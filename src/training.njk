@@ -1,0 +1,65 @@
+---
+layout: sidebar.njk
+heading: Training
+sidebarKey: training
+---
+
+<div class="container">
+    <h2 id="trainingszeiten">Trainingszeiten</h2>
+    <p>Wir trainieren derzeit im {{training.trainingsstätte }}.</p>
+  <div class="row">
+    {% for gruppe in training.zeiten %}
+    <div class="col-6 col-12-small">
+      <section class="box">
+        <header>
+          <h3>{{ gruppe.name }}</h3>
+        </header>
+        <ul class="style2">
+          {% for termin in gruppe.termine %}
+          <li><strong>{{ termin.tag }}:</strong> {{ termin.zeit }}</li>
+          <li>mit {{termin.trainer}}</li>
+          {% endfor %}
+        </ul>
+      </section>
+    </div>
+    {% endfor %}
+    
+    <h2 id="probetraining"> Probetraining</h2>
+    <div class="row">
+    <p>Du kannst gerne bei uns zum Probetraining reinschnuppern. Da jedoch vor allem die Gruppen mit den Schwimmanfängern sehr voll sind, haben wir eine Warteliste. Trage dich bzw. dein Kind gerne in unser Formular ein. Sobald wir Kapazitäten dafür haben, melden wir uns bei dir. Hier geht's zum Formular</p>
+</div>
+</div>
+
+<h2 id="trainer">Unsere Trainer</h2>
+<div class="row">
+    {% for person in training.trainer %}
+    <div class="col-4 col-12-medium">
+        <section class="box feature card-hover trainer-card">
+            <!--<a href="#" class="image featured"><img src="{{ person.bild }}" alt="" /></a>-->
+            <div class="image featured trainer-image-container">
+                <img src="{{ person.bild }}" alt="{{ person.name }}" class="portrait">
+                <img src="{{ person.bildAction }}" alt="{{ person.name }} in Action" class="action">
+              </div>
+            <div class="inner">
+                <header>
+                    <h2>{{ person.name }}</h2>
+                    <p>{{ person.gruppen }}</p>
+                </header>
+                <p><em>"{{ person.ausbildung }}"</em></p>
+                <ul class="style2">
+                    <li>Am Beckenrand seit: {{ person.seitWann }}</li>
+                </ul>
+            </div>
+      </section>
+    </div>
+    {% endfor %}
+  </div>
+
+<h2 id="faq">FAQ</h2>
+<div class="row">
+  {% for question in training.faq %}
+  <h3>{{question.frage}}</h3>
+  <p>{{question.antwort}}</p>
+  {% endfor %}
+</div>
+</div>

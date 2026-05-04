@@ -1,0 +1,26 @@
+---
+layout: base.njk
+---
+
+<div class="row gtr-200">
+							<div class="col-3 col-12-medium">
+								<div id="sidebar">
+
+                                    {# Wir suchen in der Datei 'sidebars.json' nach dem passenden Schlüssel #}
+                {% set box = sidebars[sidebarKey] if sidebars[sidebarKey] else sidebars['default'] %}
+                
+                <h3>{{ box.title }}</h3>
+                <div>
+                    {{ box.html | safe }}
+                </div>
+
+										
+
+								</div>
+							</div>
+							<div class="col-9 col-12-medium imp-medium">
+								<div id="content">
+                                    {{ content | safe }}
+								</div>
+							</div>
+						</div>

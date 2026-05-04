@@ -1,0 +1,9 @@
+# Abhängigkeiten
+node_modules/
+
+# Build-Ordner
+_site/
+
+# Betriebssystem-Dateien
+.DS_Store
+Thumbs.db

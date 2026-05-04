@@ -1,0 +1,29 @@
+trainingsseite
+
+
+trainingszeiten stil
+<div class="training-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; margin-top: 20px;">
+  {% for gruppe in trainingszeiten %}
+  <div class="group-card" style="border: 1px solid #eee; border-radius: 12px; padding: 20px; background: #fafafa; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+    <h3 style="margin-top: 0; color: #222; border-bottom: 2px solid #ddd; padding-bottom: 10px;">{{ gruppe.name }}</h3>
+    <ul style="list-style: none; padding: 0; margin: 0;">
+      {% for termin in gruppe.termine %}
+      <li style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #eee;">
+        <span style="font-weight: bold; color: #555;">{{ termin.tag }}</span>
+        <span style="color: #777;">{{ termin.zeit }} Uhr</span>
+    </li>
+    <li style="color: #777;">mit {{termin.trainer}}</li>
+    {% endfor %}
+</ul>
+</div>
+  {% endfor %}
+</div>
+
+
+news sidebar letzte artikel
+news bilder gleich groß
+
+prettier njk
+
+logo ohne kasten und in schwarz
+
