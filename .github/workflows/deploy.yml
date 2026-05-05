@@ -1,9 +1,9 @@
-name: 🚀 Deploy via FTP
+name: 🚀 Deploy via SFTP
 
 on:
   push:
     branches:
-      - main  # Der Workflow startet jedes Mal, wenn du in 'main' pushst
+      - main
 
 jobs:
   web-deploy:
@@ -11,18 +11,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: 🚚 Get latest code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4 # Update auf v4 für Node 24 Support
 
     - name: 🛠️ Install & Build
       run: |
         npm install
         npm run build
+      env:
+        # Dies erzwingt Node 24 für die JavaScript-Ausführung, wie von GitHub empfohlen
+        FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
-    - name: 📂 Sync files
-      uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+    - name: 📂 Sync files via SFTP
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.5 # Update auf neueste Version
       with:
         server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USERNAME }}
         password: ${{ secrets.FTP_PASSWORD }}
+        port: 22 # WICHTIG: Port 22 ist der Standard für SFTP
+        protocol: sftp # Explizit auf SFTP umstellen
         local-dir: ./_site/
-        server-dir: ./
+        server-dir: ./ # Oder dein Unterverzeichnis bei IONOS
