@@ -32,8 +32,8 @@ jobs:
         server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USERNAME }}
         password: ${{ secrets.FTP_PASSWORD }}
-        port: 22 # WICHTIG: Port 22 ist der Standard für SFTP
-        protocol: ftps # Explizit auf SFTP umstellen
+        port: 21
+        protocol: ftps
         local-dir: ./_site/
         server-dir: ./ # Oder dein Unterverzeichnis bei IONOS
         log-level: verbose
