@@ -5,13 +5,18 @@ on:
     branches:
       - main
 
+# Hier setzen wir die Variable global, um die Node-Warnung zu unterdrücken
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   web-deploy:
     name: 🏗️ Build & Sync
     runs-on: ubuntu-latest
     steps:
     - name: 🚚 Get latest code
-      uses: actions/checkout@v4 # Update auf v4 für Node 24 Support
+      uses: actions/checkout@v6
 
     - name: 🛠️ Install & Build
       run: |
@@ -22,7 +27,7 @@ jobs:
         FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     - name: 📂 Sync files via SFTP
-      uses: SamKirkland/FTP-Deploy-Action@v4.3.5 # Update auf neueste Version
+      uses: SamKirkland/FTP-Deploy-Action@v4.4.0
       with:
         server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USERNAME }}
