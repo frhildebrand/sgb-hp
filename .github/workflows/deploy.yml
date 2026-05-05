@@ -36,3 +36,5 @@ jobs:
         protocol: ftps # Explizit auf SFTP umstellen
         local-dir: ./_site/
         server-dir: ./ # Oder dein Unterverzeichnis bei IONOS
+        log-level: verbose
+        timeout: 200000
