@@ -25,16 +25,16 @@ jobs:
       env:
         # Dies erzwingt Node 24 für die JavaScript-Ausführung, wie von GitHub empfohlen
         FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
-    - name: 📂 Sync files via SFTP
-      uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+    
+    - name: FTP Deployer
+      uses: sand4rt/ftp-deployer@v1.8
       with:
-        server: ${{ secrets.FTP_SERVER }}
-        username: ${{ secrets.FTP_USERNAME }}
-        password: ${{ secrets.FTP_PASSWORD }}
-        port: 22
-        protocol: ftps
-        local-dir: ./_site/
-        server-dir: ./ # Oder dein Unterverzeichnis bei IONOS
-        log-level: verbose
-        timeout: 200000
+        sftp: true # optional
+        host: ${{ secrets.FTP_SERVER }} # e.g. ftp.host.com or sftp.host.com (without ftp:// or ftps://)
+        port: 22 # optional, default is: 21
+        username: ${{ secrets.FTP_USERNAME }} # FTP username
+        password: ${{ secrets.FTP_PASSWORD }} # FTP password
+        remote_folder: ./ # optional, remote path of your FTP server
+        local_folder: ./_site/ # optional, local path, default is: dist
+        cleanup: false # optional, remove existing files inside FTP remote folder
+        passive: true # optional
