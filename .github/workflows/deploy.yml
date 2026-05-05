@@ -32,7 +32,7 @@ jobs:
         server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USERNAME }}
         password: ${{ secrets.FTP_PASSWORD }}
-        port: 21
+        port: 22
         protocol: ftps
         local-dir: ./_site/
         server-dir: ./ # Oder dein Unterverzeichnis bei IONOS
