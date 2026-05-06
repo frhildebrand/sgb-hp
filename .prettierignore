@@ -1,2 +1,4 @@
-/_site
-/_node_modules
+node_modules
+_site
+package-lock.json
+src/assets/js/*.min.js

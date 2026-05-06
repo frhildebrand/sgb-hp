@@ -1926,7 +1926,9 @@ ul.menu li:first-child {
 }
 
 .trainer-image-container img {
-  transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
+  transition:
+    opacity 0.4s ease-in-out,
+    transform 0.4s ease-in-out;
 }
 
 /* Das Action-Bild liegt unsichtbar über dem Portrait */
@@ -2078,9 +2080,6 @@ ul.menu li:first-child {
 }
 
 #logo h1 {
-  background: #3759cf;
-  color: #fff;
-  border-radius: 6px;
   font-family: "Oleo Script", serif;
   font-weight: 400;
   padding: 0.25em 0.2em 0.25em 0.2em;
@@ -2109,17 +2108,15 @@ ul.menu li:first-child {
   opacity: 0.8;
 }
 
-.logo-white {
-  /* Dieser Filter macht das Bild komplett weiß */
-  filter: brightness(0) invert(1);
-  height: 2em; /* Deine gewünschte Höhe */
+.logo-black {
+  height: 2em;
   width: auto;
 }
 
 /* Verhindert, dass das Logo auf dem Handy den Header sprengt */
 @media screen and (max-width: 736px) {
   #logo img {
-      max-height: 100px;
+    max-height: 100px;
   }
 }
 

@@ -1,0 +1,69 @@
+---
+layout: sidebar.njk
+heading: Verein
+sidebarKey: verein
+---
+
+<div class="container">
+  <h2 id="vorstand">Unser Vorstand</h2>
+  <div class="row">
+    {% for person in verein.vorstand %}
+      <div class="col-4 col-12-medium">
+        <section class="box feature card-hover trainer-card">
+          <div class="image featured trainer-image-container">
+            <img
+              src="{{ person.bild }}"
+              alt="{{ person.name }}"
+              class="portrait"
+            />
+            <img
+              src="{{ person.bildAction }}"
+              alt="{{ person.name }} in Action"
+              class="action"
+            />
+          </div>
+          <div class="inner">
+            <header>
+              <h2>{{ person.name }}</h2>
+              <p>{{ person.funktion }}</p>
+            </header>
+            <ul class="style2">
+              <li>Im Amt seit: {{ person.seitWann }}</li>
+            </ul>
+          </div>
+        </section>
+      </div>
+    {% endfor %}
+  </div>
+
+  <h2 id="jugendvertretung">Unsere Jugendvertretung</h2>
+  <div class="row">
+    {% for person in verein.jugendvertretung %}
+      <div class="col-4 col-12-medium">
+        <section class="box feature card-hover trainer-card">
+          <div class="image featured trainer-image-container">
+            <img
+              src="{{ person.bild }}"
+              alt="{{ person.name }}"
+              class="portrait"
+            />
+            <img
+              src="{{ person.bildAction }}"
+              alt="{{ person.name }} in Action"
+              class="action"
+            />
+          </div>
+          <div class="inner">
+            <header>
+              <h2>{{ person.name }}</h2>
+              <p>{{ person.funktion }}</p>
+            </header>
+            <ul class="style2">
+              <li>Im Amt seit: {{ person.seitWann }}</li>
+            </ul>
+          </div>
+        </section>
+      </div>
+    {% endfor %}
+  </div>
+</div>

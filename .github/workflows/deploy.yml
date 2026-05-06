@@ -15,26 +15,26 @@ jobs:
     name: 🏗️ Build & Sync
     runs-on: ubuntu-latest
     steps:
-    - name: 🚚 Get latest code
-      uses: actions/checkout@v6
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v6
 
-    - name: 🛠️ Install & Build
-      run: |
-        npm install
-        npm run build
-      env:
-        # Dies erzwingt Node 24 für die JavaScript-Ausführung, wie von GitHub empfohlen
-        FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-    
-    - name: FTP Deployer
-      uses: sand4rt/ftp-deployer@v1.8
-      with:
-        sftp: true # optional
-        host: ${{ secrets.FTP_SERVER }} # e.g. ftp.host.com or sftp.host.com (without ftp:// or ftps://)
-        port: 22 # optional, default is: 21
-        username: ${{ secrets.FTP_USERNAME }} # FTP username
-        password: ${{ secrets.FTP_PASSWORD }} # FTP password
-        remote_folder: ./ # optional, remote path of your FTP server
-        local_folder: ./_site/ # optional, local path, default is: dist
-        cleanup: false # optional, remove existing files inside FTP remote folder
-        passive: true # optional
+      - name: 🛠️ Install & Build
+        run: |
+          npm install
+          npm run build
+        env:
+          # Dies erzwingt Node 24 für die JavaScript-Ausführung, wie von GitHub empfohlen
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+      - name: FTP Deployer
+        uses: sand4rt/ftp-deployer@v1.8
+        with:
+          sftp: true # optional
+          host: ${{ secrets.FTP_SERVER }} # e.g. ftp.host.com or sftp.host.com (without ftp:// or ftps://)
+          port: 22 # optional, default is: 21
+          username: ${{ secrets.FTP_USERNAME }} # FTP username
+          password: ${{ secrets.FTP_PASSWORD }} # FTP password
+          remote_folder: ./ # optional, remote path of your FTP server
+          local_folder: ./_site/ # optional, local path, default is: dist
+          cleanup: false # optional, remove existing files inside FTP remote folder
+          passive: true # optional

@@ -1,28 +1,35 @@
 ---
 layout: base.njk
 ---
+
 <h2>Trainingszeiten</h2>
 
 <div class="container">
   <div class="row">
     {% for gruppe in training.zeiten %}
-    <div class="col-6 col-12-small">
-      <section class="box">
-        <header>
-          <h3>{{ gruppe.name }}</h3>
-        </header>
-        <ul class="style2">
-          {% for termin in gruppe.termine %}
-          <li><strong>{{ termin.tag }}:</strong> {{ termin.zeit }}</li>
-          {% endfor %}
-        </ul>
-      </section>
-    </div>
+      <div class="col-6 col-12-small">
+        <section class="box">
+          <header>
+            <h3>{{ gruppe.name }}</h3>
+          </header>
+          <ul class="style2">
+            {% for termin in gruppe.termine %}
+              <li><strong>{{ termin.tag }}:</strong> {{ termin.zeit }}</li>
+            {% endfor %}
+          </ul>
+        </section>
+      </div>
     {% endfor %}
   </div>
 
   <div class="row">
-    <h3> Probetraining</h3>
-    <p>Du kannst gerne bei uns zum Probetraining reinschnuppern. Da jedoch vor allem die Gruppen mit den Schwimmanfängern sehr voll sind, haben wir eine Warteliste. Trage dich bzw. dein Kind gerne in unser Formular ein. Sobald wir Kapazitäten dafür haben, melden wir uns bei dir. Hier geht's zum Formular</p>
+    <h3>Probetraining</h3>
+    <p>
+      Du kannst gerne bei uns zum Probetraining reinschnuppern. Da jedoch vor
+      allem die Gruppen mit den Schwimmanfängern sehr voll sind, haben wir eine
+      Warteliste. Trage dich bzw. dein Kind gerne in unser Formular ein. Sobald
+      wir Kapazitäten dafür haben, melden wir uns bei dir. Hier geht's zum
+      Formular
+    </p>
   </div>
 </div>

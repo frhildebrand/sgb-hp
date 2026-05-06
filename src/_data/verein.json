@@ -1,0 +1,42 @@
+{
+  "vorstand": [
+    {
+      "name": "Henrik",
+      "funktion": "1.Vorsitzender",
+      "seitWann": "2026"
+    },
+    {
+      "name": "Anita",
+      "funktion": "2.Vorsitzende",
+      "seitWann": "2026"
+    },
+    {
+      "name": "Marina",
+      "funktion": "Kassenwartin",
+      "seitWann": "2026"
+    },
+    {
+      "name": "Frieda",
+      "funktion": "Geschäftsführerin",
+      "seitWann": "2023",
+      "bild": "/images/personen/frieda.jpg"
+    },
+    {
+      "name": "Jakob",
+      "funktion": "Masterswart",
+      "seitWann": "2026"
+    }
+  ],
+  "jugendvertretung": [
+    {
+      "name": "Finja",
+      "funktion": "Jugendvertreterin",
+      "seitWann": "2025"
+    },
+    {
+      "name": "Jan",
+      "funktion": "Jugendvertreter",
+      "seitWann": "2026"
+    }
+  ]
+}

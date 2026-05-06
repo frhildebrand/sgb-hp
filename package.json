@@ -4,7 +4,8 @@
   "main": "index.js",
   "scripts": {
     "build": "eleventy",
-    "start": "eleventy --serve"
+    "start": "eleventy --serve",
+    "format": "prettier --write ."
   },
   "keywords": [],
   "author": "",
@@ -12,7 +13,10 @@
   "description": "",
   "dependencies": {
     "@11ty/eleventy": "^3.1.5",
-    "luxon": "^3.7.2",
-    "prettier": "^3.8.3"
+    "luxon": "^3.7.2"
+  },
+  "devDependencies": {
+    "prettier": "^3.8.3",
+    "prettier-plugin-jinja-template": "^2.2.0"
   }
 }
