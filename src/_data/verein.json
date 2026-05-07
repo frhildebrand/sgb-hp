@@ -3,17 +3,20 @@
     {
       "name": "Henrik",
       "funktion": "1.Vorsitzender",
-      "seitWann": "2026"
+      "seitWann": "2026",
+      "bild": "/images/personen/henrik.jpg"
     },
     {
       "name": "Anita",
       "funktion": "2.Vorsitzende",
-      "seitWann": "2026"
+      "seitWann": "1998",
+      "bild": "/images/personen/anita.jpg"
     },
     {
       "name": "Marina",
       "funktion": "Kassenwartin",
-      "seitWann": "2026"
+      "seitWann": "2012",
+      "bild": "/images/personen/marina.jpg"
     },
     {
       "name": "Frieda",
@@ -24,7 +27,8 @@
     {
       "name": "Jakob",
       "funktion": "Masterswart",
-      "seitWann": "2026"
+      "seitWann": "2026",
+      "bild": "/images/personen/jakob.jpg"
     }
   ],
   "jugendvertretung": [

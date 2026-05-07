@@ -57,13 +57,15 @@
       "name": "Jakob",
       "gruppen": "Gruppe 4 + Gruppe 3",
       "seitWann": "2023",
-      "ausbildung": "-"
+      "ausbildung": "-",
+      "bild": "/images/personen/jakob.jpg"
     },
     {
       "name": "Henrik",
       "gruppen": "Gruppe 2",
       "seitWann": "2023",
-      "ausbildung": "-"
+      "ausbildung": "-",
+      "bild": "/images/personen/henrik.jpg"
     },
     {
       "name": "Nele",

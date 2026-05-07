@@ -41,15 +41,14 @@ sidebarKey: training
     {% for person in training.trainer %}
       <div class="col-4 col-12-medium">
         <section class="box feature card-hover trainer-card">
-          <!--<a href="#" class="image featured"><img src="{{ person.bild }}" alt="" /></a>-->
           <div class="image featured trainer-image-container">
             <img
-              src="{{ person.bild }}"
+              src="{{ person.bild | default('/images/personen/placeholder.png') }}"
               alt="{{ person.name }}"
               class="portrait"
             />
             <img
-              src="{{ person.bildAction }}"
+              src="{{ person.bildAction | default('/images/personen/placeholder-action.png') }}"
               alt="{{ person.name }} in Action"
               class="action"
             />
@@ -61,7 +60,7 @@ sidebarKey: training
             </header>
             <p><em>"{{ person.ausbildung }}"</em></p>
             <ul class="style2">
-              <li>Am Beckenrand seit: {{ person.seitWann }}</li>
+              <li>Am Beckenrand seit {{ person.seitWann }}</li>
             </ul>
           </div>
         </section>

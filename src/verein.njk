@@ -12,12 +12,12 @@ sidebarKey: verein
         <section class="box feature card-hover trainer-card">
           <div class="image featured trainer-image-container">
             <img
-              src="{{ person.bild }}"
+              src="{{ person.bild | default('/images/personen/placeholder.png') }}"
               alt="{{ person.name }}"
               class="portrait"
             />
             <img
-              src="{{ person.bildAction }}"
+              src="{{ person.bildAction | default('/images/personen/placeholder-action.png') }}"
               alt="{{ person.name }} in Action"
               class="action"
             />
@@ -25,11 +25,8 @@ sidebarKey: verein
           <div class="inner">
             <header>
               <h2>{{ person.name }}</h2>
-              <p>{{ person.funktion }}</p>
+              <p>{{ person.funktion }} seit {{ person.seitWann }}</p>
             </header>
-            <ul class="style2">
-              <li>Im Amt seit: {{ person.seitWann }}</li>
-            </ul>
           </div>
         </section>
       </div>
@@ -43,12 +40,12 @@ sidebarKey: verein
         <section class="box feature card-hover trainer-card">
           <div class="image featured trainer-image-container">
             <img
-              src="{{ person.bild }}"
+            src="{{ person.bild | default('/images/personen/placeholder.png') }}"
               alt="{{ person.name }}"
               class="portrait"
             />
             <img
-              src="{{ person.bildAction }}"
+            src="{{ person.bildAction | default('/images/personen/placeholder-action.png') }}"
               alt="{{ person.name }} in Action"
               class="action"
             />
