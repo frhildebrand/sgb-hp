@@ -16,7 +16,11 @@
           "zeit": "17:00 - 18:00",
           "trainer": ["Henrik", "Nele", "Philip"]
         },
-        { "tag": "Freitag", "zeit": "16:40 - 17:30", "trainer": ["Nele", "Amy"] }
+        {
+          "tag": "Freitag",
+          "zeit": "16:40 - 17:30",
+          "trainer": ["Nele", "Amy"]
+        }
       ]
     },
     {
