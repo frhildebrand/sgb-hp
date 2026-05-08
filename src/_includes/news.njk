@@ -1,0 +1,29 @@
+---
+layout: base.njk
+---
+
+<article class="news-detail">
+  <header>
+    <h1>{{ heading }}</h1>
+    <p class="news-meta">
+      Veröffentlicht am: {{ date | dateFilter }}
+      {% set displayTags = [] %}
+      {% for tag in tags %}
+        {% if tag != "news" %}
+          {% set displayTags = (displayTags.push(tag), displayTags) %}
+        {% endif %}
+      {% endfor %}
+      {% if displayTags.length > 0 %}
+        <br />
+        Tags: {{ displayTags | join(', ') }}
+      {% endif %}
+    </p>
+  </header>
+  {{ content | safe }}
+
+  {% if image %}
+    <span class="image featured"
+      ><img src="{{ image }}" alt="{{ heading }}"
+    /></span>
+  {% endif %}
+</article>

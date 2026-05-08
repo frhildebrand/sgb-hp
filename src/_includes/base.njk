@@ -10,7 +10,11 @@ title: SG Barnstorf e.V.
 -->
 <html>
   <head>
-    <title>{{ title }}</title>
+    {% if heading %}
+      <title>{{ heading }} - {{ title }}</title>
+    {% else %}
+      <title>{{ title }}</title>
+    {% endif %}
     <meta charset="utf-8" />
     <meta
       name="viewport"
