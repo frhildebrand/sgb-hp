@@ -40,12 +40,12 @@ sidebarKey: verein
         <section class="box feature card-hover trainer-card">
           <div class="image featured trainer-image-container">
             <img
-            src="{{ person.bild | default('/images/personen/placeholder.png') }}"
+              src="{{ person.bild | default('/images/personen/placeholder.png') }}"
               alt="{{ person.name }}"
               class="portrait"
             />
             <img
-            src="{{ person.bildAction | default('/images/personen/placeholder-action.png') }}"
+              src="{{ person.bildAction | default('/images/personen/placeholder-action.png') }}"
               alt="{{ person.name }} in Action"
               class="action"
             />
