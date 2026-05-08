@@ -4,8 +4,8 @@
     {
       "name": "Gruppe 1",
       "termine": [
-        { "tag": "Montag", "zeit": "17:00 - 18:00", "trainer": "Frieda" },
-        { "tag": "Freitag", "zeit": "17:30 - 18:30", "trainer": "Frieda" }
+        { "tag": "Montag", "zeit": "17:00 - 18:00", "trainer": ["Frieda"] },
+        { "tag": "Freitag", "zeit": "17:30 - 18:30", "trainer": ["Frieda"] }
       ]
     },
     {
@@ -14,9 +14,9 @@
         {
           "tag": "Dienstag",
           "zeit": "17:00 - 18:00",
-          "trainer": "Henrik, Nele"
+          "trainer": ["Henrik", "Nele", "Philip"]
         },
-        { "tag": "Freitag", "zeit": "16:40 - 17:30", "trainer": "Nele, Amy" }
+        { "tag": "Freitag", "zeit": "16:40 - 17:30", "trainer": ["Nele", "Amy"] }
       ]
     },
     {
@@ -25,7 +25,7 @@
         {
           "tag": "Freitag",
           "zeit": "15:50 - 16:35",
-          "trainer": "Karin, Finja, Jakob"
+          "trainer": ["Karin", "Finja", "Jakob"]
         }
       ]
     },
@@ -35,7 +35,7 @@
         {
           "tag": "Freitag",
           "zeit": "15:00 - 15:45",
-          "trainer": "Karin, Finja, Jakob"
+          "trainer": ["Karin", "Finja", "Jakob"]
         }
       ]
     }
@@ -43,51 +43,51 @@
   "trainer": [
     {
       "name": "Karin",
-      "gruppen": "Gruppe 4 + Gruppe 3",
-      "seitWann": "2023",
+      "gruppen": ["Gruppe 4", "Gruppe 3"],
+      "seitWann": "?",
       "ausbildung": "-"
     },
     {
       "name": "Finja",
-      "gruppen": "Gruppe 4 + Gruppe 3",
-      "seitWann": "2023",
+      "gruppen": ["Gruppe 4", "Gruppe 3"],
+      "seitWann": "?",
       "ausbildung": "-"
     },
     {
       "name": "Jakob",
-      "gruppen": "Gruppe 4 + Gruppe 3",
-      "seitWann": "2023",
+      "gruppen": ["Gruppe 4", "Gruppe 3"],
+      "seitWann": "?",
       "ausbildung": "-",
       "bild": "/images/personen/jakob.jpg"
     },
     {
       "name": "Henrik",
-      "gruppen": "Gruppe 2",
-      "seitWann": "2023",
+      "gruppen": ["Gruppe 2"],
+      "seitWann": "?",
       "ausbildung": "-",
       "bild": "/images/personen/henrik.jpg"
     },
     {
       "name": "Nele",
-      "gruppen": "Gruppe 2",
-      "seitWann": "2023",
+      "gruppen": ["Gruppe 2"],
+      "seitWann": "?",
       "ausbildung": "-"
     },
     {
       "name": "Amy",
-      "gruppen": "Gruppe 2",
-      "seitWann": "2023",
+      "gruppen": ["Gruppe 2"],
+      "seitWann": "?",
       "ausbildung": "-"
     },
     {
       "name": "Jan",
-      "gruppen": "Gruppe 2",
-      "seitWann": "2023",
+      "gruppen": ["Gruppe 2"],
+      "seitWann": "?",
       "ausbildung": "-"
     },
     {
       "name": "Frieda",
-      "gruppen": "Gruppe 1",
+      "gruppen": ["Gruppe 1"],
       "seitWann": "2010",
       "ausbildung": "Trainer-C Schwimmen Breitensport Kinder&Jugendliche",
       "bild": "/images/personen/frieda.jpg",
@@ -95,8 +95,14 @@
     },
     {
       "name": "Nane",
-      "gruppen": "Aushilfe",
-      "seitWann": "-",
+      "gruppen": ["Aushilfe"],
+      "seitWann": "?",
+      "ausbildung": "-"
+    },
+    {
+      "name": "Philip",
+      "gruppen": ["Gruppe 2"],
+      "seitWann": "2026",
       "ausbildung": "-"
     }
   ],

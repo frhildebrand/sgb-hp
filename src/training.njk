@@ -17,7 +17,7 @@ sidebarKey: training
           <ul class="style2">
             {% for termin in gruppe.termine %}
               <li><strong>{{ termin.tag }}:</strong> {{ termin.zeit }}</li>
-              <li>mit {{ termin.trainer }}</li>
+              <li>mit {{ termin.trainer | join(', ') }}</li>
             {% endfor %}
           </ul>
         </section>
@@ -56,7 +56,7 @@ sidebarKey: training
           <div class="inner">
             <header>
               <h2>{{ person.name }}</h2>
-              <p>{{ person.gruppen }}</p>
+              <p>{{ person.gruppen | join(', ') }}</p>
             </header>
             <p><em>"{{ person.ausbildung }}"</em></p>
             <ul class="style2">
