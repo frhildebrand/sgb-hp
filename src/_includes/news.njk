@@ -21,6 +21,21 @@ layout: base.njk
   </header>
   {{ content | safe }}
 
+  {% if links %}
+    <section class="related-links">
+      <h3>Links zum Thema</h3>
+      <ul class="style2">
+        {% for item in links %}
+          <li>
+            <a href="{{ item.url }}" target="_blank" rel="noopener"
+              >{{ item.text }}</a
+            >
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
   {% if image %}
     <span class="image featured"
       ><img src="{{ image }}" alt="{{ heading }}"
