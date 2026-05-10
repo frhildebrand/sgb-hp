@@ -1,0 +1,49 @@
+---
+layout: sidebar.njk
+heading: Mitgliedschaft
+sidebarKey: verein
+---
+
+<h1>Mitglied werden</h1>
+<p>
+  Du möchtest Teil der Schwimmgemeinschaft Barnstorf werden? Wir freuen uns über
+  jedes neue Mitglied! Hier findest du eine Übersicht über unsere aktuellen
+  Jahresbeiträge.
+</p>
+
+<section class="box">
+  <header>
+    <h3>Jahresbeiträge</h3>
+  </header>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Mitgliedschaftstyp</th>
+          <th style="text-align: right;">Beitrag p.a.</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for beitrag in mitgliedschaft.jahresbeiträge %}
+          <tr>
+            <td>
+              <strong>{{ beitrag.typ }}</strong><br />
+              <small>{{ beitrag.beschreibung }}</small>
+            </td>
+            <td style="text-align: right; vertical-align: middle;">
+              {{ beitrag.preis }}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <footer>
+    <p>
+      <em>Hinweis: Die Beiträge werden jährlich per Lastschrift eingezogen.</em>
+    </p>
+    <a href="/downloads" class="button icon solid fa-file-download"
+      >Aufnahmeantrag herunterladen</a
+    >
+  </footer>
+</section>

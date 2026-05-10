@@ -1,0 +1,29 @@
+{
+  "jahresbeiträge": [
+    {
+      "typ": "1 Mitglied bis 18 Jahre",
+      "preis": "60,00 €",
+      "beschreibung": "Für Kinder und Jugendliche."
+    },
+    {
+      "typ": "1 Mitglied ab 18 Jahre",
+      "preis": "72,00 €",
+      "beschreibung": "Normalbeitrag für Erwachsene."
+    },
+    {
+      "typ": "2 Mitglieder bis 18 Jahre",
+      "preis": "102,00 €",
+      "beschreibung": "Vergünstigter Tarif für zwei Kinder und Jugendliche aus einem Haushalt."
+    },
+    {
+      "typ": "Familienbeitrag",
+      "preis": "132,00 €",
+      "beschreibung": "Beinhaltet Eltern und alle Kinder bis zum 18. Lebensjahr."
+    },
+    {
+      "typ": "Passive Mitgliedschaft",
+      "preis": "30,00 €",
+      "beschreibung": "Unterstützen Sie den Verein als förderndes Mitglied."
+    }
+  ]
+}
