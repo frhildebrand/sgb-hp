@@ -8,6 +8,7 @@ module.exports = function (config) {
   });
   config.addPassthroughCopy("src/assets");
   config.addPassthroughCopy("src/images");
+  config.addPassthroughCopy("src/downloads");
   return {
     markdownTemplateEngine: "njk",
     htmlTemplateEngine: "njk",
