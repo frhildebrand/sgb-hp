@@ -257,6 +257,12 @@ h6 a {
   outline: 0;
 }
 
+h1 {
+  font-size: 2.75em;
+  margin: 0 0 0.5em 0;
+  line-height: 1.25em;
+}
+
 h2 {
   font-size: 2.25em;
   margin: 0 0 1.1em 0;
@@ -2077,6 +2083,31 @@ ul.menu li:first-child {
   color: #3759cf;
   text-decoration: none;
   display: inline-block;
+}
+
+.news-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5em;
+  line-height: 1;
+}
+
+.news-meta .tag-container {
+}
+
+.news-meta .tag-badge {
+  display: inline-block;
+  background: #3759cf;
+  color: #fff;
+  padding: 0.35em 0.8em;
+  border-radius: 4px;
+  font-size: 0.75em;
+  font-weight: 800;
+  margin-right: 0.5em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1;
 }
 
 #footer-wrapper {

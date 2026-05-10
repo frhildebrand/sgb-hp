@@ -103,7 +103,7 @@ title: SG Barnstorf e.V.
                       <div class="inner">
                         <header>
                           <h2>{{ item.data.heading }}</h2>
-                          <small>{{ item.data.date }}</small>
+                          <small>{{ item.data.date | dateFilter }}</small>
                         </header>
                         <p>
                           {{ item.data.excerpt }}

@@ -3,6 +3,7 @@ const { DateTime } = require("luxon");
 module.exports = function (config) {
   // Datums-Filter hinzufügen
   config.addFilter("dateFilter", (dateObj) => {
+    if (!dateObj) return "";
     return DateTime.fromJSDate(dateObj).toFormat("dd.MM.yyyy");
   });
   config.addPassthroughCopy("src/assets");
