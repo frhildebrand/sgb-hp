@@ -100,7 +100,9 @@ title: SG Barnstorf e.V.
                       <a
                         href="{{ item.url }}"
                         class="image featured aspect-ratio-3x2"
-                        ><img src="{{ item.data.image }}" alt=""
+                        ><img
+                          src="{{ item.data.image | default('/images/news/placeholder.png') }}"
+                          alt="{{ item.data.heading }}"
                       /></a>
                       <div class="inner">
                         <header>

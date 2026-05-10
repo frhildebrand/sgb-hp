@@ -14,7 +14,9 @@ sidebarKey: training
         <div class="col-4 col-12-medium">
           <section class="box feature news-card">
             <a href="{{ post.url }}" class="image featured aspect-ratio-3x2"
-              ><img src="{{ post.data.image }}" alt=""
+              ><img
+                src="{{ post.data.image | default('/images/news/placeholder.png') }}"
+                alt="{{ post.data.heading }}"
             /></a>
             <div class="inner">
               <header>

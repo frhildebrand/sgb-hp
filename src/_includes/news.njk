@@ -20,11 +20,12 @@ layout: base.njk
         </p>
       </header>
 
-      {% if image %}
-        <span class="image featured aspect-ratio-3x2"
-          ><img src="{{ image }}" alt="{{ heading }}"
-        /></span>
-      {% endif %}
+      <span class="image featured aspect-ratio-3x2">
+        <img
+          src="{{ image | default('/images/news/placeholder.png') }}"
+          alt="{{ heading }}"
+        />
+      </span>
 
       {{ content | safe }}
 

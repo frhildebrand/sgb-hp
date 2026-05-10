@@ -4,7 +4,7 @@ heading: "Stadtradeln vom 13.Mai bis 2.Juni"
 date: 2026-05-05
 tags: news
 excerpt: "Mach mit in unserem Stadtradel-Team 'Schwimmbegeisterte"
-image: /images/pic02.jpg
+image: /images/news/fahrrad.png
 links:
   - text: Anmeldung und weitere Infos zum Stadtradeln
     url: https://www.stadtradeln.de/sg-barnstorf
