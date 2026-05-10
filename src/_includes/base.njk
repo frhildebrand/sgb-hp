@@ -96,8 +96,10 @@ title: SG Barnstorf e.V.
               {% for item in collections.news | reverse %}
                 {% if loop.index0 < 3 %}
                   <div class="col-4 col-12-medium">
-                    <section class="box feature">
-                      <a href="{{ item.url }}" class="image featured"
+                    <section class="box feature news-card">
+                      <a
+                        href="{{ item.url }}"
+                        class="image featured aspect-ratio-3x2"
                         ><img src="{{ item.data.image }}" alt=""
                       /></a>
                       <div class="inner">

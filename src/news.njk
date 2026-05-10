@@ -12,8 +12,8 @@ sidebarKey: training
       <!-- Box -->
       {%- for post in collections.news | reverse -%}
         <div class="col-4 col-12-medium">
-          <section class="box feature">
-            <a href="{{ post.url }}" class="image featured"
+          <section class="box feature news-card">
+            <a href="{{ post.url }}" class="image featured aspect-ratio-3x2"
               ><img src="{{ post.data.image }}" alt=""
             /></a>
             <div class="inner">
