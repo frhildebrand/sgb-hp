@@ -1,11 +1,15 @@
 {
-  "trainingsstätte": "Hotel Roshop",
+  "trainingsstätte": "Freibad Barnstorf",
   "zeiten": [
     {
       "name": "Gruppe 1",
       "termine": [
-        { "tag": "Montag", "zeit": "17:00 - 18:00", "trainer": ["Frieda"] },
-        { "tag": "Freitag", "zeit": "17:30 - 18:30", "trainer": ["Frieda"] }
+        { "tag": "Montag", "zeit": "18:00 - 19:00", "trainer": ["Frieda"] },
+        {
+          "tag": "Freitag",
+          "zeit": "18:00 - 19:00",
+          "trainer": ["Frieda", "Jan", "Nele"]
+        }
       ]
     },
     {
@@ -18,7 +22,7 @@
         },
         {
           "tag": "Freitag",
-          "zeit": "16:40 - 17:30",
+          "zeit": "17:10 - 18:10",
           "trainer": ["Nele", "Amy"]
         }
       ]
@@ -28,7 +32,7 @@
       "termine": [
         {
           "tag": "Freitag",
-          "zeit": "15:50 - 16:35",
+          "zeit": "16:20 - 17:05",
           "trainer": ["Karin", "Finja", "Jakob"]
         }
       ]
@@ -38,7 +42,7 @@
       "termine": [
         {
           "tag": "Freitag",
-          "zeit": "15:00 - 15:45",
+          "zeit": "15:30 - 16:15",
           "trainer": ["Karin", "Finja", "Jakob"]
         }
       ]
