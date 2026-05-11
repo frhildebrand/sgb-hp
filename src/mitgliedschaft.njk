@@ -40,10 +40,27 @@ sidebarKey: verein
   </div>
   <footer>
     <p>
-      <em>Hinweis: Die Beiträge werden jährlich per Lastschrift eingezogen.</em>
+      <em
+        >Hinweis: Die Beiträge werden jährlich im 1.Quartal per Lastschrift
+        eingezogen.</em
+      >
     </p>
-    <a href="/downloads" class="button icon solid fa-file-download"
-      >Aufnahmeantrag herunterladen</a
-    >
+    {% set eintrittserklaerung = null %}
+    {% for item in downloads %}
+      {% if item.filename == "eintrittserklaerung.pdf" %}
+        {% set eintrittserklaerung = item %}
+      {% endif %}
+    {% endfor %}
+
+    {% if eintrittserklaerung %}
+      <a
+        href="/downloads/{{ eintrittserklaerung.filename }}"
+        class="button icon solid fa-file-download"
+        target="_blank"
+        rel="noopener"
+      >
+        {{ eintrittserklaerung.title }} herunterladen
+      </a>
+    {% endif %}
   </footer>
 </section>
