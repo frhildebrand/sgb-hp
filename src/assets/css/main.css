@@ -2092,6 +2092,9 @@ ul.menu li:first-child {
 
 #header-wrapper {
   padding: 4.5em 0 3em 0;
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), /* Dark overlay for readability */
+    url("/images/header-bg.jpg") center center / cover no-repeat; /* Your background image */
 }
 
 #features-wrapper {
@@ -2126,9 +2129,6 @@ ul.menu li:first-child {
   flex-wrap: wrap;
   gap: 1.5em;
   line-height: 1;
-}
-
-.news-meta .tag-container {
 }
 
 .news-meta .tag-badge {
@@ -2190,6 +2190,11 @@ ul.menu li:first-child {
   opacity: 0.8;
 }
 
+/* Override logo color for header-wrapper */
+#header-wrapper #logo h1 img.logo-black {
+  filter: brightness(0) invert(1); /* Make logo white */
+}
+
 .logo-black {
   height: 2em;
   width: auto;
@@ -2222,6 +2227,7 @@ ul.menu li:first-child {
   padding-left: 1.5em;
 }
 
+/* Override nav link colors for header-wrapper */
 #nav ul li a,
 #nav ul li span {
   -moz-transition: background-color 0.25s ease-in-out;
@@ -2230,7 +2236,7 @@ ul.menu li:first-child {
   transition: background-color 0.25s ease-in-out;
   font-weight: 800;
   letter-spacing: 0.025em;
-  color: #696969;
+  color: #fff; /* Make nav text white */
   text-decoration: none;
   border-radius: 6px;
   padding: 0.5em 1em 0.5em 1em;
@@ -2240,19 +2246,21 @@ ul.menu li:first-child {
   display: none;
 }
 
-#nav ul li:hover a,
-#nav ul li:hover span {
-  background: #fff;
+/* Adjust hover/active states for white text */
+#header-wrapper #nav ul li:hover a,
+#header-wrapper #nav ul li:hover span {
+  background: rgba(255, 255, 255, 0.2);
 }
 
-#nav ul li.active a,
-#nav ul li.active span {
-  background: #fff;
+#header-wrapper #nav ul li.active a,
+#header-wrapper #nav ul li.active span {
+  background: rgba(255, 255, 255, 0.2);
 }
 
-#nav ul li.current a {
-  background: #444;
-  color: #fff;
+/* The 'current' state should still be distinct */
+#header-wrapper #nav ul li.current a {
+  background: #fff; /* White background for current item */
+  color: #444; /* Dark text for current item */
 }
 
 .dropotron {
@@ -2517,6 +2525,9 @@ ul.menu li:first-child {
   #header-wrapper {
     padding: 3em 0 1em 0;
     text-align: center;
+    background:
+      linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), /* Dark overlay for readability */
+      url("/images/header-bg.jpg") center center / cover no-repeat; /* Your background image */
   }
 
   #footer-wrapper {
