@@ -2214,6 +2214,8 @@ ul.menu li:first-child {
   right: 0;
   top: 0;
   font-size: 0.9em;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
 }
 
 #nav ul {
