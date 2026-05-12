@@ -201,7 +201,7 @@ body {
   font-size: 13pt;
   color: #696969;
   font-weight: 300;
-  line-height: 2.25em;
+  line-height: 1.75em;
 }
 
 body.is-preload *,
@@ -243,7 +243,8 @@ h4,
 h5,
 h6 {
   color: #444;
-  font-weight: 800;
+  font-weight: 800;  
+  padding: 1em 0 1em 0;
 }
 
 h1 a,
@@ -259,19 +260,17 @@ h6 a {
 
 h1 {
   font-size: 2.75em;
-  margin: 0 0 0.5em 0;
   line-height: 1.25em;
 }
 
 h2 {
   font-size: 2.25em;
-  margin: 0 0 1.1em 0;
   line-height: 1em;
 }
 
 h3 {
   font-size: 1.35em;
-  margin: 0 0 1em 0;
+  margin: 1em 0 0.5em 0;
 }
 
 b,
@@ -317,7 +316,7 @@ ul,
 ol,
 dl,
 table {
-  margin-bottom: 2em;
+  margin-bottom: 0.5em;
 }
 
 /* Container */
@@ -1582,7 +1581,7 @@ article:last-child {
 }
 
 header {
-  margin: 0 0 2em 0;
+  margin: 0 0 1em 0;
 }
 
 header h2,
@@ -2312,6 +2311,84 @@ ul.menu li:first-child {
   padding: 0 1.5em;
 }
 
+/* Hunte-Schwimmmeeting Impressions Carousel */
+.hsm-impressions {
+  margin-top: 4em; /* Add some space above the section */
+}
+
+.carousel-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.carousel-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: rgba(55, 89, 207, 0.7);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s;
+  padding: 0 !important; /* Override default button padding */
+  font-size: 1em !important;
+}
+
+.carousel-nav:hover {
+  background: rgba(55, 89, 207, 1);
+}
+
+.carousel-nav.prev {
+  left: -20px;
+}
+
+.carousel-nav.next {
+  right: -20px;
+}
+
+.image-carousel {
+  display: flex;
+  overflow-x: auto; /* Enable horizontal scrolling */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  scroll-snap-type: x mandatory; /* Snap to items */
+  gap: 20px; /* Space between images */
+  padding-bottom: 20px; /* Space for scrollbar */
+  margin-bottom: 2em;
+}
+
+.carousel-item {
+  flex: 0 0 auto; /* Prevent items from shrinking */
+  width: 300px; /* Fixed width for each item */
+  height: 200px; /* Fixed height for each item */
+  scroll-snap-align: start; /* Snap to the start of each item */
+  border-radius: 8px;
+  overflow: hidden; /* Hide parts of the image that exceed the item dimensions */
+}
+
+.carousel-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Cover the item area, cropping if necessary */
+  display: block; /* Remove extra space below image */
+}
+
+/* Optional: Hide scrollbar for a cleaner look */
+.image-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.image-carousel {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
 .dropotron li > a:hover,
 .dropotron li > span:hover {
   background: #eee;
