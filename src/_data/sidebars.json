@@ -1,6 +1,6 @@
 {
   "training": {
-    "html": "<ul class='style2'><li><a href='#trainingszeiten'>Trainingszeiten</a></li><li><a href='#probetraining'>Probetraining</a></li><li><a href='#trainer'>Unsere Trainer</a></li><li><a href='#faq'>FAQ</a></li></ul>"
+    "html": "<ul class='style2'><li><a href='#trainingszeiten'>Trainingszeiten</a></li><li><a href='#probetraining'>Probetraining</a></li><li><a href='#trainer'>Unsere Trainer</a></li><li><a href='#faq'>FAQ</a></li><li><a href='https://sgbarnstorf.webclub.app/' target='_blank'>Direkt zu Webclub</a></li></ul>"
   },
   "verein": {
     "html": "<ul><li><a href='/verein'>Vorstand</a></li><li><a href='/mitgliedschaft'>Mitgliedschaft</a></li><li><a href='/downloads'>Downloads</a></li></ul>"

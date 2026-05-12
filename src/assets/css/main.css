@@ -2519,6 +2519,43 @@ ul.menu li:first-child {
   color: inherit;
 }
 
+/* Sidebar Links styling */
+#sidebar ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+#sidebar a {
+  text-decoration: none;
+  color: inherit;
+  display: inline-block;
+  padding: 0.2em 0;
+  transition: color 0.2s ease;
+  font-weight: 600;
+}
+
+#sidebar a:hover {
+  color: #0090c5;
+  text-decoration: underline;
+}
+
+#sidebar a:before {
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  margin-right: 0.75em;
+  font-size: 0.9em;
+  color: #3759cf;
+}
+
+#sidebar a[href]:not([href^="#"]):before {
+  content: "\f105"; /* angle-right for links to other pages */
+}
+
+#sidebar a[href^="#"]:before {
+  content: "\f107"; /* angle-down for internal anchor links */
+  color: #888; /* Slightly muted color for anchors */
+}
+
 /* XLarge */
 
 @media screen and (max-width: 1680px) {
