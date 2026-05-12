@@ -67,4 +67,19 @@
       300,
     );
   });
+
+  // Simple Lightbox for News Detail
+  $(".news-detail .image.featured").on("click", function (e) {
+    e.preventDefault();
+    var src = $(this).attr("href");
+    var $overlay = $('<div id="lightbox-overlay"></div>');
+    var $img = $('<img src="' + src + '">');
+    $overlay.hide().append($img).appendTo($body).fadeIn(300);
+
+    $overlay.on("click", function () {
+      $(this).fadeOut(300, function () {
+        $(this).remove();
+      });
+    });
+  });
 })(jQuery);
