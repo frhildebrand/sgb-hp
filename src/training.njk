@@ -68,10 +68,16 @@ sidebarKey: training
   </div>
 
   <h2 id="faq">FAQ</h2>
-  <div class="row">
-    {% for question in training.faq %}
-      <h3>{{ question.frage }}</h3>
-      <p>{{ question.antwort }}</p>
+  <div class="faq-accordion">
+    {% for item in training.faq %}
+      <details class="box faq-item">
+        <summary>
+          <strong>{{ item.frage }}</strong>
+        </summary>
+        <div class="inner">
+          <p>{{ item.antwort | safe }}</p>
+        </div>
+      </details>
     {% endfor %}
   </div>
 </div>

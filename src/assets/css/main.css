@@ -2311,6 +2311,44 @@ ul.menu li:first-child {
   padding: 0 1.5em;
 }
 
+/* FAQ Accordion */
+.faq-accordion .faq-item {
+  margin-bottom: 1.5em;
+  padding: 0;
+  height: auto;
+}
+
+.faq-accordion .faq-item summary {
+  padding: 1.25em 2em;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 800;
+  color: #3759cf;
+  position: relative;
+  user-select: none;
+}
+
+.faq-accordion .faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-accordion .faq-item summary:after {
+  content: "\f078";
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  position: absolute;
+  right: 2em;
+  transition: transform 0.3s ease;
+}
+
+.faq-accordion .faq-item[open] summary:after {
+  transform: rotate(180deg);
+}
+
+.faq-accordion .faq-item .inner {
+  padding: 0 2em 1.5em 2em;
+}
+
 /* Hunte-Schwimmmeeting Impressions Carousel */
 .hsm-impressions {
   margin-top: 4em; /* Add some space above the section */
