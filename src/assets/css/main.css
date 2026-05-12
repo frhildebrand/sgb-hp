@@ -243,7 +243,7 @@ h4,
 h5,
 h6 {
   color: #444;
-  font-weight: 800;  
+  font-weight: 800;
   padding: 1em 0 1em 0;
 }
 
@@ -2092,8 +2092,9 @@ ul.menu li:first-child {
 #header-wrapper {
   padding: 4.5em 0 3em 0;
   background:
-    linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), /* Dark overlay for readability */
-    url("/images/header-bg.jpg") center center / cover no-repeat; /* Your background image */
+    linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+    /* Dark overlay for readability */ url("/images/header-bg.jpg") center
+      center / cover no-repeat; /* Your background image */
 }
 
 #features-wrapper {
@@ -2643,8 +2644,9 @@ ul.menu li:first-child {
     padding: 3em 0 1em 0;
     text-align: center;
     background:
-      linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), /* Dark overlay for readability */
-      url("/images/header-bg.jpg") center center / cover no-repeat; /* Your background image */
+      linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+      /* Dark overlay for readability */ url("/images/header-bg.jpg") center
+        center / cover no-repeat; /* Your background image */
   }
 
   #footer-wrapper {

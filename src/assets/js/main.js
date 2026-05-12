@@ -54,13 +54,17 @@
     });
 
   // Carousel Navigation
-  $('.carousel-nav').on('click', function() {
-    const $carousel = $(this).siblings('.image-carousel');
-    const scrollAmount = $carousel.find('.carousel-item').outerWidth() + 20; // Width + Gap
-    
-    $carousel.animate({
-      scrollLeft: $carousel.scrollLeft() + ($(this).hasClass('next') ? scrollAmount : -scrollAmount)
-    }, 300);
-  });
+  $(".carousel-nav").on("click", function () {
+    const $carousel = $(this).siblings(".image-carousel");
+    const scrollAmount = $carousel.find(".carousel-item").outerWidth() + 20; // Width + Gap
 
+    $carousel.animate(
+      {
+        scrollLeft:
+          $carousel.scrollLeft() +
+          ($(this).hasClass("next") ? scrollAmount : -scrollAmount),
+      },
+      300,
+    );
+  });
 })(jQuery);
