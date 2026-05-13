@@ -2361,38 +2361,6 @@ ul.menu li:first-child {
   align-items: center;
 }
 
-.carousel-nav {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 10;
-  background: rgba(55, 89, 207, 0.7);
-  color: #fff;
-  border: none;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.3s;
-  padding: 0 !important; /* Override default button padding */
-  font-size: 1em !important;
-}
-
-.carousel-nav:hover {
-  background: rgba(55, 89, 207, 1);
-}
-
-.carousel-nav.prev {
-  left: -20px;
-}
-
-.carousel-nav.next {
-  right: -20px;
-}
-
 .image-carousel {
   display: flex;
   overflow-x: auto; /* Enable horizontal scrolling */
