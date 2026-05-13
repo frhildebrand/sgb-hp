@@ -2,7 +2,10 @@
 layout: news.njk
 heading: "Versammlungen 2026"
 date: 2026-03-20
-tags: news
+tags:
+  - vorstand
+  - jugend
+  - bericht
 excerpt: "Henrik löst Peter als 1.Vorsitzenden ab"
 image: /images/news/2026-03-13-versammlung-kreiszeitung.jpeg
 ---

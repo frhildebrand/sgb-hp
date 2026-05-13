@@ -2,7 +2,8 @@
 layout: news.njk
 heading: "Stadtradeln vom 13.Mai bis 2.Juni"
 date: 2026-05-05
-tags: news
+tags:
+  - veranstaltung
 excerpt: "Mach mit in unserem Stadtradel-Team 'Schwimmbegeisterte"
 image: /images/news/fahrrad.png
 links:

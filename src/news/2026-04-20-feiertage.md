@@ -2,7 +2,8 @@
 layout: news.njk
 heading: "Feiertage = trainingsfrei"
 date: 2026-04-20
-tags: news
+tags:
+  - training
 excerpt: "An den Feiertagen und Brückentagen im Mai findet kein Training statt"
 ---
 
