@@ -23,10 +23,12 @@ layout: base.njk
         {% endif %}
         <ul class="menu-list">
           {% for item in section.items %}
+            {# Normalize URLs for comparison by removing trailing slashes #}
+            {% set isCurrentPage = (item.url | replace(r/\/$/, "")) == (page.url | replace(r/\/$/, "")) %}
             <li>
               <a
                 href="{{ item.url }}"
-                {% if item.url == page.url %}class="is-active"{% endif %}
+                {% if isCurrentPage %}class="is-active"{% endif %}
                 {% if item.external %}target="_blank" rel="noopener"{% endif %}
               >
                 {{ item.text }}
@@ -36,6 +38,22 @@ layout: base.njk
                   </span>
                 {% endif %}
               </a>
+
+              {# Show anchors/headings if this is the active page #}
+              {% if isCurrentPage %}
+                {% set anchors = content | extractHeadings %}
+                {% if anchors.length > 0 %}
+                  <ul class="is-size-7 ml-3 mt-1 mb-2">
+                    {% for anchor in anchors %}
+                      <li class="py-1">
+                        <a href="#{{ anchor.id }}" class="has-text-grey"
+                          >{{ anchor.text }}</a
+                        >
+                      </li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+              {% endif %}
             </li>
           {% endfor %}
         </ul>
