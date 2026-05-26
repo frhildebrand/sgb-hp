@@ -18,9 +18,9 @@ layout: base.njk
       {% endif %}
 
       {% for section in sidebar.sections %}
-        {% if section.label %}<p class="menu-label">
-          {{ section.label }}
-        </p>{% endif %}
+        {% if section.label %}
+          <p class="menu-label">{{ section.label }}</p>
+        {% endif %}
         <ul class="menu-list">
           {% for item in section.items %}
             <li>
@@ -30,6 +30,11 @@ layout: base.njk
                 {% if item.external %}target="_blank" rel="noopener"{% endif %}
               >
                 {{ item.text }}
+                {% if item.external %}
+                  <span class="icon is-small ml-1">
+                    <i class="fas fa-external-link-alt"></i>
+                  </span>
+                {% endif %}
               </a>
             </li>
           {% endfor %}
