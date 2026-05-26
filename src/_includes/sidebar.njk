@@ -2,17 +2,42 @@
 layout: base.njk
 ---
 
-<div class="row gtr-200">
-  <div class="col-3 col-12-medium">
-    <div id="sidebar">
-      {# Wir suchen in der Datei 'sidebars.json' nach dem passenden Schlüssel #}
-      {% set box = sidebars[sidebarKey] if sidebars[sidebarKey] else sidebars['default'] %}
+<div class="columns is-multiline">
+  <div class="column is-3-desktop is-12-tablet">
+    <aside class="menu box">
+      {# The sidebarKey is now automatically provided by the Data Cascade or Front Matter #}
+      {% set key = sidebarKey or 'default' %}
+      {% set sidebar = sidebars[key] if sidebars[key] else sidebars['default'] %}
 
-      <h3>{{ box.title }}</h3>
-      <div>{{ box.html | safe }}</div>
-    </div>
+      {% if sidebar.title %}
+        <p
+          class="menu-label title is-6 mb-4 has-text-primary has-text-weight-bold"
+        >
+          {{ sidebar.title }}
+        </p>
+      {% endif %}
+
+      {% for section in sidebar.sections %}
+        {% if section.label %}<p class="menu-label">
+          {{ section.label }}
+        </p>{% endif %}
+        <ul class="menu-list">
+          {% for item in section.items %}
+            <li>
+              <a
+                href="{{ item.url }}"
+                {% if item.url == page.url %}class="is-active"{% endif %}
+                {% if item.external %}target="_blank" rel="noopener"{% endif %}
+              >
+                {{ item.text }}
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endfor %}
+    </aside>
   </div>
-  <div class="col-9 col-12-medium imp-medium">
-    <div id="content">{{ content | safe }}</div>
+  <div class="column is-9-desktop is-12-tablet">
+    <div class="content box p-5">{{ content | safe }}</div>
   </div>
 </div>

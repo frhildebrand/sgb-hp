@@ -1,0 +1,101 @@
+---
+layout: sidebar.njk
+heading: Training
+sidebarKey: training
+---
+
+<div class="container">
+  <section class="section">
+    <h2 class="title is-2">Trainingszeiten</h2>
+
+    <div class="grid is-col-min-10">
+      {% for gruppe in training.zeiten %}
+        <article class="message is-primary">
+          <div class="message-header">
+            <p>{{ gruppe.name }}</p>
+          </div>
+          <div class="message-body">
+            <ul>
+              {% for termin in gruppe.termine %}
+                <li><strong>{{ termin.tag }}:</strong> {{ termin.zeit }}</li>
+                <li>mit {{ termin.trainer | join(', ') }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+  <section class="section">
+    <h2 class="title is-2" id="probetraining">Probetraining</h2>
+    <p>
+      Du kannst gerne bei uns zum Probetraining reinschnuppern. Da jedoch vor
+      allem die Gruppen mit den Schwimmanfängern sehr voll sind, haben wir eine
+      Warteliste. Trage dich bzw. dein Kind gerne in unser Formular ein. Sobald
+      wir Kapazitäten dafür haben, melden wir uns bei dir.
+      <br />
+      <a
+        class="button is-link"
+        href="https://forms.gle/x2g5LVhuHqwe8tzE6"
+        target="_blank"
+      >
+        <span class="icon">
+          <i class="fas fa-clipboard-list"></i>
+        </span>
+        <span> Formular zur Warteliste fürs Probetraining </span>
+      </a>
+    </p>
+  </section>
+
+  <section class="section">
+    <h2 class="title is-2" id="trainer">Unsere Trainer</h2>
+    <div class="grid is-col-min-12">
+      {% for person in training.trainer %}
+        <div class="card">
+          <div class="card-image">
+            <figure class="image">
+              <img
+                src="{{ person.bild | default('/images/personen/placeholder.png') }}"
+                alt="{{ person.name }}"
+                class="portrait"
+              />
+              <!--
+            <img
+              src="{{ person.bildAction | default('/images/personen/placeholder-action.png') }}"
+              alt="{{ person.name }} in Action"
+              class="action"
+            />
+          -->
+            </figure>
+          </div>
+          <div class="card-content">
+            <div class="media-content">
+              <p class="title is-4">{{ person.name }}</p>
+              <p class="subtitle is-6">{{ person.gruppen | join(', ') }}</p>
+            </div>
+
+            <div class="content">
+              <em>"{{ person.ausbildung }}"</em>
+              <br />
+              Am Beckenrand seit {{ person.seitWann }}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="title is-2" id="faq">FAQ</h2>
+    {% for item in training.faq %}
+      <details class="box">
+        <summary>
+          <strong>{{ item.frage }}</strong>
+        </summary>
+        <div>
+          <p>{{ item.antwort | safe }}</p>
+        </div>
+      </details>
+    {% endfor %}
+  </section>
+</div>

@@ -2,57 +2,71 @@
 layout: base.njk
 ---
 
-<div class="row gtr-150">
-  <div class="col-8 col-12-medium">
-    <article class="news-detail">
-      <header>
-        <h1>{{ heading }}</h1>
-        <p class="news-meta">
-          {% if date %}
-            <span class="icon solid fa-calendar"> {{ date | dateFilter }}</span>
-          {% endif %}
+<div class="columns is-multiline">
+  <div class="column is-8-desktop is-12-tablet">
+    <article class="box p-5">
+      <header class="mb-5">
+        <h1 class="title is-1">{{ heading }}</h1>
 
-          <span class="tag-container">
-            {% for tag in tags %}
-              <span class="tag-badge">{{ tag }}</span>
-            {% endfor %}
-          </span>
-        </p>
+        <div class="level is-mobile mb-4">
+          <div class="level-left">
+            {% if date %}
+              <div class="level-item">
+                <span class="icon-text has-text-grey">
+                  <span class="icon"><i class="fas fa-calendar-alt"></i></span>
+                  <span>{{ date | dateFilter }}</span>
+                </span>
+              </div>
+            {% endif %}
+          </div>
+          <div class="level-right">
+            <div class="tags">
+              {% for tag in tags %}
+                <span class="tag is-primary is-light">{{ tag }}</span>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
       </header>
 
-      <a
-        href="{{ image | default('/images/news/placeholder.png') }}"
-        class="image featured aspect-ratio-3x2"
-      >
+      <figure class="image is-3by2 mb-5">
         <img
           src="{{ image | default('/images/news/placeholder.png') }}"
           alt="{{ heading }}"
+          style="object-fit: cover; border-radius: 6px;"
         />
-      </a>
+      </figure>
 
-      {{ content | safe }}
+      <div class="content">{{ content | safe }}</div>
 
       {% if links %}
-        <section class="related-links">
-          <h3>Links zum Thema</h3>
-          <ul class="style2">
+        <section class="mt-6 pt-5" style="border-top: 1px solid #eee;">
+          <h3 class="title is-4">Links zum Thema</h3>
+          <div class="buttons">
             {% for item in links %}
-              <li>
-                <a href="{{ item.url }}" target="_blank" rel="noopener"
-                  >{{ item.text }}</a
-                >
-              </li>
+              <a
+                href="{{ item.url }}"
+                class="button is-link is-outlined is-small"
+                target="_blank"
+                rel="noopener"
+              >
+                <span class="icon"
+                  ><i class="fas fa-external-link-alt"></i
+                ></span>
+                <span>{{ item.text }}</span>
+              </a>
             {% endfor %}
-          </ul>
+          </div>
         </section>
       {% endif %}
     </article>
   </div>
-  <div class="col-4 col-12-medium">
+
+  <div class="column is-4-desktop is-12-tablet">
     <div id="sidebar">
-      <section class="box">
-        <h3>Weitere News</h3>
-        <ul class="style2">
+      <aside class="menu box">
+        <p class="menu-label title is-5 mb-3">Weitere News</p>
+        <ul class="menu-list">
           {% set count = 0 %}
           {% for post in collections.news | reverse %}
             {% if post.url != page.url and count < 5 %}
@@ -61,13 +75,11 @@ layout: base.njk
             {% endif %}
           {% endfor %}
         </ul>
-      </section>
+      </aside>
     </div>
-    <a
-      href="/news"
-      class="button alt icon solid fa-arrow-left"
-      style="margin:1em 0 1em 0;"
-      >Alle News</a
-    >
+    <a href="/news" class="button is-light is-fullwidth mt-4">
+      <span class="icon"><i class="fas fa-arrow-left"></i></span>
+      <span>Alle News</span>
+    </a>
   </div>
 </div>

@@ -19,239 +19,195 @@ title: SG Barnstorf e.V.
     <link rel="icon" type="image/svg+xml" href="/images/sgb-hai.svg" />
   </head>
   <body>
-    <section class="hero">
-      <div class="hero-body">
-        <p class="title">SG Barnstorf e.V.</p>
-        <p class="subtitle">Seit 1972 mit euch im Wasser</p>
+    <nav class="navbar is-light" role="navigation" aria-label="main navigation">
+      <div class="container">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/">
+            <img
+              src="{{ metadata.logo }}"
+              alt="{{ metadata.title }}"
+              style="max-height: 3rem;"
+            />
+          </a>
+
+          <a
+            role="button"
+            class="navbar-burger"
+            aria-label="menu"
+            aria-expanded="false"
+            data-target="navbarMain"
+          >
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+          </a>
+        </div>
+
+        <div id="navbarMain" class="navbar-menu">
+          <div class="navbar-start">
+            <a class="navbar-item" href="/">Home</a>
+            <a class="navbar-item" href="/news">News</a>
+
+            <div class="navbar-item has-dropdown is-hoverable">
+              <a class="navbar-link" href="/training">Training</a>
+              <div class="navbar-dropdown">
+                <a
+                  class="navbar-item"
+                  href="https://sgbarnstorf.webclub.app"
+                  target="_blank"
+                >
+                  Direkt zu WebClub
+                </a>
+              </div>
+            </div>
+
+            <div class="navbar-item has-dropdown is-hoverable">
+              <a class="navbar-link" href="/verein">Verein</a>
+              <div class="navbar-dropdown">
+                <a class="navbar-item" href="/mitgliedschaft">Mitgliedschaft</a>
+                <a class="navbar-item" href="/downloads">Downloads</a>
+              </div>
+            </div>
+
+            <a class="navbar-item" href="/hunte-schwimmmeeting"
+              >Hunte-Schwimmmeeting</a
+            >
+          </div>
+        </div>
       </div>
-    </section>
+    </nav>
+
     <div>
-      <div id="header-wrapper">
-        <header id="header" class="hero">
-          <!-- Logo -->
-          <div id="logo">
-            <h1>
-              <a href="/">
-                <img
-                  src="{{ metadata.logo }}"
-                  alt="{{ metadata.title }}"
-                  class="logo-black"
-                />
-              </a>
-            </h1>
-          </div>
-
-          <!-- Nav -->
-          <nav id="nav">
-            <ul>
-              <li><a href="/">Home</a></li>
-              <li><a href="/news">News</a></li>
-              <li>
-                <a href="/training">Training</a>
-                <ul>
-                  <li>
-                    <a href="https://sgbarnstorf.webclub.app" target="_blank"
-                      >Direkt zu WebClub</a
-                    >
-                  </li>
-                </ul>
-              </li>
-              <li>
-                <a href="/verein">Verein</a>
-                <ul>
-                  <li><a href="/mitgliedschaft">Mitgliedschaft</a></li>
-                  <li><a href="/downloads">Downloads</a></li>
-                </ul>
-              </li>
-              <li><a href="/hunte-schwimmmeeting">Hunte-Schwimmmeeting</a></li>
-            </ul>
-          </nav>
-        </header>
-      </div>
-
-      <!-- Home page without sidenav-->
-      {% if page.url == "/" %}
-        <div id="banner-wrapper">
-          <div id="banner" class="box container">
-            <div class="row">
-              <div class="col-7 col-12-medium">
-                <h2>Schwimmgemeinschaft Barnstorf</h2>
-                <p>Seit 1972 mit euch im Wasser</p>
-              </div>
-              <div class="col-5 col-12-medium">
-                <ul>
-                  <li>
-                    <a href="/training" class="button large icon solid fa-clock"
-                      >Training</a
-                    >
-                  </li>
-                  <li>
-                    <a
-                      href="/news/"
-                      class="button alt large icon solid fa-newspaper"
-                      >News</a
-                    >
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div id="features-wrapper">
-          <div class="container">
-            <div class="row">
-              {% for item in collections.news | reverse %}
-                {% if loop.index0 < 3 %}
-                  <div class="col-4 col-12-medium">
-                    <section class="box feature news-card">
-                      <a
-                        href="{{ item.url }}"
-                        class="image featured aspect-ratio-3x2"
-                        ><img
-                          src="{{ item.data.image | default('/images/news/placeholder.png') }}"
-                          alt="{{ item.data.heading }}"
-                      /></a>
-                      <div class="inner">
-                        <header>
-                          <h2>{{ item.data.heading }}</h2>
-                          <small>{{ item.data.date | dateFilter }}</small>
-                        </header>
-                        <p>
-                          {{ item.data.excerpt }}
-                          <a
-                            href="{{ item.url }}"
-                            class="icon solid fa-arrow-circle-right"
-                            >Mehr</a
-                          >
-                        </p>
-                      </div>
-                    </section>
-                  </div>
-                {% endif %}
-              {% endfor %}
-            </div>
-          </div>
-        </div>
-      {% endif %}
       <!-- Main -->
-      <div id="main-wrapper">
-        <div class="container">{{ content | safe }}</div>
-      </div>
+      <div class="container">{{ content | safe }}</div>
 
       <!-- Footer -->
-      <div id="footer-wrapper">
-        <footer id="footer" class="container">
-          <div class="row">
-            <div class="col-3 col-6-medium col-12-small">
-              <!-- Links -->
-              <section class="widget links">
-                <h3>Most wanted</h3>
-                <ul class="style2">
-                  <li><a href="/downloads">Downloads</a></li>
-                  <li><a href="/training#probetraining">Probetraining</a></li>
-                  <li><a href="/mitgliedschaft">Mitgliedschaft</a></li>
-                </ul>
-              </section>
+      <footer class="footer mt-6">
+        <div class="container">
+          <div class="columns is-multiline is-variable is-8">
+            <div class="column is-3-desktop is-6-tablet">
+              <p class="menu-label has-text-weight-bold">Most wanted</p>
+              <ul class="is-size-6">
+                <li class="mb-2"><a href="/downloads">Downloads</a></li>
+                <li class="mb-2">
+                  <a href="/training#probetraining">Probetraining</a>
+                </li>
+                <li class="mb-2">
+                  <a href="/mitgliedschaft">Mitgliedschaft</a>
+                </li>
+              </ul>
             </div>
-            <div class="col-3 col-6-medium col-12-small">
-              <!-- Links -->
-              <section class="widget links">
-                <h3>Verbände</h3>
-                <ul class="style2">
-                  <li>
-                    <a
-                      href="https://kreisschwimmverband-diepholz-nienburg.de/"
-                      target="_blank"
-                      >Kreisschwimmverband</a
-                    >
-                  </li>
-                  <li>
-                    <a href="https://www.ksb-diepholz.de/" target="_blank"
-                      >Kreissportbund</a
-                    >
-                  </li>
-                  <li>
-                    <a href="https://lsn-info.de/" target="_blank"
-                      >Landesschwimmverband Nds</a
-                    >
-                  </li>
-                  <li><a href="https://www.dsv.de/" target="_blank">dsv</a></li>
-                </ul>
-              </section>
+
+            <div class="column is-3-desktop is-6-tablet">
+              <p class="menu-label has-text-weight-bold">Verbände</p>
+              <ul class="is-size-6">
+                <li class="mb-2">
+                  <a
+                    href="https://kreisschwimmverband-diepholz-nienburg.de/"
+                    target="_blank"
+                    >Kreisschwimmverband</a
+                  >
+                </li>
+                <li class="mb-2">
+                  <a href="https://www.ksb-diepholz.de/" target="_blank"
+                    >Kreissportbund</a
+                  >
+                </li>
+                <li class="mb-2">
+                  <a href="https://lsn-info.de/" target="_blank"
+                    >Landesschwimmverband Nds</a
+                  >
+                </li>
+                <li class="mb-2">
+                  <a href="https://www.dsv.de/" target="_blank">DSV</a>
+                </li>
+              </ul>
             </div>
-            <div class="col-3 col-6-medium col-12-small">
-              <!-- Links -->
-              <section class="widget links">
-                <h3>Extern</h3>
-                <ul class="style2">
-                  <li>
-                    <a href="https://sgbarnstorf.webclub.app" target="_blank"
-                      >WebClub</a
-                    >
-                  </li>
-                  <li>
-                    <a
-                      href="https://teamfreaks.de/Vereinsshops/SG-Barnstorf/"
-                      target="_blank"
-                      >Vereinsshop</a
-                    >
-                  </li>
-                  <li>
-                    <a href="https://live.sgbarnstorf.de/" target="_blank"
-                      >Live-Ergebnisse</a
-                    >
-                  </li>
-                </ul>
-              </section>
+
+            <div class="column is-3-desktop is-6-tablet">
+              <p class="menu-label has-text-weight-bold">Extern</p>
+              <ul class="is-size-6">
+                <li class="mb-2">
+                  <a href="https://sgbarnstorf.webclub.app" target="_blank"
+                    >WebClub</a
+                  >
+                </li>
+                <li class="mb-2">
+                  <a
+                    href="https://teamfreaks.de/Vereinsshops/SG-Barnstorf/"
+                    target="_blank"
+                    >Vereinsshop</a
+                  >
+                </li>
+                <li class="mb-2">
+                  <a href="https://live.sgbarnstorf.de/" target="_blank"
+                    >Live-Ergebnisse</a
+                  >
+                </li>
+              </ul>
             </div>
-            <div class="col-3 col-6-medium col-12-small">
-              <!-- Contact -->
-              <section class="widget contact last">
-                <h3>Folge uns</h3>
-                <ul>
-                  <li>
-                    <a
-                      href="https://www.facebook.com/sgbarnstorf"
-                      class="icon brands fa-facebook-f"
-                      target="_blank"
-                      ><span class="label">Facebook</span></a
-                    >
-                  </li>
-                  <li>
-                    <a
-                      href="https://www.instagram.com/sgbarnstorf"
-                      class="icon brands fa-instagram"
-                      target="_blank"
-                      ><span class="label">Instagram</span></a
-                    >
-                  </li>
-                  <li>
-                    <a
-                      href="mailto:info@sgbarnstorf.de"
-                      class="icon solid style2 fa-envelope"
-                      ><span class="label">Email</span></a
-                    >
-                  </li>
-                </ul>
-              </section>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-12">
-              <div id="copyright">
-                <ul class="menu">
-                  <li>
-                    &copy; Schwimmgemeinschaft Barnstorf e.V. All rights
-                    reserved
-                  </li>
-                  <li>Design: <a href="http://html5up.net">HTML5 UP</a></li>
-                  <li><a href="/impressum">Impressum & Datenschutz</a></li>
-                </ul>
+
+            <div class="column is-3-desktop is-6-tablet">
+              <p class="menu-label has-text-weight-bold">Folge uns</p>
+              <div class="buttons">
+                <a
+                  href="https://www.facebook.com/sgbarnstorf"
+                  class="button is-link is-light is-medium"
+                  target="_blank"
+                  aria-label="Facebook"
+                >
+                  <span class="icon"><i class="fab fa-facebook-f"></i></span>
+                </a>
+                <a
+                  href="https://www.instagram.com/sgbarnstorf"
+                  class="button is-danger is-light is-medium"
+                  target="_blank"
+                  aria-label="Instagram"
+                >
+                  <span class="icon"><i class="fab fa-instagram"></i></span>
+                </a>
+                <a
+                  href="mailto:info@sgbarnstorf.de"
+                  class="button is-dark is-light is-medium"
+                  aria-label="Email"
+                >
+                  <span class="icon"><i class="fas fa-envelope"></i></span>
+                </a>
               </div>
             </div>
           </div>
-        </footer>
-      </div>
+
+          <hr class="has-background-grey-lighter" />
+
+          <div class="level is-mobile">
+            <div class="level-left">
+              <div class="level-item">
+                <p class="is-size-7 has-text-grey">
+                  &copy; Schwimmgemeinschaft Barnstorf e.V.
+                </p>
+              </div>
+            </div>
+            <div class="level-right">
+              <div class="level-item">
+                <a href="/impressum" class="is-size-7 has-text-grey mr-4"
+                  >Impressum & Datenschutz</a
+                >
+              </div>
+              <div class="level-item">
+                <a href="https://bulma.io">
+                  <img
+                    src="https://bulma.io/assets/images/made-with-bulma.png"
+                    alt="Made with Bulma"
+                    width="128"
+                    height="24"
+                  />
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
 
     <!-- Scripts -->
@@ -262,5 +218,25 @@ title: SG Barnstorf e.V.
     <script src="/assets/js/breakpoints.min.js"></script>
     <script src="/assets/js/util.js"></script>
     <script src="/assets/js/main.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const $navbarBurgers = Array.prototype.slice.call(
+          document.querySelectorAll(".navbar-burger"),
+          0,
+        );
+        $navbarBurgers.forEach((el) => {
+          el.addEventListener("click", () => {
+            const target = el.dataset.target;
+            const $target = document.getElementById(target);
+            el.classList.toggle("is-active");
+            $target.classList.toggle("is-active");
+          });
+        });
+      });
+    </script>
+    <script
+      defer
+      src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"
+    ></script>
   </body>
 </html>

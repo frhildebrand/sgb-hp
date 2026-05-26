@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build": "eleventy",
-    "start": "eleventy --serve",
+    "build": "npm run css-build && eleventy",
+    "start": "concurrently \"npm run css-watch\" \"eleventy --serve\"",
     "format": "prettier --write .",
-    "css-build": "sass src/_sass/main.scss src/main.css"
+    "css-build": "sass --load-path=node_modules \"src/assets/_sass/main.scss\" \"src/assets/css/main.css\"",
+    "css-watch": "sass --load-path=node_modules \"src/assets/_sass/main.scss\" \"src/assets/css/main.css\" --watch"
   },
   "keywords": [],
   "author": "",
@@ -18,7 +19,9 @@
     "luxon": "^3.7.2"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "prettier": "^3.8.3",
-    "prettier-plugin-jinja-template": "^2.2.0"
+    "prettier-plugin-jinja-template": "^2.2.0",
+    "sass": "^1.99.0"
   }
 }
