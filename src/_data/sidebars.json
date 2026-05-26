@@ -4,10 +4,7 @@
     "sections": [
       {
         "items": [
-          { "text": "Trainingszeiten", "url": "/training#trainingszeiten" },
-          { "text": "Probetraining", "url": "/training#probetraining" },
-          { "text": "Unsere Trainer", "url": "/training#trainer" },
-          { "text": "FAQ", "url": "/training#faq" },
+          { "text": "Training", "url": "/training" },
           {
             "text": "Direkt zu Webclub",
             "url": "https://sgbarnstorf.webclub.app/",
@@ -23,8 +20,8 @@
       {
         "items": [
           { "text": "Vorstand", "url": "/verein" },
-          { "text": "Mitgliedschaft", "url": "/mitgliedschaft" },
-          { "text": "Downloads", "url": "/downloads" }
+          { "text": "Mitgliedschaft", "url": "/verein/mitgliedschaft" },
+          { "text": "Downloads", "url": "/verein/downloads" }
         ]
       }
     ]

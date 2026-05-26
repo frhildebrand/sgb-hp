@@ -61,32 +61,3 @@ sidebarKey: verein
     </a>
   {% endif %}
 </footer>
-
-<h2 class="title is-2">Jahresbeiträge</h2>
-<table class="table is-striped is-hoverable is-fullwidth">
-  <thead>
-    <tr>
-      <th>Typ</th>
-      <th>Preis</th>
-      <th>Beschreibung</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for beitrag in mitgliedschaft.jahresbeiträge %}
-      <tr>
-        <td>{{ beitrag.typ }}</td>
-        <td>{{ beitrag.preis }}</td>
-        <td>{{ beitrag.beschreibung }}</td>
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
-
-<h2 class="title is-2">Anmeldung</h2>
-<p>Interessiert? Laden Sie unser Anmeldeformular herunter:</p>
-<p>
-  <a href="/downloads/anmelformular.pdf" class="button is-primary">
-    <span class="icon"><i class="fas fa-download"></i></span>
-    <span>Anmeldeformular herunterladen</span>
-  </a>
-</p>
