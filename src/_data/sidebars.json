@@ -1,11 +1,44 @@
 {
   "training": {
-    "html": "<ul class='style2'><li><a href='#trainingszeiten'>Trainingszeiten</a></li><li><a href='#probetraining'>Probetraining</a></li><li><a href='#trainer'>Unsere Trainer</a></li><li><a href='#faq'>FAQ</a></li><li><a href='https://sgbarnstorf.webclub.app/' target='_blank'>Direkt zu Webclub</a></li></ul>"
+    "title": "Training",
+    "sections": [
+      {
+        "items": [
+          { "text": "Trainingszeiten", "url": "/training#trainingszeiten" },
+          { "text": "Probetraining", "url": "/training#probetraining" },
+          { "text": "Unsere Trainer", "url": "/training#trainer" },
+          { "text": "FAQ", "url": "/training#faq" },
+          {
+            "text": "Direkt zu Webclub",
+            "url": "https://sgbarnstorf.webclub.app/",
+            "external": true
+          }
+        ]
+      }
+    ]
   },
   "verein": {
-    "html": "<ul><li><a href='/verein'>Vorstand</a></li><li><a href='/mitgliedschaft'>Mitgliedschaft</a></li><li><a href='/downloads'>Downloads</a></li></ul>"
+    "title": "Unser Verein",
+    "sections": [
+      {
+        "items": [
+          { "text": "Vorstand", "url": "/verein" },
+          { "text": "Mitgliedschaft", "url": "/mitgliedschaft" },
+          { "text": "Downloads", "url": "/downloads" }
+        ]
+      }
+    ]
   },
   "default": {
-    "html": "<h3>Subheading</h3><p>Text</p><footer><a href='/' class='button icon solid fa-info-circle'>Find out more</a></footer></section><section><h3>Subheading</h3><ul class='style2'><li><a href='#'>Amet turpis, feugiat et sit amet</a></li><li><a href='#'>Ornare in hendrerit in lectus</a></li><li><a href='#'>Semper mod quis eget mi dolore</a></li></ul>"
+    "title": "Informationen",
+    "sections": [
+      {
+        "items": [
+          { "text": "Startseite", "url": "/" },
+          { "text": "News", "url": "/news" },
+          { "text": "Impressum", "url": "/impressum" }
+        ]
+      }
+    ]
   }
 }

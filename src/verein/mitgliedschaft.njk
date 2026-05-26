@@ -1,0 +1,92 @@
+---
+layout: sidebar.njk
+heading: Mitgliedschaft
+sidebarKey: verein
+---
+
+<h1 class="title is-1">Mitglied werden</h1>
+<p class="block">
+  Du möchtest Teil der Schwimmgemeinschaft Barnstorf werden? Wir freuen uns über
+  jedes neue Mitglied! Hier findest du eine Übersicht über unsere aktuellen
+  Jahresbeiträge.
+</p>
+
+<h2 class="subtitle is-4">Jahresbeiträge</h2>
+<table class="table">
+  <thead>
+    <tr class="is-primary">
+      <th>Mitgliedschaftstyp</th>
+      <th style="text-align: right;">Beitrag p.a.</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for beitrag in mitgliedschaft.jahresbeiträge %}
+      <tr>
+        <td>
+          <strong>{{ beitrag.typ }}</strong><br />
+          <small>{{ beitrag.beschreibung }}</small>
+        </td>
+        <td style="text-align: right; vertical-align: middle;">
+          {{ beitrag.preis }}
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<footer>
+  <p class="block">
+    <em
+      >Hinweis: Die Beiträge werden jährlich im 1.Quartal per Lastschrift
+      eingezogen.</em
+    >
+  </p>
+  {% set eintrittserklaerung = null %}
+  {% for item in downloads %}
+    {% if item.filename == "eintrittserklaerung.pdf" %}
+      {% set eintrittserklaerung = item %}
+    {% endif %}
+  {% endfor %}
+
+  {% if eintrittserklaerung %}
+    <a
+      class="button is-primary"
+      href="/downloads/{{ eintrittserklaerung.filename }}"
+      target="_blank"
+      rel="noopener"
+    >
+      <span class="icon">
+        <i class="fas fa-download"></i>
+      </span>
+      <span> {{ eintrittserklaerung.title }} herunterladen </span>
+    </a>
+  {% endif %}
+</footer>
+
+<h2 class="title is-2">Jahresbeiträge</h2>
+<table class="table is-striped is-hoverable is-fullwidth">
+  <thead>
+    <tr>
+      <th>Typ</th>
+      <th>Preis</th>
+      <th>Beschreibung</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for beitrag in mitgliedschaft.jahresbeiträge %}
+      <tr>
+        <td>{{ beitrag.typ }}</td>
+        <td>{{ beitrag.preis }}</td>
+        <td>{{ beitrag.beschreibung }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2 class="title is-2">Anmeldung</h2>
+<p>Interessiert? Laden Sie unser Anmeldeformular herunter:</p>
+<p>
+  <a href="/downloads/anmelformular.pdf" class="button is-primary">
+    <span class="icon"><i class="fas fa-download"></i></span>
+    <span>Anmeldeformular herunterladen</span>
+  </a>
+</p>
