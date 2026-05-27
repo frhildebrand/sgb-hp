@@ -1,6 +1,6 @@
 ---
 layout: news.njk
-heading: "Stadtradeln vom 13.Mai bis 2.Juni"
+newsTitle: "Stadtradeln vom 13.Mai bis 2.Juni"
 date: 2026-05-05
 tags:
   - veranstaltung

@@ -1,12 +1,13 @@
 ---
 layout: base.njk
+heading: News
 ---
 
 <div class="columns is-multiline">
   <div class="column is-8-desktop is-12-tablet">
     <article class="box p-5">
       <header class="mb-5">
-        <h1 class="title is-1">{{ heading }}</h1>
+        <h1 class="title is-1">{{ newsTitle }}</h1>
 
         <div class="level is-mobile mb-4">
           <div class="level-left">
@@ -70,7 +71,7 @@ layout: base.njk
           {% set count = 0 %}
           {% for post in collections.news | reverse %}
             {% if post.url != page.url and count < 5 %}
-              <li><a href="{{ post.url }}">{{ post.data.heading }}</a></li>
+              <li><a href="{{ post.url }}">{{ post.data.newsTitle }}</a></li>
               {% set count = count + 1 %}
             {% endif %}
           {% endfor %}

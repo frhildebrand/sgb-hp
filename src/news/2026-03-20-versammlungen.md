@@ -1,6 +1,6 @@
 ---
 layout: news.njk
-heading: "Versammlungen 2026"
+newsTitle: "Versammlungen 2026"
 date: 2026-03-20
 tags:
   - vorstand

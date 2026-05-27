@@ -3,7 +3,6 @@ layout: base.njk
 heading: Aktuelle News
 ---
 
-<h1 class="title is-2">{{ heading }}</h1>
 <div class="columns is-multiline">
   {%- for post in collections.news | reverse -%}
     <div class="column is-4-desktop is-12-tablet">
@@ -20,7 +19,7 @@ heading: Aktuelle News
         </div>
         <div class="card-content">
           <div class="content">
-            <p class="title is-5 mb-2">{{ post.data.heading }}</p>
+            <p class="title is-5 mb-2">{{ post.data.newsTitle }}</p>
             <p class="subtitle is-7 mb-4">{{ post.data.date | dateFilter }}</p>
             {{ post.data.excerpt }}
           </div>
