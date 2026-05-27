@@ -1,5 +1,5 @@
 ---
-title: SG Barnstorf e.V.
+title: Schwimmgemeinschaft Barnstorf e.V.
 ---
 
 <!DOCTYPE html>
@@ -101,6 +101,14 @@ title: SG Barnstorf e.V.
           >
             {{ heading or title }}
           </p>
+          {% if heroSubtitle %}
+            <p
+              class="subtitle is-4 has-text-white"
+              style="text-shadow: 0 2px 10px rgba(0,0,0,0.8);"
+            >
+              {{ heroSubtitle }}
+            </p>
+          {% endif %}
         </div>
       </div>
     </section>
