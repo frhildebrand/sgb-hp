@@ -1,6 +1,6 @@
 ---
 layout: news.njk
-heading: "Start der Freibadsaison"
+newsTitle: "Start der Freibadsaison"
 date: 2026-05-08
 tags:
   - training

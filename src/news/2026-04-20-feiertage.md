@@ -1,6 +1,6 @@
 ---
 layout: news.njk
-heading: "Feiertage = trainingsfrei"
+newsTitle: "Feiertage = trainingsfrei"
 date: 2026-04-20
 tags:
   - training

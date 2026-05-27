@@ -19,66 +19,93 @@ title: SG Barnstorf e.V.
     <link rel="icon" type="image/svg+xml" href="/images/sgb-hai.svg" />
   </head>
   <body>
-    <nav class="navbar is-light" role="navigation" aria-label="main navigation">
-      <div class="container">
-        <div class="navbar-brand">
-          <a class="navbar-item" href="/">
-            <img
-              src="{{ metadata.logo }}"
-              alt="{{ metadata.title }}"
-              style="max-height: 3rem;"
-            />
-          </a>
+    {% set activeHeroImage = heroImage or "/images/header-bg.jpg" %}
+    <section
+      class="hero is-medium"
+      style="background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)), url('{{ activeHeroImage }}') no-repeat center center; background-size: cover;"
+    >
+      <div class="hero-head">
+        <nav
+          class="navbar is-white is-fixed-top"
+          style="background-color: rgba(247, 247, 247, 0.8);"
+          role="navigation"
+          aria-label="main navigation"
+        >
+          <div class="container">
+            <div class="navbar-brand">
+              <a class="navbar-item" href="/">
+                <img
+                  src="{{ metadata.logo }}"
+                  alt="{{ metadata.title }}"
+                  style="max-height: 3rem;"
+                />
+              </a>
 
-          <a
-            role="button"
-            class="navbar-burger"
-            aria-label="menu"
-            aria-expanded="false"
-            data-target="navbarMain"
-          >
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
-          </a>
-        </div>
+              <a
+                role="button"
+                class="navbar-burger"
+                aria-label="menu"
+                aria-expanded="false"
+                data-target="navbarMain"
+              >
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+              </a>
+            </div>
 
-        <div id="navbarMain" class="navbar-menu">
-          <div class="navbar-start">
-            <a class="navbar-item" href="/">Home</a>
-            <a class="navbar-item" href="/news">News</a>
+            <div id="navbarMain" class="navbar-menu">
+              <div class="navbar-start">
+                <a class="navbar-item" href="/">Home</a>
+                <a class="navbar-item" href="/news">News</a>
 
-            <div class="navbar-item has-dropdown is-hoverable">
-              <a class="navbar-link" href="/training">Training</a>
-              <div class="navbar-dropdown">
-                <a
-                  class="navbar-item"
-                  href="https://sgbarnstorf.webclub.app"
-                  target="_blank"
+                <div class="navbar-item has-dropdown is-hoverable">
+                  <a class="navbar-link" href="/training">Training</a>
+                  <div class="navbar-dropdown">
+                    <a
+                      class="navbar-item"
+                      href="https://sgbarnstorf.webclub.app"
+                      target="_blank"
+                    >
+                      Direkt zu WebClub
+                    </a>
+                  </div>
+                </div>
+
+                <div class="navbar-item has-dropdown is-hoverable">
+                  <a class="navbar-link" href="/verein">Verein</a>
+                  <div class="navbar-dropdown">
+                    <a class="navbar-item" href="/verein/mitgliedschaft"
+                      >Mitgliedschaft</a
+                    >
+                    <a class="navbar-item" href="/verein/downloads"
+                      >Downloads</a
+                    >
+                  </div>
+                </div>
+
+                <a class="navbar-item" href="/hunte-schwimmmeeting"
+                  >Hunte-Schwimmmeeting</a
                 >
-                  Direkt zu WebClub
-                </a>
               </div>
             </div>
-
-            <div class="navbar-item has-dropdown is-hoverable">
-              <a class="navbar-link" href="/verein">Verein</a>
-              <div class="navbar-dropdown">
-                <a class="navbar-item" href="/mitgliedschaft">Mitgliedschaft</a>
-                <a class="navbar-item" href="/downloads">Downloads</a>
-              </div>
-            </div>
-
-            <a class="navbar-item" href="/hunte-schwimmmeeting"
-              >Hunte-Schwimmmeeting</a
-            >
           </div>
+        </nav>
+      </div>
+      <div class="hero-body">
+        <div class="container">
+          <p
+            class="title is-1 has-text-white"
+            style="text-shadow: 0 4px 15px rgba(0,0,0,0.8);"
+          >
+            {{ heading or title }}
+          </p>
         </div>
       </div>
-    </nav>
+    </section>
 
-    <div>
+    <div class="mt-6">
       <!-- Main -->
       <div class="container">{{ content | safe }}</div>
 
