@@ -1,10 +1,18 @@
 @charset "utf-8";
 
-// 1. Import Bulma 1.0 without configuration
-@use "bulma/bulma";
+// Set your brand colors
+$blue: #3759cf;
+$blue-light: #38b6ff;
+$red: #af0303;
 
-// 2. Customize using CSS Variables
-:root {
-  --bulma-primary: #8034fc;
-  --bulma-body-family: "Helvetica", "Arial", sans-serif;
-}
+// Path to Bulma's sass folder
+@use "bulma/sass" with (
+  $family-primary: '"Nunito", sans-serif',
+  $primary: $blue,
+  $link: $blue,
+  $danger: $red,
+  $info: $blue-light,
+);
+
+// Import the Google Font
+@import url("https://fonts.googleapis.com/css?family=Nunito:400,700");
