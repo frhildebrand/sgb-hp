@@ -4,26 +4,32 @@ heading: Downloads
 sidebarKey: verein
 ---
 
-<p class="block">
-  Hier findest du alle wichtigen Formulare und Dokumente der SG Barnstorf zum
-  Herunterladen.
-</p>
+<section class="section">
+  <p class="block">
+    Hier findest du alle wichtigen Formulare und Dokumente der SG Barnstorf zum
+    Herunterladen.
+  </p>
 
-<div class="grid is-col-min-15">
-  {% for item in downloads %}
-    <article class="message is-primary">
-      <div class="message-header">
-        <p>{{ item.title }}</p>
-      </div>
-      <div class="message-body">
-        <p class="subtitle is-6">{{ item.description }}</p>
-        <a href="/downloads/{{ item.filename }}" class="button" target="_blank">
-          <span class="icon">
-            <i class="fas fa-download"></i>
-          </span>
-          <span> Download (PDF) </span>
-        </a>
-      </div>
-    </article>
-  {% endfor %}
-</div>
+  <div class="grid is-col-min-15">
+    {% for item in downloads %}
+      <article class="message is-primary">
+        <div class="message-header">
+          <p>{{ item.title }}</p>
+        </div>
+        <div class="message-body">
+          <p class="subtitle is-6">{{ item.description }}</p>
+          <a
+            href="/downloads/{{ item.filename }}"
+            class="button"
+            target="_blank"
+          >
+            <span class="icon">
+              <i class="fas fa-download"></i>
+            </span>
+            <span> Download (PDF) </span>
+          </a>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+</section>
