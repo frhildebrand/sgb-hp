@@ -96,7 +96,11 @@ heroImage: /images/hsm/schmetterling.jpg
         <div class="card-image">
           <figure class="image is-5by4">
             <a href="{{ image.src }}">
-              <img src="{{ image.src }}" alt="{{ image.alt }}" />
+              <img
+                src="{{ image.src }}"
+                alt="{{ image.alt }}"
+                style="object-fit: cover;"
+              />
             </a>
           </figure>
         </div>
