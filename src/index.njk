@@ -8,19 +8,23 @@ heroSubtitle: "Seit 1972 mit euch im Wasser"
   <div class="columns is-multiline">
     {% for item in collections.news | reverse %}
       {% if loop.index0 < 3 %}
-        <div class="column is-4-desktop is-12-tablet">
-          <div class="card">
+        <div class="column is-4-desktop is-12-tablet is-flex">
+          <div
+            class="card is-flex is-flex-direction-column"
+            style="width: 100%;"
+          >
             <div class="card-image">
               <a href="{{ item.url }}">
                 <figure class="image is-3by2">
                   <img
                     src="{{ item.data.image | default('/images/news/placeholder.png') }}"
                     alt="{{ item.data.heading }}"
+                    style="object-fit: cover;"
                   />
                 </figure>
               </a>
             </div>
-            <div class="card-content">
+            <div class="card-content is-flex-grow-1">
               <div class="content">
                 <p class="title is-5 mb-2">{{ item.data.newsTitle }}</p>
                 <p class="subtitle is-7 mb-4">
