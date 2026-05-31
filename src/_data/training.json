@@ -6,7 +6,7 @@
       "termine": [
         { "tag": "Montag", "zeit": "18:00 - 19:00", "trainer": ["Frieda"] },
         {
-          "tag": "Freitag",
+          "tag": "Mittwoch",
           "zeit": "18:00 - 19:00",
           "trainer": ["Frieda", "Jan", "Nele"]
         }
