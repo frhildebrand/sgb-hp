@@ -1,11 +1,12 @@
 ---
 layout: news.njk
-newsTitle: "Start der Freibadsaison"
+heading: "Start der Freibadsaison"
 date: 2026-05-08
 tags:
   - training
 excerpt: "Das Freibad Barnstorf öffnet am 09.Mai. Ab da haben wir wieder Training an der frischen Luft."
-image: /images/news/freibad.png
+preview: /images/news/freibad.png
+heroImage: /images/news/freibad.png
 links:
   - text: Trainingszeiten
     url: /training
