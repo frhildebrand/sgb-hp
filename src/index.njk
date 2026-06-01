@@ -17,7 +17,7 @@ heroSubtitle: "Seit 1972 mit euch im Wasser"
               <a href="{{ item.url }}">
                 <figure class="image is-3by2">
                   <img
-                    src="{{ item.data.image | default('/images/news/placeholder.png') }}"
+                    src="{{ item.data.preview | default('/images/news/placeholder.png') }}"
                     alt="{{ item.data.heading }}"
                     style="object-fit: cover;"
                   />
@@ -26,7 +26,7 @@ heroSubtitle: "Seit 1972 mit euch im Wasser"
             </div>
             <div class="card-content is-flex-grow-1">
               <div class="content">
-                <p class="title is-5 mb-2">{{ item.data.newsTitle }}</p>
+                <p class="title is-5 mb-2">{{ item.data.heading }}</p>
                 <p class="subtitle is-7 mb-4">
                   {{ item.data.date | dateFilter }}
                 </p>

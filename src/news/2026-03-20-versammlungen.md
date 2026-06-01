@@ -1,13 +1,16 @@
 ---
 layout: news.njk
-newsTitle: "Versammlungen 2026"
+heading: "Versammlungen 2026"
 date: 2026-03-20
 tags:
   - vorstand
   - jugend
   - bericht
 excerpt: "Henrik löst Peter als 1.Vorsitzenden ab"
-image: /images/news/2026-03-13-versammlung-kreiszeitung.jpeg
+preview: /images/news/2026-03-13-versammlung-kreiszeitung.jpeg
+images:
+  - src: /images/news/2026-03-13-versammlung-kreiszeitung.jpeg
+    alt: "Artikel aus dem Diepholzer Kreisblatt"
 ---
 
 Am 13.März hielten wir wieder unsere jährlichen Mitgliederversammlungen ab. Am Nachmittag trafen sich etwa 40 Kinder und Jugendliche im Meyer-Köster-Haus, um sich über das Training auszutauchen, Vorschläge für Ausflüge zu sammeln und um einen neuen Jugendvertreter zu wählen. Hier konnte sich Jan durchsetzen, der nun zusammen mit Finja die Jugendvertretung bildet. Vielen Dank an Max, der das Amt zuvor inne hatte.
