@@ -1,17 +1,25 @@
 ---
+pagination:
+  data: collections
+  size: 1
+  alias: tag
+  addAllPagesToCollections: true
 layout: base.njk
-heading: Aktuelle News
+eleventyComputed:
+  heading: "News zum Thema: {{ tag }}"
+permalink: /tags/{{ tag | slugify }}/
 ---
 
 <div class="columns is-multiline">
-  {%- for post in collections.news | reverse -%}
+  {% set taglist = collections[ tag ] %}
+  {% for post in taglist | reverse %}
     <div class="column is-4-desktop is-12-tablet is-flex">
       <div class="card is-flex is-flex-direction-column" style="width: 100%;">
         <div class="card-image">
           <a href="{{ post.url }}">
             <figure class="image is-3by2">
               <img
-                src="{{ post.data.preview | default('/images/news/placeholder.png') }}"
+                src="{{ post.data.preview | default(post.data.image) | default('/images/news/placeholder.png') }}"
                 alt="{{ post.data.heading }}"
                 style="object-fit: cover;"
               />
@@ -43,16 +51,16 @@ heading: Aktuelle News
           </div>
         </div>
         <footer class="card-footer">
-          <a href="{{ post.url }}" class="card-footer-item">
-            <span>Mehr lesen</span>
-            <span class="icon is-small ml-2">
-              <i class="fas fa-arrow-circle-right"></i>
-            </span>
-          </a>
+          <a href="{{ post.url }}" class="card-footer-item">Mehr lesen</a>
         </footer>
       </div>
     </div>
-  {% else %}
-    <p>Keine News gefunden.</p>
-  {%- endfor -%}
+  {% endfor %}
+</div>
+
+<div class="mt-6">
+  <a href="/news" class="button is-light">
+    <span class="icon"><i class="fas fa-arrow-left"></i></span>
+    <span>Zurück zur News-Übersicht</span>
+  </a>
 </div>

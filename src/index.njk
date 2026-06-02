@@ -6,7 +6,7 @@ heroSubtitle: "Seit 1972 mit euch im Wasser"
 <section class="section">
   <h2 class="title is-2">News</h2>
   <div class="columns is-multiline">
-    {% for item in collections.news | reverse %}
+    {% for post in collections.news | reverse %}
       {% if loop.index0 < 3 %}
         <div class="column is-4-desktop is-12-tablet is-flex">
           <div
@@ -14,11 +14,11 @@ heroSubtitle: "Seit 1972 mit euch im Wasser"
             style="width: 100%;"
           >
             <div class="card-image">
-              <a href="{{ item.url }}">
+              <a href="{{ post.url }}">
                 <figure class="image is-3by2">
                   <img
-                    src="{{ item.data.preview | default('/images/news/placeholder.png') }}"
-                    alt="{{ item.data.heading }}"
+                    src="{{ post.data.preview | default('/images/news/placeholder.png') }}"
+                    alt="{{ post.data.heading }}"
                     style="object-fit: cover;"
                   />
                 </figure>
@@ -26,15 +26,30 @@ heroSubtitle: "Seit 1972 mit euch im Wasser"
             </div>
             <div class="card-content is-flex-grow-1">
               <div class="content">
-                <p class="title is-5 mb-2">{{ item.data.heading }}</p>
-                <p class="subtitle is-7 mb-4">
-                  {{ item.data.date | dateFilter }}
-                </p>
-                {{ item.data.excerpt }}
+                <p class="title is-5 mb-2">{{ post.data.heading }}</p>
+                <div
+                  class="is-flex is-justify-content-space-between is-align-items-center mb-4"
+                >
+                  <p class="subtitle is-7 mb-0">
+                    {{ post.data.date | dateFilter }}
+                  </p>
+                  <div class="tags">
+                    {% for tag in post.data.tags %}
+                      <a
+                        href="/tags/{{ tag | slugify }}/"
+                        class="tag is-primary is-light is-small"
+                        ><span class="icon is-small mr-1"
+                          ><i class="fas fa-tag"></i></span
+                        >{{ tag }}</a
+                      >
+                    {% endfor %}
+                  </div>
+                </div>
+                {{ post.data.excerpt }}
               </div>
             </div>
             <footer class="card-footer">
-              <a href="{{ item.url }}" class="card-footer-item">
+              <a href="{{ post.url }}" class="card-footer-item">
                 <span>Mehr lesen</span>
                 <span class="icon is-small ml-2">
                   <i class="fas fa-arrow-circle-right"></i>

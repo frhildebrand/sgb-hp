@@ -20,7 +20,15 @@ layout: base.njk
           <div class="level-right">
             <div class="tags">
               {% for tag in tags %}
-                <span class="tag is-primary is-light">{{ tag }}</span>
+                <a
+                  href="/tags/{{ tag | slugify }}/"
+                  class="tag is-primary is-light"
+                >
+                  <span class="icon is-small mr-1"
+                    ><i class="fas fa-tag"></i
+                  ></span>
+                  {{ tag }}
+                </a>
               {% endfor %}
             </div>
           </div>
