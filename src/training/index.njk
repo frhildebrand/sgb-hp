@@ -89,15 +89,17 @@ heroImage: /images/header-bg.jpg
 
   <section class="section">
     <h2 class="title is-2" id="faq">FAQ</h2>
-    {% for item in training.faq %}
-      <details class="box">
-        <summary>
-          <strong>{{ item.frage }}</strong>
-        </summary>
-        <div>
-          <p>{{ item.antwort | safe }}</p>
-        </div>
-      </details>
+    {% for item in faq %}
+      {% if "training" in item.tags %}
+        <details class="box">
+          <summary>
+            <strong>{{ item.frage }}</strong>
+          </summary>
+          <div>
+            <p>{{ item.antwort | safe }}</p>
+          </div>
+        </details>
+      {% endif %}
     {% endfor %}
   </section>
 </div>
