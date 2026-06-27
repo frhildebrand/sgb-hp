@@ -2,21 +2,6 @@
   {
     "tags": ["training"],
     "frage": "Wie kann ich am Training teilnehmen?",
-    "antwort": "Super, dass du Interesse hast! Sofern in einer von dir passenden Gruppe Platz ist, kannst du bis zu 3x Probetraining bei uns machen. Alle Infos findest du hier <a href='#probetraining'>Probetraining</a>",
-    "images": [
-      {
-        "file": "hdas.jpg",
-        "description": "dies das"
-      },
-      {
-        "file": "hdas.jpg",
-        "description": "dies das"
-      }
-    ]
-  },
-  {
-    "tags": ["training"],
-    "frage": "Wie kann ich am Training teilnehmen?",
     "antwort": "Super, dass du Interesse hast! Sofern in einer von dir passenden Gruppe Platz ist, kannst du bis zu 3x Probetraining bei uns machen. Alle Infos findest du hier <a href='#probetraining'>Probetraining</a>"
   },
   {
@@ -27,7 +12,13 @@
   {
     "tags": ["training"],
     "frage": "Wo trainiert ihr?",
-    "antwort": "In der Sommer-Saison von Anfang Mai bis Anfang September trainieren wir im schönen Freizeitbad Hunteholz auf der 25m-Bahn. Bei wenig öffentlichem Betrieb dürfen wir auch mal andere Bereiche des Beckens nutzen. Wenn das Freibad geschlossen hat, findet ihr uns im Hallenbad des Hotel Roshop auf der 12,5m-Bahn."
+    "antwort": "In der Sommer-Saison von Anfang Mai bis Anfang September trainieren wir im schönen Freizeitbad Hunteholz auf der 25m-Bahn. Bei wenig öffentlichem Betrieb dürfen wir auch mal andere Bereiche des Beckens nutzen. Wenn das Freibad geschlossen hat, findet ihr uns im Hallenbad des Hotel Roshop auf der 12,5m-Bahn.",
+    "images": [
+      {
+        "src": "/images/header-bg.jpg",
+        "description": "Das Schwimmerbecken des Freizeitbades mit acht 25m Bahnen."
+      }
+    ]
   },
   {
     "tags": ["training"],
@@ -47,6 +38,6 @@
   {
     "tags": ["wettkampf"],
     "frage": "Was ist ein Wettkampf?",
-    "antwort": "Dies das"
+    "antwort": "Auf einem Wettkampf schwimmen Schwimmer:innen gegeneinander und versuchen ihre persönliche Bestzeit zu erreichen. Je nach Wettkampf gibt es verschiedene Streckenlänge (50m, 100m, 200m, 400m,..) für die verschiedenen Schwimmarten (Schmetterling, Rücken, Brust, Freistil, Lagen). Auch Staffeln werden oft angeboten."
   }
 ]

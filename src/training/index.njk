@@ -91,12 +91,43 @@ heroImage: /images/header-bg.jpg
     <h2 class="title is-2" id="faq">FAQ</h2>
     {% for item in faq %}
       {% if "training" in item.tags %}
-        <details class="box">
-          <summary>
-            <strong>{{ item.frage }}</strong>
+        <details class="box faq-item mb-4">
+          <summary
+            class="is-size-5 has-text-weight-semibold is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap"
+          >
+            <span>{{ item.frage }}</span>
+            {% if item.tags %}
+              <div class="tags">
+                {% for tag in item.tags %}
+                  <span class="tag is-primary is-light is-small"
+                    >{{ tag }}</span
+                  >
+                {% endfor %}
+              </div>
+            {% endif %}
           </summary>
-          <div>
-            <p>{{ item.antwort | safe }}</p>
+          <div class="content mt-4 pt-4" style="border-top: 1px solid #eee;">
+            {{ item.antwort | safe }}
+            {% if item.images %}
+              <div class="columns is-multiline is-mobile news-gallery">
+                {% for image in item.images %}
+                  <div class="column is-3-desktop is-4-tablet is-6-mobile">
+                    <a
+                      href="{{ image.src }}"
+                      data-caption="{{ image.description }}"
+                    >
+                      <figure class="image is-1by1">
+                        <img
+                          src="{{ image.src }}"
+                          alt="{{ image.description }}"
+                          style="object-fit: cover; border-radius: 6px; width: 100%; height: 100%;"
+                        />
+                      </figure>
+                    </a>
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
           </div>
         </details>
       {% endif %}

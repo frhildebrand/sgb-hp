@@ -1,0 +1,124 @@
+---
+layout: base.njk
+heading: Häufig gestellte Fragen (FAQ)
+---
+
+<div class="container">
+  <section class="section">
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <h1 class="title is-1 has-text-centered mb-6">FAQ</h1>
+
+        <!-- Suchfeld: Nur auf dieser Seite vorhanden -->
+        <div class="field mb-6">
+          <div class="control has-icons-left is-large">
+            <input
+              class="input is-large"
+              type="text"
+              id="faqSearchInput"
+              placeholder="Suchen Sie nach einer Antwort..."
+            />
+            <span class="icon is-medium is-left">
+              <i class="fas fa-search"></i>
+            </span>
+          </div>
+        </div>
+
+        <div id="faqList">
+          {% for item in faq %}
+            <details class="box faq-item mb-4">
+              <summary
+                class="is-size-5 has-text-weight-semibold is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap"
+              >
+                <span>{{ item.frage }}</span>
+                {% if item.tags %}
+                  <div class="tags">
+                    {% for tag in item.tags %}
+                      <span class="tag is-primary is-light is-small"
+                        >{{ tag }}</span
+                      >
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </summary>
+              <div
+                class="content mt-4 pt-4"
+                style="border-top: 1px solid #eee;"
+              >
+                {{ item.antwort | safe }}
+                {% if item.images %}
+                  <div class="columns is-multiline is-mobile news-gallery">
+                    {% for image in item.images %}
+                      <div class="column is-3-desktop is-4-tablet is-6-mobile">
+                        <a
+                          href="{{ image.src }}"
+                          data-caption="{{ image.description }}"
+                        >
+                          <figure class="image is-1by1">
+                            <img
+                              src="{{ image.src }}"
+                              alt="{{ image.description }}"
+                              style="object-fit: cover; border-radius: 6px; width: 100%; height: 100%;"
+                            />
+                          </figure>
+                        </a>
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+            </details>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const searchInput = document.getElementById("faqSearchInput");
+    const items = document.querySelectorAll(".faq-item");
+
+    searchInput.addEventListener("input", (e) => {
+      const term = e.target.value.toLowerCase();
+
+      items.forEach((item) => {
+        const question = item
+          .querySelector("summary")
+          .textContent.toLowerCase();
+        const answer = item.querySelector(".content").textContent.toLowerCase();
+
+        if (question.includes(term) || answer.includes(term)) {
+          item.style.display = "block";
+        } else {
+          item.style.display = "none";
+        }
+      });
+    });
+  });
+</script>
+
+{# Lightbox Ressourcen & Initialisierung #}
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/baguettebox.js/1.11.1/baguetteBox.min.css"
+/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/baguettebox.js/1.11.1/baguetteBox.min.js"></script>
+<script>
+  window.addEventListener("load", function () {
+    baguetteBox.run(".news-gallery");
+  });
+</script>
+<style>
+  .news-gallery a {
+    display: block;
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+  .news-gallery a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+</style>
