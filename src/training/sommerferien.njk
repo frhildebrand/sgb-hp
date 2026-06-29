@@ -1,0 +1,138 @@
+---
+layout: sidebar.njk
+heading: Sommerferientraining 2026
+sidebarKey: training
+heroImage: /images/header-bg.jpg
+---
+
+<div class="container">
+  <section class="section">
+    <h2 class="title is-2" id="trainingszeiten">Trainingszeiten</h2>
+    <p>
+      Jeden Freitag im Juli von 16-18 Uhr ist Ferientraining für alle Gruppen im
+      Freizeitbad Hunteholz.
+    </p>
+    <p>
+      Während des Trainings könnt ihr Abzeichen machen oder mit ein paar Spielen
+      Meter fürs Stadtschwimmen zu sammeln.
+    </p>
+    <p>Meldet euch wie gewohnt in WebClub an und ab.</p>
+  </section>
+  <section class="section">
+    <h2 class="title is-2" id="stadtschwimmen">Stadtschwimmen</h2>
+    <p>
+      Im Juli ist das Stadtschwimmen der Stadtwerke Huntetal. Unser Freibad in
+      Barnstorf tritt gegen Diepholz und Wagenfeld an. Das Ziel: die meisten
+      geschwommenen Meter. Holt euch beim Training oder bei den Schwimmmeistern
+      das kleine blaue Heftchen ab und schwimmt fleißig eure Bahnen. Denn:
+      Sollte Barnstorf gewinnen, bekommen wir als Schwimmgemeinschaft 500€ von
+      den Stadtwerken, mit denen wir eine tolle Jugendaktion machen können!
+      Packt also am besten auch eure Freunde und Eltern zum Bahnen sammeln ein.
+      Jeder Meter zählt!
+      <a
+        href="https://www.stadtwerke-huntetal.de/Hunteholz#events"
+        target="_blank"
+        >Hier die Informationen der Stadtwerke</a
+      >
+    </p>
+  </section>
+  <section class="section">
+    <h2 class="title is-2" id="Abzeichen">Abzeichen</h2>
+    <p>
+      Hier seht ihr die Übersicht und den Unkostenbeitrag aller Abzeichen, die
+      ihr bei uns absolvieren könnt. Während der Sommerferientermine habt ihr
+      die Gelegenheit euer nächstes Abzeichen zu erlangen. Für die Deutschen
+      Schwimmabzeichen werdet ihr über die Baderegeln, Selbstrettung und
+      Fremdrettung abgefragt (je nach Abzeichen). Schaut euch dafür bitte vorher
+      unsere Zusammenstellung dazu an.
+    </p>
+    {% set baderegeln = null %}
+    {% for item in downloads %}
+      {% if item.filename == "baderegeln.pdf" %}
+        {% set baderegeln = item %}
+      {% endif %}
+    {% endfor %}
+
+    {% if baderegeln %}
+      <a
+        class="button is-primary block"
+        href="/downloads/{{ baderegeln.filename }}"
+        target="_blank"
+        rel="noopener"
+      >
+        <span class="icon">
+          <i class="fas fa-download"></i>
+        </span>
+        <span> {{ baderegeln.title }} herunterladen </span>
+      </a>
+    {% endif %}
+    <table class="table is-bordered">
+      <tbody>
+        <tr>
+          <th class="is-warning">Deutsche Schwimmabzeichen (DSA)</th>
+          <td>
+            <a
+              href="https://www.dsv.de/de/schwimmen-lernen/schwimmabzeichen/infos-zu-den-schwimmabzeichen/"
+              target="_blank"
+              >Infos zu den Prüfungsleistungen</a
+            >
+          </td>
+        </tr>
+        <tr>
+          <th>Bronze</th>
+          <td>3 €</td>
+        </tr>
+        <tr>
+          <th>Silber</th>
+          <td>2 €</td>
+        </tr>
+        <tr>
+          <th>Gold</th>
+          <td>2 €</td>
+        </tr>
+        <tr>
+          <th class="is-primary">Deutsche Leistungsschwimmabzeichen (DLA)</th>
+          <td>
+            <a
+              href="https://www.dsv.de/de/schwimmen-lernen/schwimmabzeichen/infos-zu-den-schwimmabzeichen/"
+              target="_blank"
+              >Infos zu den Prüfungsleistungen</a
+            >
+          </td>
+        </tr>
+        <tr>
+          <th>Hai</th>
+          <td>3 €</td>
+        </tr>
+        <tr>
+          <th>Silber</th>
+          <td>2 €</td>
+        </tr>
+        <tr>
+          <th>Gold</th>
+          <td>2 €</td>
+        </tr>
+        <tr>
+          <th class="is-success">Totenkopf</th>
+          <td>Dauerschwimmen</td>
+        </tr>
+        <tr>
+          <th>1 Stunde</th>
+          <td>5 €</td>
+        </tr>
+        <tr>
+          <th>1,5 Stunden</th>
+          <td>5 €</td>
+        </tr>
+        <tr>
+          <th>2 Stunden</th>
+          <td>5 €</td>
+        </tr>
+        <tr>
+          <th class="is-danger">SwimStars</th>
+          <td>Fragt einfach bei uns nach</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</div>

@@ -6,6 +6,10 @@
         "items": [
           { "text": "Training", "url": "/training" },
           {
+            "text": "Sommerferien & Abzeichen",
+            "url": "/training/sommerferien"
+          },
+          {
             "text": "Direkt zu Webclub",
             "url": "https://sgbarnstorf.webclub.app/",
             "external": true
