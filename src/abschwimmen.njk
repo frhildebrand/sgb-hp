@@ -16,22 +16,25 @@ permalink: /abschwimmen/index.html
         Updates
       </h2>
 
-      <article class="media">
-        <div class="media-content">
-          <p class="is-size-7 has-text-grey mb-1">Aktueller Stand</p>
-          <p class="has-text-weight-bold mb-2">Die Anmeldung ist geöffnet</p>
-          <p>
-            Bitte gebt uns über das Online-Formular bis zum 30. August Bescheid,
-            ob ihr dabei seid.
-          </p>
-        </div>
-      </article>
+      {% for update in event_abschwimmen.updates | reverse %}
+        {% if loop.index <= 3 %}
+          <article class="media">
+            <div class="media-content">
+              <p class="is-size-7 has-text-grey mb-1">{{ update.label }}</p>
+              <p class="has-text-weight-bold mb-2">{{ update.title }}</p>
+              <p>{{ update.text }}</p>
+            </div>
+          </article>
+          {% if loop.index < 3 and not loop.last %}<hr />{% endif %}
+        {% endif %}
+      {% endfor %}
 
-      <hr />
+      {% if event_abschwimmen.statusTags.length %}<hr />{% endif %}
 
       <div class="tags">
-        <span class="tag is-success is-light">Anmeldung offen</span>
-        <span class="tag is-light">Frist: 30.08.2026</span>
+        {% for tag in event_abschwimmen.statusTags %}
+          <span class="tag {{ tag.class }}">{{ tag.text }}</span>
+        {% endfor %}
       </div>
     </div>
   </aside>

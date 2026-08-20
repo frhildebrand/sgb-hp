@@ -14,32 +14,29 @@ permalink: /berlintreffen/index.html
         Updates
       </h2>
 
-      <article class="media">
-        <div class="media-content">
-          <p class="is-size-7 has-text-grey mb-1">Anmeldung</p>
-          <p class="has-text-weight-bold mb-2">Endgültige Rückmeldung erbeten</p>
-          <p>Bitte füllt die Anmeldung bis zum <strong>21. August 2026</strong> aus.</p>
-        </div>
-      </article>
-
-      <hr />
-
-      <article class="media">
-        <div class="media-content">
-          <p class="is-size-7 has-text-grey mb-1">Organisation</p>
-          <p class="has-text-weight-bold mb-2">Unterstützung willkommen</p>
-          <p class="mb-3">Wer beim Organisieren helfen möchte, kann dem WhatsApp-Team beitreten.</p>
-          <a
-            class="button is-success is-light is-small"
-            href="https://chat.whatsapp.com/D2CFdp9TIZO3lHNvxs1DLJ"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <span class="icon" aria-hidden="true"><i class="fab fa-whatsapp"></i></span>
-            <span>Berlin Orga-Team</span>
-          </a>
-        </div>
-      </article>
+      {% for update in event_berlintreffen.updates | reverse %}
+        {% if loop.index <= 3 %}
+          <article class="media">
+            <div class="media-content">
+              <p class="is-size-7 has-text-grey mb-1">{{ update.label }}</p>
+              <p class="has-text-weight-bold mb-2">{{ update.title }}</p>
+              <p{% if update.link %} class="mb-3"{% endif %}>{{ update.text }}</p>
+              {% if update.link %}
+                <a
+                  class="button {{ update.link.class }} is-small"
+                  href="{{ update.link.url }}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <span class="icon" aria-hidden="true"><i class="{{ update.link.icon }}"></i></span>
+                  <span>{{ update.link.text }}</span>
+                </a>
+              {% endif %}
+            </div>
+          </article>
+          {% if loop.index < 3 and not loop.last %}<hr />{% endif %}
+        {% endif %}
+      {% endfor %}
     </div>
   </aside>
 
@@ -128,91 +125,19 @@ permalink: /berlintreffen/index.html
         <h2 id="zeitplan-heading" class="title is-4">Zeitplan</h2>
         <div class="table-container">
           <table class="table is-fullwidth is-striped is-hoverable">
-            <tbody>
-              <tr class="has-background-primary-light">
-                <th colspan="2" class="has-text-primary-dark">Donnerstag</th>
-              </tr>
-              <tr>
-                <th style="width: 8rem;">14:00 Uhr</th>
-                <td>Kanuhaus: Grundreinigung</td>
-              </tr>
-              <tr>
-                <th>18:00 Uhr</th>
-                <td>Abholung des Materials vom Jugendzentrum</td>
-              </tr>
-
-              <tr class="has-background-primary-light">
-                <th colspan="2" class="has-text-primary-dark">Freitag</th>
-              </tr>
-              <tr>
-                <th>ab 15:00 Uhr</th>
-                <td>Aufbau am Kanuhaus</td>
-              </tr>
-              <tr>
-                <th>ca. 18:30 Uhr</th>
-                <td>Abendessen für die Barnstorfer</td>
-              </tr>
-              <tr>
-                <th>ab 20:00 Uhr</th>
-                <td>Ankunft der Berliner</td>
-              </tr>
-
-              <tr class="has-background-primary-light">
-                <th colspan="2" class="has-text-primary-dark">Samstag</th>
-              </tr>
-              <tr>
-                <th>07:30 Uhr</th>
-                <td>Frühstück</td>
-              </tr>
-              <tr>
-                <th>09:00 Uhr</th>
-                <td>Einschwimmen</td>
-              </tr>
-              <tr>
-                <th>10:00 Uhr</th>
-                <td>Vergleichswettkampf</td>
-              </tr>
-              <tr>
-                <th>12:30 Uhr</th>
-                <td>Mittagessen am Kanuhaus</td>
-              </tr>
-              <tr>
-                <th>14:30 Uhr</th>
-                <td>Abfahrt zur Aktion</td>
-              </tr>
-              <tr>
-                <th>18:30 Uhr</th>
-                <td>Grillabend am Kanuhaus</td>
-              </tr>
-
-              <tr class="has-background-primary-light">
-                <th colspan="2" class="has-text-primary-dark">Sonntag</th>
-              </tr>
-              <tr>
-                <th>08:00 Uhr</th>
-                <td>Frühstück</td>
-              </tr>
-              <tr>
-                <th>bis 10:00 Uhr</th>
-                <td>Sachen packen</td>
-              </tr>
-              <tr>
-                <th>10:00 Uhr</th>
-                <td>Aktion</td>
-              </tr>
-              <tr>
-                <th>12:45 Uhr</th>
-                <td>Mittagessen beim Schützenhaus</td>
-              </tr>
-              <tr>
-                <th>14:00 Uhr</th>
-                <td>Verabschiedung</td>
-              </tr>
-              <tr>
-                <th>im Anschluss</th>
-                <td>Abbau</td>
-              </tr>
-            </tbody>
+            {% for day in event_berlintreffen.schedule %}
+              <tbody>
+                <tr class="has-background-primary-light">
+                  <th colspan="2" class="has-text-primary-dark">{{ day.day }}</th>
+                </tr>
+                {% for item in day.items %}
+                  <tr>
+                    <th style="width: 8rem;">{{ item.time }}</th>
+                    <td>{{ item.activity }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            {% endfor %}
           </table>
         </div>
       </section>

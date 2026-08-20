@@ -1,0 +1,74 @@
+{
+  "updates": [
+    {
+      "label": "Organisation",
+      "title": "Unterstützung willkommen",
+      "text": "Wer beim Organisieren helfen möchte, kann dem WhatsApp-Team beitreten.",
+      "link": {
+        "text": "Berlin Orga-Team",
+        "url": "https://chat.whatsapp.com/D2CFdp9TIZO3lHNvxs1DLJ",
+        "class": "is-success is-light",
+        "icon": "fab fa-whatsapp"
+      }
+    },
+    {
+      "label": "Zur Anmeldung",
+      "title": "Endgültige Rückmeldung erbeten",
+      "text": "Bitte füllt die Anmeldung bis zum 21. August 2026 aus. Denkt auch an die Wettkampf-Anmeldung in WebClub!",
+      "link": {
+        "text": "Anmeldung",
+        "url": "https://script.google.com/macros/s/AKfycbzTwSpOi66D35blFEIvx6ax0DKcsHV3dyLcWY1WuSHV8wvbNFEkx0tvB0A5JNcorals/exec",
+        "class": "is-success is-light",
+        "icon": "fas fa-clipboard-check"
+      }
+    }
+  ],
+  "schedule": [
+    {
+      "day": "Donnerstag",
+      "items": [
+        { "time": "14:00 Uhr", "activity": "Kanuhaus: Grundreinigung" },
+        {
+          "time": "18:00 Uhr",
+          "activity": "Abholung des Materials vom Jugendzentrum"
+        }
+      ]
+    },
+    {
+      "day": "Freitag",
+      "items": [
+        { "time": "ab 15:00 Uhr", "activity": "Aufbau am Kanuhaus" },
+        {
+          "time": "ca. 18:30 Uhr",
+          "activity": "Abendessen für die Barnstorfer"
+        },
+        { "time": "ab 20:00 Uhr", "activity": "Ankunft der Berliner" }
+      ]
+    },
+    {
+      "day": "Samstag",
+      "items": [
+        { "time": "07:30 Uhr", "activity": "Frühstück" },
+        { "time": "09:00 Uhr", "activity": "Einschwimmen" },
+        { "time": "10:00 Uhr", "activity": "Vergleichswettkampf" },
+        { "time": "12:30 Uhr", "activity": "Mittagessen" },
+        { "time": "14:30 Uhr", "activity": "Abfahrt zur Aktion (auswärts)" },
+        { "time": "18:30 Uhr", "activity": "Grillabend" }
+      ]
+    },
+    {
+      "day": "Sonntag",
+      "items": [
+        { "time": "08:00 Uhr", "activity": "Frühstück" },
+        { "time": "bis 10:00 Uhr", "activity": "Sachen packen" },
+        { "time": "10:00 Uhr", "activity": "Aktion" },
+        { "time": "12:45 Uhr", "activity": "Mittagessen in der Schützenhalle" },
+        {
+          "time": "14:00 Uhr",
+          "activity": "Verabschiedung an der Schützenhalle"
+        },
+        { "time": "im Anschluss", "activity": "Abbau" }
+      ]
+    }
+  ]
+}

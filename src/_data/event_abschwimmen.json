@@ -1,0 +1,13 @@
+{
+  "updates": [
+    {
+      "label": "Aktueller Stand",
+      "title": "Die Anmeldung ist geöffnet",
+      "text": "Bitte gebt uns über das Online-Formular bis zum 30. August Bescheid, ob ihr dabei seid."
+    }
+  ],
+  "statusTags": [
+    { "text": "Anmeldung offen", "class": "is-success is-light" },
+    { "text": "Frist: 30.08.2026", "class": "is-light" }
+  ]
+}
