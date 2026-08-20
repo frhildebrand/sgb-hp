@@ -25,7 +25,11 @@
         "items": [
           { "text": "Vorstand", "url": "/verein" },
           { "text": "Mitgliedschaft", "url": "/verein/mitgliedschaft" },
-          { "text": "Downloads", "url": "/verein/downloads" }
+          { "text": "Downloads", "url": "/verein/downloads" },
+          {
+            "text": "Freundschaft mit dem PSV Delphin Berlin",
+            "url": "/verein/freundschaft-psv-delphin-berlin"
+          }
         ]
       }
     ]
