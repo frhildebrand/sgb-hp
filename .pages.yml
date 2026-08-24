@@ -1,0 +1,246 @@
+media:
+  input: src/images
+  output: /images
+  categories: [image]
+  rename: safe
+
+settings:
+  content:
+    merge: true
+  commit:
+    identity: user
+    templates:
+      create: "Inhalt erstellt: {path}"
+      update: "Inhalt aktualisiert: {path}"
+      delete: "Inhalt gelöscht: {path}"
+      rename: "Inhalt umbenannt: {oldPath} → {newPath}"
+
+content:
+  - name: news
+    label: News
+    type: collection
+    path: src/news
+    format: yaml-frontmatter
+    filename:
+      template: "{year}-{month}-{day}-{heading}.md"
+      field: false
+    view:
+      primary: heading
+      fields: [heading, date, tags]
+      sort: [date, heading]
+      search: [heading, excerpt, body]
+      default:
+        sort: date
+        order: desc
+    operations:
+      create: true
+      rename: false
+      delete: true
+    fields:
+      - name: layout
+        type: string
+        hidden: true
+        default: news.njk
+      - name: heading
+        label: Überschrift
+        type: string
+        required: true
+      - name: date
+        label: Datum
+        type: date
+        required: true
+        options:
+          time: false
+          format: yyyy-MM-dd
+      - name: tags
+        label: Schlagwörter
+        type: string
+        list:
+          collapsible: false
+      - name: excerpt
+        label: Kurzbeschreibung
+        type: text
+        required: true
+        description: Wird in der News-Übersicht angezeigt.
+      - name: preview
+        label: Vorschaubild
+        type: image
+        description: Wird in der News-Übersicht verwendet.
+      - name: heroImage
+        label: Titelbild
+        type: image
+        description: Optionales großes Bild im Kopf des Beitrags.
+      - name: images
+        label: Bildergalerie
+        type: object
+        list:
+          collapsible:
+            collapsed: true
+            summary: "{alt}"
+        fields:
+          - name: src
+            label: Bild
+            type: image
+            required: true
+          - name: alt
+            label: Bildbeschreibung
+            type: string
+            required: true
+            description: Beschreibt das Bild für Menschen mit Sehbehinderung.
+      - name: links
+        label: Weiterführende Links
+        type: object
+        list:
+          collapsible:
+            collapsed: true
+            summary: "{text}"
+        fields:
+          - name: text
+            label: Linktext
+            type: string
+            required: true
+          - name: url
+            label: Adresse
+            type: string
+            required: true
+      - name: body
+        label: Inhalt
+        type: rich-text
+        required: true
+        options:
+          format: markdown
+          switcher: true
+          path: src/images/news
+          rename: safe
+
+  - name: events
+    label: Veranstaltungen
+    type: group
+    items:
+      - name: abschwimmen
+        label: Abschwimmen
+        type: file
+        path: src/_data/event_abschwimmen.json
+        format: json
+        operations:
+          create: false
+          rename: false
+          delete: false
+        fields:
+          - name: updates
+            label: Updates
+            type: object
+            list:
+              collapsible:
+                collapsed: true
+                summary: "{title}"
+            description: Neue Updates unten hinzufügen. Auf der Website erscheinen die letzten drei, neuestes zuerst.
+            fields:
+              - name: label
+                label: Kategorie oder Datum
+                type: string
+                required: true
+              - name: title
+                label: Überschrift
+                type: string
+                required: true
+              - name: text
+                label: Text
+                type: text
+                required: true
+          - name: statusTags
+            label: Statusanzeigen
+            type: object
+            list:
+              collapsible:
+                collapsed: true
+                summary: "{text}"
+            fields:
+              - name: text
+                label: Text
+                type: string
+                required: true
+              - name: class
+                type: string
+                hidden: true
+                default: is-light
+
+      - name: berlintreffen
+        label: Berlintreffen
+        type: file
+        path: src/_data/event_berlintreffen.json
+        format: json
+        operations:
+          create: false
+          rename: false
+          delete: false
+        fields:
+          - name: updates
+            label: Updates
+            type: object
+            list:
+              collapsible:
+                collapsed: true
+                summary: "{title}"
+            description: Neue Updates unten hinzufügen. Auf der Website erscheinen die letzten drei, neuestes zuerst.
+            fields:
+              - name: label
+                label: Kategorie oder Datum
+                type: string
+                required: true
+              - name: title
+                label: Überschrift
+                type: string
+                required: true
+              - name: text
+                label: Text
+                type: text
+                required: true
+              - name: link
+                label: Optionaler Button
+                type: object
+                fields:
+                  - name: text
+                    label: Buttontext
+                    type: string
+                    required: true
+                  - name: url
+                    label: Adresse
+                    type: string
+                    required: true
+                  - name: class
+                    type: string
+                    hidden: true
+                    default: is-link is-light
+                  - name: icon
+                    type: string
+                    hidden: true
+                    default: fas fa-external-link-alt
+          - name: schedule
+            label: Zeitplan
+            type: object
+            list:
+              collapsible:
+                collapsed: true
+                summary: "{day}"
+            fields:
+              - name: day
+                label: Tag
+                type: string
+                required: true
+              - name: items
+                label: Programmpunkte
+                type: object
+                list:
+                  collapsible:
+                    collapsed: true
+                    summary: "{time}: {activity}"
+                fields:
+                  - name: time
+                    label: Uhrzeit
+                    type: string
+                    required: true
+                  - name: activity
+                    label: Programmpunkt
+                    type: string
+                    required: true
