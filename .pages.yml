@@ -203,11 +203,9 @@ content:
                   - name: text
                     label: Buttontext
                     type: string
-                    required: true
                   - name: url
                     label: Adresse
                     type: string
-                    required: true
                   - name: class
                     type: string
                     hidden: true
