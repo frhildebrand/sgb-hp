@@ -242,3 +242,8 @@ content:
                     label: Programmpunkt
                     type: string
                     required: true
+          - name: packingList
+            label: Packliste
+            type: string
+            list: true
+            description: Gegenstände können ergänzt, gelöscht und in die gewünschte Reihenfolge verschoben werden.

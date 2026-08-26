@@ -21,7 +21,7 @@ permalink: /berlintreffen/index.html
               {% set hasLink = update.link and update.link.text and update.link.url %}
               <p class="is-size-7 has-text-grey mb-1">{{ update.label }}</p>
               <p class="has-text-weight-bold mb-2">{{ update.title }}</p>
-              <p{% if hasLink %} class="mb-3"{% endif %}>{{ update.text }}</p>
+              <p class="mb-3">{{ update.text }}</p>
               {% if hasLink %}
                 <a
                   class="button {{ update.link.class or 'is-link is-light' }} is-small"
@@ -129,6 +129,15 @@ permalink: /berlintreffen/index.html
               </tbody>
             {% endfor %}
           </table>
+        </div>
+      </section>
+
+      <section class="mt-6" aria-labelledby="packliste-heading">
+        <h2 id="packliste-heading" class="title is-4">Packliste</h2>
+        <div class="columns is-multiline is-variable is-1">
+          {% for item in event_berlintreffen.packingList %}
+            <div class="column is-half py-1">{{ item }}</div>
+          {% endfor %}
         </div>
       </section>
     </div>
