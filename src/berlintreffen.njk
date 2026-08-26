@@ -18,17 +18,18 @@ permalink: /berlintreffen/index.html
         {% if loop.index <= 3 %}
           <article class="media">
             <div class="media-content">
+              {% set hasLink = update.link and update.link.text and update.link.url %}
               <p class="is-size-7 has-text-grey mb-1">{{ update.label }}</p>
               <p class="has-text-weight-bold mb-2">{{ update.title }}</p>
-              <p{% if update.link %} class="mb-3"{% endif %}>{{ update.text }}</p>
-              {% if update.link %}
+              <p{% if hasLink %} class="mb-3"{% endif %}>{{ update.text }}</p>
+              {% if hasLink %}
                 <a
-                  class="button {{ update.link.class }} is-small"
+                  class="button {{ update.link.class or 'is-link is-light' }} is-small"
                   href="{{ update.link.url }}"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <span class="icon" aria-hidden="true"><i class="{{ update.link.icon }}"></i></span>
+                  <span class="icon" aria-hidden="true"><i class="{{ update.link.icon or 'fas fa-external-link-alt' }}"></i></span>
                   <span>{{ update.link.text }}</span>
                 </a>
               {% endif %}
@@ -96,6 +97,14 @@ permalink: /berlintreffen/index.html
       </div>
 
       <div class="buttons">
+        <a
+          class="button is-primary is-medium"
+          href="/downloads/2026-08-29-ME.pdf"
+          download
+        >
+          <span class="icon" aria-hidden="true"><i class="fas fa-download"></i></span>
+          <span>Meldeergebnis (PDF)</span>
+        </a>
         <a class="button is-light is-medium" href="/verein/freundschaft-psv-delphin-berlin/">
           <span class="icon" aria-hidden="true"><i class="fas fa-info-circle"></i></span>
           <span>Hintergrund zur Freundschaft</span>

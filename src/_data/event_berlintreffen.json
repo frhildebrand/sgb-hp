@@ -24,12 +24,8 @@
     },
     {
       "label": "Anmeldung",
-      "title": "Countdown läuft ",
-      "text": "Zahlreiche Anmeldungen haben uns erreicht. Das Meldeergebnis wird aufbereitet und die letzten Zahlen werden weitergeleitet. Donnerstag geht es mit dem Aufbau los.",
-      "link": {
-        "class": "is-link is-light",
-        "icon": "fas fa-external-link-alt"
-      }
+      "title": "Auswertungen der Anmeldungen",
+      "text": "Zahlreiche Anmeldungen haben uns erreicht. Das Meldeergebnis wird aufbereitet und die letzten Zahlen werden weitergeleitet. Donnerstag geht es mit dem Aufbau los."
     }
   ],
   "schedule": [
@@ -37,7 +33,7 @@
       "day": "Donnerstag",
       "items": [
         {
-          "time": "14:00 Uhr",
+          "time": "16:00 Uhr",
           "activity": "Kanuhaus: Grundreinigung"
         },
         {
