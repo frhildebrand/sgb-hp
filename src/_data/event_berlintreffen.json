@@ -25,7 +25,20 @@
     {
       "label": "Anmeldung",
       "title": "Auswertungen der Anmeldungen",
-      "text": "Zahlreiche Anmeldungen haben uns erreicht. Das Meldeergebnis wird aufbereitet und die letzten Zahlen werden weitergeleitet. Donnerstag geht es mit dem Aufbau los."
+      "text": "Zahlreiche Anmeldungen haben uns erreicht. Das Meldeergebnis wird aufbereitet und die letzten Zahlen werden weitergeleitet. Donnerstag geht es mit dem Aufbau los.",
+      "link": {
+        "class": "is-link is-light",
+        "icon": "fas fa-external-link-alt"
+      }
+    },
+    {
+      "label": "Information",
+      "title": "Packliste und Meldeliste",
+      "text": "Das Meldeergebnis für den Vergleichswettkampf am Samstag ist nun verfügbar. Schaut euch außerdem die Packliste nochmal an! ",
+      "link": {
+        "class": "is-link is-light",
+        "icon": "fas fa-external-link-alt"
+      }
     }
   ],
   "schedule": [
