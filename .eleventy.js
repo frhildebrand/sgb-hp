@@ -32,6 +32,12 @@ module.exports = function (config) {
   config.addPassthroughCopy("src/assets");
   config.addPassthroughCopy("src/images");
   config.addPassthroughCopy("src/downloads");
+  config.addPassthroughCopy({
+    "node_modules/@fortawesome/fontawesome-free/css/all.min.css":
+      "assets/fontawesome/css/all.min.css",
+    "node_modules/@fortawesome/fontawesome-free/webfonts":
+      "assets/fontawesome/webfonts",
+  });
   return {
     markdownTemplateEngine: "njk",
     htmlTemplateEngine: "njk",
