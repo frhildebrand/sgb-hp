@@ -27,8 +27,8 @@
   ],
   "statusTags": [
     {
-      "text": "Anmeldung geschlossen",
-      "class": "is-warning is-light"
+      "text": "Anmeldung offen",
+      "class": "is-success is-light"
     }
   ],
   "highlights": [
@@ -56,8 +56,7 @@
       "url": "https://script.google.com/a/macros/sgbarnstorf.de/s/AKfycbyR4t-Xb5oQNgYql1dzHW69j6QtP3AgudN2oHNVAZ8GwMAZx52aKd9t7NYQM5BwWTfhSA/exec",
       "external": true,
       "download": false,
-      "class": "is-light",
-      "icon": "is-success"
+      "class": "is-light is-success"
     }
   ],
   "schedule": [
