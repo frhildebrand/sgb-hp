@@ -127,6 +127,36 @@ content:
           rename: false
           delete: false
         fields:
+          - name: title
+            label: Überschrift
+            type: string
+            required: true
+          - name: shortInfo
+            label: Kurze Information
+            type: text
+            required: true
+          - name: when
+            label: Wann
+            type: object
+            fields:
+              - name: title
+                label: Datum
+                type: string
+                required: true
+              - name: detail
+                label: Uhrzeit oder Zusatz
+                type: string
+          - name: where
+            label: Wo
+            type: object
+            fields:
+              - name: title
+                label: Veranstaltungsort
+                type: string
+                required: true
+              - name: detail
+                label: Treffpunkt oder Ort
+                type: string
           - name: updates
             label: Updates
             type: object
@@ -134,7 +164,7 @@ content:
               collapsible:
                 collapsed: true
                 summary: "{title}"
-            description: Neue Updates unten hinzufügen. Auf der Website erscheinen die letzten drei, neuestes zuerst.
+            description: Neue Updates unten hinzufügen. Auf der Website erscheinen die letzten drei, neuestes zuerst. Optional kann ein Tag und/oder Button ergänzt werden.
             fields:
               - name: label
                 label: Kategorie oder Datum
@@ -148,6 +178,39 @@ content:
                 label: Text
                 type: text
                 required: true
+              - name: tag
+                label: Optionaler Tag
+                type: object
+                fields:
+                  - name: text
+                    label: Tagtext
+                    type: string
+                  - name: class
+                    label: Darstellung
+                    type: string
+                    default: is-light
+              - name: link
+                label: Optionaler Button
+                type: object
+                fields:
+                  - name: text
+                    label: Buttontext
+                    type: string
+                  - name: url
+                    label: Adresse
+                    type: string
+                  - name: external
+                    label: Externer Link
+                    type: boolean
+                    default: false
+                  - name: class
+                    label: Darstellung
+                    type: string
+                    default: is-link is-light
+                  - name: icon
+                    label: Icon-Klasse
+                    type: string
+                    default: fas fa-arrow-right
           - name: statusTags
             label: Statusanzeigen
             type: object
@@ -161,59 +224,75 @@ content:
                 type: string
                 required: true
               - name: class
+                label: Darstellung
                 type: string
-                hidden: true
                 default: is-light
 
-      - name: berlintreffen
-        label: Berlintreffen
-        type: file
-        path: src/_data/event_berlintreffen.json
-        format: json
-        operations:
-          create: false
-          rename: false
-          delete: false
-        fields:
-          - name: updates
-            label: Updates
+          - name: highlightsTitle
+            label: Überschrift der Stichpunkte
+            type: string
+            default: Das erwartet euch
+          - name: highlights
+            label: Stichpunkte
             type: object
             list:
               collapsible:
                 collapsed: true
-                summary: "{title}"
-            description: Neue Updates unten hinzufügen. Auf der Website erscheinen die letzten drei, neuestes zuerst.
+                summary: "{text}"
             fields:
-              - name: label
-                label: Kategorie oder Datum
+              - name: text
+                label: Text
                 type: string
                 required: true
+              - name: icon
+                label: Icon-Klasse
+                type: string
+                default: fas fa-check
+          - name: notice
+            label: Optionaler Hinweis
+            type: object
+            fields:
               - name: title
                 label: Überschrift
                 type: string
-                required: true
               - name: text
                 label: Text
                 type: text
+              - name: class
+                label: Darstellung
+                type: string
+                default: is-warning
+          - name: links
+            label: Links und Buttons
+            type: object
+            list:
+              collapsible:
+                collapsed: true
+                summary: "{text}"
+            fields:
+              - name: text
+                label: Buttontext
+                type: string
                 required: true
-              - name: link
-                label: Optionaler Button
-                type: object
-                fields:
-                  - name: text
-                    label: Buttontext
-                    type: string
-                  - name: url
-                    label: Adresse
-                    type: string
-                  - name: class
-                    type: string
-                    hidden: true
-                    default: is-link is-light
-                  - name: icon
-                    type: string
-                    hidden: true
-                    default: fas fa-external-link-alt
+              - name: url
+                label: Adresse
+                type: string
+                required: true
+              - name: external
+                label: Externer Link
+                type: boolean
+                default: false
+              - name: download
+                label: Download
+                type: boolean
+                default: false
+              - name: class
+                label: Darstellung
+                type: string
+                default: is-light
+              - name: icon
+                label: Icon-Klasse
+                type: string
           - name: schedule
             label: Zeitplan
             type: object
@@ -235,15 +314,236 @@ content:
                     summary: "{time}: {activity}"
                 fields:
                   - name: time
-                    label: Uhrzeit
+                    label: Zeit
                     type: string
                     required: true
                   - name: activity
-                    label: Programmpunkt
+                    label: Was
                     type: string
                     required: true
+                  - name: location
+                    label: Wo
+                    type: string
           - name: packingList
-            label: Packliste
+            label: Optionale Packliste
             type: string
             list: true
-            description: Gegenstände können ergänzt, gelöscht und in die gewünschte Reihenfolge verschoben werden.
+            description: Leer lassen, wenn keine Packliste angezeigt werden soll.
+          - name: closing
+            label: Optionaler Abschlusstext (HTML)
+            type: text
+
+      - name: berlintreffen
+        label: Berlintreffen
+        type: file
+        path: src/_data/event_berlintreffen.json
+        format: json
+        operations:
+          create: false
+          rename: false
+          delete: false
+        fields:
+          - name: title
+            label: Überschrift
+            type: string
+            required: true
+          - name: shortInfo
+            label: Kurze Information
+            type: text
+            required: true
+          - name: when
+            label: Wann
+            type: object
+            fields:
+              - name: title
+                label: Datum
+                type: string
+                required: true
+              - name: detail
+                label: Uhrzeit oder Zusatz
+                type: string
+          - name: where
+            label: Wo
+            type: object
+            fields:
+              - name: title
+                label: Veranstaltungsort
+                type: string
+                required: true
+              - name: detail
+                label: Treffpunkt oder Ort
+                type: string
+          - name: updates
+            label: Updates
+            type: object
+            list:
+              collapsible:
+                collapsed: true
+                summary: "{title}"
+            description: Neue Updates unten hinzufügen. Auf der Website erscheinen die letzten drei, neuestes zuerst. Optional kann ein Tag und/oder Button ergänzt werden.
+            fields:
+              - name: label
+                label: Kategorie oder Datum
+                type: string
+                required: true
+              - name: title
+                label: Überschrift
+                type: string
+                required: true
+              - name: text
+                label: Text
+                type: text
+                required: true
+              - name: tag
+                label: Optionaler Tag
+                type: object
+                fields:
+                  - name: text
+                    label: Tagtext
+                    type: string
+                  - name: class
+                    label: Darstellung
+                    type: string
+                    default: is-light
+              - name: link
+                label: Optionaler Button
+                type: object
+                fields:
+                  - name: text
+                    label: Buttontext
+                    type: string
+                  - name: url
+                    label: Adresse
+                    type: string
+                  - name: external
+                    label: Externer Link
+                    type: boolean
+                    default: false
+                  - name: class
+                    label: Darstellung
+                    type: string
+                    default: is-link is-light
+                  - name: icon
+                    label: Icon-Klasse
+                    type: string
+                    default: fas fa-arrow-right
+          - name: statusTags
+            label: Statusanzeigen
+            type: object
+            list:
+              collapsible:
+                collapsed: true
+                summary: "{text}"
+            fields:
+              - name: text
+                label: Text
+                type: string
+                required: true
+              - name: class
+                label: Darstellung
+                type: string
+                default: is-light
+          - name: highlightsTitle
+            label: Überschrift der Stichpunkte
+            type: string
+            default: Das erwartet euch
+          - name: highlights
+            label: Stichpunkte
+            type: object
+            list:
+              collapsible:
+                collapsed: true
+                summary: "{text}"
+            fields:
+              - name: text
+                label: Text
+                type: string
+                required: true
+              - name: icon
+                label: Icon-Klasse
+                type: string
+                default: fas fa-check
+          - name: notice
+            label: Optionaler Hinweis
+            type: object
+            fields:
+              - name: title
+                label: Überschrift
+                type: string
+              - name: text
+                label: Text
+                type: text
+              - name: class
+                label: Darstellung
+                type: string
+                default: is-warning
+          - name: links
+            label: Links und Buttons
+            type: object
+            list:
+              collapsible:
+                collapsed: true
+                summary: "{text}"
+            fields:
+              - name: text
+                label: Buttontext
+                type: string
+                required: true
+              - name: url
+                label: Adresse
+                type: string
+                required: true
+              - name: external
+                label: Externer Link
+                type: boolean
+                default: false
+              - name: download
+                label: Download
+                type: boolean
+                default: false
+              - name: class
+                label: Darstellung
+                type: string
+                default: is-light
+              - name: icon
+                label: Icon-Klasse
+                type: string
+          - name: schedule
+            label: Zeitplan
+            type: object
+            list:
+              collapsible:
+                collapsed: true
+                summary: "{day}"
+            fields:
+              - name: day
+                label: Tag
+                type: string
+                required: true
+              - name: items
+                label: Programmpunkte
+                type: object
+                list:
+                  collapsible:
+                    collapsed: true
+                    summary: "{time}: {activity}"
+                fields:
+                  - name: time
+                    label: Zeit
+                    type: string
+                    required: true
+                  - name: activity
+                    label: Was
+                    type: string
+                    required: true
+                  - name: location
+                    label: Wo
+                    type: string
+          - name: packingList
+            label: Optionale Packliste
+            type: string
+            list: true
+            description: Leer lassen, wenn keine Packliste angezeigt werden soll.
+          - name: closing
+            label: Optionaler Abschlusstext (HTML)
+            type: text

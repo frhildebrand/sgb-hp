@@ -1,13 +1,66 @@
 {
+  "title": "Einladung zum Abschwimmen der SG Barnstorf 2026!",
+  "shortInfo": "Liebe Aktive, Eltern und Vereinsmitglieder, die Freibadsaison neigt sich dem Ende zu. Deshalb möchten wir euch herzlich zu unserem diesjährigen Abschwimmen einladen!",
+  "when": {
+    "title": "Freitag, 04. September 2026",
+    "detail": "ab 16:00 Uhr"
+  },
+  "where": {
+    "title": "Freibad Barnstorf",
+    "detail": "Treffpunkt vor Ort"
+  },
   "updates": [
     {
-      "label": "Aktueller Stand",
+      "label": "Anmeldung",
       "title": "Die Anmeldung ist geöffnet",
-      "text": "Bitte gebt uns über das Online-Formular bis zum 30. August Bescheid, ob ihr dabei seid."
+      "text": "Bitte gebt uns über das Online-Formular bis zum 30. August Bescheid, ob ihr dabei seid.",
+      "tag": { "text": "Frist: 30.08.2026", "class": "is-info is-light" }
+    },
+    {
+      "label": "Anmeldung",
+      "title": "Die Anmeldung ist geschlossen",
+      "text": "Wir bereiten das Meldeergebnis und weitere Informationen für euch vor."
     }
   ],
   "statusTags": [
-    { "text": "Anmeldung offen", "class": "is-success is-light" },
-    { "text": "Frist: 30.08.2026", "class": "is-light" }
-  ]
+    { "text": "Anmeldung geschlossen", "class": "is-warning is-light" }
+  ],
+  "highlights": [
+    {
+      "text": "Wettkampf und 4×25-m-Familienstaffel",
+      "icon": "fas fa-stopwatch"
+    },
+    { "text": "Gemütliches Beisammensein", "icon": "fas fa-users" },
+    { "text": "Grillen und Mitbring-Buffet", "icon": "fas fa-utensils" }
+  ],
+  "notice": {
+    "title": "Wichtig für die Planung",
+    "text": "Bitte meldet euch und eure Familienmitglieder über die Umfrage bis zum 30.08.2026 an oder ab, damit wir Essen, Wettkämpfe und Helfer planen können. Die Wettkampf-Anmeldung läuft wieder über WebClub. Im Formular könnt ihr auch angeben, was ihr zum Buffet beisteuert oder wo ihr mithelfen könnt.",
+    "class": "is-warning"
+  },
+  "links": [],
+  "schedule": [
+    {
+      "day": "Freitag, 04. September 2026",
+      "items": [
+        {
+          "time": "16:00 Uhr",
+          "activity": "Beginn und Begrüßung",
+          "location": "Freibad Barnstorf"
+        },
+        {
+          "time": "anschließend",
+          "activity": "Wettkampf und Familienstaffel",
+          "location": "Schwimmbecken"
+        },
+        {
+          "time": "danach",
+          "activity": "Grillen und Mitbring-Buffet",
+          "location": "Freibad Barnstorf"
+        }
+      ]
+    }
+  ],
+  "packingList": [],
+  "closing": "<p>Wir freuen uns auf einen tollen Nachmittag und Abend mit euch allen!</p><p><strong>Mit sportlichem Gruß</strong><br><em>Jan Kettler &amp; Finja Bredehorst</em><br>Jugendvertreter &amp; Jugendvertreterin</p>"
 }

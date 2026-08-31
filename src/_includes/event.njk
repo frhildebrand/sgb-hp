@@ -1,0 +1,112 @@
+{% set event = eventData %}
+
+<div class="columns is-variable is-7 event-page">
+  {% if event.updates.length or event.statusTags.length %}
+    <aside class="column is-4-desktop" aria-labelledby="updates-heading">
+      <div class="box event-updates">
+        <h2 id="updates-heading" class="title is-5 mb-4">
+          <span class="icon has-text-primary mr-2" aria-hidden="true"><i class="fas fa-bullhorn"></i></span>
+          Updates
+        </h2>
+        {% for update in event.updates | reverse %}
+          {% if loop.index <= 3 %}
+            <article class="media">
+              <div class="media-content">
+                <p class="is-size-7 has-text-grey mb-1">{{ update.label }}</p>
+                <p class="has-text-weight-bold mb-2">{{ update.title }}</p>
+                <p{% if update.link or update.tag %} class="mb-3"{% endif %}>{{ update.text }}</p>
+                {% if update.tag %}<span class="tag {{ update.tag.class or 'is-light' }}">{{ update.tag.text }}</span>{% endif %}
+                {% if update.link and update.link.text and update.link.url %}
+                  <a class="button {{ update.link.class or 'is-link is-light' }} is-small" href="{{ update.link.url }}" {% if update.link.external %}target="_blank" rel="noopener noreferrer"{% endif %}>
+                    <span class="icon" aria-hidden="true"><i class="{{ update.link.icon or 'fas fa-arrow-right' }}"></i></span>
+                    <span>{{ update.link.text }}</span>
+                  </a>
+                {% endif %}
+              </div>
+            </article>
+            {% if loop.index < 3 and not loop.last %}<hr />{% endif %}
+          {% endif %}
+        {% endfor %}
+        {% if event.updates.length and event.statusTags.length %}<hr />{% endif %}
+        {% if event.statusTags.length %}
+          <div class="tags">
+            {% for tag in event.statusTags %}<span class="tag {{ tag.class or 'is-light' }}">{{ tag.text }}</span>{% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    </aside>
+  {% endif %}
+
+  <main class="column{% if event.updates.length or event.statusTags.length %} is-8-desktop{% endif %}">
+    <div class="content is-medium">
+      <h1 class="title is-3">{{ event.title }}</h1>
+      {% if event.shortInfo %}<p class="event-intro">{{ event.shortInfo }}</p>{% endif %}
+
+      <div class="columns is-multiline my-5">
+        <div class="column is-half"><div class="notification is-primary is-light event-fact">
+          <p class="is-size-7 has-text-weight-bold is-uppercase mb-2">Wann</p>
+          <p class="has-text-weight-bold mb-1">{{ event.when.title }}</p>
+          {% if event.when.detail %}<p>{{ event.when.detail }}</p>{% endif %}
+        </div></div>
+        <div class="column is-half"><div class="notification is-info is-light event-fact">
+          <p class="is-size-7 has-text-weight-bold is-uppercase mb-2">Wo</p>
+          <p class="has-text-weight-bold mb-1">{{ event.where.title }}</p>
+          {% if event.where.detail %}<p>{{ event.where.detail }}</p>{% endif %}
+        </div></div>
+      </div>
+
+      {% if event.highlights.length %}
+        <section aria-labelledby="highlights-heading">
+          <h2 id="highlights-heading" class="title is-4">{{ event.highlightsTitle or 'Das erwartet euch' }}</h2>
+          <div class="columns is-multiline event-highlights">
+            {% for item in event.highlights %}
+              <div class="column is-half"><p class="icon-text">
+                <span class="icon has-text-primary" aria-hidden="true"><i class="{{ item.icon or 'fas fa-check' }}"></i></span>
+                <span>{{ item.text }}</span>
+              </p></div>
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+
+      {% if event.notice %}
+        <article class="message {{ event.notice.class or 'is-warning' }} my-5">
+          <div class="message-header"><p>{{ event.notice.title }}</p></div>
+          <div class="message-body">{{ event.notice.text }}</div>
+        </article>
+      {% endif %}
+
+      {% if event.links.length %}
+        <div class="buttons event-links">
+          {% for link in event.links %}
+            <a class="button {{ link.class or 'is-light' }} is-medium" href="{{ link.url }}" {% if link.download %}download{% endif %} {% if link.external %}target="_blank" rel="noopener noreferrer"{% endif %}>
+              {% if link.icon %}<span class="icon" aria-hidden="true"><i class="{{ link.icon }}"></i></span>{% endif %}
+              <span>{{ link.text }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if event.schedule.length %}
+        <section class="mt-6" aria-labelledby="schedule-heading">
+          <h2 id="schedule-heading" class="title is-4">Zeitplan</h2>
+          {% for day in event.schedule %}
+            <h3 class="title is-5 mt-5 mb-2">{{ day.day }}</h3>
+            <div class="table-container"><table class="table is-fullwidth is-striped is-hoverable event-schedule">
+              <thead><tr><th>Zeit</th><th>Was</th><th>Wo</th></tr></thead>
+              <tbody>{% for item in day.items %}<tr><td>{{ item.time }}</td><td>{{ item.activity }}</td><td>{{ item.location or '–' }}</td></tr>{% endfor %}</tbody>
+            </table></div>
+          {% endfor %}
+        </section>
+      {% endif %}
+
+      {% if event.packingList.length %}
+        <section class="mt-6" aria-labelledby="packing-list-heading">
+          <h2 id="packing-list-heading" class="title is-4">Packliste</h2>
+          <ul class="event-packing-list">{% for item in event.packingList %}<li>{{ item }}</li>{% endfor %}</ul>
+        </section>
+      {% endif %}
+      {% if event.closing %}<div class="mt-6">{{ event.closing | safe }}</div>{% endif %}
+    </div>
+  </main>
+</div>

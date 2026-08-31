@@ -21561,4 +21561,60 @@ has-background-danger.is-hoverable:active {
   pointer-events: all !important;
 }
 
+.event-page .event-updates {
+  position: sticky;
+  top: 5.5rem;
+}
+.event-page .event-intro {
+  max-width: 48rem;
+}
+.event-page .event-fact {
+  height: 100%;
+}
+.event-page .event-highlights {
+  margin-bottom: 0.5rem;
+}
+.event-page .event-highlights .column {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+.event-page .event-highlights .icon-text {
+  align-items: flex-start;
+  line-height: 1.3;
+}
+.event-page .event-links {
+  margin-top: 1rem;
+}
+.event-page .event-schedule th:first-child,
+.event-page .event-schedule td:first-child {
+  width: 9rem;
+  white-space: nowrap;
+}
+.event-page .event-schedule th:last-child,
+.event-page .event-schedule td:last-child {
+  width: 32%;
+}
+.event-page .event-packing-list {
+  columns: 2;
+  column-gap: 3rem;
+}
+.event-page .event-packing-list li {
+  break-inside: avoid;
+  margin-bottom: 0.4rem;
+}
+
+@media screen and (max-width: 768px) {
+  .event-page .event-updates {
+    position: static;
+  }
+  .event-page .event-schedule th:first-child,
+  .event-page .event-schedule td:first-child {
+    width: auto;
+    white-space: normal;
+  }
+  .event-page .event-packing-list {
+    columns: 1;
+  }
+}
+
 /*# sourceMappingURL=main.css.map */

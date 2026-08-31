@@ -1,4 +1,8 @@
 {
+  "title": "Berlintreffen in Barnstorf",
+  "shortInfo": "Ende August begrüßen wir unsere Freundinnen und Freunde vom PSV Delphin Berlin wieder in Barnstorf. Gemeinsam verbringen wir ein Wochenende im Freizeitbad Hunteholz – mit Zelten, Vergleichswettkampf und einem abwechslungsreichen Rahmenprogramm.",
+  "when": { "title": "28.–30. August 2026", "detail": "Freitag bis Sonntag" },
+  "where": { "title": "Freizeitbad Hunteholz", "detail": "Barnstorf" },
   "updates": [
     {
       "label": "Organisation",
@@ -8,7 +12,8 @@
         "text": "Berlin Orga-Team",
         "url": "https://chat.whatsapp.com/D2CFdp9TIZO3lHNvxs1DLJ",
         "class": "is-success is-light",
-        "icon": "fab fa-whatsapp"
+        "icon": "fab fa-whatsapp",
+        "external": true
       }
     },
     {
@@ -19,26 +24,62 @@
         "text": "Anmeldung",
         "url": "https://script.google.com/macros/s/AKfycbzTwSpOi66D35blFEIvx6ax0DKcsHV3dyLcWY1WuSHV8wvbNFEkx0tvB0A5JNcorals/exec",
         "class": "is-success is-light",
-        "icon": "fas fa-clipboard-check"
+        "icon": "fas fa-clipboard-check",
+        "external": true
       }
     },
     {
       "label": "Anmeldung",
       "title": "Auswertungen der Anmeldungen",
       "text": "Zahlreiche Anmeldungen haben uns erreicht. Das Meldeergebnis wird aufbereitet und die letzten Zahlen werden weitergeleitet. Donnerstag geht es mit dem Aufbau los.",
-      "link": {
-        "class": "is-link is-light",
-        "icon": "fas fa-external-link-alt"
-      }
+      "tag": { "text": "Vorbereitung läuft", "class": "is-info is-light" }
     },
     {
       "label": "Information",
       "title": "Packliste und Meldeliste",
-      "text": "Das Meldeergebnis für den Vergleichswettkampf am Samstag ist nun verfügbar. Schaut euch außerdem die Packliste nochmal an! ",
+      "text": "Das Meldeergebnis für den Vergleichswettkampf am Samstag ist nun verfügbar. Schaut euch außerdem die Packliste noch einmal an!",
       "link": {
+        "text": "Meldeergebnis",
+        "url": "/downloads/2026-08-29-ME.pdf",
         "class": "is-link is-light",
-        "icon": "fas fa-external-link-alt"
+        "icon": "fas fa-download"
       }
+    },
+    {
+      "label": "Information",
+      "title": "Fotosammlung",
+      "text": "Vielen Dank an alle Organisatoren und Helfer für dieses tolle Wochenende! Lasst uns gerne eure Fotos zukommen :)",
+      "link": {
+        "text": "Fotoalbum",
+        "url": "https://photos.app.goo.gl/6nacj2MTojuXmjU26",
+        "class": "is-link is-light",
+        "icon": "fas fa-images"
+      }
+    }
+  ],
+  "statusTags": [],
+  "highlights": [
+    { "text": "Zelten im Freibad", "icon": "fas fa-campground" },
+    { "text": "Vergleichswettkampf", "icon": "fas fa-stopwatch" },
+    { "text": "Gemeinsames Rahmenprogramm", "icon": "fas fa-users" },
+    { "text": "Grillabend mit Familien", "icon": "fas fa-utensils" },
+    {
+      "text": "Kostenfrei (Spendenschwein steht bereit)",
+      "icon": "fas fa-euro-sign"
+    }
+  ],
+  "links": [
+    {
+      "text": "Protokoll vom Vergleichswettkampf",
+      "url": "https://live.sgbarnstorf.de/archiv/26/08-berlin/results.php",
+      "class": "is-primary",
+      "icon": "fas fa-table-list"
+    },
+    {
+      "text": "Hintergrund zur Freundschaft",
+      "url": "/verein/freundschaft-psv-delphin-berlin/",
+      "class": "is-light",
+      "icon": "fas fa-info-circle"
     }
   ],
   "schedule": [
@@ -47,11 +88,13 @@
       "items": [
         {
           "time": "16:00 Uhr",
-          "activity": "Kanuhaus: Grundreinigung"
+          "activity": "Grundreinigung",
+          "location": "Kanuhaus"
         },
         {
           "time": "18:00 Uhr",
-          "activity": "Abholung des Materials vom Jugendzentrum"
+          "activity": "Abholung des Materials",
+          "location": "Jugendzentrum"
         }
       ]
     },
@@ -60,15 +103,18 @@
       "items": [
         {
           "time": "ab 15:30 Uhr",
-          "activity": "Aufbau am Kanuhaus"
+          "activity": "Aufbau",
+          "location": "Kanuhaus"
         },
         {
           "time": "ca. 18:30 Uhr",
-          "activity": "Abendessen für die Barnstorfer"
+          "activity": "Abendessen für die Barnstorfer",
+          "location": "Kanuhaus"
         },
         {
           "time": "ab 20:00 Uhr",
-          "activity": "Ankunft der Berliner"
+          "activity": "Ankunft der Berliner",
+          "location": "Kanuhaus"
         }
       ]
     },
@@ -77,27 +123,33 @@
       "items": [
         {
           "time": "08:00 Uhr",
-          "activity": "Frühstück"
+          "activity": "Frühstück",
+          "location": "Kanuhaus"
         },
         {
           "time": "09:00 Uhr",
-          "activity": "Einschwimmen"
+          "activity": "Einschwimmen",
+          "location": "Freizeitbad Hunteholz"
         },
         {
           "time": "10:00 Uhr",
-          "activity": "Vergleichswettkampf"
+          "activity": "Vergleichswettkampf",
+          "location": "Freizeitbad Hunteholz"
         },
         {
           "time": "12:30 Uhr",
-          "activity": "Mittagessen"
+          "activity": "Mittagessen",
+          "location": "Kanuhaus"
         },
         {
           "time": "14:30 Uhr",
-          "activity": "Abfahrt zur Aktion (auswärts)"
+          "activity": "Abfahrt zur Aktion",
+          "location": "Kanuhaus"
         },
         {
           "time": "18:30 Uhr",
-          "activity": "Grillabend"
+          "activity": "Grillabend",
+          "location": "Kanuhaus"
         }
       ]
     },
@@ -106,28 +158,26 @@
       "items": [
         {
           "time": "08:00 Uhr",
-          "activity": "Frühstück"
+          "activity": "Frühstück",
+          "location": "Kanuhaus"
         },
         {
           "time": "bis 10:00 Uhr",
-          "activity": "Sachen packen"
+          "activity": "Sachen packen",
+          "location": "Kanuhaus"
         },
-        {
-          "time": "10:00 Uhr",
-          "activity": "Aktion"
-        },
+        { "time": "10:00 Uhr", "activity": "Aktion", "location": "Barnstorf" },
         {
           "time": "12:45 Uhr",
-          "activity": "Mittagessen in der Schützenhalle"
+          "activity": "Mittagessen",
+          "location": "Schützenhalle"
         },
         {
           "time": "14:00 Uhr",
-          "activity": "Verabschiedung an der Schützenhalle"
+          "activity": "Verabschiedung",
+          "location": "Schützenhalle"
         },
-        {
-          "time": "im Anschluss",
-          "activity": "Abbau"
-        }
+        { "time": "im Anschluss", "activity": "Abbau", "location": "Kanuhaus" }
       ]
     }
   ],
@@ -135,18 +185,18 @@
     "Mehrere Badehosen / Badeanzüge",
     "Badelatschen",
     "Schwimmbrille",
-    "4-5 Handtücher",
-    "Warme Klamotten während des Wettkampfes",
-    "Wechselklamotten",
+    "4–5 Handtücher",
+    "Warme Kleidung während des Wettkampfes",
+    "Wechselkleidung",
     "Schlafsack",
-    "Luftmatratze, Feldbett o. ä.",
+    "Luftmatratze, Feldbett o. Ä.",
     "Mütze",
-    "Warme Klamotten für abends/nachts",
-    "Zahnbürste usw.",
+    "Warme Kleidung für abends und nachts",
+    "Zahnbürste und weitere Hygieneartikel",
     "Krankenkassenkarte",
-    "Sonnenspray, Anti-Mücken-Spray",
+    "Sonnenspray und Anti-Mücken-Spray",
     "Festes Schuhwerk",
-    "Geschirr für den Grillabend ",
+    "Geschirr für den Grillabend",
     "Ggf. Spiele"
   ]
 }

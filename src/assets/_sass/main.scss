@@ -16,3 +16,79 @@ $red: #af0303;
 
 // Import the Google Font
 @import url("https://fonts.googleapis.com/css?family=Nunito:400,700");
+
+.event-page {
+  .event-updates {
+    position: sticky;
+    top: 5.5rem;
+  }
+
+  .event-intro {
+    max-width: 48rem;
+  }
+
+  .event-fact {
+    height: 100%;
+  }
+
+  .event-highlights {
+    margin-bottom: 0.5rem;
+
+    .column {
+      padding-top: 0.25rem;
+      padding-bottom: 0.25rem;
+    }
+
+    .icon-text {
+      align-items: flex-start;
+      line-height: 1.3;
+    }
+  }
+
+  .event-links {
+    margin-top: 1rem;
+  }
+
+  .event-schedule {
+    th:first-child,
+    td:first-child {
+      width: 9rem;
+      white-space: nowrap;
+    }
+
+    th:last-child,
+    td:last-child {
+      width: 32%;
+    }
+  }
+
+  .event-packing-list {
+    columns: 2;
+    column-gap: 3rem;
+
+    li {
+      break-inside: avoid;
+      margin-bottom: 0.4rem;
+    }
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .event-page {
+    .event-updates {
+      position: static;
+    }
+
+    .event-schedule {
+      th:first-child,
+      td:first-child {
+        width: auto;
+        white-space: normal;
+      }
+    }
+
+    .event-packing-list {
+      columns: 1;
+    }
+  }
+}
