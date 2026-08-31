@@ -13,32 +13,53 @@
     {
       "label": "Anmeldung",
       "title": "Die Anmeldung ist geöffnet",
-      "text": "Bitte gebt uns über das Online-Formular bis zum 30. August Bescheid, ob ihr dabei seid.",
-      "tag": { "text": "Frist: 30.08.2026", "class": "is-info is-light" }
-    },
-    {
-      "label": "Anmeldung",
-      "title": "Die Anmeldung ist geschlossen",
-      "text": "Wir bereiten das Meldeergebnis und weitere Informationen für euch vor."
+      "text": "Bitte gebt uns über das Online-Formular bis zum 01.September Bescheid, ob ihr dabei seid.",
+      "tag": {
+        "text": "Frist: 01.09.2026",
+        "class": "is-info is-light"
+      },
+      "link": {
+        "external": false,
+        "class": "is-link is-light",
+        "icon": "fas fa-arrow-right"
+      }
     }
   ],
   "statusTags": [
-    { "text": "Anmeldung geschlossen", "class": "is-warning is-light" }
+    {
+      "text": "Anmeldung geschlossen",
+      "class": "is-warning is-light"
+    }
   ],
   "highlights": [
     {
       "text": "Wettkampf und 4×25-m-Familienstaffel",
       "icon": "fas fa-stopwatch"
     },
-    { "text": "Gemütliches Beisammensein", "icon": "fas fa-users" },
-    { "text": "Grillen und Mitbring-Buffet", "icon": "fas fa-utensils" }
+    {
+      "text": "Gemütliches Beisammensein",
+      "icon": "fas fa-users"
+    },
+    {
+      "text": "Grillen und Mitbring-Buffet",
+      "icon": "fas fa-utensils"
+    }
   ],
   "notice": {
     "title": "Wichtig für die Planung",
-    "text": "Bitte meldet euch und eure Familienmitglieder über die Umfrage bis zum 30.08.2026 an oder ab, damit wir Essen, Wettkämpfe und Helfer planen können. Die Wettkampf-Anmeldung läuft wieder über WebClub. Im Formular könnt ihr auch angeben, was ihr zum Buffet beisteuert oder wo ihr mithelfen könnt.",
+    "text": "Bitte meldet euch und eure Familienmitglieder über die Umfrage bis zum 01.09.2026 an oder ab, damit wir Essen, Wettkämpfe und Helfer planen können. Die Wettkampf-Anmeldung läuft wieder über WebClub. Im Formular könnt ihr auch angeben, was ihr zum Buffet beisteuert oder wo ihr mithelfen könnt.",
     "class": "is-warning"
   },
-  "links": [],
+  "links": [
+    {
+      "text": "Link zur Anmeldung ",
+      "url": "https://script.google.com/a/macros/sgbarnstorf.de/s/AKfycbyR4t-Xb5oQNgYql1dzHW69j6QtP3AgudN2oHNVAZ8GwMAZx52aKd9t7NYQM5BwWTfhSA/exec",
+      "external": true,
+      "download": false,
+      "class": "is-light",
+      "icon": "is-success"
+    }
+  ],
   "schedule": [
     {
       "day": "Freitag, 04. September 2026",
@@ -61,6 +82,6 @@
       ]
     }
   ],
-  "packingList": [],
-  "closing": "<p>Wir freuen uns auf einen tollen Nachmittag und Abend mit euch allen!</p><p><strong>Mit sportlichem Gruß</strong><br><em>Jan Kettler &amp; Finja Bredehorst</em><br>Jugendvertreter &amp; Jugendvertreterin</p>"
+  "closing": "<p>Wir freuen uns auf einen tollen Nachmittag und Abend mit euch allen!</p><p><strong>Mit sportlichem Gruß</strong><br><em>Jan Kettler &amp; Finja Bredehorst</em><br>Jugendvertreter &amp; Jugendvertreterin</p>",
+  "highlightsTitle": "Das erwartet euch"
 }
