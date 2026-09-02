@@ -7,7 +7,7 @@
   },
   "where": {
     "title": "Freibad Barnstorf",
-    "detail": "Treffpunkt vor Ort"
+    "detail": "Umgezogen am Schwimmerbecken"
   },
   "updates": [
     {
@@ -23,18 +23,35 @@
         "class": "is-link is-light",
         "icon": "fas fa-arrow-right"
       }
+    },
+    {
+      "label": "Anmeldung",
+      "title": "Die Anmeldung ist geschlossen",
+      "text": "Das Meldeergebnis für den Wettkampf ist erstellt. Die Würstchen für den Grillabend bestellt. Bis Freitag!",
+      "tag": {
+        "class": "is-light"
+      },
+      "link": {
+        "external": false,
+        "class": "is-link is-light",
+        "icon": "fas fa-arrow-right"
+      }
     }
   ],
   "statusTags": [
     {
-      "text": "Anmeldung offen",
-      "class": "is-success is-light"
+      "text": "Anmeldung geschlossen",
+      "class": "is-danger is-light"
     }
   ],
   "highlights": [
     {
       "text": "Wettkampf und 4×25-m-Familienstaffel",
       "icon": "fas fa-stopwatch"
+    },
+    {
+      "text": "Kostümwettbewerb",
+      "icon": "fas fa-user-secret"
     },
     {
       "text": "Gemütliches Beisammensein",
@@ -46,17 +63,18 @@
     }
   ],
   "notice": {
-    "title": "Wichtig für die Planung",
-    "text": "Bitte meldet euch und eure Familienmitglieder über die Umfrage bis zum 01.09.2026 an oder ab, damit wir Essen, Wettkämpfe und Helfer planen können. Die Wettkampf-Anmeldung läuft wieder über WebClub. Im Formular könnt ihr auch angeben, was ihr zum Buffet beisteuert oder wo ihr mithelfen könnt.",
+    "title": "Wichtig!",
+    "text": "Denkt an eure Kostüme (ohne Schminke)! Für den Grillabend benötigt ihr außerdem eigenes Besteck und Geschirr!",
     "class": "is-warning"
   },
   "links": [
     {
-      "text": "Link zur Anmeldung ",
-      "url": "https://script.google.com/a/macros/sgbarnstorf.de/s/AKfycbyR4t-Xb5oQNgYql1dzHW69j6QtP3AgudN2oHNVAZ8GwMAZx52aKd9t7NYQM5BwWTfhSA/exec",
+      "text": "Link zum Meldeergebnis und Protokoll",
+      "url": "https://live.sgbarnstorf.de/archiv/26/09-sgb/results.php",
       "external": true,
       "download": false,
-      "class": "is-light is-success"
+      "class": "is-light is-success",
+      "icon": "fas fa-list-ol"
     }
   ],
   "schedule": [
