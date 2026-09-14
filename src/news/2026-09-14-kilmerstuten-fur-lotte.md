@@ -1,12 +1,13 @@
 ---
 layout: news.njk
-heading: Kilmerstuten für Lotte!
+heading: "Großes Gebäck für die kleine Lotte: Masters bringen Kilmerstuten zu
+  Frieda und Anne!"
 date: 2026-09-14
 tags:
   - masters
   - bericht
-excerpt: "Großes Gebäck für die kleine Lotte: Masters bringen Kilmerstuten zu
-  Frieda und Anne!"
+excerpt: Einige unserer Masters haben am Sonntag einen ganz besonderen Brauch
+  fortgeführt und einen Kilmerstuten zu Lotte Hildebrand gebracht!
 preview: /images/2026-09-12 Kilmerstuten Lotte Gruppenbild.jpg
 heroImage: /images/2026-09-12 Kilmerstuten Lotte Bild.jpg
 ---
