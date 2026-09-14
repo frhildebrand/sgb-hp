@@ -6,8 +6,8 @@ date: 2026-09-14
 tags:
   - masters
   - bericht
-excerpt: Einige unserer Masters haben am Sonntag einen ganz besonderen Brauch
-  fortgeführt und einen Kilmerstuten zu Lotte Hildebrand gebracht!
+excerpt: Einige unserer Masters haben am Samstag einen ganz besonderen Brauch
+  fortgeführt und einen Kilmerstuten zu Lotte gebracht!
 preview: /images/2026-09-12 Kilmerstuten Lotte Bild.jpg
 heroImage: /images/2026-09-12 Kilmerstuten Lotte Bild.jpg
 images:
