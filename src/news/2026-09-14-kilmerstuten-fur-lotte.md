@@ -13,6 +13,8 @@ heroImage: /images/2026-09-12 Kilmerstuten Lotte Bild.jpg
 images:
   - src: /images/2026-09-12 Kilmerstuten Lotte Gruppenbild.jpg
     alt: Gruppenbild beim Zwischenstopp bei Familie Bork
+  - src: /images/2026-09-12 Kilmerstuten Lotte Bild.jpg
+    alt: Der Kilmerstuten bei der Ankunft
 ---
 ## **Großes Gebäck für die kleine Lotte: Masters bringen Kilmerstuten zu Frieda und Anne!**
 
