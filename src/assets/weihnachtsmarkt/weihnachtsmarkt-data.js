@@ -1,6 +1,16 @@
 window.DEFAULT_ROLE_CONFIG = {
-  helfer: { pwd: "SGHelfer", canCash: true, canPacked: true, canQty: false, canStock: false, canBox: true, canStatus: false, canPrices: false, canLog: false },
-  orga: { pwd: "SGOrga", canCash: true, canPacked: true, canQty: true, canStock: true, canBox: true, canStatus: true, canPrices: true, canLog: true },
+  helfer: {
+    pwd: "SGHelfer",
+    canCash: true, canStatus: false, canName: true, canPacked: true,
+    canBox: true, canQty: false, canStock: false, canShopBought: true,
+    canShopPrice: false, canShopStore: false, canUpload: true, canLog: false
+  },
+  orga: {
+    pwd: "SGOrga",
+    canCash: true, canStatus: true, canName: true, canPacked: true,
+    canBox: true, canQty: true, canStock: true, canShopBought: true,
+    canShopPrice: true, canShopStore: true, canUpload: true, canLog: true
+  },
   admin: { pwd: "SGJugend26" }
 };
 
