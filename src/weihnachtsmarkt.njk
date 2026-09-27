@@ -29,7 +29,7 @@ permalink: /weihnachtsmarkt/index.html
     </div>
   </div>
 
-  <!-- Helfer- & Teigspenden Aushang Vorschau (ROSHOP) - 2 Seiten Nebeneinander -->
+  <!-- Helfer- & Teigspenden Aushang Vorschau (ROSHOP) -->
   <div class="bg-amber-50/90 border border-amber-200 rounded-2xl p-4 sm:p-5 shadow-sm mb-6">
     <div class="flex items-center gap-3 mb-4">
       <span class="text-2xl">📌</span>
@@ -39,12 +39,11 @@ permalink: /weihnachtsmarkt/index.html
       </div>
     </div>
 
-    <!-- 2 Spalten Layout für Samstag & Sonntag -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <!-- Samstag -->
       <div class="bg-white border border-amber-200 rounded-xl p-3 text-center">
         <span class="font-bold text-xs sm:text-sm text-amber-900 block mb-2">📅 Samstag (1. Adventswochenende)</span>
-        <div class="bg-slate-50 border border-slate-100 rounded-lg p-2 flex justify-center items-center overflow-hidden min-h-[250px]">
+        <div class="bg-slate-50 border border-slate-100 rounded-lg p-2 flex justify-center items-center overflow-hidden min-h-[220px]">
           <img src="/images/roshop_samstag.jpg" 
                alt="Aushang Samstag" 
                class="max-h-[500px] w-auto object-contain rounded shadow-sm"
@@ -55,7 +54,7 @@ permalink: /weihnachtsmarkt/index.html
       <!-- Sonntag -->
       <div class="bg-white border border-amber-200 rounded-xl p-3 text-center">
         <span class="font-bold text-xs sm:text-sm text-amber-900 block mb-2">📅 Sonntag (1. Adventswochenende)</span>
-        <div class="bg-slate-50 border border-slate-100 rounded-lg p-2 flex justify-center items-center overflow-hidden min-h-[250px]">
+        <div class="bg-slate-50 border border-slate-100 rounded-lg p-2 flex justify-center items-center overflow-hidden min-h-[220px]">
           <img src="/images/roshop_sonntag.jpg" 
                alt="Aushang Sonntag" 
                class="max-h-[500px] w-auto object-contain rounded shadow-sm"
@@ -100,8 +99,8 @@ permalink: /weihnachtsmarkt/index.html
           <li><b>2,5 l</b> Traubensaft (rot)</li>
           <li><b>1,0 l</b> Orangensaft</li>
           <li><b>10 Beutel</b> Früchtetee / Wintertee (vorab ziehen lassen)</li>
-          <li><b>3–4 Beutel</b> Glühfix / Punschgewürz</li>
-          <li><b>2–3</b> Zimtstangen & Orangenscheiben</li>
+          <li><b>5 Beutel</b> Glühfix / Punschgewürz</li>
+          <li><b>2</b> Zimtstangen</li>
         </ul>
       </div>
 
@@ -161,52 +160,109 @@ permalink: /weihnachtsmarkt/index.html
 <script>
 {% raw %}
   const itemsData = [
-    // Orga
-    { id: 1, cat: "🏛️ Orga & Anträge", isShop: false, title: "Anmeldung Gemeinde", details: "Teilnahmebestätigung vorab sichern", defaultQty: "1x" },
-    { id: 2, cat: "🏛️ Orga & Anträge", isShop: false, title: "Anzeige Gaststättengewerbe", details: "Erforderliche Anträge einreichen", defaultQty: "1x" },
-    { id: 3, cat: "🏛️ Orga & Anträge", isShop: false, title: "Hütte Gemeinde", details: "Aufbauort, Tag & Uhrzeit genau abklären", defaultQty: "1x" },
-    { id: 4, cat: "🏛️ Orga & Anträge", isShop: false, title: "Helfer- & Teiglisten (Reshop)", details: "Aushang kontrollieren & abfotografieren", defaultQty: "1x" },
+    // Absprachen
+    { id: 1, cat: "Absprachen", title: "Anmeldung Teilnahme", details: "An Gemeinde", defaultQty: "" },
+    { id: 2, cat: "Absprachen", title: "Hütte Gemeinde", details: "Aufbau Tag & Zeit", defaultQty: "" },
+    { id: 3, cat: "Absprachen", title: "Listen Roshop Unterstützung", details: "Aufhängen Schwarzes Brett", defaultQty: "" },
     
-    // Strom & Technik
-    { id: 5, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Einkochautomaten / Punschkocher", details: "Vorab auf Funktion prüfen", defaultQty: "2x" },
-    { id: 6, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Waffeleisen", details: "2x SG + 1x KE", defaultQty: "3x" },
-    { id: 7, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Wasserkocher", details: "Für Heißwasser / schnelle Reinigung", defaultQty: "1x" },
-    { id: 8, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Lichterketten", details: "2 Sterne, 4 normale (2 kurz / 2 lang)", defaultQty: "6x" },
-    { id: 9, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Mehrfachsteckdosen", details: "Für hohe Watt-Zahlen geeignet", defaultQty: "3er & 5er" },
-    { id: 10, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Verlängerungskabel", details: "Laufwege beachten (Outdoor)", defaultQty: "3m+" },
+    // Anträge
+    { id: 4, cat: "Anträge", title: "Anzeige Gaststättengewerbe", details: "", defaultQty: "" },
     
-    // Werkzeug
-    { id: 11, cat: "🛠️ Werkzeug & Befestigung", isShop: false, title: "Werkzeugkiste", details: "Hammer, Schraubendreher, Nagelzange, Schere", defaultQty: "1 Kiste" },
-    { id: 12, cat: "🛠️ Werkzeug & Befestigung", isShop: false, title: "Befestigungsmaterial", details: "Kabelbinder, Draht, Heftzwecken, Nägel", defaultQty: "Set" },
-    { id: 13, cat: "🛠️ Werkzeug & Befestigung", isShop: false, title: "Beleuchtung & Sonstiges", details: "Taschenlampe / Kopflampe, Feuerzeug", defaultQty: "2x" },
-
-    // Stand & Deko
-    { id: 14, cat: "✨ Stand-Deko & Atmosphäre", isShop: false, title: "SG Barnstorf Banner", details: "Gut sichtbar aufhängen", defaultQty: "1x" },
-    { id: 15, cat: "✨ Stand-Deko & Atmosphäre", isShop: false, title: "Stehtische mit Tischdecken", details: "Inkl. Servietten & Kerzengläser", defaultQty: "2 Stk" },
-    { id: 16, cat: "✨ Stand-Deko & Atmosphäre", isShop: false, title: "Kerzen in größeren Gläsern", details: "Windgeschützt + Teelichter", defaultQty: "4 Gläser" },
-    { id: 17, cat: "✨ Stand-Deko & Atmosphäre", isShop: false, title: "Bodenschutz / Teppich / Malervlies", details: "Gegen kalte Füße im Stand", defaultQty: "1 Rolle" },
-    { id: 18, cat: "✨ Stand-Deko & Atmosphäre", isShop: false, title: "Deko & Zubehör", details: "Keksteller, Rezeptzettel, Weihnachtsmützen", defaultQty: "Set" },
-
-    // Zutaten Punsch (Einkauf)
-    { id: 19, cat: "☕ Zutaten & Zubehör Punsch", isShop: true, title: "Säfte & Tee", details: "Apfel-, Trauben-, Orangensaft & Wintertee", defaultQty: "2,5l / 10Btl" },
-    { id: 20, cat: "☕ Zutaten & Zubehör Punsch", isShop: true, title: "Gewürze & Zutaten", details: "Glühfix & Zimtstangen", defaultQty: "5 Btl / 2 Stk" },
-    { id: 21, cat: "☕ Zutaten & Zubehör Punsch", isShop: false, title: "Ausschank & Becher", details: "Thermobecher, Punschkelle, Suppenkellen", defaultQty: "Ausreich." },
-
-    // Zutaten Waffeln (Einkauf)
-    { id: 22, cat: "🧇 Zutaten & Zubehör Waffeln", isShop: true, title: "Teig & Zutaten", details: "Waffelteig-Spenden, Öl, Puderzucker, Spekulatius", defaultQty: "Nach Liste" },
-    { id: 23, cat: "🧇 Zutaten & Zubehör Waffeln", isShop: false, title: "Waffel-Utensilien", details: "Teigkellen, Holzgabeln, Ölpinsel, Puderzuckersieb", defaultQty: "Set" },
-
-    // Hygiene & Reinigung (Einkauf)
-    { id: 24, cat: "🧹 Hygiene, Reinigung & Müll", isShop: true, title: "Reinigungsmittel", details: "Spülmittel, Lappen, Handtücher, Küchenrolle", defaultQty: "Set" },
-    { id: 25, cat: "🧹 Hygiene, Reinigung & Müll", isShop: true, title: "Müllentsorgung", details: "Mülltüten, Steckmülleimer", defaultQty: "1 Rolle" },
-    { id: 26, cat: "🧹 Hygiene, Reinigung & Müll", isShop: false, title: "Sauberkeit & Schutz", details: "Spülschüssel, Kehrblech, Einmalhandschuhe", defaultQty: "Set" },
-
+    // Werkzeuge
+    { id: 5, cat: "Werkzeuge", title: "Hammer", details: "", defaultQty: "" },
+    { id: 6, cat: "Werkzeuge", title: "Nagelzange", details: "", defaultQty: "" },
+    { id: 7, cat: "Werkzeuge", title: "Schere", details: "", defaultQty: "" },
+    { id: 8, cat: "Werkzeuge", title: "Schraubendreher", details: "", defaultQty: "" },
+    { id: 9, cat: "Werkzeuge", title: "Seitenschneider", details: "", defaultQty: "" },
+    { id: 10, cat: "Werkzeuge", title: "Taschenlampe", details: "", defaultQty: "" },
+    
+    // Material
+    { id: 11, cat: "Material", title: "Büroklammern", details: "", defaultQty: "" },
+    { id: 12, cat: "Material", title: "Draht", details: "", defaultQty: "" },
+    { id: 13, cat: "Material", title: "Heftzwecken", details: "", defaultQty: "" },
+    { id: 14, cat: "Material", title: "Kabelbinder", details: "", defaultQty: "" },
+    { id: 15, cat: "Material", title: "Kreppband", details: "", defaultQty: "" },
+    { id: 16, cat: "Material", title: "Nägel", details: "", defaultQty: "" },
+    { id: 17, cat: "Material", title: "Schrauben", details: "", defaultQty: "" },
+    
+    // Elektrik
+    { id: 18, cat: "Elektrik", title: "Lichterketten Kurz", details: "", defaultQty: "" },
+    { id: 19, cat: "Elektrik", title: "Lichterketten Lang", details: "", defaultQty: "" },
+    { id: 20, cat: "Elektrik", title: "Lichterketten Sterne", details: "", defaultQty: "" },
+    { id: 21, cat: "Elektrik", title: "Mehrfachsteckdose 3er", details: "", defaultQty: "" },
+    { id: 22, cat: "Elektrik", title: "Mehrfachsteckdose 5er", details: "", defaultQty: "" },
+    { id: 23, cat: "Elektrik", title: "Verlängerungskabel 3m", details: "", defaultQty: "" },
+    
+    // Geräte
+    { id: 24, cat: "Geräte", title: "Einkochautomaten", details: "", defaultQty: "" },
+    { id: 25, cat: "Geräte", title: "Waffeleisen", details: "", defaultQty: "" },
+    { id: 26, cat: "Geräte", title: "Wasserkocher", details: "", defaultQty: "" },
+    
     // Kasse
-    { id: 27, cat: "💶 Kasse, Preise & Finanzen", isShop: false, title: "Kasse & Wechselgeld", details: "Geldtasche / Kasse mit Kleingeld-Reserve", defaultQty: "1 Kasse" },
-    { id: 28, cat: "💶 Kasse, Preise & Finanzen", isShop: false, title: "Preisschilder & Spenden", details: "Preisschilder Waffeln & Punsch (DIN A4), Spendenente", defaultQty: "Set" }
+    { id: 27, cat: "Kasse", title: "Geldtasche", details: "", defaultQty: "" },
+    { id: 28, cat: "Kasse", title: "Kasse", details: "", defaultQty: "" },
+    { id: 29, cat: "Kasse", title: "Preisschilder Punsch", details: "", defaultQty: "" },
+    { id: 30, cat: "Kasse", title: "Preisschilder Waffeln", details: "", defaultQty: "" },
+    { id: 31, cat: "Kasse", title: "Spendenente", details: "", defaultQty: "" },
+    { id: 32, cat: "Kasse", title: "Wechselgeld", details: "", defaultQty: "" },
+    
+    // Standdeko
+    { id: 33, cat: "Standdeko", title: "Bodenschutz/Malervlies", details: "", defaultQty: "" },
+    { id: 34, cat: "Standdeko", title: "Keksteller", details: "", defaultQty: "" },
+    { id: 35, cat: "Standdeko", title: "Kerzengläser", details: "", defaultQty: "" },
+    { id: 36, cat: "Standdeko", title: "SG Banner", details: "", defaultQty: "" },
+    { id: 37, cat: "Standdeko", title: "Tischdecken", details: "", defaultQty: "30 Damen" },
+    
+    // Zutaten Punsch
+    { id: 38, cat: "Zutaten Punsch", title: "Wintertee", details: "", defaultQty: "10 Btl." },
+    { id: 39, cat: "Zutaten Punsch", title: "Glühfix", details: "", defaultQty: "5 Btl." },
+    { id: 40, cat: "Zutaten Punsch", title: "Zimtstangen", details: "", defaultQty: "2" },
+    { id: 41, cat: "Zutaten Punsch", title: "Orangensaft", details: "", defaultQty: "1l" },
+    { id: 42, cat: "Zutaten Punsch", title: "Apfelsaft", details: "", defaultQty: "2,5l" },
+    { id: 43, cat: "Zutaten Punsch", title: "Roter Traubensaft", details: "", defaultQty: "2,5l" },
+    { id: 44, cat: "Zutaten Punsch", title: "Thermobecher", details: "", defaultQty: "" },
+    
+    // Zutaten Waffeln
+    { id: 45, cat: "Zutaten Waffeln", title: "Öl", details: "", defaultQty: "" },
+    { id: 46, cat: "Zutaten Waffeln", title: "Puderzucker", details: "", defaultQty: "" },
+    { id: 47, cat: "Zutaten Waffeln", title: "Servietten", details: "", defaultQty: "" },
+    
+    // Einkäufe
+    { id: 48, cat: "Einkäufe", title: "Geschirrhandtuch", details: "", defaultQty: "" },
+    { id: 49, cat: "Einkäufe", title: "Küchenrolle", details: "", defaultQty: "" },
+    { id: 50, cat: "Einkäufe", title: "Mülltüten", details: "", defaultQty: "" },
+    { id: 51, cat: "Einkäufe", title: "Spekulatius", details: "", defaultQty: "" },
+    { id: 52, cat: "Einkäufe", title: "Spülmittel", details: "", defaultQty: "" },
+    { id: 53, cat: "Einkäufe", title: "Teelichter", details: "", defaultQty: "" },
+    { id: 54, cat: "Einkäufe", title: "Waschlappen", details: "", defaultQty: "" },
+    
+    // Zubehör Punsch
+    { id: 55, cat: "Zubehör Punsch", title: "Esslöffel", details: "", defaultQty: "" },
+    
+    // Zubehör Waffeln
+    { id: 56, cat: "Zubehör Waffeln", title: "Holzgabeln", details: "", defaultQty: "" },
+    { id: 57, cat: "Zubehör Waffeln", title: "Ölinsel inkl. Flasche", details: "", defaultQty: "" },
+    { id: 58, cat: "Zubehör Waffeln", title: "Sieb für Puderzucker", details: "", defaultQty: "" },
+    { id: 59, cat: "Zubehör Waffeln", title: "Spaghettikelle (Punschkelle)", details: "", defaultQty: "" },
+    { id: 60, cat: "Zubehör Waffeln", title: "Suppenkellen", details: "", defaultQty: "" },
+    
+    // Sonstiges
+    { id: 61, cat: "Sonstiges", title: "Edding", details: "", defaultQty: "" },
+    { id: 62, cat: "Sonstiges", title: "Einmalhandschuhe", details: "", defaultQty: "" },
+    { id: 63, cat: "Sonstiges", title: "Erste Hilfe Set", details: "", defaultQty: "" },
+    { id: 64, cat: "Sonstiges", title: "Feuerzeug", details: "", defaultQty: "" },
+    { id: 65, cat: "Sonstiges", title: "Kehrblech & Handfeger", details: "", defaultQty: "" },
+    { id: 66, cat: "Sonstiges", title: "Kugelschreiber", details: "", defaultQty: "" },
+    { id: 67, cat: "Sonstiges", title: "Listen Roshop", details: "", defaultQty: "" },
+    { id: 68, cat: "Sonstiges", title: "Rezeptzettel", details: "", defaultQty: "" },
+    { id: 69, cat: "Sonstiges", title: "Schüssel Lappen Waschen", details: "", defaultQty: "" },
+    { id: 70, cat: "Sonstiges", title: "Steckmülleimer", details: "", defaultQty: "" },
+    { id: 71, cat: "Sonstiges", title: "Stehtische", details: "", defaultQty: "" },
+    { id: 72, cat: "Sonstiges", title: "Taschenmesser", details: "", defaultQty: "" },
+    { id: 73, cat: "Sonstiges", title: "Weihnachtsmützen", details: "", defaultQty: "" }
   ];
 
-  let appState = JSON.parse(localStorage.getItem('sg_wm_state_light_v2')) || {};
+  let appState = JSON.parse(localStorage.getItem('sg_wm_state_light_v3')) || {};
   let currentFilter = 'all';
 
   function initItemState(item) {
@@ -218,7 +274,7 @@ permalink: /weihnachtsmarkt/index.html
   itemsData.forEach(item => initItemState(item));
 
   function saveState() {
-    localStorage.setItem('sg_wm_state_light_v2', JSON.stringify(appState));
+    localStorage.setItem('sg_wm_state_light_v3', JSON.stringify(appState));
     updateProgress();
   }
 
@@ -299,18 +355,21 @@ permalink: /weihnachtsmarkt/index.html
         const tableContainer = document.createElement('div');
         tableContainer.className = 'table-container';
 
+        const isAbsprache = (cat === 'Absprachen');
+        const isEinkauf = (cat.includes('Zutaten') || cat.includes('Einkäufe'));
+
         const table = document.createElement('table');
-        table.className = 'w-full text-left text-xs sm:text-sm text-slate-800 border-collapse min-w-[700px]';
+        table.className = 'w-full text-left text-xs sm:text-sm text-slate-800 border-collapse min-w-[600px]';
 
         table.innerHTML = `
           <thead>
             <tr class="border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider bg-slate-50">
-              <th class="py-2.5 px-3 w-[26%]">Gegenstand / Details</th>
+              <th class="py-2.5 px-3 ${isAbsprache ? 'w-[40%]' : 'w-[28%]'}">${isAbsprache ? 'Details / Absprache' : 'Gegenstand'}</th>
               <th class="py-2.5 px-2 w-[12%]">Menge</th>
-              <th class="py-2.5 px-2 w-[18%]">Status</th>
-              <th class="py-2.5 px-2 w-[20%]">Verteilt an</th>
-              <th class="py-2.5 px-2 w-[12%] text-center">Eingepackt?</th>
-              <th class="py-2.5 px-2 w-[12%] text-center">Box-Nr.</th>
+              <th class="py-2.5 px-2 w-[20%]">Status</th>
+              <th class="py-2.5 px-2 w-[20%]">Verantwortlich / Von</th>
+              ${!isAbsprache ? '<th class="py-2.5 px-2 w-[10%] text-center">Eingepackt?</th>' : ''}
+              ${!isAbsprache ? '<th class="py-2.5 px-2 w-[10%] text-center">Box-Nr.</th>' : ''}
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100"></tbody>
@@ -325,17 +384,17 @@ permalink: /weihnachtsmarkt/index.html
           const tr = document.createElement('tr');
           tr.className = `hover:bg-slate-50 transition ${isDone ? 'opacity-70 bg-emerald-50/40' : ''}`;
 
-          const statusOptions = item.isShop 
+          const statusOptions = isEinkauf 
             ? ['Offen', 'Vorbereitet', 'Verteilt', 'Eingekauft']
             : ['Offen', 'Vorbereitet', 'Verteilt', 'Erledigt'];
 
           tr.innerHTML = `
             <td class="py-3 px-3">
               <div class="font-semibold ${isDone ? 'line-through text-slate-400' : 'text-slate-900'}">${item.title}</div>
-              <div class="text-xs text-slate-500">${item.details}</div>
+              ${item.details ? `<div class="text-xs text-slate-500">${item.details}</div>` : ''}
             </td>
             <td class="py-3 px-2">
-              <input type="text" value="${state.qty || ''}"
+              <input type="text" value="${state.qty || ''}" placeholder="-"
                 onchange="updateItem(${item.id}, 'qty', this.value)"
                 class="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 focus:border-emerald-500 focus:outline-none w-20 shadow-sm" />
             </td>
@@ -350,16 +409,18 @@ permalink: /weihnachtsmarkt/index.html
                 onchange="updateItem(${item.id}, 'assignedTo', this.value)"
                 class="bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none w-full shadow-sm" />
             </td>
-            <td class="py-3 px-2 text-center align-middle">
-              <input type="checkbox" ${state.packed ? 'checked' : ''} 
-                onchange="updateItem(${item.id}, 'packed', this.checked)"
-                class="w-5 h-5 accent-emerald-600 rounded cursor-pointer mx-auto block" />
-            </td>
-            <td class="py-3 px-2 text-center">
-              <input type="number" min="1" max="12" value="${state.boxNum || ''}"
-                onchange="updateItem(${item.id}, 'boxNum', this.value)"
-                class="bg-white border border-slate-300 rounded-lg px-1.5 py-1 text-xs text-slate-900 text-center focus:border-emerald-500 focus:outline-none w-14 mx-auto shadow-sm" />
-            </td>
+            ${!isAbsprache ? `
+              <td class="py-3 px-2 text-center align-middle">
+                <input type="checkbox" ${state.packed ? 'checked' : ''} 
+                  onchange="updateItem(${item.id}, 'packed', this.checked)"
+                  class="w-5 h-5 accent-emerald-600 rounded cursor-pointer mx-auto block" />
+              </td>
+              <td class="py-3 px-2 text-center">
+                <input type="number" min="1" max="12" value="${state.boxNum || ''}"
+                  onchange="updateItem(${item.id}, 'boxNum', this.value)"
+                  class="bg-white border border-slate-300 rounded-lg px-1.5 py-1 text-xs text-slate-900 text-center focus:border-emerald-500 focus:outline-none w-14 mx-auto shadow-sm" />
+              </td>
+            ` : ''}
           `;
           tbody.appendChild(tr);
         });
@@ -400,7 +461,7 @@ permalink: /weihnachtsmarkt/index.html
           li.innerHTML = `
             <div>
               <span class="font-medium text-slate-800">${item.title}</span>
-              <span class="text-slate-400 text-xs">(${state.qty || '1x'})</span>
+              ${state.qty ? `<span class="text-slate-400 text-xs">(${state.qty})</span>` : ''}
             </div>
             <span class="text-xs px-2 py-0.5 rounded border ${getStatusClass(state.status)}">${state.status}</span>
           `;
