@@ -1,134 +1,14 @@
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzm4pz4LD6vwqwkDQXqIypYRVx9m49oliAevZPGolZYm_JKFmWN526TLE-2Z3fGP8tJ/exec";
 
-// Passwörter & Detaillierte Rechte-Konfiguration
-let roleConfig = {
-  helfer: {
-    pwd: "SGHelfer",
-    canCash: true,
-    canPacked: true,
-    canQty: false,
-    canStock: false,
-    canBox: true,
-    canStatus: false,
-    canPrices: false,
-    canLog: false
-  },
-  orga: {
-    pwd: "SGOrga",
-    canCash: true,
-    canPacked: true,
-    canQty: true,
-    canStock: true,
-    canBox: true,
-    canStatus: true,
-    canPrices: true,
-    canLog: true
-  },
-  admin: {
-    pwd: "SGJugend26"
-    // Admin darf automatisch immer ALLES
-  }
-};
-
-const DEFAULT_ITEMS = [
-  {"id": 1, "cat": "🏛️ Orga", "title": "Anmeldung Teilnahme", "details": "An Gemeinde"},
-  {"id": 2, "cat": "🏛️ Orga", "title": "Hütte Gemeinde", "details": "Aufbau Tag & Zeit abklären"},
-  {"id": 3, "cat": "🏛️ Orga", "title": "Listen Roshop Unterstützung", "details": "Aufhängen Schwarzes Brett"},
-  {"id": 4, "cat": "🏛️ Orga", "title": "Anzeige Gaststättengewerbe", "details": "Gemeinde / Amt"},
-  {"id": 5, "cat": "🛠️ Werkzeuge", "title": "Hammer"},
-  {"id": 6, "cat": "🛠️ Werkzeuge", "title": "Nagelzange"},
-  {"id": 7, "cat": "🛠️ Werkzeuge", "title": "Schere"},
-  {"id": 8, "cat": "🛠️ Werkzeuge", "title": "Schraubendreher"},
-  {"id": 9, "cat": "🛠️ Werkzeuge", "title": "Seitenschneider"},
-  {"id": 10, "cat": "🛠️ Werkzeuge", "title": "Taschenlampe"},
-  {"id": 11, "cat": "📦 Material & Befestigung", "title": "Büroklammern"},
-  {"id": 12, "cat": "📦 Material & Befestigung", "title": "Draht"},
-  {"id": 13, "cat": "📦 Material & Befestigung", "title": "Heftzwecken"},
-  {"id": 14, "cat": "📦 Material & Befestigung", "title": "Kabelbinder"},
-  {"id": 15, "cat": "📦 Material & Befestigung", "title": "Kreppband"},
-  {"id": 16, "cat": "📦 Material & Befestigung", "title": "Nägel"},
-  {"id": 74, "cat": "📦 Material & Befestigung", "title": "Panzertape"},
-  {"id": 17, "cat": "📦 Material & Befestigung", "title": "Schrauben"},
-  {"id": 18, "cat": "⚡ Elektrik & Licht", "title": "Lichterketten Kurz", "defaultStockQty": "2", "defaultWatts": 10, "isPower": true},
-  {"id": 19, "cat": "⚡ Elektrik & Licht", "title": "Lichterketten Lang", "defaultStockQty": "2", "defaultWatts": 20, "isPower": true},
-  {"id": 20, "cat": "⚡ Elektrik & Licht", "title": "Lichterketten Sterne", "defaultStockQty": "2", "defaultWatts": 15, "isPower": true},
-  {"id": 76, "cat": "⚡ Elektrik & Licht", "title": "Lichtschlauch", "defaultStockQty": "1", "defaultWatts": 25, "isPower": true},
-  {"id": 21, "cat": "⚡ Elektrik & Licht", "title": "Mehrfachstecker 3er", "details": "3-fach Verteilungsstecker", "isPower": true, "defaultStockQty": "2", "defaultWatts": 3680, "isCable": true},
-  {"id": 22, "cat": "⚡ Elektrik & Licht", "title": "Mehrfachstecker 5er", "details": "5-fach Verteilungsstecker", "isPower": true, "defaultStockQty": "2", "defaultWatts": 3680, "isCable": true},
-  {"id": 23, "cat": "⚡ Elektrik & Licht", "title": "Verlängerungskabel 3m", "details": "Stromkabel Verlängerung", "isPower": true, "defaultStockQty": "2", "defaultWatts": 3680, "isCable": true},
-  {"id": 24, "cat": "🔌 Geräte", "title": "Einkochautomat", "defaultQty": "2", "defaultStockQty": "2", "defaultWatts": 1800, "isPower": true},
-  {"id": 25, "cat": "🔌 Geräte", "title": "Waffeleisen", "defaultQty": "3", "defaultStockQty": "3", "defaultWatts": 1200, "isPower": true},
-  {"id": 26, "cat": "🔌 Geräte", "title": "Wasserkocher", "defaultQty": "1", "defaultWatts": 2200, "defaultStockQty": "1", "isPower": true},
-  {"id": 27, "cat": "💶 Kasse & Finanzen", "title": "Geldtasche"},
-  {"id": 28, "cat": "💶 Kasse & Finanzen", "title": "Kasse"},
-  {"id": 29, "cat": "💶 Kasse & Finanzen", "title": "Preisschilder Punsch"},
-  {"id": 30, "cat": "💶 Kasse & Finanzen", "title": "Preisschilder Waffeln"},
-  {"id": 31, "cat": "💶 Kasse & Finanzen", "title": "Spendenente"},
-  {"id": 32, "cat": "💶 Kasse & Finanzen", "title": "Wechselgeld"},
-  {"id": 33, "cat": "✨ Standdeko", "title": "Bodenschutz/Malervlies"},
-  {"id": 34, "cat": "✨ Standdeko", "title": "Keksteller"},
-  {"id": 35, "cat": "✨ Standdeko", "title": "Kerzengläser"},
-  {"id": 36, "cat": "✨ Standdeko", "title": "SG Banner"},
-  {"id": 37, "cat": "✨ Standdeko", "title": "Tischdecken"},
-  {"id": 38, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Wintertee", "details": "Verschiedene Sorten", "defaultQty": "10 Btl.", "defaultPackageSize": "20 Btl.", "isShop": true, "isIngredient": true},
-  {"id": 39, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Glühfix", "defaultQty": "5 Btl.", "defaultPackageSize": "10 Btl.", "isShop": true, "isIngredient": true},
-  {"id": 40, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Zimtstangen", "defaultQty": "2 Stk", "defaultPackageSize": "5 Stk", "isShop": true, "isIngredient": true},
-  {"id": 41, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Orangensaft", "defaultQty": "1,0 l", "defaultPackageSize": "1 l", "isShop": true, "isIngredient": true},
-  {"id": 42, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Apfelsaft", "defaultQty": "2,5 l", "defaultPackageSize": "1 l", "isShop": true, "isIngredient": true},
-  {"id": 43, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Roter Traubensaft", "defaultQty": "2,5 l", "defaultPackageSize": "1 l", "isShop": true, "isIngredient": true},
-  {"id": 45, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Öl (Waffeln)", "defaultPackageSize": "1 Flasche", "isShop": true, "isIngredient": true},
-  {"id": 46, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Puderzucker", "defaultPackageSize": "250 g", "isShop": true, "isIngredient": true},
-  {"id": 47, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Servietten", "defaultPackageSize": "100 Stk", "isShop": true, "isIngredient": true},
-  {"id": 48, "cat": "🛒 Einkäufe & Verbrauchsmaterial", "title": "Geschirrhandtuch", "isShop": true},
-  {"id": 49, "cat": "🛒 Einkäufe & Verbrauchsmaterial", "title": "Küchenrolle", "isShop": true},
-  {"id": 50, "cat": "🛒 Einkäufe & Verbrauchsmaterial", "title": "Mülltüten", "isShop": true},
-  {"id": 51, "cat": "🛒 Einkäufe & Verbrauchsmaterial", "title": "Spekulatius", "isShop": true},
-  {"id": 52, "cat": "🛒 Einkäufe & Verbrauchsmaterial", "title": "Spülmittel", "isShop": true},
-  {"id": 53, "cat": "🛒 Einkäufe & Verbrauchsmaterial", "title": "Teelichter", "isShop": true},
-  {"id": 54, "cat": "🛒 Einkäufe & Verbrauchsmaterial", "title": "Waschlappen", "isShop": true},
-  {"id": 55, "cat": "🥣 Stand-Equipment & Zubehör", "title": "Esslöffel"},
-  {"id": 56, "cat": "🥣 Stand-Equipment & Zubehör", "title": "Holzgabeln"},
-  {"id": 57, "cat": "🥣 Stand-Equipment & Zubehör", "title": "Ölpinsel inkl. Flasche"},
-  {"id": 58, "cat": "🥣 Stand-Equipment & Zubehör", "title": "Sieb für Puderzucker"},
-  {"id": 59, "cat": "🥣 Stand-Equipment & Zubehör", "title": "Spaghettikelle (Punschkelle)"},
-  {"id": 60, "cat": "🥣 Stand-Equipment & Zubehör", "title": "Suppenkellen"},
-  {"id": 75, "cat": "📋 Sonstiges", "title": "Musikbox / Bluetooth-Lautsprecher"},
-  {"id": 61, "cat": "📋 Sonstiges", "title": "Eddings"},
-  {"id": 63, "cat": "📋 Sonstiges", "title": "Erste Hilfe Set"},
-  {"id": 64, "cat": "📋 Sonstiges", "title": "Feuerzeug"},
-  {"id": 65, "cat": "📋 Sonstiges", "title": "Kehrblech & Handfeger"},
-  {"id": 66, "cat": "📋 Sonstiges", "title": "Kugelschreiber"},
-  {"id": 67, "cat": "📋 Sonstiges", "title": "Listen Roshop"},
-  {"id": 68, "cat": "📋 Sonstiges", "title": "Rezeptzettel"},
-  {"id": 69, "cat": "📋 Sonstiges", "title": "Schüssel Lappen Waschen"},
-  {"id": 70, "cat": "📋 Sonstiges", "title": "Steckmülleimer"},
-  {"id": 71, "cat": "📋 Sonstiges", "title": "Stehtische"},
-  {"id": 72, "cat": "📋 Sonstiges", "title": "Taschenmesser"},
-  {"id": 73, "cat": "📋 Sonstiges", "title": "Weihnachtsmützen"}
-];
-
-let itemsData = [];
+let roleConfig = window.DEFAULT_ROLE_CONFIG || {};
+let itemsData = window.DEFAULT_ITEMS || [];
 let appState = {};
 let currentFilter = 'all';
 let currentRole = 'betrachter'; 
-let currentView = 'main'; // 'main', 'recipes', 'sales', 'admin'
+let currentView = 'main';
 let activityLog = [];
 
 async function initApp() {
-  try {
-    const res = await fetch('/assets/weihnachtsmarkt/weihnachtsmarkt-data.json');
-    if (res.ok) itemsData = await res.json();
-    else throw new Error();
-  } catch (e) {
-    try {
-      const resAlt = await fetch('/assets/weihnachtsmarkt-data.json');
-      if (resAlt.ok) itemsData = await resAlt.json();
-      else itemsData = [...DEFAULT_ITEMS];
-    } catch(err) {
-      itemsData = [...DEFAULT_ITEMS];
-    }
-  }
-
   loadFromLocal();
   itemsData.forEach(item => initItemState(item));
 
@@ -144,11 +24,10 @@ async function initApp() {
 }
 
 function loadFromLocal() {
-  const local = JSON.parse(localStorage.getItem('sg_wm_state_v25')) || {};
+  const local = JSON.parse(localStorage.getItem('sg_wm_state_v26')) || {};
   appState = local;
   if (appState.customItemsList && appState.customItemsList.length > 0) itemsData = appState.customItemsList;
   if (appState.roleConfig) roleConfig = appState.roleConfig;
-  if (appState.globalNotice) showNoticeBanner(appState.globalNotice);
   if (appState.activityLog) activityLog = appState.activityLog;
 }
 
@@ -166,10 +45,9 @@ async function loadStateFromSheet() {
       appState = cloudData;
       if (appState.customItemsList && appState.customItemsList.length > 0) itemsData = appState.customItemsList;
       if (appState.roleConfig) roleConfig = appState.roleConfig;
-      if (appState.globalNotice) showNoticeBanner(appState.globalNotice);
       if (appState.activityLog) activityLog = appState.activityLog;
       
-      localStorage.setItem('sg_wm_state_v25', JSON.stringify(appState));
+      localStorage.setItem('sg_wm_state_v26', JSON.stringify(appState));
       setSyncStatus(true);
       
       itemsData.forEach(item => initItemState(item));
@@ -204,7 +82,7 @@ async function saveState() {
   appState.customItemsList = itemsData;
   appState.roleConfig = roleConfig;
   appState.activityLog = activityLog;
-  localStorage.setItem('sg_wm_state_v25', JSON.stringify(appState));
+  localStorage.setItem('sg_wm_state_v26', JSON.stringify(appState));
   updateProgress();
 
   if (SCRIPT_URL) {
@@ -225,7 +103,7 @@ function toggleNavMenu() {
 
 function switchView(viewName) {
   if (viewName === 'admin' && currentRole !== 'admin') {
-    const pwdPrompt = prompt("Für das Admin Control Center ist das Admin-Passwort erforderlich:");
+    const pwdPrompt = prompt("Admin-Passwort für Control Center erforderlich:");
     if (pwdPrompt === roleConfig.admin.pwd) {
       currentRole = 'admin';
       applyRolePermissions();
@@ -238,7 +116,6 @@ function switchView(viewName) {
   currentView = viewName;
   document.getElementById('navDropdown')?.classList.add('hidden');
 
-  // Bereiche schalten
   document.getElementById('viewChecklist')?.classList.toggle('hidden', viewName !== 'main');
   document.getElementById('viewRecipes')?.classList.toggle('hidden', viewName !== 'recipes');
   document.getElementById('viewSales')?.classList.toggle('hidden', viewName !== 'sales');
@@ -261,7 +138,7 @@ function selectRoleWithPassword(role) {
     currentRole = 'betrachter';
     closeRoleModal();
     applyRolePermissions();
-    logActivity("Rolle: Betrachter");
+    logActivity("Rolle gewechselt zu: Betrachter");
     return;
   }
 
@@ -323,7 +200,7 @@ function saveRoleSettings() {
 
   saveState();
   applyRolePermissions();
-  alert("Rollen-Rechte & Passwörter erfolgreich im System gespeichert!");
+  alert("Berechtigungen & Passwörter erfolgreich gespeichert!");
 }
 
 function addSale(type, amount) {
@@ -381,10 +258,15 @@ function parseVal(valStr) {
 }
 
 function getStatusClass(s) {
-  if (s === 'Vorbereitet') return 'status-vorbereitet';
-  if (s === 'Verteilt') return 'status-verteilt';
-  if (s === 'Erledigt' || s === 'Eingekauft') return 'status-erledigt';
-  return 'status-offen';
+  if (s === 'Vorbereitet') return 'bg-amber-100 text-amber-800 border-amber-300';
+  if (s === 'Verteilt') return 'bg-sky-100 text-sky-800 border-sky-300';
+  if (s === 'Erledigt' || s === 'Eingekauft') return 'bg-emerald-100 text-emerald-800 border-emerald-300';
+  return 'bg-slate-100 text-slate-700 border-slate-300';
+}
+
+function filterCategory(cat) {
+  currentFilter = cat;
+  renderChecklist();
 }
 
 function renderChecklist() {
@@ -406,9 +288,9 @@ function renderChecklist() {
       return item.cat === cat && matchesSearch && matchesFilter;
     });
 
-    if (catItems.length > 0 || isAdmin) {
+    if (catItems.length > 0) {
       const catWrapper = document.createElement('div');
-      catWrapper.className = 'bg-white border border-slate-200/80 rounded-3xl p-4 sm:p-6 shadow-sm print:border-none print:shadow-none print:p-0 print:mb-6';
+      catWrapper.className = 'bg-white border border-slate-200/80 rounded-3xl p-4 sm:p-6 shadow-sm mb-6';
       
       const isOrga = (cat === '🏛️ Orga'), isIngredientCat = (cat === '🍎 Zutaten (Waffeln & Punsch)');
 
@@ -425,7 +307,7 @@ function renderChecklist() {
         const statusOpts = item.isShop ? ['Offen', 'Vorbereitet', 'Verteilt', 'Eingekauft'] : ['Offen', 'Vorbereitet', 'Verteilt', 'Erledigt'];
 
         return `
-          <tr class="hover:bg-slate-50 transition ${isDone ? 'opacity-70 bg-emerald-50/30' : ''}">
+          <tr class="hover:bg-slate-50/80 transition ${isDone ? 'opacity-75 bg-emerald-50/20' : ''}">
             <td class="py-3 px-3">
               <div class="font-semibold ${isDone ? 'line-through text-slate-400' : 'text-slate-900'}">${item.title}</div>
               ${item.details ? `<div class="text-xs text-slate-500">${item.details}</div>` : ''}
@@ -456,33 +338,25 @@ function renderChecklist() {
                 <input type="number" min="1" max="12" value="${state.boxNum || ''}" ${disBox} onchange="updateItem(${item.id}, 'boxNum', this.value)" class="bg-white border border-slate-300 rounded-lg px-1 py-1 text-xs text-center w-12 mx-auto" />
               </td>
             ` : ''}
-            ${isAdmin ? `
-              <td class="py-3 px-2 text-center whitespace-nowrap print:hidden">
-                <button onclick="openEditItemModal(${item.id})" class="text-slate-500 hover:text-emerald-700 font-bold px-1 text-sm">✏️</button>
-                <button onclick="deleteItem(${item.id})" class="text-slate-500 hover:text-red-700 font-bold px-1 text-sm">🗑️</button>
-              </td>
-            ` : ''}
           </tr>
         `;
       }).join('');
 
       catWrapper.innerHTML = `
-        <h2 class="text-lg font-bold text-emerald-950 mb-4 flex items-center justify-between border-b border-slate-100 pb-2">
+        <h2 class="text-base font-bold text-slate-900 mb-3 flex items-center justify-between border-b border-slate-100 pb-2">
           <span>${cat}</span>
-          ${isAdmin ? `<div class="flex gap-2 print:hidden"><button onclick="renameCategory('${cat}')" class="text-xs px-2 py-1 bg-slate-100 rounded-lg">✏️ Umbenennen</button><button onclick="deleteCategory('${cat}')" class="text-xs px-2 py-1 bg-red-50 text-red-600 rounded-lg">🗑️ Löschen</button></div>` : ''}
         </h2>
-        <div class="table-container">
+        <div class="overflow-x-auto">
           <table class="w-full text-left text-xs sm:text-sm text-slate-800 border-collapse min-w-[650px]">
             <thead>
               <tr class="border-b border-slate-200 text-slate-500 text-xs uppercase bg-slate-50/50">
                 <th class="py-2.5 px-3">${isOrga ? 'Aufgabe / Details' : 'Gegenstand'}</th>
                 ${!isOrga ? '<th class="py-2.5 px-2 w-[12%]">Benötigt</th>' : ''}
                 ${!isOrga && !isIngredientCat ? '<th class="py-2.5 px-2 w-[10%] text-amber-900 font-bold">Auf Lager</th>' : ''}
-                <th class="py-2.5 px-2 w-[16%]">Status</th>
-                <th class="py-2.5 px-2 w-[16%]">${isOrga ? 'Ansprechpartner' : 'Verantwortlich'}</th>
-                ${!isOrga ? '<th class="py-2.5 px-2 w-[7%] text-center">Gepackt?</th>' : ''}
+                <th class="py-2.5 px-2 w-[18%]">Status</th>
+                <th class="py-2.5 px-2 w-[18%]">${isOrga ? 'Ansprechpartner' : 'Verantwortlich'}</th>
+                ${!isOrga ? '<th class="py-2.5 px-2 w-[8%] text-center">Gepackt</th>' : ''}
                 ${!isOrga ? '<th class="py-2.5 px-2 w-[8%] text-center">Box</th>' : ''}
-                ${isAdmin ? '<th class="py-2.5 px-2 w-[8%] text-center print:hidden">Admin</th>' : ''}
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">${rowsHtml}</tbody>
@@ -497,7 +371,8 @@ function renderChecklist() {
 function updateItem(id, field, value) {
   if (!appState[id]) appState[id] = {};
   appState[id][field] = value;
-  saveState(); renderChecklist();
+  saveState(); 
+  renderChecklist();
 }
 
 function updateProgress() {
@@ -520,7 +395,7 @@ function updateRecipeScaling() {
       <li><b>${(1.0 * factor).toFixed(1).replace('.0','')} l</b> Orangensaft</li>
       <li><b>${(2.5 * factor).toFixed(1).replace('.0','')} l</b> Apfelsaft</li>
       <li><b>${(2.5 * factor).toFixed(1).replace('.0','')} l</b> Roter Traubensaft</li>
-      <li><b>${Math.ceil(2 * factor)} Stk.</b> Zimtstangen <i>(nicht kaufen)</i></li>
+      <li><b>${Math.ceil(2 * factor)} Stk.</b> Zimtstangen</li>
       <li><b>${Math.ceil(5 * factor)} Btl.</b> Glühfix</li>
     `;
   }
@@ -547,7 +422,6 @@ function renderActivityLog() {
 function toggleRoleModal() { document.getElementById('roleModal')?.classList.remove('hidden'); }
 function closeRoleModal() { document.getElementById('roleModal')?.classList.add('hidden'); }
 
-// Init beim Start
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initApp);
 } else {
