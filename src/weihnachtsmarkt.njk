@@ -452,15 +452,22 @@ permalink: /weihnachtsmarkt/index.html
     { id: 73, cat: "📋 Sonstiges", title: "Weihnachtsmützen", details: "", isShop: false }
   ];
 
-    // 🔗 Füge hier deine Google Script Web-App-URL ein:
+  // 🔗 Google Script Web-App-URL:
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzm4pz4LD6vwqwkDQXqIypYRVx9m49oliAevZPGolZYm_JKFmWN526TLE-2Z3fGP8tJ/exec";
   let appState = {};
   let currentFilter = 'all';
 
   async function loadStateFromSheet() {
     try {
-      const res = await fetch(SCRIPT_URL);
-      appState = await res.json();
+      // Timestamp verhindert Caching auf iPad/Handy
+      const res = await fetch(SCRIPT_URL + '?t=' + new Date().getTime());
+      const cloudData = await res.json();
+      if (cloudData && Object.keys(cloudData).length > 0) {
+        appState = cloudData;
+        localStorage.setItem('sg_wm_state_v15', JSON.stringify(appState));
+      } else {
+        appState = JSON.parse(localStorage.getItem('sg_wm_state_v15')) || {};
+      }
     } catch(e) {
       console.error("Fehler beim Laden aus Google Sheets:", e);
       appState = JSON.parse(localStorage.getItem('sg_wm_state_v15')) || {};
@@ -510,21 +517,24 @@ permalink: /weihnachtsmarkt/index.html
     appState.instanceWatts = {};
   }
 
-  itemsData.forEach(item => initItemState(item));
-
-  function saveState() {
-    // Weiterhin lokal speichern als Backup
+  async function saveState() {
+    // 1. Lokales Backup sofort aktualisieren
     localStorage.setItem('sg_wm_state_v15', JSON.stringify(appState));
     updateProgress();
 
-    // Live an das Google Sheet senden
-    if (SCRIPT_URL && !SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbzm4pz4LD6vwqwkDQXqIypYRVx9m49oliAevZPGolZYm_JKFmWN526TLE-2Z3fGP8tJ/exec")) {
-      fetch(SCRIPT_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(appState)
-      });
+    // 2. Direkt an Google Sheets senden
+    if (SCRIPT_URL) {
+      try {
+        await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+          },
+          body: JSON.stringify(appState)
+        });
+      } catch (err) {
+        console.error("Fehler beim Speichern in Google Sheets:", err);
+      }
     }
   }
 
@@ -1118,10 +1128,10 @@ permalink: /weihnachtsmarkt/index.html
     document.getElementById('boxModal').classList.add('hidden');
   }
 
-    function initChecklist() {
+  function initChecklist() {
     const input = document.getElementById('searchInput');
     if (input) input.addEventListener('input', renderChecklist);
-    loadStateFromSheet(); // Lädt jetzt live die Daten aus Google Sheets!
+    loadStateFromSheet();
   }
 
   if (document.readyState === 'loading') {
