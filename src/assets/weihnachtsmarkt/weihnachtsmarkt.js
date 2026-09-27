@@ -1,12 +1,56 @@
+/**
+ * SG Barnstorf Weihnachtsmarkt - Core JavaScript
+ * Kombiniert: Cloud-Sync (Google Sheet), Rollen- & Berechtigungssystem, 
+ * Inventar, Einkaufsliste, Boxen-Übersicht, Rezept-Rechner, Stromverbrauch & Kasse.
+ */
+
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzm4pz4LD6vwqwkDQXqIypYRVx9m49oliAevZPGolZYm_JKFmWN526TLE-2Z3fGP8tJ/exec";
 
-let roleConfig = window.DEFAULT_ROLE_CONFIG || {};
+// App-Status & Standardwerte
+let roleConfig = window.DEFAULT_ROLE_CONFIG || {
+  helfer: {
+    pwd: 'helfer2026',
+    canCash: true,
+    canPacked: true,
+    canQty: false,
+    canStock: false,
+    canBox: true,
+    canStatus: true,
+    canPrices: false,
+    canLog: true
+  },
+  orga: {
+    pwd: 'orga2026',
+    canCash: true,
+    canPacked: true,
+    canQty: true,
+    canStock: true,
+    canBox: true,
+    canStatus: true,
+    canPrices: true,
+    canLog: true
+  },
+  admin: {
+    pwd: 'admin2026'
+  }
+};
+
 let itemsData = window.DEFAULT_ITEMS || [];
 let appState = {};
 let currentFilter = 'all';
-let currentRole = 'betrachter'; 
+let currentRole = 'betrachter'; // betrachter, helfer, orga, admin
 let currentView = 'main';
 let activityLog = [];
+
+/* ==========================================================================
+   INITIALISIERUNG & CLOUD-SYNC
+   ========================================================================== */
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
 
 async function initApp() {
   loadFromLocal();
@@ -15,6 +59,7 @@ async function initApp() {
   switchView('main');
   updateProgress();
   updateRecipeScaling();
+  calculatePowerLoad();
   calculateSalesStats();
   applyRolePermissions();
   renderActivityLog();
@@ -52,6 +97,7 @@ async function loadStateFromSheet() {
       
       itemsData.forEach(item => initItemState(item));
       renderChecklist();
+      renderBoxOverview();
       updateProgress();
       calculateSalesStats();
     }
@@ -83,7 +129,9 @@ async function saveState() {
   appState.roleConfig = roleConfig;
   appState.activityLog = activityLog;
   localStorage.setItem('sg_wm_state_v26', JSON.stringify(appState));
+  
   updateProgress();
+  renderBoxOverview();
 
   if (SCRIPT_URL) {
     try {
@@ -93,9 +141,15 @@ async function saveState() {
         body: JSON.stringify(appState)
       });
       setSyncStatus(true);
-    } catch (err) { setSyncStatus(false); }
+    } catch (err) { 
+      setSyncStatus(false); 
+    }
   }
 }
+
+/* ==========================================================================
+   NAVIGATION & VIEW SWITCHING
+   ========================================================================== */
 
 function toggleNavMenu() {
   document.getElementById('navDropdown')?.classList.toggle('hidden');
@@ -107,6 +161,7 @@ function switchView(viewName) {
     if (pwdPrompt === roleConfig.admin.pwd) {
       currentRole = 'admin';
       applyRolePermissions();
+      logActivity("Admin-Bereich betreten");
     } else {
       if (pwdPrompt !== null) alert("Falsches Admin-Passwort!");
       return;
@@ -116,29 +171,54 @@ function switchView(viewName) {
   currentView = viewName;
   document.getElementById('navDropdown')?.classList.add('hidden');
 
-  document.getElementById('viewChecklist')?.classList.toggle('hidden', viewName !== 'main');
-  document.getElementById('viewRecipes')?.classList.toggle('hidden', viewName !== 'recipes');
-  document.getElementById('viewSales')?.classList.toggle('hidden', viewName !== 'sales');
-  document.getElementById('viewAdmin')?.classList.toggle('hidden', viewName !== 'admin');
+  // Ausblenden aller Views
+  document.getElementById('viewChecklist')?.classList.add('hidden');
+  document.getElementById('viewBoxes')?.classList.add('hidden');
+  document.getElementById('viewRecipes')?.classList.add('hidden');
+  document.getElementById('viewPower')?.classList.add('hidden');
+  document.getElementById('viewSales')?.classList.add('hidden');
+  document.getElementById('viewAdmin')?.classList.add('hidden');
 
+  // Einblenden des Ziel-Views
+  if (viewName === 'main') document.getElementById('viewChecklist')?.classList.remove('hidden');
+  if (viewName === 'boxes') document.getElementById('viewBoxes')?.classList.remove('hidden');
+  if (viewName === 'recipes') document.getElementById('viewRecipes')?.classList.remove('hidden');
+  if (viewName === 'power') document.getElementById('viewPower')?.classList.remove('hidden');
+  if (viewName === 'sales') document.getElementById('viewSales')?.classList.remove('hidden');
+  if (viewName === 'admin') document.getElementById('viewAdmin')?.classList.remove('hidden');
+
+  // Dynamischer Titel im Header
   const titleEl = document.getElementById('currentViewTitle');
   if (titleEl) {
-    if (viewName === 'main') titleEl.innerText = "📋 Hauptliste & Inventar";
-    if (viewName === 'recipes') titleEl.innerText = "☕ Rezepte & Zutaten";
-    if (viewName === 'sales') titleEl.innerText = "🏬 Standkasse & Verkauf";
-    if (viewName === 'admin') titleEl.innerText = "👑 Admin Control Center";
+    const titles = {
+      main: '📋 Hauptliste & Inventar',
+      boxes: '🏷️ Lagerbestand & Boxen',
+      recipes: '☕ Rezepte & Zutaten',
+      power: '⚡ Stromverbrauch-Rechner',
+      sales: '💰 Standkasse & Verkauf',
+      admin: '👑 Admin Control Center'
+    };
+    titleEl.innerText = titles[viewName] || '📋 Hauptliste & Inventar';
   }
 
   if (viewName === 'main') renderChecklist();
+  if (viewName === 'boxes') renderBoxOverview();
   if (viewName === 'admin') openRoleSettingsModal();
 }
+
+/* ==========================================================================
+   BENUTZERROLLEN & RECHTEVERWALTUNG
+   ========================================================================== */
+
+function toggleRoleModal() { document.getElementById('roleModal')?.classList.remove('hidden'); }
+function closeRoleModal() { document.getElementById('roleModal')?.classList.add('hidden'); }
 
 function selectRoleWithPassword(role) {
   if (role === 'betrachter') {
     currentRole = 'betrachter';
     closeRoleModal();
     applyRolePermissions();
-    logActivity("Rolle gewechselt zu: Betrachter");
+    logActivity("Rolle gewechselt zu: BETRACHTER");
     return;
   }
 
@@ -158,10 +238,19 @@ function applyRolePermissions() {
   const isAdmin = currentRole === 'admin';
 
   if (badge) {
-    if (isAdmin) badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-400 text-slate-950 shadow-sm', badge.innerHTML = '🔓 Rolle: ADMIN';
-    else if (currentRole === 'orga') badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-500/30 text-sky-100 border border-sky-300/40 shadow-sm', badge.innerHTML = '📋 Rolle: ORGA';
-    else if (currentRole === 'helfer') badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/30 text-emerald-100 border border-emerald-300/40 shadow-sm', badge.innerHTML = '🤝 Rolle: HELFER';
-    else badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-white/10 text-emerald-100 border border-white/20 shadow-sm', badge.innerHTML = '👁️ Rolle: BETRACHTER';
+    if (isAdmin) {
+      badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-400 text-slate-950 shadow-sm';
+      badge.innerHTML = '🔓 Rolle: ADMIN';
+    } else if (currentRole === 'orga') {
+      badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-500/30 text-sky-100 border border-sky-300/40 shadow-sm';
+      badge.innerHTML = '📋 Rolle: ORGA';
+    } else if (currentRole === 'helfer') {
+      badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/30 text-emerald-100 border border-emerald-300/40 shadow-sm';
+      badge.innerHTML = '🤝 Rolle: HELFER';
+    } else {
+      badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-white/10 text-emerald-100 border border-white/20 shadow-sm';
+      badge.innerHTML = '👁️ Rolle: BETRACHTER';
+    }
   }
 
   const perms = roleConfig[currentRole] || {};
@@ -174,9 +263,9 @@ function applyRolePermissions() {
 function openRoleSettingsModal() {
   ['helfer', 'orga', 'admin'].forEach(r => {
     const pEl = document.getElementById(`pwd_${r}`);
-    if (pEl) pEl.value = roleConfig[r].pwd || '';
+    if (pEl && roleConfig[r]) pEl.value = roleConfig[r].pwd || '';
     
-    if (r !== 'admin') {
+    if (r !== 'admin' && roleConfig[r]) {
       ['cash', 'packed', 'qty', 'stock', 'box', 'status', 'prices', 'log'].forEach(p => {
         const checkEl = document.getElementById(`perm_${r}_${p}`);
         if (checkEl) checkEl.checked = !!roleConfig[r][`can${p.charAt(0).toUpperCase() + p.slice(1)}`];
@@ -188,9 +277,9 @@ function openRoleSettingsModal() {
 function saveRoleSettings() {
   ['helfer', 'orga', 'admin'].forEach(r => {
     const pEl = document.getElementById(`pwd_${r}`);
-    if (pEl) roleConfig[r].pwd = pEl.value.trim() || roleConfig[r].pwd;
+    if (pEl && roleConfig[r]) roleConfig[r].pwd = pEl.value.trim() || roleConfig[r].pwd;
     
-    if (r !== 'admin') {
+    if (r !== 'admin' && roleConfig[r]) {
       ['cash', 'packed', 'qty', 'stock', 'box', 'status', 'prices', 'log'].forEach(p => {
         const checkEl = document.getElementById(`perm_${r}_${p}`);
         if (checkEl) roleConfig[r][`can${p.charAt(0).toUpperCase() + p.slice(1)}`] = checkEl.checked;
@@ -203,66 +292,9 @@ function saveRoleSettings() {
   alert("Berechtigungen & Passwörter erfolgreich gespeichert!");
 }
 
-function addSale(type, amount) {
-  const perms = roleConfig[currentRole] || {};
-  if (!perms.canCash && currentRole !== 'admin') {
-    alert("Keine Berechtigung für die Standkasse.");
-    return;
-  }
-  
-  const el = document.getElementById(type === 'punsch' ? 'soldPunsch' : 'soldWaffles');
-  if (!el) return;
-  
-  let currentVal = parseInt(el.value || 0);
-  currentVal += amount;
-  if (currentVal < 0) currentVal = 0;
-  
-  el.value = currentVal;
-  calculateSalesStats();
-  logActivity(`Kasse: ${amount > 0 ? '+' : ''}${amount} ${type.toUpperCase()}`);
-}
-
-function calculateSalesStats() {
-  const sPunsch = parseInt(document.getElementById('soldPunsch')?.value || 0);
-  const pPunsch = 2.00;
-  const sWaffles = parseInt(document.getElementById('soldWaffles')?.value || 0);
-  const pWaffles = 2.00;
-  const fee = parseFloat(document.getElementById('standFee')?.value || 0.00);
-  const otherRev = parseFloat(document.getElementById('otherRevenue')?.value || 0.00);
-
-  let shoppingCost = 0;
-  itemsData.filter(i => i.isShop).forEach(item => {
-    const state = appState[item.id];
-    if (state) {
-      const needNum = parseVal(state.qty), packNum = parseVal(state.packageSize);
-      let calcPackages = (needNum > 0 && packNum > 0) ? Math.ceil(needNum / packNum) : Math.ceil(needNum || 1);
-      shoppingCost += calcPackages * parseVal(state.price);
-    }
-  });
-
-  const revenue = (sPunsch * pPunsch) + (sWaffles * pWaffles) + otherRev;
-  const totalExpenses = shoppingCost + fee;
-
-  if (document.getElementById('statRevenue')) document.getElementById('statRevenue').innerText = revenue.toFixed(2).replace('.', ',') + ' €';
-  if (document.getElementById('statExpenses')) document.getElementById('statExpenses').innerText = totalExpenses.toFixed(2).replace('.', ',') + ' €';
-  if (document.getElementById('statProfit')) document.getElementById('statProfit').innerText = (revenue - totalExpenses).toFixed(2).replace('.', ',') + ' €';
-
-  appState.salesStats = { soldPunsch: sPunsch, pricePunsch: pPunsch, soldWaffles: sWaffles, priceWaffles: pWaffles, standFee: fee, otherRevenue: otherRev };
-  saveState();
-}
-
-function parseVal(valStr) {
-  if (!valStr) return 0;
-  const match = valStr.toString().replace(',', '.').match(/([0-9.]+)/);
-  return match ? parseFloat(match[1]) : 0;
-}
-
-function getStatusClass(s) {
-  if (s === 'Vorbereitet') return 'bg-amber-100 text-amber-800 border-amber-300';
-  if (s === 'Verteilt') return 'bg-sky-100 text-sky-800 border-sky-300';
-  if (s === 'Erledigt' || s === 'Eingekauft') return 'bg-emerald-100 text-emerald-800 border-emerald-300';
-  return 'bg-slate-100 text-slate-700 border-slate-300';
-}
+/* ==========================================================================
+   INVENTAR & CHECKLISTE
+   ========================================================================== */
 
 function filterCategory(cat) {
   currentFilter = cat;
@@ -383,6 +415,59 @@ function updateProgress() {
   if (document.getElementById('progressText')) document.getElementById('progressText').innerText = percent + '% erledigt (' + count + '/' + total + ')';
 }
 
+function getStatusClass(s) {
+  if (s === 'Vorbereitet') return 'bg-amber-100 text-amber-800 border-amber-300';
+  if (s === 'Verteilt') return 'bg-sky-100 text-sky-800 border-sky-300';
+  if (s === 'Erledigt' || s === 'Eingekauft') return 'bg-emerald-100 text-emerald-800 border-emerald-300';
+  return 'bg-slate-100 text-slate-700 border-slate-300';
+}
+
+/* ==========================================================================
+   BOXEN & LAGER-ÜBERSICHT
+   ========================================================================== */
+
+function renderBoxOverview() {
+  const container = document.getElementById('boxOverviewGrid');
+  if (!container) return;
+
+  container.innerHTML = '';
+  const boxes = {};
+
+  itemsData.forEach(item => {
+    const st = appState[item.id];
+    if (st && st.boxNum) {
+      if (!boxes[st.boxNum]) boxes[st.boxNum] = [];
+      boxes[st.boxNum].push(item.title);
+    }
+  });
+
+  const sortedBoxKeys = Object.keys(boxes).sort((a, b) => parseInt(a) - parseInt(b));
+
+  if (sortedBoxKeys.length === 0) {
+    container.innerHTML = `<div class="text-slate-400 italic text-sm text-center col-span-full py-4">Bisher wurden keinen Gegenständen Boxen zugewiesen.</div>`;
+    return;
+  }
+
+  sortedBoxKeys.forEach(boxNum => {
+    const boxCard = document.createElement('div');
+    boxCard.className = 'bg-white border border-slate-200 p-4 rounded-2xl shadow-sm space-y-2';
+    boxCard.innerHTML = `
+      <div class="font-bold text-amber-600 text-sm flex items-center justify-between border-b border-slate-100 pb-2">
+        <span>📦 Box / Lagerort #${boxNum}</span>
+        <span class="bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full text-xs font-semibold">${boxes[boxNum].length} Artikel</span>
+      </div>
+      <ul class="text-xs text-slate-700 space-y-1 list-disc pl-4">
+        ${boxes[boxNum].map(title => `<li>${title}</li>`).join('')}
+      </ul>
+    `;
+    container.appendChild(boxCard);
+  });
+}
+
+/* ==========================================================================
+   REZEPTE & STROMRECHNER
+   ========================================================================== */
+
 function updateRecipeScaling() {
   const punschLiters = parseFloat(document.getElementById('punschLiters')?.value || 8);
   if (document.getElementById('punschLitersLabel')) document.getElementById('punschLitersLabel').innerText = `${punschLiters} Liter`;
@@ -401,6 +486,78 @@ function updateRecipeScaling() {
   }
 }
 
+function calculatePowerLoad() {
+  const waffel = parseInt(document.getElementById('pwrWaffel')?.value || 0) * 2000;
+  const punsch = parseInt(document.getElementById('pwrPunsch')?.value || 0) * 1800;
+  const licht = parseInt(document.getElementById('pwrLicht')?.value || 0) * 150;
+
+  const total = waffel + punsch + licht;
+  const totalEl = document.getElementById('totalWatts');
+  if (totalEl) totalEl.textContent = `${total} Watt`;
+}
+
+/* ==========================================================================
+   KASSE & VERKAUFSSTATISTIKEN
+   ========================================================================== */
+
+function addSale(type, amount) {
+  const perms = roleConfig[currentRole] || {};
+  if (!perms.canCash && currentRole !== 'admin') {
+    alert("Keine Berechtigung für die Standkasse.");
+    return;
+  }
+  
+  const el = document.getElementById(type === 'punsch' ? 'soldPunsch' : 'soldWaffles');
+  if (!el) return;
+  
+  let currentVal = parseInt(el.value || 0);
+  currentVal += amount;
+  if (currentVal < 0) currentVal = 0;
+  
+  el.value = currentVal;
+  calculateSalesStats();
+  logActivity(`Kasse: ${amount > 0 ? '+' : ''}${amount} ${type.toUpperCase()}`);
+}
+
+function calculateSalesStats() {
+  const sPunsch = parseInt(document.getElementById('soldPunsch')?.value || 0);
+  const pPunsch = 2.00;
+  const sWaffles = parseInt(document.getElementById('soldWaffles')?.value || 0);
+  const pWaffles = 2.00;
+  const fee = parseFloat(document.getElementById('standFee')?.value || 0.00);
+  const otherRev = parseFloat(document.getElementById('otherRevenue')?.value || 0.00);
+
+  let shoppingCost = 0;
+  itemsData.filter(i => i.isShop).forEach(item => {
+    const state = appState[item.id];
+    if (state) {
+      const needNum = parseVal(state.qty), packNum = parseVal(state.packageSize);
+      let calcPackages = (needNum > 0 && packNum > 0) ? Math.ceil(needNum / packNum) : Math.ceil(needNum || 1);
+      shoppingCost += calcPackages * parseVal(state.price);
+    }
+  });
+
+  const revenue = (sPunsch * pPunsch) + (sWaffles * pWaffles) + otherRev;
+  const totalExpenses = shoppingCost + fee;
+
+  if (document.getElementById('statRevenue')) document.getElementById('statRevenue').innerText = revenue.toFixed(2).replace('.', ',') + ' €';
+  if (document.getElementById('statExpenses')) document.getElementById('statExpenses').innerText = totalExpenses.toFixed(2).replace('.', ',') + ' €';
+  if (document.getElementById('statProfit')) document.getElementById('statProfit').innerText = (revenue - totalExpenses).toFixed(2).replace('.', ',') + ' €';
+
+  appState.salesStats = { soldPunsch: sPunsch, pricePunsch: pPunsch, soldWaffles: sWaffles, priceWaffles: pWaffles, standFee: fee, otherRevenue: otherRev };
+  saveState();
+}
+
+function parseVal(valStr) {
+  if (!valStr) return 0;
+  const match = valStr.toString().replace(',', '.').match(/([0-9.]+)/);
+  return match ? parseFloat(match[1]) : 0;
+}
+
+/* ==========================================================================
+   LOG-SYSTEM
+   ========================================================================== */
+
 function logActivity(text) {
   const perms = roleConfig[currentRole] || {};
   if (!perms.canLog && currentRole !== 'admin') return;
@@ -417,13 +574,4 @@ function renderActivityLog() {
   list.innerHTML = activityLog.length === 0 
     ? `<li class="italic text-slate-400">Keine Aktivitäten aufgezeichnet.</li>`
     : activityLog.map(log => `<li class="border-b border-slate-700/50 pb-1 font-mono">${log}</li>`).join('');
-}
-
-function toggleRoleModal() { document.getElementById('roleModal')?.classList.remove('hidden'); }
-function closeRoleModal() { document.getElementById('roleModal')?.classList.add('hidden'); }
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initApp);
-} else {
-  initApp();
 }
