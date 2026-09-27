@@ -141,7 +141,7 @@ permalink: /weihnachtsmarkt/index.html
     </div>
     
     <div class="p-4 sm:p-6 overflow-y-auto space-y-4">
-      <p class="text-xs sm:text-sm text-slate-600">Trage hier Supermärkte und geschätzte/gezahlte Preise ein. Hak erledigte Dinge direkt ab!</p>
+      <p class="text-xs sm:text-sm text-slate-600">Wähle hier die Geschäfte aus und trage geschätzte oder gezahlte Preise ein. Hak erledigte Einkäufe einfach ab!</p>
       
       <div class="table-container">
         <table class="w-full text-left text-xs sm:text-sm text-slate-800 border-collapse min-w-[650px]">
@@ -150,8 +150,8 @@ permalink: /weihnachtsmarkt/index.html
               <th class="py-2.5 px-3 w-[8%] text-center">Gekauft</th>
               <th class="py-2.5 px-3 w-[30%]">Artikel</th>
               <th class="py-2.5 px-2 w-[15%]">Menge</th>
-              <th class="py-2.5 px-2 w-[22%]">Laden / Geschäft</th>
-              <th class="py-2.5 px-2 w-[25%] text-right">Preis (€)</th>
+              <th class="py-2.5 px-2 w-[25%]">Laden / Geschäft</th>
+              <th class="py-2.5 px-2 w-[22%] text-right">Preis (€)</th>
             </tr>
           </thead>
           <tbody id="shoppingTableBody" class="divide-y divide-slate-100"></tbody>
@@ -170,16 +170,23 @@ permalink: /weihnachtsmarkt/index.html
   </div>
 </div>
 
-<!-- Modal für Boxen-Übersicht -->
+<!-- Modal für Boxen-Übersicht (Optimiertes Grid-Design) -->
 <div id="boxModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-  <div class="bg-white border border-slate-200 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl">
-    <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
-      <h2 class="text-lg font-bold text-emerald-900 flex items-center gap-2">📦 Inhaltsübersicht der Boxen (1–12)</h2>
+  <div class="bg-white border border-slate-200 rounded-2xl max-w-4xl w-full max-h-[85vh] flex flex-col shadow-2xl">
+    <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-emerald-50/60 rounded-t-2xl">
+      <div>
+        <h2 class="text-lg font-bold text-emerald-900 flex items-center gap-2">📦 Inhaltsübersicht & Packstatus der Boxen (1–12)</h2>
+        <p class="text-xs text-slate-500 mt-0.5">Übersicht aller Gegenstände und Pack-Fortschritt pro Kiste</p>
+      </div>
       <button onclick="closeBoxOverview()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1">✕</button>
     </div>
-    <div class="p-4 sm:p-6 overflow-y-auto space-y-6" id="boxModalContent"></div>
+    
+    <div class="p-4 sm:p-6 overflow-y-auto">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="boxModalContent"></div>
+    </div>
+
     <div class="p-4 border-t border-slate-100 text-right bg-slate-50 rounded-b-2xl">
-      <button onclick="closeBoxOverview()" class="px-4 py-2 bg-emerald-700 text-white font-bold rounded-xl text-xs sm:text-sm hover:bg-emerald-800 transition">Schließen</button>
+      <button onclick="closeBoxOverview()" class="px-5 py-2 bg-emerald-700 text-white font-bold rounded-xl text-xs sm:text-sm hover:bg-emerald-800 transition">Schließen</button>
     </div>
   </div>
 </div>
@@ -201,8 +208,22 @@ permalink: /weihnachtsmarkt/index.html
 
 <script>
 {% raw %}
+  // Alphabetisch sortierte Liste der Läden
+  const storeOptions = [
+    "Aldi",
+    "E-Center",
+    "Famila",
+    "Kaufland",
+    "Kruber",
+    "Lidl",
+    "Netto",
+    "Online",
+    "Penny",
+    "Rewe"
+  ];
+
   const itemsData = [
-    // 🏛️ Orga (Absprachen & Anträge zusammengefasst)
+    // 🏛️ Orga
     { id: 1, cat: "🏛️ Orga", title: "Anmeldung Teilnahme", details: "An Gemeinde", isShop: false },
     { id: 2, cat: "🏛️ Orga", title: "Hütte Gemeinde", details: "Aufbau Tag & Zeit abklären", isShop: false },
     { id: 3, cat: "🏛️ Orga", title: "Listen Roshop Unterstützung", details: "Aufhängen Schwarzes Brett", isShop: false },
@@ -253,53 +274,52 @@ permalink: /weihnachtsmarkt/index.html
     { id: 36, cat: "✨ Standdeko", title: "SG Banner", details: "", isShop: false },
     { id: 37, cat: "✨ Standdeko", title: "Tischdecken", details: "", defaultQty: "", isShop: false },
     
-    // 🍎 Zutaten (Waffeln & Punsch für 8L-Rezeptur)
-    { id: 38, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Wintertee", details: "Verschiedene Sorten (für 8L)", defaultQty: "10 Btl.", isShop: true },
-    { id: 39, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Glühfix", details: "Für 8L Punsch", defaultQty: "5 Btl.", isShop: true },
-    { id: 40, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Zimtstangen", details: "Für 8L Punsch", defaultQty: "2 Stk", isShop: true },
-    { id: 41, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Orangensaft", details: "Für 8L Punsch", defaultQty: "1 l", isShop: true },
-    { id: 42, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Apfelsaft", details: "Für 8L Punsch", defaultQty: "2,5 l", isShop: true },
-    { id: 43, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Roter Traubensaft", details: "Für 8L Punsch", defaultQty: "2,5 l", isShop: true },
-    { id: 44, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Wasser (Kochend)", details: "Für 8L Punsch", defaultQty: "2 l", isShop: false },
-    { id: 45, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Thermobecher", details: "", isShop: true },
-    { id: 46, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Öl (Waffeln)", details: "", isShop: true },
-    { id: 47, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Puderzucker", details: "", isShop: true },
-    { id: 48, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Servietten", details: "", isShop: true },
+    // 🍎 Zutaten (Waffeln & Punsch)
+    { id: 38, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Wintertee", details: "Verschiedene Sorten", defaultQty: "10 Btl.", isShop: true },
+    { id: 39, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Glühfix", details: "", defaultQty: "5 Btl.", isShop: true },
+    { id: 40, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Zimtstangen", details: "", defaultQty: "2 Stk", isShop: true },
+    { id: 41, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Orangensaft", details: "", defaultQty: "1 l", isShop: true },
+    { id: 42, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Apfelsaft", details: "", defaultQty: "2,5 l", isShop: true },
+    { id: 43, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Roter Traubensaft", details: "", defaultQty: "2,5 l", isShop: true },
+    { id: 44, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Thermobecher", details: "", isShop: true },
+    { id: 45, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Öl (Waffeln)", details: "", isShop: true },
+    { id: 46, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Puderzucker", details: "", isShop: true },
+    { id: 47, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Servietten", details: "", isShop: true },
     
     // 🛒 Einkäufe (Sonstige Verbrauchsmaterialien)
-    { id: 49, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Geschirrhandtuch", details: "", isShop: true },
-    { id: 50, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Küchenrolle", details: "", isShop: true },
-    { id: 51, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Mülltüten", details: "", isShop: true },
-    { id: 52, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Spekulatius", details: "", isShop: true },
-    { id: 53, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Spülmittel", details: "", isShop: true },
-    { id: 54, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Teelichter", details: "", isShop: true },
-    { id: 55, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Waschlappen", details: "", isShop: true },
+    { id: 48, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Geschirrhandtuch", details: "", isShop: true },
+    { id: 49, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Küchenrolle", details: "", isShop: true },
+    { id: 50, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Mülltüten", details: "", isShop: true },
+    { id: 51, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Spekulatius", details: "", isShop: true },
+    { id: 52, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Spülmittel", details: "", isShop: true },
+    { id: 53, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Teelichter", details: "", isShop: true },
+    { id: 54, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Waschlappen", details: "", isShop: true },
     
-    // 🥣 Stand-Equipment & Zubehör (Punsch & Waffeln)
-    { id: 56, cat: "🥣 Stand-Equipment & Zubehör", title: "Esslöffel", details: "", isShop: false },
-    { id: 57, cat: "🥣 Stand-Equipment & Zubehör", title: "Holzgabeln", details: "", isShop: false },
-    { id: 58, cat: "🥣 Stand-Equipment & Zubehör", title: "Ölpinsel inkl. Flasche", details: "", isShop: false },
-    { id: 59, cat: "🥣 Stand-Equipment & Zubehör", title: "Sieb für Puderzucker", details: "", isShop: false },
-    { id: 60, cat: "🥣 Stand-Equipment & Zubehör", title: "Spaghettikelle (Punschkelle)", details: "", isShop: false },
-    { id: 61, cat: "🥣 Stand-Equipment & Zubehör", title: "Suppenkellen", details: "", isShop: false },
+    // 🥣 Stand-Equipment & Zubehör
+    { id: 55, cat: "🥣 Stand-Equipment & Zubehör", title: "Esslöffel", details: "", isShop: false },
+    { id: 56, cat: "🥣 Stand-Equipment & Zubehör", title: "Holzgabeln", details: "", isShop: false },
+    { id: 57, cat: "🥣 Stand-Equipment & Zubehör", title: "Ölpinsel inkl. Flasche", details: "", isShop: false },
+    { id: 58, cat: "🥣 Stand-Equipment & Zubehör", title: "Sieb für Puderzucker", details: "", isShop: false },
+    { id: 59, cat: "🥣 Stand-Equipment & Zubehör", title: "Spaghettikelle (Punschkelle)", details: "", isShop: false },
+    { id: 60, cat: "🥣 Stand-Equipment & Zubehör", title: "Suppenkellen", details: "", isShop: false },
     
     // Sonstiges
-    { id: 62, cat: "📋 Sonstiges", title: "Edding", details: "", isShop: false },
-    { id: 63, cat: "📋 Sonstiges", title: "Einmalhandschuhe", details: "", isShop: false },
-    { id: 64, cat: "📋 Sonstiges", title: "Erste Hilfe Set", details: "", isShop: false },
-    { id: 65, cat: "📋 Sonstiges", title: "Feuerzeug", details: "", isShop: false },
-    { id: 66, cat: "📋 Sonstiges", title: "Kehrblech & Handfeger", details: "", isShop: false },
-    { id: 67, cat: "📋 Sonstiges", title: "Kugelschreiber", details: "", isShop: false },
-    { id: 68, cat: "📋 Sonstiges", title: "Listen Roshop", details: "", isShop: false },
-    { id: 69, cat: "📋 Sonstiges", title: "Rezeptzettel", details: "", isShop: false },
-    { id: 70, cat: "📋 Sonstiges", title: "Schüssel Lappen Waschen", details: "", isShop: false },
-    { id: 71, cat: "📋 Sonstiges", title: "Steckmülleimer", details: "", isShop: false },
-    { id: 72, cat: "📋 Sonstiges", title: "Stehtische", details: "", isShop: false },
-    { id: 73, cat: "📋 Sonstiges", title: "Taschenmesser", details: "", isShop: false },
-    { id: 74, cat: "📋 Sonstiges", title: "Weihnachtsmützen", details: "", isShop: false }
+    { id: 61, cat: "📋 Sonstiges", title: "Edding", details: "", isShop: false },
+    { id: 62, cat: "📋 Sonstiges", title: "Einmalhandschuhe", details: "", isShop: false },
+    { id: 63, cat: "📋 Sonstiges", title: "Erste Hilfe Set", details: "", isShop: false },
+    { id: 64, cat: "📋 Sonstiges", title: "Feuerzeug", details: "", isShop: false },
+    { id: 65, cat: "📋 Sonstiges", title: "Kehrblech & Handfeger", details: "", isShop: false },
+    { id: 66, cat: "📋 Sonstiges", title: "Kugelschreiber", details: "", isShop: false },
+    { id: 67, cat: "📋 Sonstiges", title: "Listen Roshop", details: "", isShop: false },
+    { id: 68, cat: "📋 Sonstiges", title: "Rezeptzettel", details: "", isShop: false },
+    { id: 69, cat: "📋 Sonstiges", title: "Schüssel Lappen Waschen", details: "", isShop: false },
+    { id: 70, cat: "📋 Sonstiges", title: "Steckmülleimer", details: "", isShop: false },
+    { id: 71, cat: "📋 Sonstiges", title: "Stehtische", details: "", isShop: false },
+    { id: 72, cat: "📋 Sonstiges", title: "Taschenmesser", details: "", isShop: false },
+    { id: 73, cat: "📋 Sonstiges", title: "Weihnachtsmützen", details: "", isShop: false }
   ];
 
-  let appState = JSON.parse(localStorage.getItem('sg_wm_state_v5')) || {};
+  let appState = JSON.parse(localStorage.getItem('sg_wm_state_v6')) || {};
   let currentFilter = 'all';
 
   function initItemState(item) {
@@ -319,7 +339,7 @@ permalink: /weihnachtsmarkt/index.html
   itemsData.forEach(item => initItemState(item));
 
   function saveState() {
-    localStorage.setItem('sg_wm_state_v5', JSON.stringify(appState));
+    localStorage.setItem('sg_wm_state_v6', JSON.stringify(appState));
     updateProgress();
   }
 
@@ -368,6 +388,7 @@ permalink: /weihnachtsmarkt/index.html
     if (!container) return;
     container.innerHTML = '';
 
+    // Beibehaltung der ursprünglichen Kategorien-Reihenfolge
     const categories = [...new Set(itemsData.map(item => item.cat))];
 
     categories.forEach(cat => {
@@ -494,6 +515,11 @@ permalink: /weihnachtsmarkt/index.html
       const tr = document.createElement('tr');
       tr.className = `hover:bg-slate-50 transition ${isBought ? 'bg-emerald-50/50' : ''}`;
 
+      const storeOptionsHtml = `
+        <option value="">-- Geschäft wählen --</option>
+        ${storeOptions.map(store => `<option value="${store}" ${state.store === store ? 'selected' : ''}>${store}</option>`).join('')}
+      `;
+
       tr.innerHTML = `
         <td class="py-2.5 px-3 text-center align-middle">
           <input type="checkbox" ${isBought ? 'checked' : ''} 
@@ -506,13 +532,14 @@ permalink: /weihnachtsmarkt/index.html
         </td>
         <td class="py-2.5 px-2">
           <input type="text" value="${state.qty || ''}" placeholder="Menge..."
-            onchange="updateItem(${item.id}, 'qty', this.value); renderShoppingModal();"
+            onchange="updateItem(${item.id}, 'qty', this.value)"
             class="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 w-24 shadow-sm" />
         </td>
         <td class="py-2.5 px-2">
-          <input type="text" value="${state.store || ''}" placeholder="z. B. Aldi, Edeka"
-            onchange="updateItem(${item.id}, 'store', this.value)"
-            class="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 w-full shadow-sm" />
+          <select onchange="updateItem(${item.id}, 'store', this.value)"
+            class="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 w-full shadow-sm focus:border-amber-500 focus:outline-none">
+            ${storeOptionsHtml}
+          </select>
         </td>
         <td class="py-2.5 px-2 text-right">
           <input type="number" step="0.01" value="${state.price || ''}" placeholder="0.00"
@@ -550,7 +577,7 @@ permalink: /weihnachtsmarkt/index.html
     document.getElementById('shoppingModal').classList.add('hidden');
   }
 
-  // --- Boxen-Modal Logik ---
+  // --- Boxen-Modal Logik mit verfeinertem Pack-Fortschritt ---
   function openBoxOverview() {
     const modal = document.getElementById('boxModal');
     const content = document.getElementById('boxModalContent');
@@ -562,35 +589,57 @@ permalink: /weihnachtsmarkt/index.html
         return state && parseInt(state.boxNum) === b;
       });
 
-      const boxDiv = document.createElement('div');
-      boxDiv.className = 'border border-slate-200 rounded-xl p-4 bg-slate-50';
+      const packedCount = boxItems.filter(item => appState[item.id] && appState[item.id].packed).length;
+      const totalCount = boxItems.length;
+      const isComplete = totalCount > 0 && packedCount === totalCount;
 
-      const boxHeader = document.createElement('h3');
-      boxHeader.className = 'font-bold text-emerald-900 text-base mb-2 flex justify-between items-center';
-      boxHeader.innerHTML = `<span>📦 Box ${b}</span> <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-semibold">${boxItems.length} Gegenstände</span>`;
+      const boxDiv = document.createElement('div');
+      boxDiv.className = `border rounded-xl p-4 transition shadow-sm ${totalCount === 0 ? 'bg-slate-50/60 border-slate-200 opacity-60' : isComplete ? 'bg-emerald-50/60 border-emerald-300' : 'bg-white border-slate-200'}`;
+
+      const boxHeader = document.createElement('div');
+      boxHeader.className = 'border-b border-slate-100 pb-2 mb-3';
+      boxHeader.innerHTML = `
+        <div class="flex justify-between items-center mb-1">
+          <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2">
+            <span>📦 Box ${b}</span>
+            ${isComplete ? '<span class="text-xs bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold">✓ Fertig gepackt</span>' : ''}
+          </h3>
+          <span class="text-xs font-semibold ${totalCount === 0 ? 'text-slate-400' : 'text-slate-600'}">
+            ${packedCount}/${totalCount} gepackt
+          </span>
+        </div>
+        ${totalCount > 0 ? `
+          <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+            <div class="bg-emerald-500 h-full transition-all duration-300" style="width: ${Math.round((packedCount/totalCount)*100)}%"></div>
+          </div>
+        ` : ''}
+      `;
       boxDiv.appendChild(boxHeader);
 
-      if (boxItems.length > 0) {
+      if (totalCount > 0) {
         const ul = document.createElement('ul');
-        ul.className = 'divide-y divide-slate-200 text-xs sm:text-sm';
+        ul.className = 'divide-y divide-slate-100 text-xs sm:text-sm';
         boxItems.forEach(item => {
           const state = appState[item.id];
           const li = document.createElement('li');
-          li.className = 'py-1.5 flex justify-between items-center';
+          li.className = 'py-2 flex justify-between items-center gap-2';
           li.innerHTML = `
-            <div>
-              <span class="font-medium text-slate-800">${item.title}</span>
-              ${state.qty ? `<span class="text-slate-400 text-xs">(${state.qty})</span>` : ''}
+            <div class="flex items-center gap-2 overflow-hidden">
+              <span class="${state.packed ? 'text-emerald-600 font-bold' : 'text-slate-300'}">
+                ${state.packed ? '☑' : '☐'}
+              </span>
+              <span class="font-medium text-slate-800 truncate ${state.packed ? 'line-through text-slate-400' : ''}">${item.title}</span>
+              ${state.qty ? `<span class="text-slate-400 text-xs shrink-0">(${state.qty})</span>` : ''}
             </div>
-            <span class="text-xs px-2 py-0.5 rounded border ${getStatusClass(state.status)}">${state.status}</span>
+            <span class="text-[11px] px-2 py-0.5 rounded border shrink-0 font-medium ${getStatusClass(state.status)}">${state.status}</span>
           `;
           ul.appendChild(li);
         });
         boxDiv.appendChild(ul);
       } else {
         const emptyMsg = document.createElement('p');
-        emptyMsg.className = 'text-xs text-slate-400 italic';
-        emptyMsg.innerText = 'Bisher keine Gegenstände dieser Box zugewiesen.';
+        emptyMsg.className = 'text-xs text-slate-400 italic py-2';
+        emptyMsg.innerText = 'Noch keine Gegenstände dieser Box zugewiesen.';
         boxDiv.appendChild(emptyMsg);
       }
 
