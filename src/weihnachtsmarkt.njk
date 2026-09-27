@@ -3,7 +3,7 @@ layout: base.njk
 title: SG Barnstorf Weihnachtsmarkt
 ---
 
-<!-- CDN Embed für Stylesheet -->
+<!-- CDN Embed für Tailwind Stylesheet -->
 <script src="https://cdn.tailwindcss.com"></script>
 
 <div class="min-h-screen bg-slate-950 text-slate-100 font-sans pb-12">
@@ -28,6 +28,7 @@ title: SG Barnstorf Weihnachtsmarkt
           👁️ Rolle: BETRACHTER
         </button>
 
+        <!-- Main Navigation Menu -->
         <div class="relative">
           <button onclick="toggleNavMenu()" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-200 transition">
             ☰
@@ -83,33 +84,40 @@ title: SG Barnstorf Weihnachtsmarkt
           </div>
         </div>
 
-        <!-- Status Filter mit starkem Farbkontrast -->
+        <!-- Status Filter -->
         <div class="flex gap-2 overflow-x-auto pb-1 text-xs font-medium">
           <button onclick="filterCategory('all')" id="btnFilterAll" class="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">Alle</button>
-          <button onclick="filterCategory('Offen')" id="btnFilterOffen" class="px-3.5 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40">🔴 Offen</button>
+          <button onclick="filterCategory('Offen')" id="btnFilterOffen" class="px-3.5 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 font-bold">🔴 Offen</button>
           <button onclick="filterCategory('Vorbereitet')" id="btnFilterVorbereitet" class="px-3.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40">🟡 Vorbereitet</button>
           <button onclick="filterCategory('Verteilt')" id="btnFilterVerteilt" class="px-3.5 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40">🔵 Verteilt</button>
           <button onclick="filterCategory('Erledigt')" id="btnFilterErledigt" class="px-3.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40">🟢 Erledigt</button>
         </div>
       </div>
 
-      <!-- Item Formular -->
-      <div id="addItemCard" class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
-        <h3 class="font-bold text-xs uppercase tracking-wider text-amber-400">➕ Neues Item anlegen</h3>
+      <!-- ITEM ANLEGEN CARD (Nur sichtbar, wenn per Einzelberechtigung freigeschaltet) -->
+      <div id="addItemCard" class="hidden bg-slate-900/80 border border-amber-500/40 rounded-2xl p-5 shadow-xl space-y-3">
+        <h3 class="font-bold text-xs uppercase tracking-wider text-amber-400 flex items-center gap-2">
+          <span>➕</span> Neues Item anlegen
+        </h3>
         <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 text-xs">
           <input type="text" id="newItemName" placeholder="Gegenstand..." class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 placeholder-slate-500" />
+          
           <select id="newItemCategory" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100">
             <option value="Orga">🏛️ Orga</option>
-            <option value="Stand">🎪 Stand & Aufbauten</option>
+            <option value="Werkzeuge">🛠️ Werkzeuge</option>
+            <option value="Stand & Aufbauten">🎪 Stand & Aufbauten</option>
             <option value="Küche & Verpflegung">☕ Küche & Verpflegung</option>
             <option value="Technik & Licht">🔌 Technik & Licht</option>
+            <option value="Deko & Beschilderung">🎀 Deko & Beschilderung</option>
           </select>
+          
           <input type="text" id="newItemOwner" placeholder="Verantwortlicher..." class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 placeholder-slate-500" />
           <button onclick="addNewItem()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl py-2 px-4 transition shadow-md">Hinzufügen</button>
         </div>
       </div>
 
-      <div id="checklist" class="space-y-3"></div>
+      <!-- Inventar-Karten Container -->
+      <div id="checklist" class="space-y-4"></div>
     </section>
 
     <!-- VIEW 2: EINKAUFSLISTE -->
@@ -117,7 +125,7 @@ title: SG Barnstorf Weihnachtsmarkt
       <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
         <div class="flex justify-between items-center">
           <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">🛒 Einkaufsliste Weihnachtsmarkt</h2>
-          <button onclick="addShoppingItem()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition shadow">+ Artikel</button>
+          <button id="btnAddShoppingItem" onclick="addShoppingItem()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition shadow">+ Artikel</button>
         </div>
         <div id="shoppingListContainer" class="space-y-2"></div>
       </div>
@@ -236,7 +244,7 @@ title: SG Barnstorf Weihnachtsmarkt
       </div>
     </section>
 
-    <!-- VIEW 7: ADMIN CONTROL CENTER -->
+    <!-- VIEW 7: ADMIN CONTROL CENTER (EXAKTE EINZELBERECHTIGUNGEN) -->
     <section id="viewAdmin" class="hidden space-y-6">
       <div class="bg-slate-900/90 border border-amber-500/30 rounded-2xl p-6 shadow-2xl space-y-6">
         
@@ -245,7 +253,7 @@ title: SG Barnstorf Weihnachtsmarkt
             <h2 class="text-base font-bold text-amber-400 flex items-center gap-2">
               <span>👑</span> Admin Control Center
             </h2>
-            <p class="text-xs text-slate-400">Verwaltung von Preisen, Berechtigungen & Passwörtern.</p>
+            <p class="text-xs text-slate-400">Feingliederige Einzelberechtigungen & Passwörter.</p>
           </div>
           <button onclick="saveRoleSettings()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs transition shadow-md">
             💾 Speichern
@@ -254,7 +262,7 @@ title: SG Barnstorf Weihnachtsmarkt
 
         <!-- Preis-Editor -->
         <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
-          <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider">💶 Preise & Kosten</h3>
+          <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider">💶 Live Preise & Fixkosten</h3>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
             <div>
               <label class="text-slate-400 block mb-1">Preis Punsch (€)</label>
@@ -271,48 +279,66 @@ title: SG Barnstorf Weihnachtsmarkt
           </div>
         </div>
 
-        <!-- Berechtigungen -->
-        <div class="space-y-4 text-xs">
+        <!-- Einzelberechtigungen Matrizen -->
+        <div class="space-y-6 text-xs">
           
-          <!-- Helfer -->
-          <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
-            <div class="flex items-center justify-between">
-              <span class="font-bold text-emerald-400">🤝 Helfer Rolle</span>
+          <!-- HELFER ROLLE EINZELBERECHTIGUNGEN -->
+          <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <span class="font-bold text-emerald-400 text-sm">🤝 Helfer Rolle</span>
               <div class="flex items-center gap-2">
-                <span class="text-slate-400">PW:</span>
-                <input type="text" id="pwd_helfer" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 font-mono w-28" />
+                <span class="text-slate-400">Passwort:</span>
+                <input type="text" id="pwd_helfer" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-100 font-mono w-32" />
               </div>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-300 pt-2 border-t border-slate-800">
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_cash" class="accent-amber-500 rounded" /> 🛒 Kasse (+1/-1)</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_override_sales" class="accent-amber-500 rounded" /> 🔢 Gesamtzahlen anpassen</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_add_item" class="accent-amber-500 rounded" /> ➕ Items anlegen</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_status" class="accent-amber-500 rounded" /> 🔄 Status ändern</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_box" class="accent-amber-500 rounded" /> 🏷️ Boxen verwalten</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_shopping" class="accent-amber-500 rounded" /> 🛒 Einkaufsliste abhaken</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_power" class="accent-amber-500 rounded" /> ⚡ Strom-Rechner nutzen</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_prices" class="accent-amber-500 rounded" /> 💶 Finanzen einsehen</label>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-slate-300">
+              <div class="font-semibold text-slate-400 col-span-full mt-1">📦 Inventar & Gegenstände</div>
+              <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 p-2 rounded-lg border border-slate-800"><input type="checkbox" id="perm_helfer_add_item" class="accent-amber-500 rounded" /> ➕ Neue Items anlegen</label>
+              <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 p-2 rounded-lg border border-slate-800"><input type="checkbox" id="perm_helfer_delete_item" class="accent-amber-500 rounded" /> 🗑️ Items löschen</label>
+              <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 p-2 rounded-lg border border-slate-800"><input type="checkbox" id="perm_helfer_edit_status" class="accent-amber-500 rounded" /> 🔄 Status verändern</label>
+              <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 p-2 rounded-lg border border-slate-800"><input type="checkbox" id="perm_helfer_edit_qty" class="accent-amber-500 rounded" /> 🔢 Mengen (Benötigt/Auf Lager) verändern</label>
+              <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 p-2 rounded-lg border border-slate-800"><input type="checkbox" id="perm_helfer_edit_person" class="accent-amber-500 rounded" /> 👤 Verantwortliche zuweisen</label>
+
+              <div class="font-semibold text-slate-400 col-span-full mt-2">🏷️ Boxen & Einkaufsliste</div>
+              <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 p-2 rounded-lg border border-slate-800"><input type="checkbox" id="perm_helfer_edit_box" class="accent-amber-500 rounded" /> 🏷️ Boxen / Lagerorte zuweisen</label>
+              <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 p-2 rounded-lg border border-slate-800"><input type="checkbox" id="perm_helfer_shopping_check" class="accent-amber-500 rounded" /> ☑️ Einkaufseinträge abhaken</label>
+              <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 p-2 rounded-lg border border-slate-800"><input type="checkbox" id="perm_helfer_shopping_add" class="accent-amber-500 rounded" /> 🛒 Einkaufsartikel hinzufügen</label>
+
+              <div class="font-semibold text-slate-400 col-span-full mt-2">💰 Kasse & Finanzen</div>
+              <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 p-2 rounded-lg border border-slate-800"><input type="checkbox" id="perm_helfer_cash_buttons" class="accent-amber-500 rounded" /> 🛒 Kasse Schnelltasten (+1/-1)</label>
+              <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 p-2 rounded-lg border border-slate-800"><input type="checkbox" id="perm_helfer_override_sales" class="accent-amber-500 rounded" /> 🔢 Gesamtzahlen Kasse abändern</label>
+              <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 p-2 rounded-lg border border-slate-800"><input type="checkbox" id="perm_helfer_view_finances" class="accent-amber-500 rounded" /> 💶 Umsatz & Gewinn einsehen</label>
             </div>
           </div>
 
-          <!-- Orga -->
-          <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
-            <div class="flex items-center justify-between">
-              <span class="font-bold text-sky-400">📋 Orga-Team Rolle</span>
+          <!-- ORGA ROLLE EINZELBERECHTIGUNGEN -->
+          <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <span class="font-bold text-sky-400 text-sm">📋 Orga-Team Rolle</span>
               <div class="flex items-center gap-2">
-                <span class="text-slate-400">PW:</span>
-                <input type="text" id="pwd_orga" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 font-mono w-28" />
+                <span class="text-slate-400">Passwort:</span>
+                <input type="text" id="pwd_orga" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-100 font-mono w-32" />
               </div>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-300 pt-2 border-t border-slate-800">
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_cash" class="accent-amber-500 rounded" /> 🛒 Kasse (+1/-1)</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_override_sales" class="accent-amber-500 rounded" /> 🔢 Gesamtzahlen anpassen</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_add_item" class="accent-amber-500 rounded" /> ➕ Items anlegen</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_status" class="accent-amber-500 rounded" /> 🔄 Status ändern</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_box" class="accent-amber-500 rounded" /> 🏷️ Boxen verwalten</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_shopping" class="accent-amber-500 rounded" /> 🛒 Einkaufsliste abhaken</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_power" class="accent-amber-500 rounded" /> ⚡ Strom-Rechner nutzen</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_prices" class="accent-amber-500 rounded" /> 💶 Finanzen einsehen</label>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-slate-300">
+              <div class="font-semibold text-slate-400 col-span-full mt-1">📦 Inventar & Gegenstände</div>
+              <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 p-2 rounded-lg border border-slate-800"><input type="checkbox" id="perm_orga_add_item" class="accent-amber-500 rounded" /> ➕ Neue Items anlegen</label>
+              <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 p-2 rounded-lg border border-slate-800"><input type="checkbox" id="perm_orga_delete_item" class="accent-amber-500 rounded" /> 🗑️ Items löschen</label>
+              <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 p-2 rounded-lg border border-slate-800"><input type="checkbox" id="perm_orga_edit_status" class="accent-amber-500 rounded" /> 🔄 Status verändern</label>
+              <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 p-2 rounded-lg border border-slate-800"><input type="checkbox" id="perm_orga_edit_qty" class="accent-amber-500 rounded" /> 🔢 Mengen (Benötigt/Auf Lager) verändern</label>
+              <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 p-2 rounded-lg border border-slate-800"><input type="checkbox" id="perm_orga_edit_person" class="accent-amber-500 rounded" /> 👤 Verantwortliche zuweisen</label>
+
+              <div class="font-semibold text-slate-400 col-span-full mt-2">🏷️ Boxen & Einkaufsliste</div>
+              <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 p-2 rounded-lg border border-slate-800"><input type="checkbox" id="perm_orga_edit_box" class="accent-amber-500 rounded" /> 🏷️ Boxen / Lagerorte zuweisen</label>
+              <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 p-2 rounded-lg border border-slate-800"><input type="checkbox" id="perm_orga_shopping_check" class="accent-amber-500 rounded" /> ☑️ Einkaufseinträge abhaken</label>
+              <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 p-2 rounded-lg border border-slate-800"><input type="checkbox" id="perm_orga_shopping_add" class="accent-amber-500 rounded" /> 🛒 Einkaufsartikel hinzufügen</label>
+
+              <div class="font-semibold text-slate-400 col-span-full mt-2">💰 Kasse & Finanzen</div>
+              <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 p-2 rounded-lg border border-slate-800"><input type="checkbox" id="perm_orga_cash_buttons" class="accent-amber-500 rounded" /> 🛒 Kasse Schnelltasten (+1/-1)</label>
+              <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 p-2 rounded-lg border border-slate-800"><input type="checkbox" id="perm_orga_override_sales" class="accent-amber-500 rounded" /> 🔢 Gesamtzahlen Kasse abändern</label>
+              <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 p-2 rounded-lg border border-slate-800"><input type="checkbox" id="perm_orga_view_finances" class="accent-amber-500 rounded" /> 💶 Umsatz & Gewinn einsehen</label>
             </div>
           </div>
 
