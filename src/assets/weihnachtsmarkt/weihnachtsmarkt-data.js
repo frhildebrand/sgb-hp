@@ -1,4 +1,32 @@
-[
+window.DEFAULT_ROLE_CONFIG = {
+  helfer: {
+    pwd: "SGHelfer",
+    canCash: true,
+    canPacked: true,
+    canQty: false,
+    canStock: false,
+    canBox: true,
+    canStatus: false,
+    canPrices: false,
+    canLog: false
+  },
+  orga: {
+    pwd: "SGOrga",
+    canCash: true,
+    canPacked: true,
+    canQty: true,
+    canStock: true,
+    canBox: true,
+    canStatus: true,
+    canPrices: true,
+    canLog: true
+  },
+  admin: {
+    pwd: "SGJugend26"
+  }
+};
+
+window.DEFAULT_ITEMS = [
   {"id": 1, "cat": "🏛️ Orga", "title": "Anmeldung Teilnahme", "details": "An Gemeinde"},
   {"id": 2, "cat": "🏛️ Orga", "title": "Hütte Gemeinde", "details": "Aufbau Tag & Zeit abklären"},
   {"id": 3, "cat": "🏛️ Orga", "title": "Listen Roshop Unterstützung", "details": "Aufhängen Schwarzes Brett"},
@@ -73,4 +101,4 @@
   {"id": 71, "cat": "📋 Sonstiges", "title": "Stehtische"},
   {"id": 72, "cat": "📋 Sonstiges", "title": "Taschenmesser"},
   {"id": 73, "cat": "📋 Sonstiges", "title": "Weihnachtsmützen"}
-]
+];
