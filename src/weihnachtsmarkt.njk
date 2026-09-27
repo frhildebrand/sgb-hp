@@ -64,36 +64,54 @@ permalink: /weihnachtsmarkt/index.html
     </div>
   </div>
 
-  <!-- Rezepte Sektion -->
+  <!-- Rezepte Sektion (Aktualisierte Rezepte aus den Vorlagen) -->
   <div class="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-sm mb-6">
     <h2 class="text-lg font-bold text-emerald-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-2">📜 Stand-Rezepte & Mengenangaben</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      
+      <!-- Belgische Waffeln -->
       <div class="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 text-xs sm:text-sm">
-        <div class="flex items-center gap-2 font-bold text-emerald-900 text-sm sm:text-base mb-2"><span>🧇</span> Waffelteig (Standard-Portion)</div>
-        <p class="text-slate-600 mb-3 text-xs italic">Bitte Teig in verschließbaren Eimern/Gefäßen mitbringen!</p>
-        <ul class="list-disc list-inside space-y-1 text-slate-700">
+        <div class="flex items-center gap-2 font-bold text-emerald-900 text-sm sm:text-base mb-2"><span>🧇</span> Belgische Waffeln</div>
+        <p class="text-slate-600 mb-2 text-xs italic">Bitte eine ausreichend große Schüssel benutzen (2l reichen nicht)!</p>
+        <ul class="list-disc list-inside space-y-1 text-slate-700 mb-3">
+          <li><b>5</b> Eier</li>
+          <li><b>300 g</b> Zucker</li>
+          <li><b>2 Pck.</b> Vanillezucker</li>
+          <li><b>2 Prisen</b> Salz</li>
+          <li><b>400 g</b> Butter (weich)</li>
           <li><b>500 g</b> Mehl</li>
-          <li><b>250 g</b> Butter (weich)</li>
-          <li><b>150–200 g</b> Zucker</li>
-          <li><b>1 Pck.</b> Vanillezucker</li>
-          <li><b>6</b> Eier</li>
-          <li><b>500 ml</b> Milch</li>
-          <li><b>1 Pck.</b> Backpulver & 1 Prise Salz</li>
+          <li><b>½ Pck.</b> Backpulver</li>
+          <li><b>200 ml</b> Milch</li>
         </ul>
+        <div class="border-t border-emerald-200/60 pt-2 text-slate-600 space-y-1 text-[11px]">
+          <p><b>Zubereitung:</b></p>
+          <p>1. Eier, Zucker, Vanillezucker, Salz verrühren, bis der Zucker aufgelöst & schaumig ist.</p>
+          <p>2. Weiche Butter dazu und kurz unterrühren.</p>
+          <p>3. Mehl mit Backpulver vermischen und mit Milch zur Masse geben und gut unterrühren.</p>
+        </div>
       </div>
+
+      <!-- Winter-Kinderpunsch -->
       <div class="bg-red-50/50 border border-red-100 rounded-xl p-4 text-xs sm:text-sm">
-        <div class="flex items-center gap-2 font-bold text-red-900 text-sm sm:text-base mb-2"><span>☕</span> Kinderpunsch (Pro 20L Target-Füllung)</div>
-        <p class="text-slate-600 mb-3 text-xs italic">Im Einkochautomaten erhitzen – nicht kochen lassen!</p>
-        <ul class="list-disc list-inside space-y-1 text-slate-700">
-          <li><b>6,25 l</b> Apfelsaft</li>
-          <li><b>6,25 l</b> Roter Traubensaft</li>
-          <li><b>2,5 l</b> Orangensaft</li>
-          <li><b>5,0 l</b> Kochendes Wasser</li>
-          <li><b>25 Beutel</b> Früchtetee / Wintertee</li>
-          <li><b>12 Beutel</b> Glühfix / Punschgewürz</li>
-          <li><b>5 Stk.</b> Zimtstangen</li>
+        <div class="flex items-center gap-2 font-bold text-red-900 text-sm sm:text-base mb-2"><span>☕</span> Winter-Kinderpunsch (ca. 8 Liter)</div>
+        <p class="text-slate-600 mb-2 text-xs italic">Im Einkochautomaten erhitzen – nicht kochen lassen!</p>
+        <ul class="list-disc list-inside space-y-1 text-slate-700 mb-3">
+          <li><b>2,0 l</b> Wasser</li>
+          <li><b>10 Btl.</b> Wintertee</li>
+          <li><b>1,0 l</b> Orangensaft</li>
+          <li><b>2,5 l</b> Apfelsaft</li>
+          <li><b>2,5 l</b> Roter Traubensaft</li>
+          <li><b>2 Stk.</b> Zimtstangen <i>(nicht kaufen)</i></li>
+          <li><b>5 Btl.</b> Glühfix</li>
         </ul>
+        <div class="border-t border-red-200/60 pt-2 text-slate-600 space-y-1 text-[11px]">
+          <p><b>Zubereitung:</b></p>
+          <p>1. Tee kochen – ziehen lassen, Beutel raus.</p>
+          <p>2. Rest nach und nach zugeben.</p>
+          <p>3. Ziehen lassen.</p>
+        </div>
       </div>
+
     </div>
   </div>
 
@@ -343,6 +361,13 @@ permalink: /weihnachtsmarkt/index.html
   .status-vorbereitet { background-color: #fefce8; color: #854d0e; border-color: #fef08a; }
   .status-verteilt { background-color: #f0f9ff; color: #075985; border-color: #bae6fd; }
   .status-erledigt, .status-eingekauft { background-color: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+
+  /* Dark Mode Verbesserungen für Tabellen-Header */
+  @media (prefers-color-scheme: dark) {
+    th {
+      color: #0f172a !important;
+    }
+  }
 </style>
 
 <script>
@@ -366,14 +391,14 @@ permalink: /weihnachtsmarkt/index.html
     { id: 9, cat: "🛠️ Werkzeuge", title: "Seitenschneider", details: "", isShop: false },
     { id: 10, cat: "🛠️ Werkzeuge", title: "Taschenlampe", details: "", isShop: false },
     
-    // Material
+    // Material (Panzertape schlicht ohne Beschreibung)
     { id: 11, cat: "📦 Material & Befestigung", title: "Büroklammern", details: "", isShop: false },
     { id: 12, cat: "📦 Material & Befestigung", title: "Draht", details: "", isShop: false },
     { id: 13, cat: "📦 Material & Befestigung", title: "Heftzwecken", details: "", isShop: false },
     { id: 14, cat: "📦 Material & Befestigung", title: "Kabelbinder", details: "", isShop: false },
     { id: 15, cat: "📦 Material & Befestigung", title: "Kreppband", details: "", isShop: false },
     { id: 16, cat: "📦 Material & Befestigung", title: "Nägel", details: "", isShop: false },
-    { id: 74, cat: "📦 Material & Befestigung", title: "Panzertape / Gewebeband", details: "Zum Fixieren von Kabeln & Deko", isShop: false },
+    { id: 74, cat: "📦 Material & Befestigung", title: "Panzertape", details: "", isShop: false },
     { id: 17, cat: "📦 Material & Befestigung", title: "Schrauben", details: "", isShop: false },
     
     // Elektrik
@@ -385,13 +410,10 @@ permalink: /weihnachtsmarkt/index.html
     { id: 22, cat: "⚡ Elektrik & Licht", title: "Mehrfachstecker 5er", details: "5-fach Verteilungsstecker", isPower: true, defaultStockQty: "2", defaultWatts: 3680, isCable: true, isShop: false },
     { id: 23, cat: "⚡ Elektrik & Licht", title: "Verlängerungskabel 3m", details: "Stromkabel Verlängerung", isPower: true, defaultStockQty: "2", defaultWatts: 3680, isCable: true, isShop: false },
     
-    // Geräte
-    { id: 24, cat: "🔌 Geräte", title: "Einkochautomat 1", details: "", defaultStockQty: "1", defaultWatts: 1800, isPower: true, isShop: false },
-    { id: 77, cat: "🔌 Geräte", title: "Einkochautomat 2", details: "", defaultStockQty: "1", defaultWatts: 1800, isPower: true, isShop: false },
-    { id: 25, cat: "🔌 Geräte", title: "Waffeleisen 1", details: "", defaultStockQty: "1", defaultWatts: 1200, isPower: true, isShop: false },
-    { id: 78, cat: "🔌 Geräte", title: "Waffeleisen 2", details: "", defaultStockQty: "1", defaultWatts: 1200, isPower: true, isShop: false },
-    { id: 79, cat: "🔌 Geräte", title: "Waffeleisen 3", details: "", defaultStockQty: "1", defaultWatts: 1200, isPower: true, isShop: false },
-    { id: 26, cat: "🔌 Geräte", title: "Wasserkocher", details: "", defaultWatts: 2200, defaultStockQty: "1", isPower: true, isShop: false },
+    // Geräte (Gezielt als einzelne Zeilen mit anpassbarem Bedarf)
+    { id: 24, cat: "🔌 Geräte", title: "Einkochautomat", details: "", defaultQty: "2", defaultStockQty: "2", defaultWatts: 1800, isPower: true, isShop: false },
+    { id: 25, cat: "🔌 Geräte", title: "Waffeleisen", details: "", defaultQty: "3", defaultStockQty: "3", defaultWatts: 1200, isPower: true, isShop: false },
+    { id: 26, cat: "🔌 Geräte", title: "Wasserkocher", details: "", defaultQty: "1", defaultWatts: 2200, defaultStockQty: "1", isPower: true, isShop: false },
     
     // Kasse
     { id: 27, cat: "💶 Kasse & Finanzen", title: "Geldtasche", details: "", isShop: false },
@@ -540,6 +562,42 @@ permalink: /weihnachtsmarkt/index.html
     renderChecklist();
   }
 
+  // --- Hinzufügen & Löschen von Items ---
+  function addNewItem() {
+    const title = prompt("Name des Gegenstands:");
+    if (!title) return;
+
+    const cat = prompt("Kategorie (z. B. 🔌 Geräte, 🛠️ Werkzeuge, 📦 Material & Befestigung):", "🔌 Geräte");
+    if (!cat) return;
+
+    const newId = Date.now();
+    const newItem = {
+      id: newId,
+      cat: cat,
+      title: title,
+      details: "",
+      isShop: false,
+      isCustom: true
+    };
+
+    itemsData.push(newItem);
+    initItemState(newItem);
+    saveState();
+    renderChecklist();
+  }
+
+  function deleteCustomItem(id) {
+    if (confirm("Möchtest du diesen Eintrag wirklich löschen?")) {
+      const index = itemsData.findIndex(item => item.id === id);
+      if (index !== -1) {
+        itemsData.splice(index, 1);
+        delete appState[id];
+        saveState();
+        renderChecklist();
+      }
+    }
+  }
+
   function updateProgress() {
     const total = itemsData.length;
     const count = itemsData.filter(i => {
@@ -577,6 +635,16 @@ permalink: /weihnachtsmarkt/index.html
     const container = document.getElementById('checklist');
     if (!container) return;
     container.innerHTML = '';
+
+    // Button zum Hinzufügen neuer Gegenstände oben anhängen
+    const addBtnContainer = document.createElement('div');
+    addBtnContainer.className = 'flex justify-end mb-4';
+    addBtnContainer.innerHTML = `
+      <button onclick="addNewItem()" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-700 text-white hover:bg-emerald-800 transition shadow-sm flex items-center gap-1.5">
+        ➕ Gegenstand hinzufügen
+      </button>
+    `;
+    container.appendChild(addBtnContainer);
 
     const categories = [...new Set(itemsData.map(item => item.cat))];
 
@@ -626,6 +694,7 @@ permalink: /weihnachtsmarkt/index.html
               <th class="py-2.5 px-2 w-[16%]">${isOrga ? 'Ansprechpartner' : 'Verantwortlich'}</th>
               ${!isOrga ? '<th class="py-2.5 px-2 w-[7%] text-center">Gepackt?</th>' : ''}
               ${!isOrga ? '<th class="py-2.5 px-2 w-[8%] text-center">Box</th>' : ''}
+              <th class="py-2.5 px-2 w-[5%] text-center"></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100"></tbody>
@@ -686,6 +755,9 @@ permalink: /weihnachtsmarkt/index.html
                   class="bg-white border border-slate-300 rounded-lg px-1 py-1 text-xs text-slate-900 text-center focus:border-emerald-500 focus:outline-none w-12 mx-auto shadow-sm" />
               </td>
             ` : ''}
+            <td class="py-3 px-2 text-center">
+              ${item.isCustom ? `<button onclick="deleteCustomItem(${item.id})" class="text-red-500 hover:text-red-700 font-bold px-1" title="Löschen">🗑️</button>` : ''}
+            </td>
           `;
           tbody.appendChild(tr);
         });
@@ -808,6 +880,7 @@ permalink: /weihnachtsmarkt/index.html
     document.getElementById('shoppingModal').classList.add('hidden');
   }
 
+  // --- Modularer Strom- & Verkabelungs-Planer ---
   function openWiringModal() {
     renderWiringModal();
     document.getElementById('wiringModal').classList.remove('hidden');
@@ -826,15 +899,16 @@ permalink: /weihnachtsmarkt/index.html
     calculateSocketsPower();
   }
 
+  // Ermittelt dynamisch die Anzahl der Geräte-Instanzen aus 'qty' oder 'stockQty'
   function getItemCount(item) {
     const state = appState[item.id] || {};
-    const stock = parseInt(state.stockQty);
     const need = parseInt(state.qty);
+    const stock = parseInt(state.stockQty);
     let count = 1;
-    if (!isNaN(stock) && stock > 0) {
-      count = stock;
-    } else if (!isNaN(need) && need > 0) {
+    if (!isNaN(need) && need > 0) {
       count = need;
+    } else if (!isNaN(stock) && stock > 0) {
+      count = stock;
     }
     return Math.max(1, count);
   }
@@ -1004,6 +1078,7 @@ permalink: /weihnachtsmarkt/index.html
     document.getElementById('wiringModal').classList.add('hidden');
   }
 
+  // --- Lagerbestand Modal Logik (ohne Zutaten) ---
   function openStockModal() {
     const modal = document.getElementById('stockModal');
     const tbody = document.getElementById('stockTableBody');
@@ -1043,6 +1118,7 @@ permalink: /weihnachtsmarkt/index.html
     document.getElementById('stockModal').classList.add('hidden');
   }
 
+  // --- Boxen-Modal Logik ---
   function openBoxOverview() {
     const modal = document.getElementById('boxModal');
     const content = document.getElementById('boxModalContent');
