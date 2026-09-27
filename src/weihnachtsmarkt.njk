@@ -155,7 +155,7 @@ permalink: /weihnachtsmarkt/index.html
               <th class="py-2.5 px-3 w-[26%]">Artikel</th>
               <th class="py-2.5 px-2 w-[12%] text-center">Soll</th>
               <th class="py-2.5 px-2 w-[12%] text-center">Auf Lager</th>
-              <th class="py-2.5 px-2 w-[14%] font-bold text-amber-900 text-center">Nocheinzukaufen</th>
+              <th class="py-2.5 px-2 w-[14%] font-bold text-amber-900 text-center">Noch einzukaufen</th>
               <th class="py-2.5 px-2 w-[18%]">Laden / Geschäft</th>
               <th class="py-2.5 px-2 w-[12%] text-right">Preis (€)</th>
             </tr>
@@ -286,7 +286,7 @@ permalink: /weihnachtsmarkt/index.html
     { id: 'dev4', name: 'Waffeleisen 2', watts: 1200, active: false },
     { id: 'dev5', name: 'Wasserkocher', watts: 2200, active: false },
     { id: 'dev6', name: 'Lichterketten & Deko-Licht', watts: 50, active: true },
-    { id: 'dev7', name: 'Musikbox / Anlage', watts: 80, active: true }
+    { id: 'dev7', name: 'Musikbox / Anlage (Akku)', watts: 0, active: false }
   ];
 
   const itemsData = [
@@ -315,16 +315,16 @@ permalink: /weihnachtsmarkt/index.html
     { id: 17, cat: "📦 Material & Befestigung", title: "Schrauben", details: "", isShop: false },
     
     // Elektrik
-    { id: 18, cat: "⚡ Elektrik & Licht", title: "Lichterketten Kurz", details: "", isShop: false },
-    { id: 19, cat: "⚡ Elektrik & Licht", title: "Lichterketten Lang", details: "", isShop: false },
-    { id: 20, cat: "⚡ Elektrik & Licht", title: "Lichterketten Sterne", details: "", isShop: false },
+    { id: 18, cat: "⚡ Elektrik & Licht", title: "Lichterketten Kurz", details: "", defaultStockQty: "2", isShop: false },
+    { id: 19, cat: "⚡ Elektrik & Licht", title: "Lichterketten Lang", details: "", defaultStockQty: "2", isShop: false },
+    { id: 20, cat: "⚡ Elektrik & Licht", title: "Lichterketten Sterne", details: "", defaultStockQty: "2", isShop: false },
     { id: 21, cat: "⚡ Elektrik & Licht", title: "Mehrfachsteckdose 3er", details: "", isShop: false },
     { id: 22, cat: "⚡ Elektrik & Licht", title: "Mehrfachsteckdose 5er", details: "", isShop: false },
     { id: 23, cat: "⚡ Elektrik & Licht", title: "Verlängerungskabel 3m", details: "", isShop: false },
     
     // Geräte
-    { id: 24, cat: "🔌 Geräte", title: "Einkochautomaten", details: "", isShop: false },
-    { id: 25, cat: "🔌 Geräte", title: "Waffeleisen", details: "", isShop: false },
+    { id: 24, cat: "🔌 Geräte", title: "Einkochautomaten", details: "", defaultStockQty: "2", isShop: false },
+    { id: 25, cat: "🔌 Geräte", title: "Waffeleisen", details: "", defaultStockQty: "3", isShop: false },
     { id: 26, cat: "🔌 Geräte", title: "Wasserkocher", details: "", isShop: false },
     
     // Kasse
@@ -371,7 +371,7 @@ permalink: /weihnachtsmarkt/index.html
     { id: 60, cat: "🥣 Stand-Equipment & Zubehör", title: "Suppenkellen", details: "", isShop: false },
     
     // 📋 Sonstiges
-    { id: 75, cat: "📋 Sonstiges", title: "Musikbox / Bluetooth-Lautsprecher", details: "Inkl. Ladekabel & Powerbank", isShop: false },
+    { id: 75, cat: "📋 Sonstiges", title: "Musikbox / Bluetooth-Lautsprecher", details: "Akku-Betrieb, inkl. Ladekabel & Powerbank", isShop: false },
     { id: 61, cat: "📋 Sonstiges", title: "Edding", details: "", isShop: false },
     { id: 63, cat: "📋 Sonstiges", title: "Erste Hilfe Set", details: "", isShop: false },
     { id: 64, cat: "📋 Sonstiges", title: "Feuerzeug", details: "", isShop: false },
@@ -386,7 +386,7 @@ permalink: /weihnachtsmarkt/index.html
     { id: 73, cat: "📋 Sonstiges", title: "Weihnachtsmützen", details: "", isShop: false }
   ];
 
-  let appState = JSON.parse(localStorage.getItem('sg_wm_state_v8')) || {};
+  let appState = JSON.parse(localStorage.getItem('sg_wm_state_v9')) || {};
   let currentFilter = 'all';
 
   function initItemState(item) {
@@ -397,7 +397,7 @@ permalink: /weihnachtsmarkt/index.html
         packed: false, 
         boxNum: '', 
         qty: item.defaultQty || '',
-        stockQty: '',
+        stockQty: item.defaultStockQty || '',
         store: '',
         price: ''
       };
@@ -407,7 +407,7 @@ permalink: /weihnachtsmarkt/index.html
   itemsData.forEach(item => initItemState(item));
 
   function saveState() {
-    localStorage.setItem('sg_wm_state_v8', JSON.stringify(appState));
+    localStorage.setItem('sg_wm_state_v9', JSON.stringify(appState));
     updateProgress();
   }
 
