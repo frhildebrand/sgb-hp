@@ -1,16 +1,15 @@
 /**
- * SG Barnstorf Weihnachtsmarkt - Core JavaScript (Gefixt)
- * - Navigation für alle Dropdown-Namen korrigiert
- * - Tabellenüberschriften mit hoher Lesbarkeit/Kontrast
+ * SG Barnstorf Weihnachtsmarkt - Core JavaScript
+ * Binds dynamically to window.DEFAULT_ROLE_CONFIG and window.DEFAULT_ITEMS
  */
 
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzm4pz4LD6vwqwkDQXqIypYRVx9m49oliAevZPGolZYm_JKFmWN526TLE-2Z3fGP8tJ/exec";
 
-// App-Status & Standardwerte
+// Fallbacks, falls die data.js mal nicht geladen ist
 let roleConfig = window.DEFAULT_ROLE_CONFIG || {
-  helfer: { pwd: 'helfer2026', canCash: true, canPacked: true, canQty: false, canStock: false, canBox: true, canStatus: true, canPrices: false, canLog: true },
-  orga: { pwd: 'orga2026', canCash: true, canPacked: true, canQty: true, canStock: true, canBox: true, canStatus: true, canPrices: true, canLog: true },
-  admin: { pwd: 'admin2026' }
+  helfer: { pwd: "SGHelfer", canCash: true, canPacked: true, canQty: false, canStock: false, canBox: true, canStatus: false, canPrices: false, canLog: false },
+  orga: { pwd: "SGOrga", canCash: true, canPacked: true, canQty: true, canStock: true, canBox: true, canStatus: true, canPrices: true, canLog: true },
+  admin: { pwd: "SGJugend26" }
 };
 
 let itemsData = window.DEFAULT_ITEMS || [];
@@ -43,6 +42,8 @@ async function initApp() {
   renderActivityLog();
 
   loadStateFromSheet();
+  
+  // Event-Listener für Suche
   document.getElementById('searchInput')?.addEventListener('input', renderChecklist);
 }
 
@@ -126,7 +127,7 @@ async function saveState() {
 }
 
 /* ==========================================================================
-   NAVIGATION & VIEW SWITCHING (KORRIGIERT)
+   NAVIGATION & VIEW SWITCHING (Robust für alle Menüpunkte)
    ========================================================================== */
 
 function toggleNavMenu() {
@@ -134,12 +135,10 @@ function toggleNavMenu() {
 }
 
 function switchView(viewName) {
-  // Mapping für alle möglichen Begriffe aus dem HTML-Dropdown-Menü
   const viewMap = {
     'main': 'main',
     'inventar': 'main',
     'checklist': 'main',
-    'einkaufsliste': 'main',
     'boxes': 'boxes',
     'lagerbestand': 'boxes',
     'recipes': 'recipes',
@@ -169,12 +168,12 @@ function switchView(viewName) {
   currentView = targetView;
   document.getElementById('navDropdown')?.classList.add('hidden');
 
-  // Alle Ansichten verbergen
+  // Alle Views ausblenden
   ['viewChecklist', 'viewBoxes', 'viewRecipes', 'viewPower', 'viewSales', 'viewAdmin'].forEach(id => {
     document.getElementById(id)?.classList.add('hidden');
   });
 
-  // Ziel-Ansicht einblenden
+  // Ziel-View einblenden
   if (targetView === 'main') document.getElementById('viewChecklist')?.classList.remove('hidden');
   if (targetView === 'boxes') document.getElementById('viewBoxes')?.classList.remove('hidden');
   if (targetView === 'recipes') document.getElementById('viewRecipes')?.classList.remove('hidden');
@@ -182,7 +181,7 @@ function switchView(viewName) {
   if (targetView === 'sales') document.getElementById('viewSales')?.classList.remove('hidden');
   if (targetView === 'admin') document.getElementById('viewAdmin')?.classList.remove('hidden');
 
-  // Dynamischer Titel im Header
+  // Titel im Header aktualisieren
   const titleEl = document.getElementById('currentViewTitle');
   if (titleEl) {
     const titles = {
@@ -288,7 +287,7 @@ function saveRoleSettings() {
 }
 
 /* ==========================================================================
-   INVENTAR & CHECKLISTE (GEFIXTE TABELLEN-ÜBERSCHRIFTEN)
+   INVENTAR & CHECKLISTE (GEFIXTE DUNKLE TABELLEN-KONTRASTE)
    ========================================================================== */
 
 function filterCategory(cat) {
@@ -334,18 +333,18 @@ function renderChecklist() {
         const statusOpts = item.isShop ? ['Offen', 'Vorbereitet', 'Verteilt', 'Eingekauft'] : ['Offen', 'Vorbereitet', 'Verteilt', 'Erledigt'];
 
         return `
-          <tr class="hover:bg-slate-50/80 transition ${isDone ? 'opacity-75 bg-emerald-50/20' : ''}">
+          <tr class="hover:bg-slate-50 transition ${isDone ? 'opacity-75 bg-emerald-50/20' : ''}">
             <td class="py-3 px-3">
               <div class="font-semibold ${isDone ? 'line-through text-slate-400' : 'text-slate-900'}">${item.title}</div>
               ${item.details ? `<div class="text-xs text-slate-500">${item.details}</div>` : ''}
             </td>
             ${!isOrga ? `
               <td class="py-3 px-2">
-                <input type="text" value="${state.qty || ''}" placeholder="-" ${disQty} onchange="updateItem(${item.id}, 'qty', this.value)" class="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs w-20 text-slate-900" />
+                <input type="text" value="${state.qty || ''}" placeholder="-" ${disQty} onchange="updateItem(${item.id}, 'qty', this.value)" class="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs w-20 text-slate-900 font-medium" />
               </td>
               ${!isIngredientCat ? `
                 <td class="py-3 px-2">
-                  <input type="text" value="${state.stockQty || ''}" placeholder="0" ${disStock} onchange="updateItem(${item.id}, 'stockQty', this.value)" class="bg-amber-50/80 border border-amber-300 rounded-lg px-2 py-1 text-xs w-16 text-slate-900" />
+                  <input type="text" value="${state.stockQty || ''}" placeholder="0" ${disStock} onchange="updateItem(${item.id}, 'stockQty', this.value)" class="bg-amber-50/80 border border-amber-300 rounded-lg px-2 py-1 text-xs w-16 text-slate-900 font-medium" />
                 </td>
               ` : ''}
             ` : ''}
@@ -362,7 +361,7 @@ function renderChecklist() {
                 <input type="checkbox" ${state.packed ? 'checked' : ''} ${disPacked} onchange="updateItem(${item.id}, 'packed', this.checked)" class="w-5 h-5 accent-emerald-600 rounded cursor-pointer mx-auto block" />
               </td>
               <td class="py-3 px-2 text-center">
-                <input type="number" min="1" max="12" value="${state.boxNum || ''}" ${disBox} onchange="updateItem(${item.id}, 'boxNum', this.value)" class="bg-white border border-slate-300 rounded-lg px-1 py-1 text-xs text-center w-12 mx-auto text-slate-900" />
+                <input type="number" min="1" max="12" value="${state.boxNum || ''}" ${disBox} onchange="updateItem(${item.id}, 'boxNum', this.value)" class="bg-white border border-slate-300 rounded-lg px-1 py-1 text-xs text-center w-12 mx-auto text-slate-900 font-medium" />
               </td>
             ` : ''}
           </tr>
@@ -374,16 +373,16 @@ function renderChecklist() {
           <span>${cat}</span>
         </h2>
         <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs sm:text-sm text-slate-800 border-collapse min-w-[650px]">
+          <table class="w-full text-left text-xs sm:text-sm border-collapse min-w-[650px]">
             <thead>
-              <tr class="border-b border-slate-300 text-slate-800 font-bold text-xs uppercase bg-slate-100">
-                <th class="py-3 px-3 text-slate-800 font-extrabold">${isOrga ? 'Aufgabe / Details' : 'Gegenstand'}</th>
-                ${!isOrga ? '<th class="py-3 px-2 w-[12%] text-slate-800 font-extrabold">Benötigt</th>' : ''}
+              <tr class="border-b border-slate-200 text-slate-900 font-extrabold text-xs uppercase bg-slate-100">
+                <th class="py-3 px-3 text-slate-900 font-extrabold">${isOrga ? 'Aufgabe / Details' : 'Gegenstand'}</th>
+                ${!isOrga ? '<th class="py-3 px-2 w-[12%] text-slate-900 font-extrabold">Benötigt</th>' : ''}
                 ${!isOrga && !isIngredientCat ? '<th class="py-3 px-2 w-[10%] text-amber-900 font-extrabold">Auf Lager</th>' : ''}
-                <th class="py-3 px-2 w-[18%] text-slate-800 font-extrabold">Status</th>
-                <th class="py-3 px-2 w-[18%] text-slate-800 font-extrabold">${isOrga ? 'Ansprechpartner' : 'Verantwortlich'}</th>
-                ${!isOrga ? '<th class="py-3 px-2 w-[8%] text-center text-slate-800 font-extrabold">Gepackt</th>' : ''}
-                ${!isOrga ? '<th class="py-3 px-2 w-[8%] text-center text-slate-800 font-extrabold">Box</th>' : ''}
+                <th class="py-3 px-2 w-[18%] text-slate-900 font-extrabold">Status</th>
+                <th class="py-3 px-2 w-[18%] text-slate-900 font-extrabold">${isOrga ? 'Ansprechpartner' : 'Verantwortlich'}</th>
+                ${!isOrga ? '<th class="py-3 px-2 w-[8%] text-center text-slate-900 font-extrabold">Gepackt</th>' : ''}
+                ${!isOrga ? '<th class="py-3 px-2 w-[8%] text-center text-slate-900 font-extrabold">Box</th>' : ''}
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">${rowsHtml}</tbody>
@@ -411,10 +410,10 @@ function updateProgress() {
 }
 
 function getStatusClass(s) {
-  if (s === 'Vorbereitet') return 'bg-amber-100 text-amber-900 border-amber-300';
-  if (s === 'Verteilt') return 'bg-sky-100 text-sky-900 border-sky-300';
-  if (s === 'Erledigt' || s === 'Eingekauft') return 'bg-emerald-100 text-emerald-900 border-emerald-300';
-  return 'bg-slate-100 text-slate-800 border-slate-300';
+  if (s === 'Vorbereitet') return 'bg-amber-100 text-amber-900 border-amber-300 font-semibold';
+  if (s === 'Verteilt') return 'bg-sky-100 text-sky-900 border-sky-300 font-semibold';
+  if (s === 'Erledigt' || s === 'Eingekauft') return 'bg-emerald-100 text-emerald-900 border-emerald-300 font-semibold';
+  return 'bg-slate-100 text-slate-800 border-slate-300 font-semibold';
 }
 
 /* ==========================================================================
@@ -482,11 +481,11 @@ function updateRecipeScaling() {
 }
 
 function calculatePowerLoad() {
-  const waffel = parseInt(document.getElementById('pwrWaffel')?.value || 0) * 2000;
+  const waffel = parseInt(document.getElementById('pwrWaffel')?.value || 0) * 1200;
   const punsch = parseInt(document.getElementById('pwrPunsch')?.value || 0) * 1800;
-  const licht = parseInt(document.getElementById('pwrLicht')?.value || 0) * 150;
+  const wasser = parseInt(document.getElementById('pwrWasser')?.value || 0) * 2200;
 
-  const total = waffel + punsch + licht;
+  const total = waffel + punsch + wasser;
   const totalEl = document.getElementById('totalWatts');
   if (totalEl) totalEl.textContent = `${total} Watt`;
 }
