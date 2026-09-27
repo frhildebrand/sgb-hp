@@ -1,0 +1,139 @@
+---
+layout: base.njk
+title: SG Barnstorf Weihnachtsmarkt
+---
+<script src="https://cdn.tailwindcss.com"></script>
+
+<div class="min-h-screen bg-slate-950 text-slate-100 font-sans pb-12">
+  <div class="max-w-6xl mx-auto px-4 py-6 space-y-6">
+    
+    <!-- HEADER -->
+    <header class="flex items-center justify-between gap-4 bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-2xl relative">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-xl">🎄</div>
+        <div>
+          <h1 class="font-bold text-sm sm:text-base text-slate-100">SG Barnstorf – Weihnachtsmarkt</h1>
+          <div id="currentViewTitle" class="text-xs text-amber-400 font-semibold mt-0.5">📋 Hauptliste & Inventar</div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button type="button" onclick="toggleRoleModal()" id="roleBadge" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-emerald-400 border border-emerald-500/30">
+          👁️ Rolle: BETRACHTER
+        </button>
+        <div class="relative">
+          <button type="button" onclick="toggleNavMenu()" class="p-2 bg-slate-800 border border-slate-700 rounded-xl">☰</button>
+          <div id="navDropdown" class="hidden absolute right-0 mt-2 w-64 bg-slate-900 border border-slate-800 rounded-2xl p-2 z-50 text-xs">
+            <button onclick="switchView('main')" class="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-800">📋 Hauptliste & Inventar</button>
+            <button onclick="switchView('boxes')" class="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-800">📦 Lagerbestand & Boxen</button>
+            <button onclick="switchView('recipes')" class="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-800">☕ Rezepte & Zutaten</button>
+            <button onclick="switchView('power')" class="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-800">⚡ Strom-Rechner</button>
+            <button onclick="switchView('sales')" class="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-800">💰 Standkasse</button>
+            <div class="my-1 border-t border-slate-800"></div>
+            <button onclick="switchView('admin')" class="w-full text-left px-3 py-2 rounded-xl bg-amber-500/10 text-amber-300 font-bold">👑 Admin Center</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- VIEWS -->
+    <section id="viewChecklist" class="space-y-4">
+      <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
+        <div class="flex justify-between items-center gap-4">
+          <input type="text" id="searchInput" placeholder="🔍 Suchen..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-100" />
+          <div id="syncStatus" class="text-xs text-slate-400 font-mono whitespace-nowrap">⏳ Verbinde...</div>
+        </div>
+        <div class="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden border border-slate-800">
+          <div id="progressBar" class="bg-emerald-500 h-full w-0 transition-all duration-300"></div>
+        </div>
+      </div>
+      <div id="checklist" class="space-y-4"></div>
+    </section>
+
+    <section id="viewBoxes" class="hidden bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4">
+      <h2 class="font-bold text-slate-100 text-sm">📦 Boxenübersicht & Lagerorte</h2>
+      <div id="boxOverviewGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+    </section>
+
+    <section id="viewRecipes" class="hidden bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4">
+      <h2 class="font-bold text-slate-100 text-sm">☕ Kinderpunsch-Rechner</h2>
+      <div class="flex items-center gap-4 bg-slate-950 p-4 rounded-xl border border-slate-800">
+        <input type="range" id="punschLiters" min="4" max="40" step="4" value="8" oninput="updateRecipeScaling()" class="w-full accent-amber-500" />
+        <span id="punschLitersLabel" class="font-bold text-amber-400 text-sm whitespace-nowrap">8 Liter</span>
+      </div>
+      <ul id="punschRecipeList" class="space-y-1.5 text-xs text-slate-200 list-disc pl-5"></ul>
+    </section>
+
+    <section id="viewPower" class="hidden bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4">
+      <h2 class="font-bold text-slate-100 text-sm">⚡ Stromverbrauch-Rechner</h2>
+      <div class="space-y-2 text-xs">
+        <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+          <span>🧇 Waffeleisen (1200W)</span>
+          <input type="number" id="pwrWaffel" value="3" onchange="calculatePowerLoad()" class="w-16 bg-slate-900 text-amber-400 text-center font-bold border border-slate-700 rounded-lg p-1" />
+        </div>
+        <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+          <span>☕ Einkochautomat (1800W)</span>
+          <input type="number" id="pwrPunsch" value="2" onchange="calculatePowerLoad()" class="w-16 bg-slate-900 text-amber-400 text-center font-bold border border-slate-700 rounded-lg p-1" />
+        </div>
+      </div>
+      <div class="p-3 bg-amber-500/10 border border-amber-500/30 text-amber-300 rounded-xl text-xs text-center font-bold">
+        Gesamtleistung: <span id="totalWatts">7200 Watt</span>
+      </div>
+    </section>
+
+    <section id="viewSales" class="hidden space-y-4">
+      <div class="grid grid-cols-2 gap-4 text-center">
+        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-3">
+          <h3 class="font-bold text-xs">☕ Kinderpunsch (2,00 €)</h3>
+          <div class="flex justify-center gap-2">
+            <button onclick="addSale('punsch', -1)" class="cash-btn w-10 h-10 bg-slate-800 text-lg rounded-lg">-1</button>
+            <input type="number" id="soldPunsch" value="0" readonly class="w-16 text-center font-bold bg-slate-950 text-amber-400 rounded-lg border border-slate-800" />
+            <button onclick="addSale('punsch', 1)" class="cash-btn w-10 h-10 bg-emerald-600 text-white text-lg rounded-lg">+1</button>
+          </div>
+        </div>
+        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-3">
+          <h3 class="font-bold text-xs">🧇 Waffeln (2,00 €)</h3>
+          <div class="flex justify-center gap-2">
+            <button onclick="addSale('waffles', -1)" class="cash-btn w-10 h-10 bg-slate-800 text-lg rounded-lg">-1</button>
+            <input type="number" id="soldWaffles" value="0" readonly class="w-16 text-center font-bold bg-slate-950 text-amber-400 rounded-lg border border-slate-800" />
+            <button onclick="addSale('waffles', 1)" class="cash-btn w-10 h-10 bg-emerald-600 text-white text-lg rounded-lg">+1</button>
+          </div>
+        </div>
+      </div>
+      <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 text-center font-bold text-xs text-emerald-400">
+        Umsatz: <span id="statRevenue">0,00 €</span>
+      </div>
+    </section>
+
+    <section id="viewAdmin" class="hidden bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4 text-xs">
+      <h2 class="font-bold text-amber-400 text-sm">👑 Admin Control Center</h2>
+      <div class="space-y-2">
+        <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+          <span>Helfer Passwort:</span>
+          <input type="text" id="pwd_helfer" class="bg-slate-900 border border-slate-700 px-2 py-1 rounded text-slate-100 font-mono w-32" />
+        </div>
+        <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+          <span>Orga Passwort:</span>
+          <input type="text" id="pwd_orga" class="bg-slate-900 border border-slate-700 px-2 py-1 rounded text-slate-100 font-mono w-32" />
+        </div>
+      </div>
+      <button onclick="saveRoleSettings()" class="w-full bg-amber-500 text-slate-950 font-bold py-2 rounded-xl">💾 Speichern</button>
+    </section>
+
+    <!-- ROLE MODAL -->
+    <div id="roleModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-sm text-center space-y-3">
+        <h3 class="font-bold text-sm">Rolle wählen</h3>
+        <button onclick="selectRoleWithPassword('betrachter')" class="w-full py-2 bg-slate-800 rounded-xl text-xs">👁️ Betrachter</button>
+        <button onclick="selectRoleWithPassword('helfer')" class="w-full py-2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-xl text-xs">🤝 Helfer</button>
+        <button onclick="selectRoleWithPassword('orga')" class="w-full py-2 bg-sky-500/20 text-sky-300 border border-sky-500/30 rounded-xl text-xs">📋 Orga</button>
+        <button onclick="selectRoleWithPassword('admin')" class="w-full py-2 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-bold">👑 Admin</button>
+        <button onclick="closeRoleModal()" class="text-xs text-slate-500 block mx-auto pt-1">Abbrechen</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/assets/weihnachtsmarkt/weihnachtsmarkt-data.js"></script>
+<script src="/assets/weihnachtsmarkt/weihnachtsmarkt.js"></script>
