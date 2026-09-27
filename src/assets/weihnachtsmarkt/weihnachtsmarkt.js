@@ -1,38 +1,16 @@
 /**
- * SG Barnstorf Weihnachtsmarkt - Core JavaScript
- * Kombiniert: Cloud-Sync (Google Sheet), Rollen- & Berechtigungssystem, 
- * Inventar, Einkaufsliste, Boxen-Übersicht, Rezept-Rechner, Stromverbrauch & Kasse.
+ * SG Barnstorf Weihnachtsmarkt - Core JavaScript (Gefixt)
+ * - Navigation für alle Dropdown-Namen korrigiert
+ * - Tabellenüberschriften mit hoher Lesbarkeit/Kontrast
  */
 
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzm4pz4LD6vwqwkDQXqIypYRVx9m49oliAevZPGolZYm_JKFmWN526TLE-2Z3fGP8tJ/exec";
 
 // App-Status & Standardwerte
 let roleConfig = window.DEFAULT_ROLE_CONFIG || {
-  helfer: {
-    pwd: 'helfer2026',
-    canCash: true,
-    canPacked: true,
-    canQty: false,
-    canStock: false,
-    canBox: true,
-    canStatus: true,
-    canPrices: false,
-    canLog: true
-  },
-  orga: {
-    pwd: 'orga2026',
-    canCash: true,
-    canPacked: true,
-    canQty: true,
-    canStock: true,
-    canBox: true,
-    canStatus: true,
-    canPrices: true,
-    canLog: true
-  },
-  admin: {
-    pwd: 'admin2026'
-  }
+  helfer: { pwd: 'helfer2026', canCash: true, canPacked: true, canQty: false, canStock: false, canBox: true, canStatus: true, canPrices: false, canLog: true },
+  orga: { pwd: 'orga2026', canCash: true, canPacked: true, canQty: true, canStock: true, canBox: true, canStatus: true, canPrices: true, canLog: true },
+  admin: { pwd: 'admin2026' }
 };
 
 let itemsData = window.DEFAULT_ITEMS || [];
@@ -148,7 +126,7 @@ async function saveState() {
 }
 
 /* ==========================================================================
-   NAVIGATION & VIEW SWITCHING
+   NAVIGATION & VIEW SWITCHING (KORRIGIERT)
    ========================================================================== */
 
 function toggleNavMenu() {
@@ -156,7 +134,27 @@ function toggleNavMenu() {
 }
 
 function switchView(viewName) {
-  if (viewName === 'admin' && currentRole !== 'admin') {
+  // Mapping für alle möglichen Begriffe aus dem HTML-Dropdown-Menü
+  const viewMap = {
+    'main': 'main',
+    'inventar': 'main',
+    'checklist': 'main',
+    'einkaufsliste': 'main',
+    'boxes': 'boxes',
+    'lagerbestand': 'boxes',
+    'recipes': 'recipes',
+    'rezepte': 'recipes',
+    'power': 'power',
+    'strom': 'power',
+    'sales': 'sales',
+    'kasse': 'sales',
+    'verkauf': 'sales',
+    'admin': 'admin'
+  };
+
+  const targetView = viewMap[viewName?.toLowerCase()] || 'main';
+
+  if (targetView === 'admin' && currentRole !== 'admin') {
     const pwdPrompt = prompt("Admin-Passwort für Control Center erforderlich:");
     if (pwdPrompt === roleConfig.admin.pwd) {
       currentRole = 'admin';
@@ -168,24 +166,21 @@ function switchView(viewName) {
     }
   }
 
-  currentView = viewName;
+  currentView = targetView;
   document.getElementById('navDropdown')?.classList.add('hidden');
 
-  // Ausblenden aller Views
-  document.getElementById('viewChecklist')?.classList.add('hidden');
-  document.getElementById('viewBoxes')?.classList.add('hidden');
-  document.getElementById('viewRecipes')?.classList.add('hidden');
-  document.getElementById('viewPower')?.classList.add('hidden');
-  document.getElementById('viewSales')?.classList.add('hidden');
-  document.getElementById('viewAdmin')?.classList.add('hidden');
+  // Alle Ansichten verbergen
+  ['viewChecklist', 'viewBoxes', 'viewRecipes', 'viewPower', 'viewSales', 'viewAdmin'].forEach(id => {
+    document.getElementById(id)?.classList.add('hidden');
+  });
 
-  // Einblenden des Ziel-Views
-  if (viewName === 'main') document.getElementById('viewChecklist')?.classList.remove('hidden');
-  if (viewName === 'boxes') document.getElementById('viewBoxes')?.classList.remove('hidden');
-  if (viewName === 'recipes') document.getElementById('viewRecipes')?.classList.remove('hidden');
-  if (viewName === 'power') document.getElementById('viewPower')?.classList.remove('hidden');
-  if (viewName === 'sales') document.getElementById('viewSales')?.classList.remove('hidden');
-  if (viewName === 'admin') document.getElementById('viewAdmin')?.classList.remove('hidden');
+  // Ziel-Ansicht einblenden
+  if (targetView === 'main') document.getElementById('viewChecklist')?.classList.remove('hidden');
+  if (targetView === 'boxes') document.getElementById('viewBoxes')?.classList.remove('hidden');
+  if (targetView === 'recipes') document.getElementById('viewRecipes')?.classList.remove('hidden');
+  if (targetView === 'power') document.getElementById('viewPower')?.classList.remove('hidden');
+  if (targetView === 'sales') document.getElementById('viewSales')?.classList.remove('hidden');
+  if (targetView === 'admin') document.getElementById('viewAdmin')?.classList.remove('hidden');
 
   // Dynamischer Titel im Header
   const titleEl = document.getElementById('currentViewTitle');
@@ -198,12 +193,12 @@ function switchView(viewName) {
       sales: '💰 Standkasse & Verkauf',
       admin: '👑 Admin Control Center'
     };
-    titleEl.innerText = titles[viewName] || '📋 Hauptliste & Inventar';
+    titleEl.innerText = titles[targetView] || '📋 Hauptliste & Inventar';
   }
 
-  if (viewName === 'main') renderChecklist();
-  if (viewName === 'boxes') renderBoxOverview();
-  if (viewName === 'admin') openRoleSettingsModal();
+  if (targetView === 'main') renderChecklist();
+  if (targetView === 'boxes') renderBoxOverview();
+  if (targetView === 'admin') openRoleSettingsModal();
 }
 
 /* ==========================================================================
@@ -293,7 +288,7 @@ function saveRoleSettings() {
 }
 
 /* ==========================================================================
-   INVENTAR & CHECKLISTE
+   INVENTAR & CHECKLISTE (GEFIXTE TABELLEN-ÜBERSCHRIFTEN)
    ========================================================================== */
 
 function filterCategory(cat) {
@@ -346,11 +341,11 @@ function renderChecklist() {
             </td>
             ${!isOrga ? `
               <td class="py-3 px-2">
-                <input type="text" value="${state.qty || ''}" placeholder="-" ${disQty} onchange="updateItem(${item.id}, 'qty', this.value)" class="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs w-20" />
+                <input type="text" value="${state.qty || ''}" placeholder="-" ${disQty} onchange="updateItem(${item.id}, 'qty', this.value)" class="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs w-20 text-slate-900" />
               </td>
               ${!isIngredientCat ? `
                 <td class="py-3 px-2">
-                  <input type="text" value="${state.stockQty || ''}" placeholder="0" ${disStock} onchange="updateItem(${item.id}, 'stockQty', this.value)" class="bg-amber-50/80 border border-amber-300 rounded-lg px-2 py-1 text-xs w-16" />
+                  <input type="text" value="${state.stockQty || ''}" placeholder="0" ${disStock} onchange="updateItem(${item.id}, 'stockQty', this.value)" class="bg-amber-50/80 border border-amber-300 rounded-lg px-2 py-1 text-xs w-16 text-slate-900" />
                 </td>
               ` : ''}
             ` : ''}
@@ -360,14 +355,14 @@ function renderChecklist() {
               </select>
             </td>
             <td class="py-3 px-2">
-              <input type="text" placeholder="Name..." value="${state.assignedTo || ''}" ${disStatus} onchange="updateItem(${item.id}, 'assignedTo', this.value)" class="bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs w-full" />
+              <input type="text" placeholder="Name..." value="${state.assignedTo || ''}" ${disStatus} onchange="updateItem(${item.id}, 'assignedTo', this.value)" class="bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs w-full text-slate-900" />
             </td>
             ${!isOrga ? `
               <td class="py-3 px-2 text-center align-middle">
                 <input type="checkbox" ${state.packed ? 'checked' : ''} ${disPacked} onchange="updateItem(${item.id}, 'packed', this.checked)" class="w-5 h-5 accent-emerald-600 rounded cursor-pointer mx-auto block" />
               </td>
               <td class="py-3 px-2 text-center">
-                <input type="number" min="1" max="12" value="${state.boxNum || ''}" ${disBox} onchange="updateItem(${item.id}, 'boxNum', this.value)" class="bg-white border border-slate-300 rounded-lg px-1 py-1 text-xs text-center w-12 mx-auto" />
+                <input type="number" min="1" max="12" value="${state.boxNum || ''}" ${disBox} onchange="updateItem(${item.id}, 'boxNum', this.value)" class="bg-white border border-slate-300 rounded-lg px-1 py-1 text-xs text-center w-12 mx-auto text-slate-900" />
               </td>
             ` : ''}
           </tr>
@@ -381,14 +376,14 @@ function renderChecklist() {
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs sm:text-sm text-slate-800 border-collapse min-w-[650px]">
             <thead>
-              <tr class="border-b border-slate-200 text-slate-500 text-xs uppercase bg-slate-50/50">
-                <th class="py-2.5 px-3">${isOrga ? 'Aufgabe / Details' : 'Gegenstand'}</th>
-                ${!isOrga ? '<th class="py-2.5 px-2 w-[12%]">Benötigt</th>' : ''}
-                ${!isOrga && !isIngredientCat ? '<th class="py-2.5 px-2 w-[10%] text-amber-900 font-bold">Auf Lager</th>' : ''}
-                <th class="py-2.5 px-2 w-[18%]">Status</th>
-                <th class="py-2.5 px-2 w-[18%]">${isOrga ? 'Ansprechpartner' : 'Verantwortlich'}</th>
-                ${!isOrga ? '<th class="py-2.5 px-2 w-[8%] text-center">Gepackt</th>' : ''}
-                ${!isOrga ? '<th class="py-2.5 px-2 w-[8%] text-center">Box</th>' : ''}
+              <tr class="border-b border-slate-300 text-slate-800 font-bold text-xs uppercase bg-slate-100">
+                <th class="py-3 px-3 text-slate-800 font-extrabold">${isOrga ? 'Aufgabe / Details' : 'Gegenstand'}</th>
+                ${!isOrga ? '<th class="py-3 px-2 w-[12%] text-slate-800 font-extrabold">Benötigt</th>' : ''}
+                ${!isOrga && !isIngredientCat ? '<th class="py-3 px-2 w-[10%] text-amber-900 font-extrabold">Auf Lager</th>' : ''}
+                <th class="py-3 px-2 w-[18%] text-slate-800 font-extrabold">Status</th>
+                <th class="py-3 px-2 w-[18%] text-slate-800 font-extrabold">${isOrga ? 'Ansprechpartner' : 'Verantwortlich'}</th>
+                ${!isOrga ? '<th class="py-3 px-2 w-[8%] text-center text-slate-800 font-extrabold">Gepackt</th>' : ''}
+                ${!isOrga ? '<th class="py-3 px-2 w-[8%] text-center text-slate-800 font-extrabold">Box</th>' : ''}
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">${rowsHtml}</tbody>
@@ -416,10 +411,10 @@ function updateProgress() {
 }
 
 function getStatusClass(s) {
-  if (s === 'Vorbereitet') return 'bg-amber-100 text-amber-800 border-amber-300';
-  if (s === 'Verteilt') return 'bg-sky-100 text-sky-800 border-sky-300';
-  if (s === 'Erledigt' || s === 'Eingekauft') return 'bg-emerald-100 text-emerald-800 border-emerald-300';
-  return 'bg-slate-100 text-slate-700 border-slate-300';
+  if (s === 'Vorbereitet') return 'bg-amber-100 text-amber-900 border-amber-300';
+  if (s === 'Verteilt') return 'bg-sky-100 text-sky-900 border-sky-300';
+  if (s === 'Erledigt' || s === 'Eingekauft') return 'bg-emerald-100 text-emerald-900 border-emerald-300';
+  return 'bg-slate-100 text-slate-800 border-slate-300';
 }
 
 /* ==========================================================================
