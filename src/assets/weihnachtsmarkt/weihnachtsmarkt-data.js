@@ -1,7 +1,7 @@
 window.DEFAULT_ROLE_CONFIG = {
   helfer: { pwd: "SGHelfer", canCash: true, canPacked: true, canQty: false, canStock: false, canBox: true, canStatus: false, canPrices: false, canLog: false },
   orga: { pwd: "SGOrga", canCash: true, canPacked: true, canQty: true, canStock: true, canBox: true, canStatus: true, canPrices: true, canLog: true },
-  admin: { pwd: "SGAdmin" }
+  admin: { pwd: "SGJugend26" }
 };
 
 window.DEFAULT_ITEMS = [
@@ -20,9 +20,9 @@ window.DEFAULT_ITEMS = [
   {id:19, cat:"⚡ Elektrik & Licht", title:"Lichterketten Lang", defaultStockQty:"2", defaultWatts:20},
   {id:20, cat:"⚡ Elektrik & Licht", title:"Lichterketten Sterne", defaultStockQty:"2", defaultWatts:15},
   {id:76, cat:"⚡ Elektrik & Licht", title:"Lichtschlauch", defaultStockQty:"1", defaultWatts:25},
-  {id:21, cat:"⚡ Elektrik & Licht", title:"Mehrfachstecker 3er", details:"3-fach Verteilungsstecker", defaultStockQty:"2"},
-  {id:22, cat:"⚡ Elektrik & Licht", title:"Mehrfachstecker 5er", details:"5-fach Verteilungsstecker", defaultStockQty:"2"},
-  {id:23, cat:"⚡ Elektrik & Licht", title:"Verlängerungskabel 3m", details:"Stromkabel Verlängerung", defaultStockQty:"2"},
+  {id:21, cat:"⚡ Elektrik & Licht", title:"Mehrfachstecker 3er", details:"3-fach Verteilungsstecker", defaultStockQty:"2", defaultWatts:3680},
+  {id:22, cat:"⚡ Elektrik & Licht", title:"Mehrfachstecker 5er", details:"5-fach Verteilungsstecker", defaultStockQty:"2", defaultWatts:3680},
+  {id:23, cat:"⚡ Elektrik & Licht", title:"Verlängerungskabel 3m", details:"Stromkabel Verlängerung", defaultStockQty:"2", defaultWatts:3680},
   {id:24, cat:"🔌 Geräte", title:"Einkochautomat", defaultQty:"2", defaultStockQty:"2", defaultWatts:1800},
   {id:25, cat:"🔌 Geräte", title:"Waffeleisen", defaultQty:"3", defaultStockQty:"3", defaultWatts:1200},
   {id:26, cat:"🔌 Geräte", title:"Wasserkocher", defaultQty:"1", defaultWatts:2200, defaultStockQty:"1"},
@@ -32,15 +32,15 @@ window.DEFAULT_ITEMS = [
   {id:33, cat:"✨ Standdeko", title:"Bodenschutz/Malervlies"}, {id:34, cat:"✨ Standdeko", title:"Keksteller"},
   {id:35, cat:"✨ Standdeko", title:"Kerzengläser"}, {id:36, cat:"✨ Standdeko", title:"SG Banner"},
   {id:37, cat:"✨ Standdeko", title:"Tischdecken"},
-  {id:38, cat:"🍎 Zutaten (Waffeln & Punsch)", title:"Wintertee", details:"Verschiedene Sorten", defaultQty:"10 Btl."},
-  {id:39, cat:"🍎 Zutaten (Waffeln & Punsch)", title:"Glühfix", defaultQty:"5 Btl."},
-  {id:40, cat:"🍎 Zutaten (Waffeln & Punsch)", title:"Zimtstangen", defaultQty:"2 Stk"},
-  {id:41, cat:"🍎 Zutaten (Waffeln & Punsch)", title:"Orangensaft", defaultQty:"1,0 l"},
-  {id:42, cat:"🍎 Zutaten (Waffeln & Punsch)", title:"Apfelsaft", defaultQty:"2,5 l"},
-  {id:43, cat:"🍎 Zutaten (Waffeln & Punsch)", title:"Roter Traubensaft", defaultQty:"2,5 l"},
-  {id:45, cat:"🍎 Zutaten (Waffeln & Punsch)", title:"Öl (Waffeln)"},
-  {id:46, cat:"🍎 Zutaten (Waffeln & Punsch)", title:"Puderzucker"},
-  {id:47, cat:"🍎 Zutaten (Waffeln & Punsch)", title:"Servietten"},
+  {id:38, cat:"🍎 Zutaten (Waffeln & Punsch)", title:"Wintertee", details:"Verschiedene Sorten", defaultQty:"10 Btl.", packageSize:"20 Btl.", isShop:true},
+  {id:39, cat:"🍎 Zutaten (Waffeln & Punsch)", title:"Glühfix", defaultQty:"5 Btl.", packageSize:"10 Btl.", isShop:true},
+  {id:40, cat:"🍎 Zutaten (Waffeln & Punsch)", title:"Zimtstangen", defaultQty:"2 Stk", packageSize:"5 Stk", isShop:true},
+  {id:41, cat:"🍎 Zutaten (Waffeln & Punsch)", title:"Orangensaft", defaultQty:"1,0 l", packageSize:"1 l", isShop:true},
+  {id:42, cat:"🍎 Zutaten (Waffeln & Punsch)", title:"Apfelsaft", defaultQty:"2,5 l", packageSize:"1 l", isShop:true},
+  {id:43, cat:"🍎 Zutaten (Waffeln & Punsch)", title:"Roter Traubensaft", defaultQty:"2,5 l", packageSize:"1 l", isShop:true},
+  {id:45, cat:"🍎 Zutaten (Waffeln & Punsch)", title:"Öl (Waffeln)", packageSize:"1 Flasche", isShop:true},
+  {id:46, cat:"🍎 Zutaten (Waffeln & Punsch)", title:"Puderzucker", packageSize:"250 g", isShop:true},
+  {id:47, cat:"🍎 Zutaten (Waffeln & Punsch)", title:"Servietten", packageSize:"100 Stk", isShop:true},
   {id:48, cat:"🛒 Einkäufe & Verbrauchsmaterial", title:"Geschirrhandtuch", isShop:true},
   {id:49, cat:"🛒 Einkäufe & Verbrauchsmaterial", title:"Küchenrolle", isShop:true},
   {id:50, cat:"🛒 Einkäufe & Verbrauchsmaterial", title:"Mülltüten", isShop:true},
