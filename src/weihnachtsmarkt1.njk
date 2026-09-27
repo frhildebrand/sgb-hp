@@ -1,897 +1,1724 @@
 ---
 layout: base.njk
-title: SG Barnstorf Weihnachtsmarkt
+heading: Weihnachtsmarkt Checkliste
+heroSubtitle: Interaktive Vorbereitungsliste für Kinderpunsch & Waffelstand
+permalink: /weihnachtsmarkt/index.html
 ---
 
-<!-- Tailwind CDN Embed -->
+<!-- Tailwind CSS Fallback CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
 
-<div class="min-h-screen bg-slate-950 text-slate-100 font-sans pb-12">
-  <div class="max-w-6xl mx-auto px-4 py-6 space-y-6">
-    
-    <!-- HEADER & NAVIGATION -->
-    <header class="flex items-center justify-between gap-4 bg-slate-900/90 backdrop-blur-md p-4 rounded-2xl border border-slate-800 shadow-2xl relative">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-xl">
-          🎄
-        </div>
-        <div>
-          <h1 class="font-bold text-sm sm:text-base text-slate-100 leading-tight">SG Barnstorf – Weihnachtsmarkt</h1>
-          <div id="currentViewTitle" class="text-xs text-amber-400 font-semibold flex items-center gap-1.5 mt-0.5">
-            📋 Hauptliste & Inventar
-          </div>
-        </div>
+<div class="max-w-6xl mx-auto px-2 sm:px-4 py-6 font-sans text-slate-800 print:p-0 print:max-w-none">
+  
+  <!-- Live Notice Banner (Falls vom Admin gesetzt) -->
+  <div id="noticeBanner" class="hidden bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white rounded-2xl p-4 shadow-lg mb-6 flex items-center justify-between gap-3 animate-pulse print:hidden">
+    <div class="flex items-center gap-3">
+      <span class="text-2xl">📢</span>
+      <div>
+        <span class="font-extrabold uppercase text-xs tracking-wider opacity-90 block">Wichtige Durchsage</span>
+        <p id="noticeBannerText" class="text-sm font-bold sm:text-base"></p>
       </div>
+    </div>
+    <button onclick="dismissNotice()" class="text-white/80 hover:text-white font-bold p-1 text-sm bg-black/10 rounded-lg px-2">Schließen</button>
+  </div>
 
-      <div class="flex items-center gap-3">
-        <button type="button" onclick="toggleRoleModal()" id="roleBadge" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 transition shadow-sm">
-          👁️ Rolle: BETRACHTER
+  <!-- Header -->
+  <div class="bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900 text-white rounded-3xl p-6 sm:p-8 text-center shadow-xl mb-6 relative overflow-hidden print:hidden">
+    <!-- Dekorative Blurs -->
+    <div class="absolute -top-12 -left-12 w-40 h-40 bg-emerald-500/20 rounded-full blur-2xl"></div>
+    <div class="absolute -bottom-12 -right-12 w-40 h-40 bg-amber-500/20 rounded-full blur-2xl"></div>
+
+    <!-- Header Top Row (Role Badge & Admin Switch) -->
+    <div class="flex items-center justify-between gap-2 mb-4 relative z-10">
+      <div id="roleBadge" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-white/10 backdrop-blur-md border border-white/20 text-emerald-100 flex items-center gap-1.5 shadow-sm">
+        👁️ Rolle: Betrachter
+      </div>
+      
+      <div class="flex items-center gap-2">
+        <span id="syncStatus" class="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-emerald-200">
+          🟢 Synced
+        </span>
+        <button id="adminToggleBtn" onclick="toggleRoleModal()" class="px-3 py-1.5 rounded-xl text-xs font-extrabold transition shadow-md flex items-center gap-1.5 bg-amber-400 text-slate-950 hover:bg-amber-300">
+          🔑 Rolle / Login
         </button>
-
-        <!-- Main Navigation Dropdown -->
-        <div class="relative">
-          <button type="button" onclick="toggleNavMenu()" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-200 transition">
-            ☰
-          </button>
-
-          <div id="navDropdown" class="hidden absolute right-0 mt-2 w-64 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-2 z-50 text-xs font-medium">
-            <button type="button" onclick="switchView('main')" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-800 flex items-center gap-2.5 text-slate-200">
-              📋 <span>Hauptliste & Inventar</span>
-            </button>
-            <button type="button" onclick="switchView('boxes')" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-800 flex items-center gap-2.5 text-slate-200">
-              📦 <span>Lagerbestand & Boxen</span>
-            </button>
-            <button type="button" onclick="switchView('recipes')" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-800 flex items-center gap-2.5 text-slate-200">
-              ☕ <span>Rezepte & Zutaten</span>
-            </button>
-            <button type="button" onclick="switchView('power')" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-800 flex items-center gap-2.5 text-slate-200">
-              ⚡ <span>Stromverbrauch-Rechner</span>
-            </button>
-            <button type="button" onclick="switchView('sales')" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-800 flex items-center gap-2.5 text-slate-200">
-              💰 <span>Standkasse & Verkauf</span>
-            </button>
-            
-            <div class="my-1.5 border-t border-slate-800"></div>
-
-            <button type="button" onclick="switchView('admin')" class="w-full text-left px-3 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold flex items-center gap-2.5">
-              👑 <span>Admin Control Center</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </header>
-
-    <!-- VIEW 1: HAUPTLISTE & INVENTAR -->
-    <section id="viewChecklist" class="space-y-6">
-      <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 shadow-xl space-y-4">
-        <div class="flex flex-col sm:flex-row gap-3 justify-between items-center">
-          <div class="w-full sm:w-1/2">
-            <input type="text" id="searchInput" placeholder="🔍 Suchen nach Gegenstand, Helfer, Box..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs font-medium text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50" />
-          </div>
-          <div id="syncStatus" class="text-xs text-slate-400 font-mono">⏳ Verbinde...</div>
-        </div>
-
-        <div>
-          <div class="flex justify-between text-xs font-semibold mb-2 text-slate-300">
-            <span>Gesamtfortschritt</span>
-            <span id="progressText" class="text-amber-400">0% erledigt</span>
-          </div>
-          <div class="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-slate-800">
-            <div id="progressBar" class="bg-gradient-to-r from-amber-500 to-emerald-500 h-full w-0 transition-all duration-300"></div>
-          </div>
-        </div>
-
-        <!-- Filter-Buttons -->
-        <div class="flex gap-2 overflow-x-auto pb-1 text-xs font-medium">
-          <button type="button" onclick="filterCategory('all')" id="btnFilterAll" class="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">Alle</button>
-          <button type="button" onclick="filterCategory('Offen')" id="btnFilterOffen" class="px-3.5 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 font-bold">🔴 Offen</button>
-          <button type="button" onclick="filterCategory('Vorbereitet')" id="btnFilterVorbereitet" class="px-3.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40">🟡 Vorbereitet</button>
-          <button type="button" onclick="filterCategory('Verteilt')" id="btnFilterVerteilt" class="px-3.5 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40">🔵 Verteilt</button>
-          <button type="button" onclick="filterCategory('Erledigt')" id="btnFilterErledigt" class="px-3.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40">🟢 Erledigt</button>
-        </div>
-      </div>
-
-      <!-- Dynamische Checklisten-Tabellen -->
-      <div id="checklist" class="space-y-4"></div>
-    </section>
-
-    <!-- VIEW 2: LAGERBESTAND & BOXEN -->
-    <section id="viewBoxes" class="hidden space-y-6">
-      <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-        <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">📦 Boxenübersicht & Lagerorte</h2>
-        <div id="boxOverviewGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-      </div>
-    </section>
-
-    <!-- VIEW 3: REZEPTE & ZUTATEN -->
-    <section id="viewRecipes" class="hidden space-y-6">
-      <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-        <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">☕ Kinderpunsch-Rechner</h2>
-        <p class="text-xs text-slate-400">Stelle die gewünschte Menge ein, um die benötigten Zutaten automatisch hochzurechnen.</p>
-        
-        <div class="flex items-center gap-4 bg-slate-950 p-4 rounded-xl border border-slate-800">
-          <input type="range" id="punschLiters" min="4" max="40" step="4" value="8" oninput="updateRecipeScaling()" class="w-full accent-amber-500" />
-          <span id="punschLitersLabel" class="font-bold text-amber-400 text-sm whitespace-nowrap">8 Liter</span>
-        </div>
-        
-        <ul id="punschRecipeList" class="space-y-2 text-xs sm:text-sm text-slate-200 list-disc pl-5 font-medium"></ul>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-3">
-          <h3 class="font-bold text-amber-400 text-sm flex items-center gap-2">☕ Original Kinderpunsch (Grundrezept 8L)</h3>
-          <ul class="text-xs text-slate-300 space-y-1.5 list-disc pl-4 font-medium">
-            <li><strong>2,0 Liter</strong> Wasser</li>
-            <li><strong>10 Beutel</strong> Wintertee</li>
-            <li><strong>1,0 Liter</strong> Orangensaft</li>
-            <li><strong>2,5 Liter</strong> Apfelsaft</li>
-            <li><strong>2,5 Liter</strong> Roter Traubensaft</li>
-            <li><strong>2 Stück</strong> Zimtstangen</li>
-            <li><strong>5 Beutel</strong> Glühfix</li>
-          </ul>
-        </div>
-
-        <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-3">
-          <h3 class="font-bold text-emerald-400 text-sm flex items-center gap-2">🧇 SG Barnstorf Herzwaffeln (ca. 30 Stk.)</h3>
-          <ul class="text-xs text-slate-300 space-y-1.5 list-disc pl-4 font-medium">
-            <li><strong>500g</strong> Butter (weich)</li>
-            <li><strong>300g</strong> Zucker & 2 Pck. Vanillezucker</li>
-            <li><strong>1 Prise</strong> Salz</li>
-            <li><strong>10 Stück</strong> Eier</li>
-            <li><strong>1.000g</strong> Weizenmehl (Typ 405)</li>
-            <li><strong>2 Pck.</strong> Backpulver</li>
-            <li><strong>ca. 400ml</strong> Milch</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <!-- VIEW 4: STROMVERBRAUCH-RECHNER -->
-    <section id="viewPower" class="hidden space-y-6">
-      <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-        <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">⚡ Stromverbrauch & Last-Rechner</h2>
-        <p class="text-xs text-slate-400">Berechne die Gesamtleistung am Stand (Max. 3680W pro 16A Phase!).</p>
-
-        <div class="space-y-2 text-xs font-medium">
-          <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
-            <span class="text-slate-300">🧇 Waffeleisen (ca. 1200W)</span>
-            <input type="number" id="pwrWaffel" value="3" onchange="calculatePowerLoad()" class="w-16 bg-slate-900 border border-slate-700 text-amber-400 rounded-lg p-1 text-center font-bold" />
-          </div>
-          <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
-            <span class="text-slate-300">☕ Einkochautomat (ca. 1800W)</span>
-            <input type="number" id="pwrPunsch" value="2" onchange="calculatePowerLoad()" class="w-16 bg-slate-900 border border-slate-700 text-amber-400 rounded-lg p-1 text-center font-bold" />
-          </div>
-          <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
-            <span class="text-slate-300">🫖 Wasserkocher (ca. 2200W)</span>
-            <input type="number" id="pwrWasser" value="1" onchange="calculatePowerLoad()" class="w-16 bg-slate-900 border border-slate-700 text-amber-400 rounded-lg p-1 text-center font-bold" />
-          </div>
-        </div>
-
-        <div id="powerSummary" class="p-4 bg-amber-500/10 border border-amber-500/30 text-amber-300 rounded-xl font-semibold text-xs text-center">
-          Gesamtleistung: <span class="text-amber-400 font-bold" id="totalWatts">9400 Watt</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- VIEW 5: STANDKASSE & VERKAUF -->
-    <section id="viewSales" class="hidden space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4 text-center">
-          <h3 class="font-bold text-slate-100 text-base">☕ Kinderpunsch (2,00 €)</h3>
-          <div class="flex items-center justify-center gap-3">
-            <button type="button" onclick="addSale('punsch', -1)" class="cash-btn w-12 h-12 bg-slate-800 hover:bg-slate-700 font-bold text-xl rounded-xl border border-slate-700 text-slate-200 transition">-1</button>
-            <input type="number" id="soldPunsch" value="0" readonly class="w-24 text-center font-extrabold text-2xl border border-slate-800 rounded-xl py-2 bg-slate-950 text-amber-400" />
-            <button type="button" onclick="addSale('punsch', 1)" class="cash-btn w-12 h-12 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xl rounded-xl shadow-lg transition">+1</button>
-          </div>
-        </div>
-
-        <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4 text-center">
-          <h3 class="font-bold text-slate-100 text-base">🧇 Waffeln (2,00 €)</h3>
-          <div class="flex items-center justify-center gap-3">
-            <button type="button" onclick="addSale('waffles', -1)" class="cash-btn w-12 h-12 bg-slate-800 hover:bg-slate-700 font-bold text-xl rounded-xl border border-slate-700 text-slate-200 transition">-1</button>
-            <input type="number" id="soldWaffles" value="0" readonly class="w-24 text-center font-extrabold text-2xl border border-slate-800 rounded-xl py-2 bg-slate-950 text-amber-400" />
-            <button type="button" onclick="addSale('waffles', 1)" class="cash-btn w-12 h-12 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xl rounded-xl shadow-lg transition">+1</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-        <h3 class="font-bold text-amber-400 text-xs uppercase tracking-wider">📊 Live Umsatz & Bilanz</h3>
-        
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs mb-4">
-          <div>
-            <label class="text-slate-400 block mb-1">Standgebühren (€)</label>
-            <input type="number" id="standFee" value="0.00" onchange="calculateSalesStats()" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-slate-100 font-bold" />
-          </div>
-          <div>
-            <label class="text-slate-400 block mb-1">Sonstige Einnahmen (€)</label>
-            <input type="number" id="otherRevenue" value="0.00" onchange="calculateSalesStats()" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-slate-100 font-bold" />
-          </div>
-        </div>
-
-        <div class="grid grid-cols-3 gap-3 text-center">
-          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-            <div class="text-[11px] text-slate-400">Einnahmen</div>
-            <div id="statRevenue" class="text-base font-bold text-emerald-400">0,00 €</div>
-          </div>
-          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-            <div class="text-[11px] text-slate-400">Ausgaben</div>
-            <div id="statExpenses" class="text-base font-bold text-red-400">0,00 €</div>
-          </div>
-          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-            <div class="text-[11px] text-slate-400">Gewinn</div>
-            <div id="statProfit" class="text-base font-extrabold text-amber-400">0,00 €</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- VIEW 6: ADMIN CONTROL CENTER -->
-    <section id="viewAdmin" class="hidden space-y-6">
-      <div class="bg-slate-900/90 border border-amber-500/30 rounded-2xl p-6 shadow-2xl space-y-6">
-        <div class="flex items-center justify-between pb-4 border-b border-slate-800">
-          <div>
-            <h2 class="text-base font-bold text-amber-400 flex items-center gap-2">
-              <span>👑</span> Admin Control Center
-            </h2>
-            <p class="text-xs text-slate-400">Passwörter & feingliedrige Einzelberechtigungen verwalten.</p>
-          </div>
-          <button type="button" onclick="saveRoleSettings()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs transition shadow-md">
-            💾 Speichern
-          </button>
-        </div>
-
-        <div class="space-y-4 text-xs">
-          <!-- HELFER -->
-          <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-              <span class="font-bold text-emerald-400">🤝 Helfer Rolle</span>
-              <div class="flex items-center gap-2">
-                <span class="text-slate-400">PW:</span>
-                <input type="text" id="pwd_helfer" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 font-mono w-32" />
-              </div>
-            </div>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-slate-300">
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_cash" /> 🛒 Kasse</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_packed" /> ✅ Gepackt</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_qty" /> 🔢 Menge</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_stock" /> 📦 Auf Lager</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_box" /> 🏷️ Box</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_status" /> 🔄 Status</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_prices" /> 💶 Preise</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_log" /> 📜 Log</label>
-            </div>
-          </div>
-
-          <!-- ORGA -->
-          <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-              <span class="font-bold text-sky-400">📋 Orga-Team Rolle</span>
-              <div class="flex items-center gap-2">
-                <span class="text-slate-400">PW:</span>
-                <input type="text" id="pwd_orga" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 font-mono w-32" />
-              </div>
-            </div>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-slate-300">
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_cash" /> 🛒 Kasse</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_packed" /> ✅ Gepackt</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_qty" /> 🔢 Menge</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_stock" /> 📦 Auf Lager</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_box" /> 🏷️ Box</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_status" /> 🔄 Status</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_prices" /> 💶 Preise</label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_log" /> 📜 Log</label>
-            </div>
-          </div>
-
-          <!-- ADMIN -->
-          <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="font-bold text-amber-400">🔓 Admin Rolle</span>
-              <div class="flex items-center gap-2">
-                <span class="text-slate-400">PW:</span>
-                <input type="text" id="pwd_admin" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 font-mono w-32" />
-              </div>
-            </div>
-            <p class="text-slate-500 text-[11px]">Der Admin besitzt automatisch immer alle Berechtigungen.</p>
-          </div>
-        </div>
-
-        <!-- Aktivitäten-Protokoll -->
-        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
-          <h3 class="font-bold text-slate-300 text-xs uppercase tracking-wider">📜 Aktivitäts-Protokoll</h3>
-          <ul id="activityLogList" class="text-xs text-slate-400 space-y-1 max-h-40 overflow-y-auto pt-2">
-            <li class="italic text-slate-500">Keine Aktivitäten aufgezeichnet.</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <!-- ROLE MODAL -->
-    <div id="roleModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div class="bg-slate-900 border border-slate-800 text-slate-100 rounded-2xl p-6 w-full max-w-sm space-y-4 text-center shadow-2xl">
-        <h3 class="font-bold text-sm">Rolle auswählen</h3>
-        <div class="space-y-2 text-xs">
-          <button type="button" onclick="selectRoleWithPassword('betrachter')" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl font-semibold">👁️ Betrachter (Nur Lesen)</button>
-          <button type="button" onclick="selectRoleWithPassword('helfer')" class="w-full py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-xl font-semibold">🤝 Helfer</button>
-          <button type="button" onclick="selectRoleWithPassword('orga')" class="w-full py-2.5 bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/30 rounded-xl font-semibold">📋 Orga-Team</button>
-          <button type="button" onclick="selectRoleWithPassword('admin')" class="w-full py-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-xl font-bold">👑 Admin</button>
-        </div>
-        <button type="button" onclick="closeRoleModal()" class="text-xs text-slate-500 hover:text-slate-300 pt-1">Abbrechen</button>
       </div>
     </div>
 
+    <h1 class="text-2xl sm:text-4xl font-black tracking-tight mb-2 text-amber-300 drop-shadow-sm">🎄 SG Barnstorf – Stand-Planung</h1>
+    <p class="text-emerald-100/90 text-sm sm:text-base mb-6 max-w-xl mx-auto font-medium">Vorbereitungsliste & Stand-Kasse für Kinderpunsch & Waffelstand am 1. Advent</p>
+    
+    <!-- Progress Bar -->
+    <div class="max-w-xl mx-auto bg-black/20 backdrop-blur-md rounded-full h-6 border border-white/10 overflow-hidden relative shadow-inner mb-6">
+      <div id="progressBar" class="bg-gradient-to-r from-amber-400 via-amber-300 to-emerald-400 h-full w-0 transition-all duration-500"></div>
+      <div id="progressText" class="absolute inset-0 flex items-center justify-center text-xs sm:text-sm font-black text-white drop-shadow">0% erledigt</div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex flex-wrap justify-center gap-2.5 relative z-10">
+      <button onclick="openShoppingModal()" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 transition shadow-md flex items-center gap-2">
+        🛒 Einkaufsliste & Preise
+      </button>
+      <button onclick="openWiringModal()" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-sky-500/20 backdrop-blur-md border border-sky-300/30 text-sky-100 hover:bg-sky-500/30 transition shadow-md flex items-center gap-2">
+        ⚡ Strom-Planer
+      </button>
+      <button onclick="openStockModal()" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-indigo-500/20 backdrop-blur-md border border-indigo-300/30 text-indigo-100 hover:bg-indigo-500/30 transition shadow-md flex items-center gap-2">
+        📊 Lagerbestand
+      </button>
+      <button onclick="openBoxOverview()" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-emerald-500/20 backdrop-blur-md border border-emerald-300/30 text-emerald-100 hover:bg-emerald-500/30 transition shadow-md flex items-center gap-2">
+        📦 Boxen-Übersicht
+      </button>
+      <button onclick="window.print()" class="px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-white/10 hover:bg-white/20 text-white transition shadow-md flex items-center gap-2">
+        🖨️ Drucken
+      </button>
+    </div>
+  </div>
+
+  <!-- Admin Panel Bar (Nur sichtbar im Admin-Modus) -->
+  <div id="adminPanel" class="hidden bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 border-2 border-amber-300 rounded-3xl p-5 shadow-lg mb-6 print:hidden">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-amber-200/80 pb-3 mb-4">
+      <span class="font-extrabold text-amber-950 text-base flex items-center gap-2">⚙️ Admin Control-Center</span>
+      <div class="flex flex-wrap gap-2">
+        <button onclick="openCreateItemModal()" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-700 text-white hover:bg-emerald-800 transition shadow-sm">➕ Neuer Gegenstand</button>
+        <button onclick="syncIngredientsToShoppingList()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-amber-700 text-white hover:bg-amber-800 transition">🛒 Punsch-Zutaten synchronisieren</button>
+        <button onclick="setGlobalNotice()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-orange-600 text-white hover:bg-orange-700 transition">📢 Durchsage / Notice setzen</button>
+        <button onclick="exportDataJSON()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-700 text-white hover:bg-slate-800 transition">💾 Backup</button>
+        <button onclick="importDataJSON()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-700 text-white hover:bg-slate-800 transition">📂 Import</button>
+        <button onclick="changeAdminPassword()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-sky-700 text-white hover:bg-sky-800 transition">🔑 PW Ändern</button>
+        <button onclick="resetSeason()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 text-white hover:bg-red-700 transition">🔄 Saison-Reset</button>
+      </div>
+    </div>
+
+    <!-- Admin Sub-Section: Audit-Logbuch -->
+    <div class="bg-white/80 backdrop-blur border border-amber-200/60 rounded-2xl p-3.5 text-xs text-slate-700">
+      <div class="flex justify-between items-center mb-2">
+        <span class="font-bold text-amber-950 flex items-center gap-1.5">⏱️ Aktivitäten-Logbuch (Letzte 10 Aktionen)</span>
+        <button onclick="clearActivityLog()" class="text-[10px] text-slate-400 hover:text-slate-600 underline">Log leeren</button>
+      </div>
+      <ul id="activityLogList" class="space-y-1 font-mono text-[11px] text-slate-600 max-h-28 overflow-y-auto">
+        <li class="italic text-slate-400">Noch keine Aktivitäten in dieser Sitzung.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ROSHOP Aushang -->
+  <div class="bg-amber-50/80 border border-amber-200/80 rounded-3xl p-5 shadow-sm mb-6 print:hidden">
+    <div class="flex items-center gap-3 mb-4">
+      <span class="text-2xl">📌</span>
+      <div>
+        <h3 class="font-bold text-slate-900 text-sm sm:text-base">Aktueller Aushang bei ROSHOP (Helfer & Teigspenden)</h3>
+        <p class="text-xs text-slate-600">Fotos/Scans der ausgehängten Listen für Samstag und Sonntag:</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="bg-white border border-amber-200/60 rounded-2xl p-3 text-center shadow-xs">
+        <span class="font-bold text-xs sm:text-sm text-amber-900 block mb-2">📅 Samstag (1. Adventswochenende)</span>
+        <div class="bg-slate-50 border border-slate-100 rounded-xl p-2 flex justify-center items-center overflow-hidden min-h-[200px]">
+          <img src="/images/roshop_samstag.jpg" alt="Aushang Samstag" class="max-h-[450px] w-auto object-contain rounded shadow-sm" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'py-12 text-amber-700/70 text-xs italic\'>📷 Noch kein Foto für <b>Samstag</b> hochgeladen.</div>';" />
+        </div>
+      </div>
+      <div class="bg-white border border-amber-200/60 rounded-2xl p-3 text-center shadow-xs">
+        <span class="font-bold text-xs sm:text-sm text-amber-900 block mb-2">📅 Sonntag (1. Adventswochenende)</span>
+        <div class="bg-slate-50 border border-slate-100 rounded-xl p-2 flex justify-center items-center overflow-hidden min-h-[200px]">
+          <img src="/images/roshop_sonntag.jpg" alt="Aushang Sonntag" class="max-h-[450px] w-auto object-contain rounded shadow-sm" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'py-12 text-amber-700/70 text-xs italic\'>📷 Noch kein Foto für <b>Sonntag</b> hochgeladen.</div>';" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rezepte & Punsch-Skalierer -->
+  <div class="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-sm mb-6 print:break-inside-avoid">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3 mb-4">
+      <h2 class="text-lg font-bold text-emerald-950 flex items-center gap-2">📜 Stand-Rezepte</h2>
+      <div class="flex items-center gap-2 text-xs bg-emerald-50/60 px-3 py-1.5 rounded-xl border border-emerald-200">
+        <span class="font-bold text-emerald-900">☕ Punsch-Rechner:</span>
+        <label class="flex items-center gap-1.5 font-semibold text-slate-700">
+          Ziel-Menge:
+          <input type="number" id="punschLiters" value="8" min="1" max="200" step="1" onchange="updateRecipeScaling()" class="w-16 border border-slate-300 rounded-lg text-center py-0.5 text-xs font-bold bg-white focus:outline-none focus:border-emerald-500" /> Liter
+        </label>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Waffeln -->
+      <div class="bg-emerald-50/40 border border-emerald-100 rounded-2xl p-4 text-xs sm:text-sm">
+        <div class="flex items-center gap-2 font-bold text-emerald-900 text-sm sm:text-base mb-2"><span>🧇</span> Belgische Waffeln (Spenden-Rezept)</div>
+        <p class="text-slate-500 mb-2 text-xs italic">Bitte eine ausreichend große Schüssel benutzen (2l reichen nicht)!</p>
+        <ul class="list-disc list-inside space-y-1 text-slate-700 mb-3 font-medium">
+          <li><b>5</b> Eier</li>
+          <li><b>300 g</b> Zucker</li>
+          <li><b>2 Pck.</b> Vanillezucker</li>
+          <li><b>2 Prisen</b> Salz</li>
+          <li><b>400 g</b> Butter (weich)</li>
+          <li><b>500 g</b> Mehl</li>
+          <li><b>½ Pck.</b> Backpulver</li>
+          <li><b>200 ml</b> Milch</li>
+        </ul>
+        <div class="border-t border-emerald-200/60 pt-2 text-slate-600 space-y-1 text-[11px]">
+          <p><b>Zubereitung:</b> Eier, Zucker, Vanillezucker, Salz schaumig schlagen. Weiche Butter einrühren. Mehl + Backpulver mit Milch abwechselnd unterrühren.</p>
+        </div>
+      </div>
+
+      <!-- Kinderpunsch -->
+      <div class="bg-red-50/40 border border-red-100 rounded-2xl p-4 text-xs sm:text-sm">
+        <div class="flex items-center gap-2 font-bold text-red-900 text-sm sm:text-base mb-2"><span>☕</span> Winter-Kinderpunsch (<span id="punschLitersLabel">8 Liter</span>)</div>
+        <p class="text-slate-500 mb-2 text-xs italic">Im Einkochautomaten erhitzen – nicht kochen lassen!</p>
+        <ul id="punschRecipeList" class="list-disc list-inside space-y-1 text-slate-700 mb-3 font-medium"></ul>
+        <div class="border-t border-red-200/60 pt-2 text-slate-600 space-y-1 text-[11px]">
+          <p><b>Zubereitung:</b> Tee kochen, ziehen lassen, Beutel entfernen. Säfte & Glühfix zugeben und langsam erhitzen.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Verkaufsstatistik & Stand-Kasse -->
+  <div class="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-sm mb-6 print:hidden">
+    <h2 class="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2 border-b border-slate-100 pb-2">📈 Verkaufsstatistik & Stand-Kasse</h2>
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs sm:text-sm mb-4">
+      <div class="bg-slate-50 border border-slate-200/60 p-3 rounded-2xl">
+        <label class="block font-bold text-slate-700 mb-1">Tassen Punsch:</label>
+        <div class="flex items-center gap-1.5">
+          <input type="number" id="soldPunsch" value="0" min="0" onchange="calculateSalesStats()" class="role-helfer-field w-16 border border-slate-300 rounded-lg p-1.5 text-center font-bold text-slate-900 focus:outline-none" />
+          <span class="text-slate-400">x</span>
+          <input type="number" step="0.50" id="pricePunsch" value="2.50" onchange="calculateSalesStats()" class="role-orga-field w-16 border border-slate-300 rounded-lg p-1.5 text-right font-bold text-slate-900 focus:outline-none" /> €
+        </div>
+      </div>
+
+      <div class="bg-slate-50 border border-slate-200/60 p-3 rounded-2xl">
+        <label class="block font-bold text-slate-700 mb-1">Verkaufte Waffeln:</label>
+        <div class="flex items-center gap-1.5">
+          <input type="number" id="soldWaffles" value="0" min="0" onchange="calculateSalesStats()" class="role-helfer-field w-16 border border-slate-300 rounded-lg p-1.5 text-center font-bold text-slate-900 focus:outline-none" />
+          <span class="text-slate-400">x</span>
+          <input type="number" step="0.50" id="priceWaffles" value="2.00" onchange="calculateSalesStats()" class="role-orga-field w-16 border border-slate-300 rounded-lg p-1.5 text-right font-bold text-slate-900 focus:outline-none" /> €
+        </div>
+      </div>
+
+      <div class="bg-slate-50 border border-slate-200/60 p-3 rounded-2xl">
+        <label class="block font-bold text-slate-700 mb-1">Standgebühr (Fixkosten):</label>
+        <div class="flex items-center gap-1">
+          <input type="number" step="1.00" id="standFee" value="0.00" min="0" onchange="calculateSalesStats()" class="role-orga-field w-20 border border-slate-300 rounded-lg p-1.5 text-right font-bold text-slate-900 focus:outline-none" /> €
+        </div>
+      </div>
+
+      <div class="bg-slate-50 border border-slate-200/60 p-3 rounded-2xl">
+        <label class="block font-bold text-slate-700 mb-1">Sonstiges / Spenden:</label>
+        <div class="flex items-center gap-1">
+          <input type="number" step="1.00" id="otherRevenue" value="0.00" onchange="calculateSalesStats()" class="role-helfer-field w-20 border border-slate-300 rounded-lg p-1.5 text-right font-bold text-slate-900 focus:outline-none" /> €
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Kassen-Ergebnis -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center border-t border-slate-100 pt-3">
+      <div class="bg-blue-50/80 border border-blue-200/60 p-3 rounded-2xl">
+        <span class="block text-xs font-bold text-blue-800 uppercase tracking-wider">Einnahmen (Brutto)</span>
+        <span id="statRevenue" class="text-lg font-black text-blue-950">0,00 €</span>
+      </div>
+      <div class="bg-amber-50/80 border border-amber-200/60 p-3 rounded-2xl">
+        <span class="block text-xs font-bold text-amber-800 uppercase tracking-wider">Gesamtkosten (Einkauf + Gebühr)</span>
+        <span id="statExpenses" class="text-lg font-black text-amber-950">0,00 €</span>
+      </div>
+      <div class="bg-emerald-50/80 border border-emerald-200/60 p-3 rounded-2xl">
+        <span class="block text-xs font-bold text-emerald-800 uppercase tracking-wider">Reingewinn (SG Jugend)</span>
+        <span id="statProfit" class="text-lg font-black text-emerald-950">0,00 €</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Suche & Status-Filter -->
+  <div class="space-y-4 mb-8 print:hidden">
+    <input type="text" id="searchInput" placeholder="🔍 Gegenstand, Person, Menge oder Box suchen..." 
+      class="w-full bg-white border border-slate-300 text-slate-900 placeholder-slate-400 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:border-emerald-500 transition shadow-sm" />
+    
+    <div class="flex flex-wrap justify-center gap-2" id="filterContainer">
+      <button onclick="setFilter('all', this)" class="filter-btn active px-4 py-2 rounded-xl border border-emerald-600 bg-emerald-600 text-white font-bold text-xs sm:text-sm shadow-sm">Alle</button>
+      <button onclick="setFilter('Offen', this)" class="filter-btn px-4 py-2 rounded-xl border border-slate-200 bg-white text-red-600 font-medium text-xs sm:text-sm hover:border-red-400">Offen</button>
+      <button onclick="setFilter('Vorbereitet', this)" class="filter-btn px-4 py-2 rounded-xl border border-slate-200 bg-white text-amber-600 font-medium text-xs sm:text-sm hover:border-amber-400">Vorbereitet</button>
+      <button onclick="setFilter('Verteilt', this)" class="filter-btn px-4 py-2 rounded-xl border border-slate-200 bg-white text-sky-600 font-medium text-xs sm:text-sm hover:border-sky-400">Verteilt</button>
+      <button onclick="setFilter('Eingekauft', this)" class="filter-btn px-4 py-2 rounded-xl border border-slate-200 bg-white text-emerald-600 font-medium text-xs sm:text-sm hover:border-emerald-400">Eingekauft</button>
+      <button onclick="setFilter('Erledigt', this)" class="filter-btn px-4 py-2 rounded-xl border border-slate-200 bg-white text-emerald-600 font-medium text-xs sm:text-sm hover:border-emerald-400">Erledigt</button>
+    </div>
+  </div>
+
+  <!-- Checklist Container -->
+  <div id="checklist" class="space-y-8"></div>
+
+</div>
+
+<!-- Modal: Rollen-Wechsel & Login -->
+<div id="roleModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 print:hidden">
+  <div class="bg-white border border-slate-200 rounded-3xl max-w-sm w-full p-6 shadow-2xl">
+    <h3 class="text-lg font-bold text-slate-900 mb-2">🔑 Rollen-Wechsel</h3>
+    <p class="text-xs text-slate-500 mb-4">Wähle deine Zugriffsrolle für die Bearbeitung aus:</p>
+
+    <div class="space-y-2 mb-6">
+      <button onclick="selectRole('betrachter')" class="w-full text-left p-3 rounded-2xl border border-slate-200 hover:border-emerald-500 transition flex items-center justify-between">
+        <div>
+          <span class="font-bold text-slate-900 text-sm block">👁️ Betrachter</span>
+          <span class="text-[11px] text-slate-500">Nur Lesen (Smartphone-Sicher)</span>
+        </div>
+      </button>
+
+      <button onclick="selectRole('helfer')" class="w-full text-left p-3 rounded-2xl border border-slate-200 hover:border-emerald-500 transition flex items-center justify-between">
+        <div>
+          <span class="font-bold text-slate-900 text-sm block">🤝 Helfer</span>
+          <span class="text-[11px] text-slate-500">Kann Gepackt-Haken & Kasse bedienen</span>
+        </div>
+      </button>
+
+      <button onclick="selectRole('orga')" class="w-full text-left p-3 rounded-2xl border border-slate-200 hover:border-emerald-500 transition flex items-center justify-between">
+        <div>
+          <span class="font-bold text-slate-900 text-sm block">📋 Orga-Team</span>
+          <span class="text-[11px] text-slate-500">Status, Mengen & Namen anpassen</span>
+        </div>
+      </button>
+
+      <button onclick="promptAdminLogin()" class="w-full text-left p-3 rounded-2xl border border-amber-300 bg-amber-50 hover:border-amber-500 transition flex items-center justify-between">
+        <div>
+          <span class="font-bold text-amber-950 text-sm block">🔒 Admin (Passwortgeschützt)</span>
+          <span class="text-[11px] text-amber-800">Vollzugriff, Artikel-Löschen, Reset</span>
+        </div>
+      </button>
+    </div>
+
+    <button onclick="closeRoleModal()" class="w-full py-2.5 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 text-xs">Schließen</button>
   </div>
 </div>
 
-<!-- COMPLETED INLINE APPLICATION SCRIPT -->
-<script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzm4pz4LD6vwqwkDQXqIypYRVx9m49oliAevZPGolZYm_JKFmWN526TLE-2Z3fGP8tJ/exec";
-
-// Default Configuration with your actual passwords
-let roleConfig = {
-  helfer: { pwd: "SGHelfer", canCash: true, canPacked: true, canQty: false, canStock: false, canBox: true, canStatus: false, canPrices: false, canLog: false },
-  orga: { pwd: "SGOrga", canCash: true, canPacked: true, canQty: true, canStock: true, canBox: true, canStatus: true, canPrices: true, canLog: true },
-  admin: { pwd: "SGJugend26" }
-};
-
-// All 74+ Original Inventory Items
-let itemsData = [
-  {"id": 1, "cat": "🏛️ Orga", "title": "Anmeldung Teilnahme", "details": "An Gemeinde"},
-  {"id": 2, "cat": "🏛️ Orga", "title": "Hütte Gemeinde", "details": "Aufbau Tag & Zeit abklären"},
-  {"id": 3, "cat": "🏛️ Orga", "title": "Listen Roshop Unterstützung", "details": "Aufhängen Schwarzes Brett"},
-  {"id": 4, "cat": "🏛️ Orga", "title": "Anzeige Gaststättengewerbe", "details": "Gemeinde / Amt"},
-  {"id": 5, "cat": "🛠️ Werkzeuge", "title": "Hammer"},
-  {"id": 6, "cat": "🛠️ Werkzeuge", "title": "Nagelzange"},
-  {"id": 7, "cat": "🛠️ Werkzeuge", "title": "Schere"},
-  {"id": 8, "cat": "🛠️ Werkzeuge", "title": "Schraubendreher"},
-  {"id": 9, "cat": "🛠️ Werkzeuge", "title": "Seitenschneider"},
-  {"id": 10, "cat": "🛠️ Werkzeuge", "title": "Taschenlampe"},
-  {"id": 11, "cat": "📦 Material & Befestigung", "title": "Büroklammern"},
-  {"id": 12, "cat": "📦 Material & Befestigung", "title": "Draht"},
-  {"id": 13, "cat": "📦 Material & Befestigung", "title": "Heftzwecken"},
-  {"id": 14, "cat": "📦 Material & Befestigung", "title": "Kabelbinder"},
-  {"id": 15, "cat": "📦 Material & Befestigung", "title": "Kreppband"},
-  {"id": 16, "cat": "📦 Material & Befestigung", "title": "Nägel"},
-  {"id": 74, "cat": "📦 Material & Befestigung", "title": "Panzertape"},
-  {"id": 17, "cat": "📦 Material & Befestigung", "title": "Schrauben"},
-  {"id": 18, "cat": "⚡ Elektrik & Licht", "title": "Lichterketten Kurz", "defaultStockQty": "2", "defaultWatts": 10, "isPower": true},
-  {"id": 19, "cat": "⚡ Elektrik & Licht", "title": "Lichterketten Lang", "defaultStockQty": "2", "defaultWatts": 20, "isPower": true},
-  {"id": 20, "cat": "⚡ Elektrik & Licht", "title": "Lichterketten Sterne", "defaultStockQty": "2", "defaultWatts": 15, "isPower": true},
-  {"id": 76, "cat": "⚡ Elektrik & Licht", "title": "Lichtschlauch", "defaultStockQty": "1", "defaultWatts": 25, "isPower": true},
-  {"id": 21, "cat": "⚡ Elektrik & Licht", "title": "Mehrfachstecker 3er", "details": "3-fach Verteilungsstecker", "isPower": true, "defaultStockQty": "2", "defaultWatts": 3680, "isCable": true},
-  {"id": 22, "cat": "⚡ Elektrik & Licht", "title": "Mehrfachstecker 5er", "details": "5-fach Verteilungsstecker", "isPower": true, "defaultStockQty": "2", "defaultWatts": 3680, "isCable": true},
-  {"id": 23, "cat": "⚡ Elektrik & Licht", "title": "Verlängerungskabel 3m", "details": "Stromkabel Verlängerung", "isPower": true, "defaultStockQty": "2", "defaultWatts": 3680, "isCable": true},
-  {"id": 24, "cat": "🔌 Geräte", "title": "Einkochautomat", "defaultQty": "2", "defaultStockQty": "2", "defaultWatts": 1800, "isPower": true},
-  {"id": 25, "cat": "🔌 Geräte", "title": "Waffeleisen", "defaultQty": "3", "defaultStockQty": "3", "defaultWatts": 1200, "isPower": true},
-  {"id": 26, "cat": "🔌 Geräte", "title": "Wasserkocher", "defaultQty": "1", "defaultWatts": 2200, "defaultStockQty": "1", "isPower": true},
-  {"id": 27, "cat": "💶 Kasse & Finanzen", "title": "Geldtasche"},
-  {"id": 28, "cat": "💶 Kasse & Finanzen", "title": "Kasse"},
-  {"id": 29, "cat": "💶 Kasse & Finanzen", "title": "Preisschilder Punsch"},
-  {"id": 30, "cat": "💶 Kasse & Finanzen", "title": "Preisschilder Waffeln"},
-  {"id": 31, "cat": "💶 Kasse & Finanzen", "title": "Spendenente"},
-  {"id": 32, "cat": "💶 Kasse & Finanzen", "title": "Wechselgeld"},
-  {"id": 33, "cat": "✨ Standdeko", "title": "Bodenschutz/Malervlies"},
-  {"id": 34, "cat": "✨ Standdeko", "title": "Keksteller"},
-  {"id": 35, "cat": "✨ Standdeko", "title": "Kerzengläser"},
-  {"id": 36, "cat": "✨ Standdeko", "title": "SG Banner"},
-  {"id": 37, "cat": "✨ Standdeko", "title": "Tischdecken"},
-  {"id": 38, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Wintertee", "details": "Verschiedene Sorten", "defaultQty": "10 Btl.", "defaultPackageSize": "20 Btl.", "isShop": true, "isIngredient": true},
-  {"id": 39, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Glühfix", "defaultQty": "5 Btl.", "defaultPackageSize": "10 Btl.", "isShop": true, "isIngredient": true},
-  {"id": 40, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Zimtstangen", "defaultQty": "2 Stk", "defaultPackageSize": "5 Stk", "isShop": true, "isIngredient": true},
-  {"id": 41, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Orangensaft", "defaultQty": "1,0 l", "defaultPackageSize": "1 l", "isShop": true, "isIngredient": true},
-  {"id": 42, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Apfelsaft", "defaultQty": "2,5 l", "defaultPackageSize": "1 l", "isShop": true, "isIngredient": true},
-  {"id": 43, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Roter Traubensaft", "defaultQty": "2,5 l", "defaultPackageSize": "1 l", "isShop": true, "isIngredient": true},
-  {"id": 45, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Öl (Waffeln)", "defaultPackageSize": "1 Flasche", "isShop": true, "isIngredient": true},
-  {"id": 46, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Puderzucker", "defaultPackageSize": "250 g", "isShop": true, "isIngredient": true},
-  {"id": 47, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Servietten", "defaultPackageSize": "100 Stk", "isShop": true, "isIngredient": true},
-  {"id": 48, "cat": "🛒 Einkäufe & Verbrauchsmaterial", "title": "Geschirrhandtuch", "isShop": true},
-  {"id": 49, "cat": "🛒 Einkäufe & Verbrauchsmaterial", "title": "Küchenrolle", "isShop": true},
-  {"id": 50, "cat": "🛒 Einkäufe & Verbrauchsmaterial", "title": "Mülltüten", "isShop": true},
-  {"id": 51, "cat": "🛒 Einkäufe & Verbrauchsmaterial", "title": "Spekulatius", "isShop": true},
-  {"id": 52, "cat": "🛒 Einkäufe & Verbrauchsmaterial", "title": "Spülmittel", "isShop": true},
-  {"id": 53, "cat": "🛒 Einkäufe & Verbrauchsmaterial", "title": "Teelichter", "isShop": true},
-  {"id": 54, "cat": "🛒 Einkäufe & Verbrauchsmaterial", "title": "Waschlappen", "isShop": true},
-  {"id": 55, "cat": "🥣 Stand-Equipment & Zubehör", "title": "Esslöffel"},
-  {"id": 56, "cat": "🥣 Stand-Equipment & Zubehör", "title": "Holzgabeln"},
-  {"id": 57, "cat": "🥣 Stand-Equipment & Zubehör", "title": "Ölpinsel inkl. Flasche"},
-  {"id": 58, "cat": "🥣 Stand-Equipment & Zubehör", "title": "Sieb für Puderzucker"},
-  {"id": 59, "cat": "🥣 Stand-Equipment & Zubehör", "title": "Spaghettikelle (Punschkelle)"},
-  {"id": 60, "cat": "🥣 Stand-Equipment & Zubehör", "title": "Suppenkellen"},
-  {"id": 75, "cat": "📋 Sonstiges", "title": "Musikbox / Bluetooth-Lautsprecher"},
-  {"id": 61, "cat": "📋 Sonstiges", "title": "Eddings"},
-  {"id": 63, "cat": "📋 Sonstiges", "title": "Erste Hilfe Set"},
-  {"id": 64, "cat": "📋 Sonstiges", "title": "Feuerzeug"},
-  {"id": 65, "cat": "📋 Sonstiges", "title": "Kehrblech & Handfeger"},
-  {"id": 66, "cat": "📋 Sonstiges", "title": "Kugelschreiber"},
-  {"id": 67, "cat": "📋 Sonstiges", "title": "Listen Roshop"},
-  {"id": 68, "cat": "📋 Sonstiges", "title": "Rezeptzettel"},
-  {"id": 69, "cat": "📋 Sonstiges", "title": "Schüssel Lappen Waschen"},
-  {"id": 70, "cat": "📋 Sonstiges", "title": "Steckmülleimer"},
-  {"id": 71, "cat": "📋 Sonstiges", "title": "Stehtische"},
-  {"id": 72, "cat": "📋 Sonstiges", "title": "Taschenmesser"},
-  {"id": 73, "cat": "📋 Sonstiges", "title": "Weihnachtsmützen"}
-];
-
-let appState = {};
-let currentFilter = 'all';
-let currentRole = 'betrachter'; // betrachter, helfer, orga, admin
-let activityLog = [];
-
-document.addEventListener('DOMContentLoaded', () => {
-  loadFromLocal();
-  itemsData.forEach(item => initItemState(item));
-  
-  switchView('main');
-  updateProgress();
-  updateRecipeScaling();
-  calculatePowerLoad();
-  calculateSalesStats();
-  applyRolePermissions();
-
-  loadStateFromSheet();
-  document.getElementById('searchInput')?.addEventListener('input', renderChecklist);
-});
-
-function loadFromLocal() {
-  const local = JSON.parse(localStorage.getItem('sg_wm_state_v26')) || {};
-  appState = local;
-  if (appState.customItemsList && appState.customItemsList.length > 0) itemsData = appState.customItemsList;
-  if (appState.roleConfig) roleConfig = appState.roleConfig;
-  if (appState.activityLog) activityLog = appState.activityLog;
-}
-
-async function loadStateFromSheet() {
-  setSyncStatus(null, "⏳ Verbinde...");
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000);
-
-    const res = await fetch(SCRIPT_URL + '?t=' + new Date().getTime(), { signal: controller.signal });
-    clearTimeout(timeoutId);
+<!-- Modal: Admin Item Erstellen/Bearbeiten -->
+<div id="itemModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 print:hidden">
+  <div class="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl">
+    <h3 id="itemModalTitle" class="text-lg font-bold text-slate-900 mb-4">Gegenstand bearbeiten</h3>
     
-    const cloudData = await res.json();
-    if (cloudData && Object.keys(cloudData).length > 0) {
-      appState = cloudData;
-      if (appState.customItemsList && appState.customItemsList.length > 0) itemsData = appState.customItemsList;
-      if (appState.roleConfig) roleConfig = appState.roleConfig;
-      if (appState.activityLog) activityLog = appState.activityLog;
-      
-      localStorage.setItem('sg_wm_state_v26', JSON.stringify(appState));
-      setSyncStatus(true);
-      
-      itemsData.forEach(item => initItemState(item));
-      renderChecklist();
-      renderBoxOverview();
-      updateProgress();
-      calculateSalesStats();
-    }
-  } catch(e) {
-    setSyncStatus(false);
+    <div class="space-y-4 text-xs sm:text-sm">
+      <div>
+        <label class="block font-semibold text-slate-700 mb-1">Name des Gegenstands:</label>
+        <input type="text" id="modalItemTitle" class="w-full border border-slate-300 rounded-xl p-2.5 focus:border-emerald-500 focus:outline-none" />
+      </div>
+
+      <div>
+        <label class="block font-semibold text-slate-700 mb-1">Kategorie:</label>
+        <select id="modalItemCat" onchange="handleCatSelectChange(this)" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white focus:border-emerald-500 focus:outline-none">
+        </select>
+        <input type="text" id="modalCustomCat" placeholder="Neue Kategorie eingeben..." class="w-full border border-slate-300 rounded-xl p-2.5 mt-2 hidden focus:border-emerald-500 focus:outline-none" />
+      </div>
+
+      <div>
+        <label class="block font-semibold text-slate-700 mb-1">Zusatzdetails / Hinweistext (optional):</label>
+        <input type="text" id="modalItemDetails" placeholder="z. B. Verpackungs-Tipp..." class="w-full border border-slate-300 rounded-xl p-2.5 focus:border-emerald-500 focus:outline-none" />
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-2 mt-6">
+      <button onclick="closeItemModal()" class="px-4 py-2 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 text-xs sm:text-sm">Abbrechen</button>
+      <button onclick="saveItemFromModal()" class="px-4 py-2 bg-emerald-700 text-white font-bold rounded-xl hover:bg-emerald-800 text-xs sm:text-sm">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Einkaufsliste -->
+<div id="shoppingModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 print:hidden">
+  <div class="bg-white border border-slate-200 rounded-3xl max-w-5xl w-full max-h-[90vh] flex flex-col shadow-2xl">
+    <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-amber-50 rounded-t-3xl">
+      <div>
+        <h2 class="text-lg font-bold text-amber-900 flex items-center gap-2">🛒 Interaktive Einkaufsliste & Preise</h2>
+        <p class="text-xs text-amber-800/80 mt-0.5">Packungsgrößen & Einzelpreise eingeben. Gesamtmenge und Kosten berechnen sich automatisch!</p>
+      </div>
+      <button onclick="closeShoppingModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1">✕</button>
+    </div>
+    
+    <div class="p-4 sm:p-6 overflow-y-auto space-y-4">
+      <div class="table-container">
+        <table class="w-full text-left text-xs sm:text-sm text-slate-800 border-collapse min-w-[750px]">
+          <thead>
+            <tr class="border-b border-slate-200 text-slate-500 text-xs uppercase bg-slate-50">
+              <th class="py-2.5 px-3 w-[5%] text-center">Gekauft</th>
+              <th class="py-2.5 px-3 w-[22%]">Artikel</th>
+              <th class="py-2.5 px-2 w-[10%] text-center">Bedarf</th>
+              <th class="py-2.5 px-2 w-[12%] text-center">Packungsgröße</th>
+              <th class="py-2.5 px-2 w-[12%] text-center font-bold text-amber-900">Anz. Packungen</th>
+              <th class="py-2.5 px-2 w-[15%]">Laden / Geschäft</th>
+              <th class="py-2.5 px-2 w-[12%] text-right">Preis / Packung</th>
+              <th class="py-2.5 px-2 w-[12%] text-right font-bold">Gesamtpreis</th>
+            </tr>
+          </thead>
+          <tbody id="shoppingTableBody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+
+      <div class="flex justify-between items-center gap-4 pt-4 border-t border-slate-200">
+        <button onclick="window.print()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-slate-200 text-slate-700 hover:bg-slate-300">🖨️ Einkaufsliste drucken</button>
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-bold text-slate-700">Gesamtsumme Einkauf:</span>
+          <span id="shoppingTotal" class="text-lg font-black text-emerald-800 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200">0,00 €</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-4 border-t border-slate-100 text-right bg-slate-50 rounded-b-3xl">
+      <button onclick="closeShoppingModal()" class="px-5 py-2 bg-amber-600 text-white font-bold rounded-xl text-xs sm:text-sm hover:bg-amber-700 transition">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Strom & Modularer Verkabelungs-Planer -->
+<div id="wiringModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 print:hidden">
+  <div class="bg-white border border-slate-200 rounded-3xl max-w-6xl w-full max-h-[92vh] flex flex-col shadow-2xl">
+    <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-sky-50 rounded-t-3xl">
+      <div>
+        <h2 class="text-lg font-bold text-sky-900 flex items-center gap-2">⚡ Modularer Strom- & Kabel-Planer (3 Stromeingänge)</h2>
+        <p class="text-xs text-sky-700 mt-0.5">Wattzahlen für jedes einzelne Gerät direkt anpassen und per Drag & Drop Verteilen!</p>
+      </div>
+      <button onclick="closeWiringModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1">✕</button>
+    </div>
+
+    <div class="p-4 sm:p-6 overflow-y-auto space-y-6 text-xs sm:text-sm">
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+        <h3 class="font-bold text-slate-900 text-sm mb-2 flex items-center gap-2">🔌 Nicht zugewiesene Geräte & Kabel:</h3>
+        <div id="unassignedPool" ondragover="allowDrop(event)" ondrop="drop(event, 'unassigned')" class="flex flex-wrap gap-2 min-h-[50px] p-2 bg-white rounded-lg border border-dashed border-slate-300"></div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Steckdose 1 -->
+        <div class="bg-sky-50/50 border border-sky-200 rounded-2xl p-4 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <h4 class="font-bold text-sky-900 text-sm">🔌 Steckdose 1</h4>
+              <span id="socket1Watts" class="px-2 py-0.5 rounded bg-sky-100 text-sky-900 font-bold font-mono text-xs">0 W / 0,0 A</span>
+            </div>
+            <div class="mb-3 space-y-1.5 bg-white p-2.5 rounded-xl border border-sky-100">
+              <label class="block text-[11px] font-semibold text-slate-600">Angeschlossenes Kabel:</label>
+              <select id="socket1Cable" onchange="updateSocketCable(1, this.value)" class="role-orga-field w-full text-xs border border-sky-200 rounded-lg p-1.5 bg-white font-medium text-sky-950 focus:outline-none"></select>
+              <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100">
+                <span class="text-slate-500">Max Limit:</span>
+                <div class="flex items-center gap-1">
+                  <input type="number" id="socket1CableMax" value="3680" step="100" onchange="updateCableMaxWatt(1, this.value)" class="role-orga-field w-16 border rounded px-1 text-right font-mono font-bold text-sky-900" />
+                  <span class="text-slate-500 font-bold">W</span>
+                </div>
+              </div>
+            </div>
+            <div id="socket1Pool" ondragover="allowDrop(event)" ondrop="drop(event, 'socket1')" class="space-y-2 min-h-[140px] p-2 bg-white rounded-xl border border-dashed border-sky-300"></div>
+          </div>
+          <div id="socket1Warn" class="mt-3 text-xs hidden font-bold text-red-600">⚠️ Überlastung Steckdose 1!</div>
+        </div>
+
+        <!-- Steckdose 2 -->
+        <div class="bg-indigo-50/50 border border-indigo-200 rounded-2xl p-4 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <h4 class="font-bold text-indigo-900 text-sm">🔌 Steckdose 2</h4>
+              <span id="socket2Watts" class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-900 font-bold font-mono text-xs">0 W / 0,0 A</span>
+            </div>
+            <div class="mb-3 space-y-1.5 bg-white p-2.5 rounded-xl border border-indigo-100">
+              <label class="block text-[11px] font-semibold text-slate-600">Angeschlossenes Kabel:</label>
+              <select id="socket2Cable" onchange="updateSocketCable(2, this.value)" class="role-orga-field w-full text-xs border border-indigo-200 rounded-lg p-1.5 bg-white font-medium text-indigo-950 focus:outline-none"></select>
+              <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100">
+                <span class="text-slate-500">Max Limit:</span>
+                <div class="flex items-center gap-1">
+                  <input type="number" id="socket2CableMax" value="3680" step="100" onchange="updateCableMaxWatt(2, this.value)" class="role-orga-field w-16 border rounded px-1 text-right font-mono font-bold text-indigo-900" />
+                  <span class="text-slate-500 font-bold">W</span>
+                </div>
+              </div>
+            </div>
+            <div id="socket2Pool" ondragover="allowDrop(event)" ondrop="drop(event, 'socket2')" class="space-y-2 min-h-[140px] p-2 bg-white rounded-xl border border-dashed border-indigo-300"></div>
+          </div>
+          <div id="socket2Warn" class="mt-3 text-xs hidden font-bold text-red-600">⚠️ Überlastung Steckdose 2!</div>
+        </div>
+
+        <!-- Steckdose 3 -->
+        <div class="bg-emerald-50/50 border border-emerald-200 rounded-2xl p-4 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <h4 class="font-bold text-emerald-900 text-sm">🔌 Steckdose 3</h4>
+              <span id="socket3Watts" class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-bold font-mono text-xs">0 W / 0,0 A</span>
+            </div>
+            <div class="mb-3 space-y-1.5 bg-white p-2.5 rounded-xl border border-emerald-100">
+              <label class="block text-[11px] font-semibold text-slate-600">Angeschlossenes Kabel:</label>
+              <select id="socket3Cable" onchange="updateSocketCable(3, this.value)" class="role-orga-field w-full text-xs border border-emerald-200 rounded-lg p-1.5 bg-white font-medium text-emerald-950 focus:outline-none"></select>
+              <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100">
+                <span class="text-slate-500">Max Limit:</span>
+                <div class="flex items-center gap-1">
+                  <input type="number" id="socket3CableMax" value="3680" step="100" onchange="updateCableMaxWatt(3, this.value)" class="role-orga-field w-16 border rounded px-1 text-right font-mono font-bold text-emerald-900" />
+                  <span class="text-slate-500 font-bold">W</span>
+                </div>
+              </div>
+            </div>
+            <div id="socket3Pool" ondragover="allowDrop(event)" ondrop="drop(event, 'socket3')" class="space-y-2 min-h-[140px] p-2 bg-white rounded-xl border border-dashed border-emerald-300"></div>
+          </div>
+          <div id="socket3Warn" class="mt-3 text-xs hidden font-bold text-red-600">⚠️ Überlastung Steckdose 3!</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-4 border-t border-slate-100 text-right bg-slate-50 rounded-b-3xl">
+      <button onclick="closeWiringModal()" class="px-5 py-2 bg-sky-700 text-white font-bold rounded-xl text-xs sm:text-sm hover:bg-sky-800 transition">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Lagerbestand-Übersicht -->
+<div id="stockModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 print:hidden">
+  <div class="bg-white border border-slate-200 rounded-3xl max-w-4xl w-full max-h-[85vh] flex flex-col shadow-2xl">
+    <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-indigo-50 rounded-t-3xl">
+      <div>
+        <h2 class="text-lg font-bold text-indigo-900 flex items-center gap-2">📊 Aktueller Lagerbestand</h2>
+        <p class="text-xs text-indigo-700 mt-0.5">Übersicht aller vorhandenen Materialien (ohne Zutaten)</p>
+      </div>
+      <button onclick="closeStockModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1">✕</button>
+    </div>
+    <div class="p-4 sm:p-6 overflow-y-auto">
+      <div class="table-container">
+        <table class="w-full text-left text-xs sm:text-sm text-slate-800 border-collapse min-w-[500px]">
+          <thead>
+            <tr class="border-b border-slate-200 text-slate-500 text-xs uppercase bg-slate-50">
+              <th class="py-2.5 px-3">Kategorie</th>
+              <th class="py-2.5 px-3">Gegenstand</th>
+              <th class="py-2.5 px-2 text-center">Auf Lager</th>
+              <th class="py-2.5 px-2 text-center">Soll-Bedarf</th>
+              <th class="py-2.5 px-2 text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody id="stockTableBody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="p-4 border-t border-slate-100 text-right bg-slate-50 rounded-b-3xl">
+      <button onclick="closeStockModal()" class="px-5 py-2 bg-indigo-700 text-white font-bold rounded-xl text-xs sm:text-sm hover:bg-indigo-800 transition">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Boxen-Übersicht -->
+<div id="boxModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 print:hidden">
+  <div class="bg-white border border-slate-200 rounded-3xl max-w-4xl w-full max-h-[85vh] flex flex-col shadow-2xl">
+    <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-emerald-50/60 rounded-t-3xl">
+      <div>
+        <h2 class="text-lg font-bold text-emerald-900 flex items-center gap-2">📦 Inhaltsübersicht & Packstatus der Boxen (1–12)</h2>
+        <p class="text-xs text-slate-500 mt-0.5">Übersicht aller Gegenstände und Pack-Fortschritt pro Kiste</p>
+      </div>
+      <button onclick="closeBoxOverview()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1">✕</button>
+    </div>
+    <div class="p-4 sm:p-6 overflow-y-auto">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="boxModalContent"></div>
+    </div>
+    <div class="p-4 border-t border-slate-100 text-right bg-slate-50 rounded-b-3xl">
+      <button onclick="closeBoxOverview()" class="px-5 py-2 bg-emerald-700 text-white font-bold rounded-xl text-xs sm:text-sm hover:bg-emerald-800 transition">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
-}
-
-function setSyncStatus(isOk, textOverride) {
-  const el = document.getElementById('syncStatus');
-  if (!el) return;
-  if (textOverride) el.innerHTML = textOverride;
-  else if (isOk) el.innerHTML = `🟢 Synced (${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})`;
-  else el.innerHTML = `🟡 Offline Mode`;
-}
-
-function initItemState(item) {
-  if (!appState[item.id]) {
-    appState[item.id] = { 
-      status: 'Offen', assignedTo: '', packed: false, boxNum: '', 
-      qty: item.defaultQty || '', stockQty: item.defaultStockQty || ''
-    };
+  select option {
+    background-color: #ffffff;
+    color: #0f172a;
   }
-}
+  .status-offen { background-color: #fef2f2; color: #991b1b; border-color: #fecaca; }
+  .status-vorbereitet { background-color: #fefce8; color: #854d0e; border-color: #fef08a; }
+  .status-verteilt { background-color: #f0f9ff; color: #075985; border-color: #bae6fd; }
+  .status-erledigt, .status-eingekauft { background-color: #f0fdf4; color: #166534; border-color: #bbf7d0; }
 
-async function saveState() {
-  appState.customItemsList = itemsData;
-  appState.roleConfig = roleConfig;
-  appState.activityLog = activityLog;
-  localStorage.setItem('sg_wm_state_v26', JSON.stringify(appState));
-  
-  updateProgress();
-  renderBoxOverview();
+  @media print {
+    body { background: white !important; color: black !important; }
+    .table-container { overflow: visible !important; }
+    input, select { border: none !important; background: transparent !important; }
+  }
+</style>
 
-  if (SCRIPT_URL) {
+<script>
+{% raw %}
+  const storeOptions = ["Aldi", "E-Center", "Famila", "Kaufland", "Kruber", "Lidl", "Netto", "Online", "Penny", "Rewe"];
+
+  let itemsData = [
+    // Orga
+    { id: 1, cat: "🏛️ Orga", title: "Anmeldung Teilnahme", details: "An Gemeinde", isShop: false },
+    { id: 2, cat: "🏛️ Orga", title: "Hütte Gemeinde", details: "Aufbau Tag & Zeit abklären", isShop: false },
+    { id: 3, cat: "🏛️ Orga", title: "Listen Roshop Unterstützung", details: "Aufhängen Schwarzes Brett", isShop: false },
+    { id: 4, cat: "🏛️ Orga", title: "Anzeige Gaststättengewerbe", details: "Gemeinde / Amt", isShop: false },
+    
+    // Werkzeuge
+    { id: 5, cat: "🛠️ Werkzeuge", title: "Hammer", details: "", isShop: false },
+    { id: 6, cat: "🛠️ Werkzeuge", title: "Nagelzange", details: "", isShop: false },
+    { id: 7, cat: "🛠️ Werkzeuge", title: "Schere", details: "", isShop: false },
+    { id: 8, cat: "🛠️ Werkzeuge", title: "Schraubendreher", details: "", isShop: false },
+    { id: 9, cat: "🛠️ Werkzeuge", title: "Seitenschneider", details: "", isShop: false },
+    { id: 10, cat: "🛠️ Werkzeuge", title: "Taschenlampe", details: "", isShop: false },
+    
+    // Material
+    { id: 11, cat: "📦 Material & Befestigung", title: "Büroklammern", details: "", isShop: false },
+    { id: 12, cat: "📦 Material & Befestigung", title: "Draht", details: "", isShop: false },
+    { id: 13, cat: "📦 Material & Befestigung", title: "Heftzwecken", details: "", isShop: false },
+    { id: 14, cat: "📦 Material & Befestigung", title: "Kabelbinder", details: "", isShop: false },
+    { id: 15, cat: "📦 Material & Befestigung", title: "Kreppband", details: "", isShop: false },
+    { id: 16, cat: "📦 Material & Befestigung", title: "Nägel", details: "", isShop: false },
+    { id: 74, cat: "📦 Material & Befestigung", title: "Panzertape", details: "", isShop: false },
+    { id: 17, cat: "📦 Material & Befestigung", title: "Schrauben", details: "", isShop: false },
+    
+    // Elektrik
+    { id: 18, cat: "⚡ Elektrik & Licht", title: "Lichterketten Kurz", details: "", defaultStockQty: "2", defaultWatts: 10, isPower: true, isShop: false },
+    { id: 19, cat: "⚡ Elektrik & Licht", title: "Lichterketten Lang", details: "", defaultStockQty: "2", defaultWatts: 20, isPower: true, isShop: false },
+    { id: 20, cat: "⚡ Elektrik & Licht", title: "Lichterketten Sterne", details: "", defaultStockQty: "2", defaultWatts: 15, isPower: true, isShop: false },
+    { id: 76, cat: "⚡ Elektrik & Licht", title: "Lichtschlauch", details: "", defaultStockQty: "1", defaultWatts: 25, isPower: true, isShop: false },
+    { id: 21, cat: "⚡ Elektrik & Licht", title: "Mehrfachstecker 3er", details: "3-fach Verteilungsstecker", isPower: true, defaultStockQty: "2", defaultWatts: 3680, isCable: true, isShop: false },
+    { id: 22, cat: "⚡ Elektrik & Licht", title: "Mehrfachstecker 5er", details: "5-fach Verteilungsstecker", isPower: true, defaultStockQty: "2", defaultWatts: 3680, isCable: true, isShop: false },
+    { id: 23, cat: "⚡ Elektrik & Licht", title: "Verlängerungskabel 3m", details: "Stromkabel Verlängerung", isPower: true, defaultStockQty: "2", defaultWatts: 3680, isCable: true, isShop: false },
+    
+    // Geräte
+    { id: 24, cat: "🔌 Geräte", title: "Einkochautomat", details: "", defaultQty: "2", defaultStockQty: "2", defaultWatts: 1800, isPower: true, isShop: false },
+    { id: 25, cat: "🔌 Geräte", title: "Waffeleisen", details: "", defaultQty: "3", defaultStockQty: "3", defaultWatts: 1200, isPower: true, isShop: false },
+    { id: 26, cat: "🔌 Geräte", title: "Wasserkocher", details: "", defaultQty: "1", defaultWatts: 2200, defaultStockQty: "1", isPower: true, isShop: false },
+    
+    // Kasse
+    { id: 27, cat: "💶 Kasse & Finanzen", title: "Geldtasche", details: "", isShop: false },
+    { id: 28, cat: "💶 Kasse & Finanzen", title: "Kasse", details: "", isShop: false },
+    { id: 29, cat: "💶 Kasse & Finanzen", title: "Preisschilder Punsch", details: "", isShop: false },
+    { id: 30, cat: "💶 Kasse & Finanzen", title: "Preisschilder Waffeln", details: "", isShop: false },
+    { id: 31, cat: "💶 Kasse & Finanzen", title: "Spendenente", details: "", isShop: false },
+    { id: 32, cat: "💶 Kasse & Finanzen", title: "Wechselgeld", details: "", isShop: false },
+    
+    // Standdeko
+    { id: 33, cat: "✨ Standdeko", title: "Bodenschutz/Malervlies", details: "", isShop: false },
+    { id: 34, cat: "✨ Standdeko", title: "Keksteller", details: "", isShop: false },
+    { id: 35, cat: "✨ Standdeko", title: "Kerzengläser", details: "", isShop: false },
+    { id: 36, cat: "✨ Standdeko", title: "SG Banner", details: "", isShop: false },
+    { id: 37, cat: "✨ Standdeko", title: "Tischdecken", details: "", defaultQty: "", isShop: false },
+    
+    // Zutaten
+    { id: 38, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Wintertee", details: "Verschiedene Sorten", defaultQty: "10 Btl.", defaultPackageSize: "20 Btl.", isShop: true, isIngredient: true },
+    { id: 39, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Glühfix", details: "", defaultQty: "5 Btl.", defaultPackageSize: "10 Btl.", isShop: true, isIngredient: true },
+    { id: 40, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Zimtstangen", details: "", defaultQty: "2 Stk", defaultPackageSize: "5 Stk", isShop: true, isIngredient: true },
+    { id: 41, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Orangensaft", details: "", defaultQty: "1,0 l", defaultPackageSize: "1 l", isShop: true, isIngredient: true },
+    { id: 42, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Apfelsaft", details: "", defaultQty: "2,5 l", defaultPackageSize: "1 l", isShop: true, isIngredient: true },
+    { id: 43, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Roter Traubensaft", details: "", defaultQty: "2,5 l", defaultPackageSize: "1 l", isShop: true, isIngredient: true },
+    { id: 45, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Öl (Waffeln)", details: "", defaultPackageSize: "1 Flasche", isShop: true, isIngredient: true },
+    { id: 46, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Puderzucker", details: "", defaultPackageSize: "250 g", isShop: true, isIngredient: true },
+    { id: 47, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Servietten", details: "", defaultPackageSize: "100 Stk", isShop: true, isIngredient: true },
+    
+    // Einkäufe
+    { id: 48, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Geschirrhandtuch", details: "", isShop: true },
+    { id: 49, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Küchenrolle", details: "", isShop: true },
+    { id: 50, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Mülltüten", details: "", isShop: true },
+    { id: 51, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Spekulatius", details: "", isShop: true },
+    { id: 52, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Spülmittel", details: "", isShop: true },
+    { id: 53, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Teelichter", details: "", isShop: true },
+    { id: 54, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Waschlappen", details: "", isShop: true },
+    
+    // Equipment
+    { id: 55, cat: "🥣 Stand-Equipment & Zubehör", title: "Esslöffel", details: "", isShop: false },
+    { id: 56, cat: "🥣 Stand-Equipment & Zubehör", title: "Holzgabeln", details: "", isShop: false },
+    { id: 57, cat: "🥣 Stand-Equipment & Zubehör", title: "Ölpinsel inkl. Flasche", details: "", isShop: false },
+    { id: 58, cat: "🥣 Stand-Equipment & Zubehör", title: "Sieb für Puderzucker", details: "", isShop: false },
+    { id: 59, cat: "🥣 Stand-Equipment & Zubehör", title: "Spaghettikelle (Punschkelle)", details: "", isShop: false },
+    { id: 60, cat: "🥣 Stand-Equipment & Zubehör", title: "Suppenkellen", details: "", isShop: false },
+    
+    // Sonstiges
+    { id: 75, cat: "📋 Sonstiges", title: "Musikbox / Bluetooth-Lautsprecher", details: "", isShop: false },
+    { id: 61, cat: "📋 Sonstiges", title: "Eddings", details: "", isShop: false },
+    { id: 63, cat: "📋 Sonstiges", title: "Erste Hilfe Set", details: "", isShop: false },
+    { id: 64, cat: "📋 Sonstiges", title: "Feuerzeug", details: "", isShop: false },
+    { id: 65, cat: "📋 Sonstiges", title: "Kehrblech & Handfeger", details: "", isShop: false },
+    { id: 66, cat: "📋 Sonstiges", title: "Kugelschreiber", details: "", isShop: false },
+    { id: 67, cat: "📋 Sonstiges", title: "Listen Roshop", details: "", isShop: false },
+    { id: 68, cat: "📋 Sonstiges", title: "Rezeptzettel", details: "", isShop: false },
+    { id: 69, cat: "📋 Sonstiges", title: "Schüssel Lappen Waschen", details: "", isShop: false },
+    { id: 70, cat: "📋 Sonstiges", title: "Steckmülleimer", details: "", isShop: false },
+    { id: 71, cat: "📋 Sonstiges", title: "Stehtische", details: "", isShop: false },
+    { id: 72, cat: "📋 Sonstiges", title: "Taschenmesser", details: "", isShop: false },
+    { id: 73, cat: "📋 Sonstiges", title: "Weihnachtsmützen", details: "", isShop: false }
+  ];
+
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzm4pz4LD6vwqwkDQXqIypYRVx9m49oliAevZPGolZYm_JKFmWN526TLE-2Z3fGP8tJ/exec";
+  let appState = {};
+  let currentFilter = 'all';
+  let currentRole = 'betrachter'; // Rollen: 'betrachter', 'helfer', 'orga', 'admin'
+  let adminPassword = "SGJugend26";
+  let editingItemId = null;
+  let activityLog = [];
+
+  async function loadStateFromSheet() {
     try {
-      await fetch(SCRIPT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(appState)
-      });
-      setSyncStatus(true);
-    } catch (err) { 
-      setSyncStatus(false); 
+      const res = await fetch(SCRIPT_URL + '?t=' + new Date().getTime());
+      const cloudData = await res.json();
+      if (cloudData && Object.keys(cloudData).length > 0) {
+        appState = cloudData;
+        if (appState.customItemsList && Array.isArray(appState.customItemsList)) itemsData = appState.customItemsList;
+        if (appState.adminPassword) adminPassword = appState.adminPassword;
+        if (appState.globalNotice) showNoticeBanner(appState.globalNotice);
+        if (appState.activityLog) activityLog = appState.activityLog;
+        localStorage.setItem('sg_wm_state_v20', JSON.stringify(appState));
+        setSyncStatus(true);
+      } else {
+        loadFromLocal();
+      }
+    } catch(e) {
+      console.error("Ladefehler:", e);
+      loadFromLocal();
+      setSyncStatus(false);
     }
-  }
-}
-
-function toggleNavMenu() {
-  document.getElementById('navDropdown')?.classList.toggle('hidden');
-}
-
-function switchView(viewName) {
-  if (viewName === 'admin' && currentRole !== 'admin') {
-    const pwdPrompt = prompt("Admin-Passwort für Control Center erforderlich:");
-    if (pwdPrompt === roleConfig.admin?.pwd) {
-      currentRole = 'admin';
-      applyRolePermissions();
-      logActivity("Admin-Bereich betreten");
-    } else {
-      if (pwdPrompt !== null) alert("Falsches Admin-Passwort!");
-      return;
+    itemsData.forEach(item => initItemState(item));
+    renderChecklist();
+    updateProgress();
+    updateRecipeScaling();
+    
+    if (appState.salesStats) {
+      if (document.getElementById('soldPunsch')) document.getElementById('soldPunsch').value = appState.salesStats.soldPunsch || 0;
+      if (document.getElementById('pricePunsch')) document.getElementById('pricePunsch').value = appState.salesStats.pricePunsch || 2.50;
+      if (document.getElementById('soldWaffles')) document.getElementById('soldWaffles').value = appState.salesStats.soldWaffles || 0;
+      if (document.getElementById('priceWaffles')) document.getElementById('priceWaffles').value = appState.salesStats.priceWaffles || 2.00;
+      if (document.getElementById('standFee')) document.getElementById('standFee').value = appState.salesStats.standFee || 0.00;
+      if (document.getElementById('otherRevenue')) document.getElementById('otherRevenue').value = appState.salesStats.otherRevenue || 0.00;
     }
-  }
-
-  document.getElementById('navDropdown')?.classList.add('hidden');
-
-  const views = {
-    'main': 'viewChecklist',
-    'boxes': 'viewBoxes',
-    'recipes': 'viewRecipes',
-    'power': 'viewPower',
-    'sales': 'viewSales',
-    'admin': 'viewAdmin'
-  };
-
-  // All Sections Hide
-  Object.values(views).forEach(id => {
-    document.getElementById(id)?.classList.add('hidden');
-  });
-
-  // Target Section Show
-  const targetId = views[viewName] || 'viewChecklist';
-  document.getElementById(targetId)?.classList.remove('hidden');
-
-  const titleEl = document.getElementById('currentViewTitle');
-  if (titleEl) {
-    const titles = {
-      main: '📋 Hauptliste & Inventar',
-      boxes: '📦 Lagerbestand & Boxen',
-      recipes: '☕ Rezepte & Zutaten',
-      power: '⚡ Stromverbrauch-Rechner',
-      sales: '💰 Standkasse & Verkauf',
-      admin: '👑 Admin Control Center'
-    };
-    titleEl.innerText = titles[viewName] || '📋 Hauptliste & Inventar';
-  }
-
-  if (viewName === 'main') renderChecklist();
-  if (viewName === 'boxes') renderBoxOverview();
-  if (viewName === 'admin') openRoleSettingsModal();
-}
-
-function toggleRoleModal() { document.getElementById('roleModal')?.classList.remove('hidden'); }
-function closeRoleModal() { document.getElementById('roleModal')?.classList.add('hidden'); }
-
-function selectRoleWithPassword(role) {
-  if (role === 'betrachter') {
-    currentRole = 'betrachter';
-    closeRoleModal();
+    calculateSalesStats();
     applyRolePermissions();
-    logActivity("Rolle gewechselt zu: BETRACHTER");
-    return;
+    renderActivityLog();
   }
 
-  const pwdPrompt = prompt(`Passwort für Rolle "${role.toUpperCase()}" eingeben:`);
-  if (pwdPrompt === roleConfig[role]?.pwd) {
+  function loadFromLocal() {
+    const local = JSON.parse(localStorage.getItem('sg_wm_state_v20')) || {};
+    appState = local;
+    if (appState.customItemsList) itemsData = appState.customItemsList;
+    if (appState.adminPassword) adminPassword = appState.adminPassword;
+    if (appState.globalNotice) showNoticeBanner(appState.globalNotice);
+    if (appState.activityLog) activityLog = appState.activityLog;
+  }
+
+  function setSyncStatus(isOk) {
+    const el = document.getElementById('syncStatus');
+    if (!el) return;
+    if (isOk) {
+      const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      el.innerHTML = `🟢 Synced (${time})`;
+    } else {
+      el.innerHTML = `🔴 Offline`;
+    }
+  }
+
+  function initItemState(item) {
+    if (!appState[item.id]) {
+      appState[item.id] = { 
+        status: 'Offen', assignedTo: '', packed: false, boxNum: '', 
+        qty: item.defaultQty || '', stockQty: item.defaultStockQty || '',
+        packageSize: item.defaultPackageSize || '', store: '', price: ''
+      };
+    }
+  }
+
+  if (!appState.socketCables) appState.socketCables = { 1: "Direkt Mehrfachstecker 3er", 2: "Verlängerung 3m + Mehrfachstecker 3er", 3: "Verlängerung 3m + Mehrfachstecker 5er" };
+  if (!appState.socketCableMaxWatts) appState.socketCableMaxWatts = { 1: 3680, 2: 3680, 3: 3680 };
+  if (!appState.powerAssignments) appState.powerAssignments = {};
+  if (!appState.instanceWatts) appState.instanceWatts = {};
+  if (!appState.salesStats) appState.salesStats = { soldPunsch: 0, pricePunsch: 2.50, soldWaffles: 0, priceWaffles: 2.00, standFee: 0.00, otherRevenue: 0.00 };
+
+  async function saveState() {
+    appState.customItemsList = itemsData;
+    appState.adminPassword = adminPassword;
+    appState.activityLog = activityLog;
+    localStorage.setItem('sg_wm_state_v20', JSON.stringify(appState));
+    updateProgress();
+
+    if (SCRIPT_URL) {
+      try {
+        await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(appState)
+        });
+        setSyncStatus(true);
+      } catch (err) {
+        console.error("Speicherfehler:", err);
+        setSyncStatus(false);
+      }
+    }
+  }
+
+  // --- Aktivitäten Logbuch & Notice Banner ---
+  function logActivity(text) {
+    const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    const roleLabel = currentRole.toUpperCase();
+    activityLog.unshift(`[${time}] [${roleLabel}] ${text}`);
+    if (activityLog.length > 15) activityLog.pop();
+    renderActivityLog();
+  }
+
+  function renderActivityLog() {
+    const list = document.getElementById('activityLogList');
+    if (!list) return;
+    if (activityLog.length === 0) {
+      list.innerHTML = `<li class="italic text-slate-400">Noch keine Aktivitäten protokolliert.</li>`;
+    } else {
+      list.innerHTML = activityLog.map(log => `<li class="border-b border-amber-200/40 pb-0.5">${log}</li>`).join('');
+    }
+  }
+
+  function clearActivityLog() {
+    activityLog = [];
+    saveState();
+    renderActivityLog();
+  }
+
+  function showNoticeBanner(text) {
+    const banner = document.getElementById('noticeBanner');
+    const txt = document.getElementById('noticeBannerText');
+    if (banner && txt && text) {
+      txt.innerText = text;
+      banner.classList.remove('hidden');
+    }
+  }
+
+  function dismissNotice() {
+    document.getElementById('noticeBanner')?.classList.add('hidden');
+  }
+
+  function setGlobalNotice() {
+    const msg = prompt("Wichtige Durchsage/Hinweis für alle Helfer eingeben:", appState.globalNotice || "");
+    if (msg !== null) {
+      appState.globalNotice = msg.trim();
+      saveState();
+      if (appState.globalNotice) {
+        showNoticeBanner(appState.globalNotice);
+        logActivity(`Notice gesetzt: "${appState.globalNotice}"`);
+      } else {
+        dismissNotice();
+      }
+    }
+  }
+
+  // --- Rollen-System ---
+  function toggleRoleModal() {
+    document.getElementById('roleModal')?.classList.remove('hidden');
+  }
+
+  function closeRoleModal() {
+    document.getElementById('roleModal')?.classList.add('hidden');
+  }
+
+  function selectRole(role) {
     currentRole = role;
     closeRoleModal();
     applyRolePermissions();
-    logActivity(`Rolle gewechselt zu: ${role.toUpperCase()}`);
-  } else if (pwdPrompt !== null) {
-    alert("Falsches Passwort!");
+    logActivity(`Rolle gewechselt zu ${role}`);
   }
-}
 
-function applyRolePermissions() {
-  const badge = document.getElementById('roleBadge');
-  const isAdmin = currentRole === 'admin';
-
-  if (badge) {
-    if (isAdmin) {
-      badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-400 text-slate-950 shadow-sm';
-      badge.innerHTML = '🔓 Rolle: ADMIN';
-    } else if (currentRole === 'orga') {
-      badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-500/30 text-sky-100 border border-sky-300/40 shadow-sm';
-      badge.innerHTML = '📋 Rolle: ORGA';
-    } else if (currentRole === 'helfer') {
-      badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/30 text-emerald-100 border border-emerald-300/40 shadow-sm';
-      badge.innerHTML = '🤝 Rolle: HELFER';
-    } else {
-      badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-white/10 text-emerald-100 border border-white/20 shadow-sm';
-      badge.innerHTML = '👁️ Rolle: BETRACHTER';
+  function promptAdminLogin() {
+    const pwd = prompt("Bitte Admin-Passwort eingeben:");
+    if (pwd === adminPassword) {
+      currentRole = 'admin';
+      closeRoleModal();
+      applyRolePermissions();
+      logActivity("Admin eingeloggt");
+    } else if (pwd !== null) {
+      alert("Falsches Passwort!");
     }
   }
 
-  const perms = roleConfig[currentRole] || {};
-  const cashBtns = document.querySelectorAll('.cash-btn');
-  cashBtns.forEach(btn => btn.disabled = !perms.canCash && !isAdmin);
+  function applyRolePermissions() {
+    const badge = document.getElementById('roleBadge');
+    const adminPanel = document.getElementById('adminPanel');
+    const isBetrachter = currentRole === 'betrachter';
+    const isHelfer = currentRole === 'helfer';
+    const isOrga = currentRole === 'orga';
+    const isAdmin = currentRole === 'admin';
 
-  renderChecklist();
-}
-
-function openRoleSettingsModal() {
-  ['helfer', 'orga', 'admin'].forEach(r => {
-    const pEl = document.getElementById(`pwd_${r}`);
-    if (pEl && roleConfig[r]) pEl.value = roleConfig[r].pwd || '';
-    
-    if (r !== 'admin' && roleConfig[r]) {
-      ['cash', 'packed', 'qty', 'stock', 'box', 'status', 'prices', 'log'].forEach(p => {
-        const checkEl = document.getElementById(`perm_${r}_${p}`);
-        if (checkEl) checkEl.checked = !!roleConfig[r][`can${p.charAt(0).toUpperCase() + p.slice(1)}`];
-      });
+    if (badge) {
+      if (isAdmin) {
+        badge.innerHTML = '🔓 Rolle: ADMIN';
+        badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-400 text-slate-950 shadow-sm';
+      } else if (isOrga) {
+        badge.innerHTML = '📋 Rolle: ORGA-TEAM';
+        badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-500/30 text-sky-100 border border-sky-300/40 shadow-sm';
+      } else if (isHelfer) {
+        badge.innerHTML = '🤝 Rolle: HELFER';
+        badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/30 text-emerald-100 border border-emerald-300/40 shadow-sm';
+      } else {
+        badge.innerHTML = '👁️ Rolle: BETRACHTER (Nur Lesen)';
+        badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-white/10 text-emerald-100 border border-white/20 shadow-sm';
+      }
     }
-  });
-}
 
-function saveRoleSettings() {
-  ['helfer', 'orga', 'admin'].forEach(r => {
-    const pEl = document.getElementById(`pwd_${r}`);
-    if (pEl && roleConfig[r]) roleConfig[r].pwd = pEl.value.trim() || roleConfig[r].pwd;
-    
-    if (r !== 'admin' && roleConfig[r]) {
-      ['cash', 'packed', 'qty', 'stock', 'box', 'status', 'prices', 'log'].forEach(p => {
-        const checkEl = document.getElementById(`perm_${r}_${p}`);
-        if (checkEl) roleConfig[r][`can${p.charAt(0).toUpperCase() + p.slice(1)}`] = checkEl.checked;
-      });
+    if (adminPanel) {
+      adminPanel.classList.toggle('hidden', !isAdmin);
     }
-  });
 
-  saveState();
-  applyRolePermissions();
-  alert("Berechtigungen & Passwörter erfolgreich gespeichert!");
-}
-
-function filterCategory(cat) {
-  currentFilter = cat;
-  renderChecklist();
-}
-
-function renderChecklist() {
-  const container = document.getElementById('checklist');
-  if (!container) return;
-  container.innerHTML = '';
-
-  const searchVal = (document.getElementById('searchInput')?.value || '').toLowerCase();
-  const isAdmin = currentRole === 'admin';
-  const perms = roleConfig[currentRole] || {};
-  const categories = [...new Set(itemsData.map(item => item.cat))];
-
-  categories.forEach(cat => {
-    const catItems = itemsData.filter(item => {
-      initItemState(item);
-      const st = appState[item.id];
-      const matchSearch = item.title.toLowerCase().includes(searchVal) || (item.details && item.details.toLowerCase().includes(searchVal));
-      const matchFilter = currentFilter === 'all' || st.status === currentFilter;
-      return item.cat === cat && matchSearch && matchFilter;
+    // Eingabefelder im Dokument sperren / freigeben
+    document.querySelectorAll('input, select').forEach(el => {
+      if (el.id === 'searchInput' || el.id === 'adminToggleBtn' || el.id === 'punschLiters') return;
+      
+      if (isBetrachter) {
+        el.disabled = true;
+      } else if (isHelfer) {
+        const isHelferAllowed = el.classList.contains('role-helfer-field') || el.type === 'checkbox' || el.tagName === 'SELECT';
+        el.disabled = !isHelferAllowed;
+      } else {
+        el.disabled = false;
+      }
     });
 
-    if (catItems.length > 0) {
-      const card = document.createElement('div');
-      card.className = 'bg-white border border-slate-200/80 rounded-3xl p-4 sm:p-6 shadow-sm mb-6';
+    renderChecklist();
+  }
 
-      const isOrga = (cat === '🏛️ Orga'), isIngredientCat = (cat === '🍎 Zutaten (Waffeln & Punsch)');
+  // --- Rezept Punsch-Skalierer ---
+  function updateRecipeScaling() {
+    const punschLiters = parseFloat(document.getElementById('punschLiters')?.value || 8);
+    document.getElementById('punschLitersLabel').innerText = `${punschLiters} Liter`;
 
-      let rows = catItems.map(item => {
-        const st = appState[item.id];
-        const isDone = st.status === 'Erledigt' || st.status === 'Eingekauft';
+    const factor = punschLiters / 8.0;
+    const punschList = document.getElementById('punschRecipeList');
+    if (punschList) {
+      punschList.innerHTML = `
+        <li><b>${(2.0 * factor).toFixed(1).replace('.0','')} l</b> Wasser</li>
+        <li><b>${Math.ceil(10 * factor)} Btl.</b> Wintertee</li>
+        <li><b>${(1.0 * factor).toFixed(1).replace('.0','')} l</b> Orangensaft</li>
+        <li><b>${(2.5 * factor).toFixed(1).replace('.0','')} l</b> Apfelsaft</li>
+        <li><b>${(2.5 * factor).toFixed(1).replace('.0','')} l</b> Roter Traubensaft</li>
+        <li><b>${Math.ceil(2 * factor)} Stk.</b> Zimtstangen <i>(nicht kaufen)</i></li>
+        <li><b>${Math.ceil(5 * factor)} Btl.</b> Glühfix</li>
+      `;
+    }
+  }
 
-        const disQty = (!perms.canQty && !isAdmin) ? 'disabled' : '';
-        const disStock = (!perms.canStock && !isAdmin) ? 'disabled' : '';
-        const disStatus = (!perms.canStatus && !isAdmin) ? 'disabled' : '';
-        const disPacked = (!perms.canPacked && !isAdmin) ? 'disabled' : '';
-        const disBox = (!perms.canBox && !isAdmin) ? 'disabled' : '';
+  function syncIngredientsToShoppingList() {
+    const punschLiters = parseFloat(document.getElementById('punschLiters')?.value || 8);
+    const factor = punschLiters / 8.0;
 
-        const statusOpts = item.isShop ? ['Offen', 'Vorbereitet', 'Verteilt', 'Eingekauft'] : ['Offen', 'Vorbereitet', 'Verteilt', 'Erledigt'];
+    const ingredientUpdates = {
+      38: `${Math.ceil(10 * factor)} Btl.`,
+      39: `${Math.ceil(5 * factor)} Btl.`,
+      40: `${Math.ceil(2 * factor)} Stk`,
+      41: `${(1.0 * factor).toFixed(1).replace('.0','')} l`,
+      42: `${(2.5 * factor).toFixed(1).replace('.0','')} l`,
+      43: `${(2.5 * factor).toFixed(1).replace('.0','')} l`
+    };
 
-        return `
-          <tr class="hover:bg-slate-50 transition ${isDone ? 'opacity-75 bg-emerald-50/20' : ''}">
+    Object.keys(ingredientUpdates).forEach(id => {
+      if (appState[id]) appState[id].qty = ingredientUpdates[id];
+    });
+
+    saveState();
+    renderChecklist();
+    logActivity(`Punsch-Zutaten für ${punschLiters}L in Einkaufsliste synchronisiert`);
+    alert("Die Punsch-Zutaten wurden direkt in die Einkaufsliste übernommen!");
+  }
+
+  // --- Verkaufsstatistik Rechner ---
+  function calculateSalesStats() {
+    const sPunsch = parseInt(document.getElementById('soldPunsch')?.value || 0);
+    const pPunsch = parseFloat(document.getElementById('pricePunsch')?.value || 2.50);
+    const sWaffles = parseInt(document.getElementById('soldWaffles')?.value || 0);
+    const pWaffles = parseFloat(document.getElementById('priceWaffles')?.value || 2.00);
+    const fee = parseFloat(document.getElementById('standFee')?.value || 0.00);
+    const otherRev = parseFloat(document.getElementById('otherRevenue')?.value || 0.00);
+
+    const revenue = (sPunsch * pPunsch) + (sWaffles * pWaffles) + otherRev;
+
+    let shoppingCost = 0;
+    itemsData.filter(i => i.isShop).forEach(item => {
+      const state = appState[item.id];
+      if (state) {
+        const needNum = parseVal(state.qty);
+        const packNum = parseVal(state.packageSize);
+        let calcPackages = 1;
+        if (needNum > 0 && packNum > 0) calcPackages = Math.ceil(needNum / packNum);
+        else if (needNum > 0) calcPackages = Math.ceil(needNum);
+        const unitPrice = parseVal(state.price);
+        shoppingCost += calcPackages * unitPrice;
+      }
+    });
+
+    const totalExpenses = shoppingCost + fee;
+    const profit = revenue - totalExpenses;
+
+    document.getElementById('statRevenue').innerText = revenue.toFixed(2).replace('.', ',') + ' €';
+    document.getElementById('statExpenses').innerText = totalExpenses.toFixed(2).replace('.', ',') + ' €';
+    document.getElementById('statProfit').innerText = profit.toFixed(2).replace('.', ',') + ' €';
+
+    appState.salesStats = { soldPunsch: sPunsch, pricePunsch: pPunsch, soldWaffles: sWaffles, priceWaffles: pWaffles, standFee: fee, otherRevenue: otherRev };
+    saveState();
+  }
+
+  function changeAdminPassword() {
+    const newPwd = prompt("Neues Admin-Passwort eingeben:", adminPassword);
+    if (newPwd && newPwd.trim() !== "") {
+      adminPassword = newPwd.trim();
+      saveState();
+      logActivity("Admin-Passwort geändert");
+      alert("Admin-Passwort geändert!");
+    }
+  }
+
+  function resetSeason() {
+    if (confirm("⚠️ Bist du sicher? Das setzt alle Gepackt-Haken, Erledigt-Statusse und Namen für die nächste Saison zurück!")) {
+      itemsData.forEach(item => {
+        if (appState[item.id]) {
+          appState[item.id].status = 'Offen';
+          appState[item.id].assignedTo = '';
+          appState[item.id].packed = false;
+        }
+      });
+      saveState();
+      renderChecklist();
+      logActivity("Saison-Reset durchgeführt");
+      alert("Saison-Reset abgeschlossen!");
+    }
+  }
+
+  function exportDataJSON() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+    const dlAnchorElem = document.createElement('a');
+    dlAnchorElem.setAttribute("href", dataStr);
+    dlAnchorElem.setAttribute("download", `SG_Barnstorf_Weihnachtsmarkt_Backup_${new Date().toISOString().slice(0,10)}.json`);
+    dlAnchorElem.click();
+  }
+
+  function importDataJSON() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json';
+    input.onchange = e => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.readAsText(file, 'UTF-8');
+      reader.onload = readerEvent => {
+        try {
+          const content = JSON.parse(readerEvent.target.result);
+          if (content) {
+            appState = content;
+            if (appState.customItemsList) itemsData = appState.customItemsList;
+            if (appState.adminPassword) adminPassword = appState.adminPassword;
+            saveState();
+            renderChecklist();
+            alert("Backup wiederhergestellt!");
+          }
+        } catch(err) {
+          alert("Fehler beim Einlesen der Datei!");
+        }
+      }
+    }
+    input.click();
+  }
+
+  function getExistingCategories() {
+    return [...new Set(itemsData.map(item => item.cat))];
+  }
+
+  function openCreateItemModal() {
+    editingItemId = null;
+    document.getElementById('itemModalTitle').innerText = "➕ Neuer Gegenstand";
+    document.getElementById('modalItemTitle').value = "";
+    document.getElementById('modalItemDetails').value = "";
+    populateCategoryDropdown();
+    document.getElementById('itemModal').classList.remove('hidden');
+  }
+
+  function openEditItemModal(id) {
+    editingItemId = id;
+    const item = itemsData.find(i => i.id === id);
+    if (!item) return;
+
+    document.getElementById('itemModalTitle').innerText = "✏️ Gegenstand bearbeiten";
+    document.getElementById('modalItemTitle').value = item.title;
+    document.getElementById('modalItemDetails').value = item.details || "";
+    populateCategoryDropdown(item.cat);
+    document.getElementById('itemModal').classList.remove('hidden');
+  }
+
+  function populateCategoryDropdown(selectedCat = "") {
+    const select = document.getElementById('modalItemCat');
+    const customInput = document.getElementById('modalCustomCat');
+    select.innerHTML = "";
+
+    const cats = getExistingCategories();
+    cats.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.innerText = c;
+      if (c === selectedCat) opt.selected = true;
+      select.appendChild(opt);
+    });
+
+    const newOpt = document.createElement('option');
+    newOpt.value = "__NEW__";
+    newOpt.innerText = "➕ [ Neue Kategorie erstellen ]";
+    select.appendChild(newOpt);
+
+    customInput.value = "";
+    customInput.classList.add('hidden');
+  }
+
+  function handleCatSelectChange(selectEl) {
+    const customInput = document.getElementById('modalCustomCat');
+    if (selectEl.value === "__NEW__") customInput.classList.remove('hidden');
+    else customInput.classList.add('hidden');
+  }
+
+  function saveItemFromModal() {
+    const title = document.getElementById('modalItemTitle').value.trim();
+    if (!title) { alert("Bitte einen Namen angeben!"); return; }
+
+    const selectCat = document.getElementById('modalItemCat').value;
+    const customCat = document.getElementById('modalCustomCat').value.trim();
+    let finalCat = (selectCat === "__NEW__") ? customCat : selectCat;
+
+    if (selectCat === "__NEW__" && !customCat) { alert("Bitte Kategorie-Namen eingeben!"); return; }
+
+    const details = document.getElementById('modalItemDetails').value.trim();
+
+    if (editingItemId !== null) {
+      const item = itemsData.find(i => i.id === editingItemId);
+      if (item) {
+        item.title = title;
+        item.cat = finalCat;
+        item.details = details;
+        logActivity(`Gegenstand bearbeited: "${title}"`);
+      }
+    } else {
+      const newId = Date.now();
+      const newItem = { id: newId, cat: finalCat, title: title, details: details, isShop: false };
+      itemsData.push(newItem);
+      initItemState(newItem);
+      logActivity(`Neuer Gegenstand angelegt: "${title}"`);
+    }
+
+    saveState();
+    closeItemModal();
+    renderChecklist();
+  }
+
+  function closeItemModal() {
+    document.getElementById('itemModal').classList.add('hidden');
+  }
+
+  function deleteItem(id) {
+    if (confirm("Gegenstand unwiderruflich löschen?")) {
+      const idx = itemsData.findIndex(i => i.id === id);
+      if (idx !== -1) {
+        const title = itemsData[idx].title;
+        itemsData.splice(idx, 1);
+        delete appState[id];
+        saveState();
+        renderChecklist();
+        logActivity(`Gegenstand gelöscht: "${title}"`);
+      }
+    }
+  }
+
+  function renameCategory(oldCat) {
+    const newCat = prompt("Neuer Name für Kategorie:", oldCat);
+    if (newCat && newCat.trim() !== "" && newCat !== oldCat) {
+      itemsData.forEach(i => { if (i.cat === oldCat) i.cat = newCat.trim(); });
+      saveState();
+      renderChecklist();
+      logActivity(`Kategorie umbenannt: "${oldCat}" -> "${newCat.trim()}"`);
+    }
+  }
+
+  function deleteCategory(cat) {
+    if (confirm(`Ganze Kategorie "${cat}" inklusive aller Gegenstände löschen?`)) {
+      itemsData = itemsData.filter(i => i.cat !== cat);
+      saveState();
+      renderChecklist();
+      logActivity(`Kategorie gelöscht: "${cat}"`);
+    }
+  }
+
+  function updateItem(id, field, value) {
+    if (!appState[id]) appState[id] = {};
+    appState[id][field] = value;
+    saveState();
+    renderChecklist();
+    const item = itemsData.find(i => i.id === id);
+    if (item) logActivity(`"${item.title}" -> ${field}: ${value}`);
+  }
+
+  function updateProgress() {
+    const total = itemsData.length;
+    const count = itemsData.filter(i => {
+      const s = appState[i.id] ? appState[i.id].status : 'Offen';
+      return s === 'Erledigt' || s === 'Eingekauft';
+    }).length;
+    const percent = total > 0 ? Math.round((count / total) * 100) : 0;
+    
+    const bar = document.getElementById('progressBar');
+    const txt = document.getElementById('progressText');
+    if (bar) bar.style.width = percent + '%';
+    if (txt) txt.innerText = percent + '% erledigt (' + count + '/' + total + ')';
+  }
+
+  function setFilter(filter, btn) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.remove('bg-emerald-600', 'text-white', 'border-emerald-600', 'font-bold');
+      b.classList.add('bg-white', 'text-slate-700', 'border-slate-200', 'font-medium');
+    });
+    btn.classList.remove('bg-white', 'text-slate-700', 'border-slate-200', 'font-medium');
+    btn.classList.add('bg-emerald-600', 'text-white', 'border-emerald-600', 'font-bold');
+    renderChecklist();
+  }
+
+  function getStatusClass(status) {
+    if (status === 'Vorbereitet') return 'status-vorbereitet';
+    if (status === 'Verteilt') return 'status-verteilt';
+    if (status === 'Erledigt' || status === 'Eingekauft') return 'status-erledigt';
+    return 'status-offen';
+  }
+
+  function renderChecklist() {
+    const searchVal = (document.getElementById('searchInput')?.value || '').toLowerCase();
+    const container = document.getElementById('checklist');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const isAdmin = currentRole === 'admin';
+    const isBetrachter = currentRole === 'betrachter';
+
+    const categories = [...new Set(itemsData.map(item => item.cat))];
+
+    categories.forEach(cat => {
+      const catItems = itemsData.filter(item => {
+        initItemState(item);
+        const state = appState[item.id];
+        const matchesCat = item.cat === cat;
+        const matchesSearch = item.title.toLowerCase().includes(searchVal) || 
+                              (item.details && item.details.toLowerCase().includes(searchVal)) ||
+                              (state.assignedTo && state.assignedTo.toLowerCase().includes(searchVal)) ||
+                              (state.boxNum && state.boxNum.toString().includes(searchVal));
+        let matchesFilter = true;
+        if (currentFilter !== 'all') matchesFilter = (state.status === currentFilter);
+
+        return matchesCat && matchesSearch && matchesFilter;
+      });
+
+      if (catItems.length > 0 || isAdmin) {
+        const catWrapper = document.createElement('div');
+        catWrapper.className = 'bg-white border border-slate-200/80 rounded-3xl p-4 sm:p-6 shadow-sm print:border-none print:shadow-none print:p-0 print:mb-6';
+
+        const catTitle = document.createElement('h2');
+        catTitle.className = 'text-lg font-bold text-emerald-950 mb-4 flex items-center justify-between border-b border-slate-100 pb-2';
+        catTitle.innerHTML = `
+          <span>${cat}</span>
+          ${isAdmin ? `
+            <div class="flex items-center gap-2 print:hidden">
+              <button onclick="renameCategory('${cat}')" class="text-xs font-semibold px-2 py-1 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200">✏️ Umbenennen</button>
+              <button onclick="deleteCategory('${cat}')" class="text-xs font-semibold px-2 py-1 bg-red-50 text-red-600 rounded-lg hover:bg-red-100">🗑️ Löschen</button>
+            </div>
+          ` : ''}
+        `;
+        catWrapper.appendChild(catTitle);
+
+        const tableContainer = document.createElement('div');
+        tableContainer.className = 'table-container';
+
+        const isOrga = (cat === '🏛️ Orga');
+        const isIngredientCat = (cat === '🍎 Zutaten (Waffeln & Punsch)');
+
+        const table = document.createElement('table');
+        table.className = 'w-full text-left text-xs sm:text-sm text-slate-800 border-collapse min-w-[650px] print:min-w-0';
+
+        table.innerHTML = `
+          <thead>
+            <tr class="border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider bg-slate-50/50 print:bg-transparent">
+              <th class="py-2.5 px-3 ${isOrga ? 'w-[38%]' : 'w-[22%]'}">${isOrga ? 'Aufgabe / Details' : 'Gegenstand'}</th>
+              ${!isOrga ? '<th class="py-2.5 px-2 w-[12%]">Benötigt</th>' : ''}
+              ${!isOrga && !isIngredientCat ? '<th class="py-2.5 px-2 w-[10%] text-amber-900 font-bold">Auf Lager</th>' : ''}
+              <th class="py-2.5 px-2 w-[16%]">Status</th>
+              <th class="py-2.5 px-2 w-[16%]">${isOrga ? 'Ansprechpartner' : 'Verantwortlich'}</th>
+              ${!isOrga ? '<th class="py-2.5 px-2 w-[7%] text-center">Gepackt?</th>' : ''}
+              ${!isOrga ? '<th class="py-2.5 px-2 w-[8%] text-center">Box</th>' : ''}
+              ${isAdmin ? '<th class="py-2.5 px-2 w-[8%] text-center print:hidden">Admin</th>' : ''}
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100"></tbody>
+        `;
+
+        const tbody = table.querySelector('tbody');
+
+        catItems.forEach(item => {
+          const state = appState[item.id];
+          const isDone = state.status === 'Erledigt' || state.status === 'Eingekauft';
+          
+          const tr = document.createElement('tr');
+          tr.className = `hover:bg-slate-50 transition ${isDone ? 'opacity-70 bg-emerald-50/30' : ''}`;
+
+          const statusOptions = item.isShop 
+            ? ['Offen', 'Vorbereitet', 'Verteilt', 'Eingekauft']
+            : ['Offen', 'Vorbereitet', 'Verteilt', 'Erledigt'];
+
+          const disabledAttr = isBetrachter ? 'disabled' : '';
+
+          tr.innerHTML = `
             <td class="py-3 px-3">
               <div class="font-semibold ${isDone ? 'line-through text-slate-400' : 'text-slate-900'}">${item.title}</div>
               ${item.details ? `<div class="text-xs text-slate-500">${item.details}</div>` : ''}
             </td>
             ${!isOrga ? `
               <td class="py-3 px-2">
-                <input type="text" value="${st.qty || ''}" placeholder="-" ${disQty} onchange="updateItem(${item.id}, 'qty', this.value)" class="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs w-20 text-slate-900 font-medium" />
+                <input type="text" value="${state.qty \vert{}\vert{} ''}" placeholder="-" ${disabledAttr}
+                  onchange="updateItem(${item.id}, 'qty', this.value)"
+                  class="role-orga-field bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 focus:border-emerald-500 focus:outline-none w-20 shadow-xs" />
               </td>
               ${!isIngredientCat ? `
                 <td class="py-3 px-2">
-                  <input type="text" value="${st.stockQty || ''}" placeholder="0" ${disStock} onchange="updateItem(${item.id}, 'stockQty', this.value)" class="bg-amber-50/80 border border-amber-300 rounded-lg px-2 py-1 text-xs w-16 text-slate-900 font-medium" />
+                  <input type="text" value="${state.stockQty || ''}" placeholder="0" ${disabledAttr}
+                    onchange="updateItem(${item.id}, 'stockQty', this.value)"
+                    class="role-orga-field bg-amber-50/80 border border-amber-300 rounded-lg px-2 py-1 text-xs text-amber-900 font-medium focus:border-amber-500 focus:outline-none w-16 shadow-xs" />
                 </td>
               ` : ''}
             ` : ''}
             <td class="py-3 px-2">
-              <select onchange="updateItem(${item.id}, 'status', this.value)" ${disStatus} class="border rounded-lg px-2 py-1 text-xs font-semibold w-full ${getStatusClass(st.status)}">
-                ${statusOpts.map(o => `<option value="${o}" ${st.status === o ? 'selected' : ''}>${o}</option>`).join('')}
+              <select onchange="updateItem(${item.id}, 'status', this.value)" ${disabledAttr}
+                class="border rounded-lg px-2 py-1 text-xs font-semibold focus:outline-none w-full shadow-xs ${getStatusClass(state.status)}">
+                ${statusOptions.map(opt => `<option value="${opt}" ${state.status === opt ? 'selected' : ''}>${opt}</option>`).join('')}
               </select>
             </td>
             <td class="py-3 px-2">
-              <input type="text" placeholder="Name..." value="${st.assignedTo || ''}" ${disStatus} onchange="updateItem(${item.id}, 'assignedTo', this.value)" class="bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs w-full text-slate-900" />
+              <input type="text" placeholder="Name..." value="${state.assignedTo || ''}" ${disabledAttr}
+                onchange="updateItem(${item.id}, 'assignedTo', this.value)"
+                class="role-orga-field bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none w-full shadow-xs" />
             </td>
             ${!isOrga ? `
               <td class="py-3 px-2 text-center align-middle">
-                <input type="checkbox" ${st.packed ? 'checked' : ''} ${disPacked} onchange="updateItem(${item.id}, 'packed', this.checked)" class="w-5 h-5 accent-emerald-600 rounded cursor-pointer mx-auto block" />
+                <input type="checkbox" ${state.packed ? 'checked' : ''} ${disabledAttr}
+                  onchange="updateItem(${item.id}, 'packed', this.checked)"
+                  class="role-helfer-field w-5 h-5 accent-emerald-600 rounded cursor-pointer mx-auto block" />
               </td>
               <td class="py-3 px-2 text-center">
-                <input type="number" min="1" max="12" value="${st.boxNum || ''}" ${disBox} onchange="updateItem(${item.id}, 'boxNum', this.value)" class="bg-white border border-slate-300 rounded-lg px-1 py-1 text-xs text-center w-12 mx-auto text-slate-900 font-medium" />
+                <input type="number" min="1" max="12" value="${state.boxNum \vert{}\vert{} ''}" ${disabledAttr}
+                  onchange="updateItem(${item.id}, 'boxNum', this.value)"
+                  class="role-orga-field bg-white border border-slate-300 rounded-lg px-1 py-1 text-xs text-slate-900 text-center focus:border-emerald-500 focus:outline-none w-12 mx-auto shadow-xs" />
               </td>
             ` : ''}
-          </tr>
-        `;
-      }).join('');
+            ${isAdmin ? `
+              <td class="py-3 px-2 text-center whitespace-nowrap print:hidden">
+                <button onclick="openEditItemModal(${item.id})" class="text-slate-500 hover:text-emerald-700 font-bold px-1 text-sm">✏️</button>
+                <button onclick="deleteItem(${item.id})" class="text-slate-500 hover:text-red-700 font-bold px-1 text-sm">🗑️</button>
+              </td>
+            ` : ''}
+          `;
+          tbody.appendChild(tr);
+        });
+
+        tableContainer.appendChild(table);
+        catWrapper.appendChild(tableContainer);
+        container.appendChild(catWrapper);
+      }
+    });
+  }
+
+  function parseVal(valStr) {
+    if (!valStr) return 0;
+    const match = valStr.toString().replace(',', '.').match(/([0-9.]+)/);
+    return match ? parseFloat(match[1]) : 0;
+  }
+
+  function openShoppingModal() {
+    const modal = document.getElementById('shoppingModal');
+    const tbody = document.getElementById('shoppingTableBody');
+    tbody.innerHTML = '';
+
+    const shopItems = itemsData.filter(i => i.isShop);
+
+    shopItems.forEach(item => {
+      initItemState(item);
+      const state = appState[item.id];
+      const isBought = state.status === 'Eingekauft';
+
+      const needNum = parseVal(state.qty);
+      const packNum = parseVal(state.packageSize);
+
+      let calcPackages = 1;
+      if (needNum > 0 && packNum > 0) calcPackages = Math.ceil(needNum / packNum);
+      else if (needNum > 0) calcPackages = Math.ceil(needNum);
+
+      const unitPrice = parseVal(state.price);
+      const totalPrice = calcPackages * unitPrice;
+
+      const tr = document.createElement('tr');
+      tr.className = `hover:bg-slate-50 transition ${isBought ? 'bg-emerald-50/60' : ''}`;
+
+      const storeOptionsHtml = `
+        <option value="">-- Geschäft --</option>
+        ${storeOptions.map(store => `<option value="${store}" ${state.store === store ? 'selected' : ''}>${store}</option>`).join('')}
+      `;
+
+      tr.innerHTML = `
+        <td class="py-2.5 px-3 text-center align-middle">
+          <input type="checkbox" ${isBought ? 'checked' : ''} 
+            onchange="toggleShopItemStatus(${item.id}, this.checked)"
+            class="w-5 h-5 accent-emerald-600 rounded cursor-pointer mx-auto block" />
+        </td>
+        <td class="py-2.5 px-3">
+          <div class="font-semibold ${isBought ? 'line-through text-emerald-800' : 'text-slate-900'}">${item.title}</div>
+          ${item.details ? `<div class="text-xs text-slate-400">${item.details}</div>` : ''}
+        </td>
+        <td class="py-2.5 px-2 text-center text-slate-700 font-medium">${state.qty || '-'}</td>
+        <td class="py-2.5 px-2 text-center">
+          <input type="text" value="${state.packageSize || ''}" placeholder="z.B. 1 l"
+            onchange="updateItem(${item.id}, 'packageSize', this.value); openShoppingModal();"
+            class="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 text-center w-20 shadow-xs focus:border-amber-500 focus:outline-none" />
+        </td>
+        <td class="py-2.5 px-2 text-center font-bold text-amber-900 bg-amber-50/60 rounded-lg whitespace-nowrap">
+          ${calcPackages}x
+        </td>
+        <td class="py-2.5 px-2">
+          <select onchange="updateItem(${item.id}, 'store', this.value)"
+            class="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 w-full shadow-xs focus:border-amber-500 focus:outline-none">
+            ${storeOptionsHtml}
+          </select>
+        </td>
+        <td class="py-2.5 px-2 text-right whitespace-nowrap">
+          <input type="number" step="0.01" value="${state.price || ''}" placeholder="0.00"
+            onchange="updateItem(${item.id}, 'price', this.value); openShoppingModal();"
+            class="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 text-right w-16 shadow-xs inline-block mr-1 focus:border-amber-500 focus:outline-none" /> €
+        </td>
+        <td class="py-2.5 px-2 text-right font-bold text-emerald-800 whitespace-nowrap">
+          ${totalPrice.toFixed(2).replace('.', ',')} €
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    calculateShopTotal();
+    modal.classList.remove('hidden');
+  }
+
+  function toggleShopItemStatus(id, isChecked) {
+    updateItem(id, 'status', isChecked ? 'Eingekauft' : 'Offen');
+    openShoppingModal();
+  }
+
+  function calculateShopTotal() {
+    const shopItems = itemsData.filter(i => i.isShop);
+    let sum = 0;
+    shopItems.forEach(item => {
+      const state = appState[item.id];
+      if (state) {
+        const needNum = parseVal(state.qty);
+        const packNum = parseVal(state.packageSize);
+        let calcPackages = 1;
+        if (needNum > 0 && packNum > 0) calcPackages = Math.ceil(needNum / packNum);
+        else if (needNum > 0) calcPackages = Math.ceil(needNum);
+        const unitPrice = parseVal(state.price);
+        sum += calcPackages * unitPrice;
+      }
+    });
+    const totalEl = document.getElementById('shoppingTotal');
+    if (totalEl) totalEl.innerText = sum.toFixed(2).replace('.', ',') + ' €';
+  }
+
+  function closeShoppingModal() {
+    document.getElementById('shoppingModal').classList.add('hidden');
+  }
+
+  // --- Strom & Verkabelungs Planer ---
+  function openWiringModal() {
+    renderWiringModal();
+    document.getElementById('wiringModal').classList.remove('hidden');
+  }
+
+  function updateSocketCable(socketNum, val) {
+    if (!appState.socketCables) appState.socketCables = {};
+    appState.socketCables[socketNum] = val;
+    saveState();
+  }
+
+  function updateCableMaxWatt(socketNum, val) {
+    if (!appState.socketCableMaxWatts) appState.socketCableMaxWatts = {};
+    appState.socketCableMaxWatts[socketNum] = parseInt(val || 3680);
+    saveState();
+    calculateSocketsPower();
+  }
+
+  function getItemCount(item) {
+    const state = appState[item.id] || {};
+    const need = parseInt(state.qty);
+    const stock = parseInt(state.stockQty);
+    let count = 1;
+    if (!isNaN(need) && need > 0) count = need;
+    else if (!isNaN(stock) && stock > 0) count = stock;
+    return Math.max(1, count);
+  }
+
+  function getPowerInstances() {
+    const instances = [];
+    itemsData.filter(i => i.isPower).forEach(item => {
+      const count = getItemCount(item);
+      for (let i = 1; i <= count; i++) {
+        const key = `${item.id}-${i}`;
+        const socket = (appState.powerAssignments && appState.powerAssignments[key]) || 'unassigned';
+        const savedWatts = appState.instanceWatts && appState.instanceWatts[key] !== undefined 
+          ? appState.instanceWatts[key] 
+          : item.defaultWatts || 0;
+
+        instances.push({
+          key: key, itemId: item.id,
+          title: count > 1 ? `${item.title} #${i}` : item.title,
+          baseTitle: item.title, watts: parseInt(savedWatts),
+          isCable: item.isCable, socket: socket
+        });
+      }
+    });
+    return instances;
+  }
+
+  function updateInstanceWatts(instKey, newWatts) {
+    if (!appState.instanceWatts) appState.instanceWatts = {};
+    appState.instanceWatts[instKey] = parseInt(newWatts || 0);
+    saveState();
+    calculateSocketsPower();
+  }
+
+  function populateCableDropdowns() {
+    const cableOptionsHtml = [
+      `<option value="Direkt Mehrfachstecker 3er">➡️ Direkt Mehrfachstecker 3er</option>`,
+      `<option value="Direkt Mehrfachstecker 5er">➡️ Direkt Mehrfachstecker 5er</option>`,
+      `<option value="Verlängerung 3m + Mehrfachstecker 3er">➡️ Verlängerung 3m + Mehrfachstecker 3er</option>`,
+      `<option value="Verlängerung 3m + Mehrfachstecker 5er">➡️ Verlängerung 3m + Mehrfachstecker 5er</option>`,
+      `<option value="Kabeltrommel + Mehrfachstecker 3er">➡️ Kabeltrommel + Mehrfachstecker 3er</option>`
+    ];
+
+    [1, 2, 3].forEach(sNum => {
+      const el = document.getElementById(`socket${sNum}Cable`);
+      if (el) {
+        const curVal = (appState.socketCables && appState.socketCables[sNum]) || el.value;
+        el.innerHTML = cableOptionsHtml.join('');
+        if (curVal) el.value = curVal;
+      }
+      const maxEl = document.getElementById(`socket${sNum}CableMax`);
+      if (maxEl && appState.socketCableMaxWatts) {
+        maxEl.value = appState.socketCableMaxWatts[sNum] || 3680;
+      }
+    });
+  }
+
+  function renderWiringModal() {
+    const poolUnassigned = document.getElementById('unassignedPool');
+    const poolSocket1 = document.getElementById('socket1Pool');
+    const poolSocket2 = document.getElementById('socket2Pool');
+    const poolSocket3 = document.getElementById('socket3Pool');
+
+    poolUnassigned.innerHTML = '';
+    poolSocket1.innerHTML = '';
+    poolSocket2.innerHTML = '';
+    poolSocket3.innerHTML = '';
+
+    const instances = getPowerInstances();
+    populateCableDropdowns();
+
+    instances.forEach(inst => {
+      const card = document.createElement('div');
+      card.id = `drag-item-${inst.key}`;
+      card.draggable = true;
+      card.ondragstart = (e) => drag(e, inst.key);
+      card.className = `p-2 rounded-xl border bg-white shadow-xs flex items-center justify-between gap-1.5 cursor-grab active:cursor-grabbing hover:border-sky-400 transition select-none`;
 
       card.innerHTML = `
-        <h2 class="text-base font-bold text-slate-900 mb-3 flex items-center justify-between border-b border-slate-100 pb-2">
-          <span>${cat}</span>
-        </h2>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs sm:text-sm border-collapse min-w-[650px]">
-            <thead>
-              <tr class="border-b border-slate-200 text-slate-900 font-extrabold text-xs uppercase bg-slate-100">
-                <th class="py-3 px-3 text-slate-900 font-extrabold">${isOrga ? 'Aufgabe / Details' : 'Gegenstand'}</th>
-                ${!isOrga ? '<th class="py-3 px-2 w-[12%] text-slate-900 font-extrabold">Benötigt</th>' : ''}
-                ${!isOrga && !isIngredientCat ? '<th class="py-3 px-2 w-[10%] text-amber-900 font-extrabold">Auf Lager</th>' : ''}
-                <th class="py-3 px-2 w-[18%] text-slate-900 font-extrabold">Status</th>
-                <th class="py-3 px-2 w-[18%] text-slate-900 font-extrabold">${isOrga ? 'Ansprechpartner' : 'Verantwortlich'}</th>
-                ${!isOrga ? '<th class="py-3 px-2 w-[8%] text-center text-slate-900 font-extrabold">Gepackt</th>' : ''}
-                ${!isOrga ? '<th class="py-3 px-2 w-[8%] text-center text-slate-900 font-extrabold">Box</th>' : ''}
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100">${rows}</tbody>
-          </table>
+        <div class="flex items-center gap-1.5 overflow-hidden">
+          <span class="text-slate-400 font-bold cursor-move text-xs">⋮⋮</span>
+          <span class="font-semibold text-slate-800 text-xs truncate">${inst.title}</span>
+        </div>
+        <div class="flex items-center gap-1 shrink-0">
+          <input type="number" value="${inst.watts}" step="50" onchange="updateInstanceWatts('${inst.key}', this.value)" 
+            class="w-14 border border-sky-200 rounded text-right px-1 py-0.5 text-[10px] font-mono font-bold text-sky-900 bg-sky-50 focus:outline-none" />
+          <span class="text-[10px] text-slate-500 font-bold">${inst.isCable ? 'W max' : 'W'}</span>
+          <select onchange="moveInstanceSocket('${inst.key}', this.value)" class="text-[10px] border rounded bg-slate-50 py-0.5 px-1 cursor-pointer">
+            <option value="unassigned" ${inst.socket === 'unassigned' ? 'selected' : ''}>Pool</option>
+            <option value="socket1" ${inst.socket === 'socket1' ? 'selected' : ''}>Dose 1</option>
+            <option value="socket2" ${inst.socket === 'socket2' ? 'selected' : ''}>Dose 2</option>
+            <option value="socket3" ${inst.socket === 'socket3' ? 'selected' : ''}>Dose 3</option>
+          </select>
         </div>
       `;
-      container.appendChild(card);
+
+      if (inst.socket === 'socket1') poolSocket1.appendChild(card);
+      else if (inst.socket === 'socket2') poolSocket2.appendChild(card);
+      else if (inst.socket === 'socket3') poolSocket3.appendChild(card);
+      else poolUnassigned.appendChild(card);
+    });
+
+    calculateSocketsPower();
+  }
+
+  function drag(e, instKey) {
+    e.dataTransfer.setData("text/plain", instKey);
+  }
+
+  function allowDrop(e) {
+    e.preventDefault();
+  }
+
+  function drop(e, targetSocket) {
+    e.preventDefault();
+    const instKey = e.dataTransfer.getData("text/plain");
+    if (instKey) moveInstanceSocket(instKey, targetSocket);
+  }
+
+  function moveInstanceSocket(instKey, targetSocket) {
+    if (!appState.powerAssignments) appState.powerAssignments = {};
+    appState.powerAssignments[instKey] = targetSocket;
+    saveState();
+    renderWiringModal();
+  }
+
+  function calculateSocketsPower() {
+    let watts1 = 0, watts2 = 0, watts3 = 0;
+    const instances = getPowerInstances();
+
+    instances.forEach(inst => {
+      if (!inst.isCable) {
+        if (inst.socket === 'socket1') watts1 += inst.watts;
+        if (inst.socket === 'socket2') watts2 += inst.watts;
+        if (inst.socket === 'socket3') watts3 += inst.watts;
+      }
+    });
+
+    const amps1 = (watts1 / 230).toFixed(1).replace('.', ',');
+    const amps2 = (watts2 / 230).toFixed(1).replace('.', ',');
+    const amps3 = (watts3 / 230).toFixed(1).replace('.', ',');
+
+    document.getElementById('socket1Watts').innerText = `${watts1.toLocaleString('de-DE')} W / ${amps1} A`;
+    document.getElementById('socket2Watts').innerText = `${watts2.toLocaleString('de-DE')} W / ${amps2} A`;
+    document.getElementById('socket3Watts').innerText = `${watts3.toLocaleString('de-DE')} W / ${amps3} A`;
+
+    const max1 = (appState.socketCableMaxWatts && appState.socketCableMaxWatts[1]) || 3680;
+    const max2 = (appState.socketCableMaxWatts && appState.socketCableMaxWatts[2]) || 3680;
+    const max3 = (appState.socketCableMaxWatts && appState.socketCableMaxWatts[3]) || 3680;
+
+    document.getElementById('socket1Warn').classList.toggle('hidden', watts1 <= Math.min(3680, max1));
+    document.getElementById('socket2Warn').classList.toggle('hidden', watts2 <= Math.min(3680, max2));
+    document.getElementById('socket3Warn').classList.toggle('hidden', watts3 <= Math.min(3680, max3));
+  }
+
+  function closeWiringModal() {
+    document.getElementById('wiringModal').classList.add('hidden');
+  }
+
+  function openStockModal() {
+    const modal = document.getElementById('stockModal');
+    const tbody = document.getElementById('stockTableBody');
+    tbody.innerHTML = '';
+
+    const stockedItems = itemsData.filter(item => {
+      if (item.isIngredient) return false;
+      initItemState(item);
+      const state = appState[item.id];
+      return state.stockQty && state.stockQty.toString().trim() !== '' && state.stockQty !== '0';
+    });
+
+    if (stockedItems.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400 italic">Noch kein Lagerbestand eingetragen.</td></tr>`;
+    } else {
+      stockedItems.forEach(item => {
+        const state = appState[item.id];
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition';
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 text-xs font-semibold text-slate-500">${item.cat}</td>
+          <td class="py-2.5 px-3 font-semibold text-slate-900">${item.title}</td>
+          <td class="py-2.5 px-2 text-center font-bold text-amber-900 bg-amber-50 rounded-lg">${state.stockQty}</td>
+          <td class="py-2.5 px-2 text-center text-slate-500">${state.qty || '-'}</td>
+          <td class="py-2.5 px-2 text-center">
+            <span class="text-xs px-2 py-0.5 rounded border font-medium ${getStatusClass(state.status)}">${state.status}</span>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
     }
-  });
-}
 
-function updateItem(id, field, value) {
-  if (!appState[id]) appState[id] = {};
-  appState[id][field] = value;
-  saveState();
-  renderChecklist();
-}
+    modal.classList.remove('hidden');
+  }
 
-function updateProgress() {
-  const total = itemsData.length;
-  const count = itemsData.filter(i => appState[i.id] && (appState[i.id].status === 'Erledigt' || appState[i.id].status === 'Eingekauft')).length;
-  const percent = total > 0 ? Math.round((count / total) * 100) : 0;
-  if (document.getElementById('progressBar')) document.getElementById('progressBar').style.width = percent + '%';
-  if (document.getElementById('progressText')) document.getElementById('progressText').innerText = percent + '% erledigt (' + count + '/' + total + ')';
-}
+  function closeStockModal() {
+    document.getElementById('stockModal').classList.add('hidden');
+  }
 
-function getStatusClass(s) {
-  if (s === 'Vorbereitet') return 'bg-amber-100 text-amber-900 border-amber-300 font-semibold';
-  if (s === 'Verteilt') return 'bg-sky-100 text-sky-900 border-sky-300 font-semibold';
-  if (s === 'Erledigt' || s === 'Eingekauft') return 'bg-emerald-100 text-emerald-900 border-emerald-300 font-semibold';
-  return 'bg-slate-100 text-slate-800 border-slate-300 font-semibold';
-}
+  function openBoxOverview() {
+    const modal = document.getElementById('boxModal');
+    const content = document.getElementById('boxModalContent');
+    content.innerHTML = '';
 
-function renderBoxOverview() {
-  const container = document.getElementById('boxOverviewGrid');
-  if (!container) return;
-  container.innerHTML = '';
+    for (let b = 1; b <= 12; b++) {
+      const boxItems = itemsData.filter(item => {
+        const state = appState[item.id];
+        return state && parseInt(state.boxNum) === b;
+      });
 
-  const boxes = {};
-  itemsData.forEach(item => {
-    const st = appState[item.id];
-    if (st && st.boxNum) {
-      if (!boxes[st.boxNum]) boxes[st.boxNum] = [];
-      boxes[st.boxNum].push(item.title);
+      const packedCount = boxItems.filter(item => appState[item.id] && appState[item.id].packed).length;
+      const totalCount = boxItems.length;
+      const isComplete = totalCount > 0 && packedCount === totalCount;
+
+      const boxDiv = document.createElement('div');
+      boxDiv.className = `border rounded-2xl p-4 transition shadow-xs ${totalCount === 0 ? 'bg-slate-50/60 border-slate-200 opacity-60' : isComplete ? 'bg-emerald-50/60 border-emerald-300' : 'bg-white border-slate-200'}`;
+
+      const boxHeader = document.createElement('div');
+      boxHeader.className = 'border-b border-slate-100 pb-2 mb-3';
+      boxHeader.innerHTML = `
+        <div class="flex justify-between items-center mb-1">
+          <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2">
+            <span>📦 Box ${b}</span>
+            ${isComplete ? '<span class="text-xs bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold">✓ Gepackt</span>' : ''}
+          </h3>
+          <span class="text-xs font-semibold ${totalCount === 0 ? 'text-slate-400' : 'text-slate-600'}">
+            ${packedCount}/${totalCount} gepackt
+          </span>
+        </div>
+        ${totalCount > 0 ? `
+          <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+            <div class="bg-emerald-500 h-full transition-all duration-300" style="width: ${Math.round((packedCount/totalCount)*100)}%"></div>
+          </div>
+        ` : ''}
+      `;
+      boxDiv.appendChild(boxHeader);
+
+      if (totalCount > 0) {
+        const ul = document.createElement('ul');
+        ul.className = 'divide-y divide-slate-100 text-xs sm:text-sm';
+        boxItems.forEach(item => {
+          const state = appState[item.id];
+          const li = document.createElement('li');
+          li.className = 'py-2 flex justify-between items-center gap-2';
+          li.innerHTML = `
+            <div class="flex items-center gap-2 overflow-hidden">
+              <span class="${state.packed ? 'text-emerald-600 font-bold' : 'text-slate-300'}">
+                ${state.packed ? '☑' : '☐'}
+              </span>
+              <span class="font-medium text-slate-800 truncate ${state.packed ? 'line-through text-slate-400' : ''}">${item.title}</span>
+              ${state.qty ? `<span class="text-slate-400 text-xs shrink-0">(${state.qty})</span>` : ''}
+            </div>
+            <span class="text-[11px] px-2 py-0.5 rounded border shrink-0 font-medium ${getStatusClass(state.status)}">${state.status}</span>
+          `;
+          ul.appendChild(li);
+        });
+        boxDiv.appendChild(ul);
+      } else {
+        const emptyMsg = document.createElement('p');
+        emptyMsg.className = 'text-xs text-slate-400 italic py-2';
+        emptyMsg.innerText = 'Noch keine Gegenstände zugewiesen.';
+        boxDiv.appendChild(emptyMsg);
+      }
+
+      content.appendChild(boxDiv);
     }
-  });
 
-  const sortedBoxKeys = Object.keys(boxes).sort((a, b) => parseInt(a) - parseInt(b));
-
-  if (sortedBoxKeys.length === 0) {
-    container.innerHTML = `<div class="text-slate-400 italic text-sm text-center col-span-full py-4">Bisher wurden keinen Gegenständen Boxen zugewiesen.</div>`;
-    return;
+    modal.classList.remove('hidden');
   }
 
-  sortedBoxKeys.forEach(boxNum => {
-    const boxCard = document.createElement('div');
-    boxCard.className = 'bg-white border border-slate-200 p-4 rounded-2xl shadow-sm space-y-2';
-    boxCard.innerHTML = `
-      <div class="font-bold text-amber-600 text-sm flex items-center justify-between border-b border-slate-100 pb-2">
-        <span>📦 Box / Lagerort #${boxNum}</span>
-        <span class="bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full text-xs font-semibold">${boxes[boxNum].length} Artikel</span>
-      </div>
-      <ul class="text-xs text-slate-700 space-y-1 list-disc pl-4 font-medium">
-        ${boxes[boxNum].map(title => `<li>${title}</li>`).join('')}
-      </ul>
-    `;
-    container.appendChild(boxCard);
-  });
-}
-
-function updateRecipeScaling() {
-  const punschLiters = parseFloat(document.getElementById('punschLiters')?.value || 8);
-  if (document.getElementById('punschLitersLabel')) document.getElementById('punschLitersLabel').innerText = `${punschLiters} Liter`;
-  const factor = punschLiters / 8.0;
-  const list = document.getElementById('punschRecipeList');
-  if (list) {
-    list.innerHTML = `
-      <li><b>${(2.0 * factor).toFixed(1).replace('.0','')} l</b> Wasser</li>
-      <li><b>${Math.ceil(10 * factor)} Btl.</b> Wintertee</li>
-      <li><b>${(1.0 * factor).toFixed(1).replace('.0','')} l</b> Orangensaft</li>
-      <li><b>${(2.5 * factor).toFixed(1).replace('.0','')} l</b> Apfelsaft</li>
-      <li><b>${(2.5 * factor).toFixed(1).replace('.0','')} l</b> Roter Traubensaft</li>
-      <li><b>${Math.ceil(2 * factor)} Stk.</b> Zimtstangen</li>
-      <li><b>${Math.ceil(5 * factor)} Btl.</b> Glühfix</li>
-    `;
+  function closeBoxOverview() {
+    document.getElementById('boxModal').classList.add('hidden');
   }
-}
 
-function calculatePowerLoad() {
-  const waffel = parseInt(document.getElementById('pwrWaffel')?.value || 0) * 1200;
-  const punsch = parseInt(document.getElementById('pwrPunsch')?.value || 0) * 1800;
-  const wasser = parseInt(document.getElementById('pwrWasser')?.value || 0) * 2200;
-
-  const total = waffel + punsch + wasser;
-  const totalEl = document.getElementById('totalWatts');
-  if (totalEl) totalEl.textContent = `${total} Watt`;
-}
-
-function addSale(type, amount) {
-  const perms = roleConfig[currentRole] || {};
-  if (!perms.canCash && currentRole !== 'admin') {
-    alert("Keine Berechtigung für die Standkasse.");
-    return;
+  function initChecklist() {
+    const input = document.getElementById('searchInput');
+    if (input) input.addEventListener('input', renderChecklist);
+    loadStateFromSheet();
   }
-  
-  const el = document.getElementById(type === 'punsch' ? 'soldPunsch' : 'soldWaffles');
-  if (!el) return;
-  
-  let currentVal = parseInt(el.value || 0);
-  currentVal += amount;
-  if (currentVal < 0) currentVal = 0;
-  
-  el.value = currentVal;
-  calculateSalesStats();
-  logActivity(`Kasse: ${amount > 0 ? '+' : ''}${amount} ${type.toUpperCase()}`);
-}
 
-function calculateSalesStats() {
-  const sPunsch = parseInt(document.getElementById('soldPunsch')?.value || 0);
-  const pPunsch = 2.00;
-  const sWaffles = parseInt(document.getElementById('soldWaffles')?.value || 0);
-  const pWaffles = 2.00;
-  const fee = parseFloat(document.getElementById('standFee')?.value || 0.00);
-  const otherRev = parseFloat(document.getElementById('otherRevenue')?.value || 0.00);
-
-  const revenue = (sPunsch * pPunsch) + (sWaffles * pWaffles) + otherRev;
-  const totalExpenses = fee;
-
-  if (document.getElementById('statRevenue')) document.getElementById('statRevenue').innerText = revenue.toFixed(2).replace('.', ',') + ' €';
-  if (document.getElementById('statExpenses')) document.getElementById('statExpenses').innerText = totalExpenses.toFixed(2).replace('.', ',') + ' €';
-  if (document.getElementById('statProfit')) document.getElementById('statProfit').innerText = (revenue - totalExpenses).toFixed(2).replace('.', ',') + ' €';
-
-  appState.salesStats = { soldPunsch: sPunsch, pricePunsch: pPunsch, soldWaffles: sWaffles, priceWaffles: pWaffles, standFee: fee, otherRevenue: otherRev };
-  saveState();
-}
-
-function logActivity(text) {
-  const perms = roleConfig[currentRole] || {};
-  if (!perms.canLog && currentRole !== 'admin') return;
-
-  const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-  activityLog.unshift(`[${time}] [${currentRole.toUpperCase()}] ${text}`);
-  if (activityLog.length > 20) activityLog.pop();
-  renderActivityLog();
-}
-
-function renderActivityLog() {
-  const list = document.getElementById('activityLogList');
-  if (!list) return;
-  list.innerHTML = activityLog.length === 0 
-    ? `<li class="italic text-slate-400">Keine Aktivitäten aufgezeichnet.</li>`
-    : activityLog.map(log => `<li class="border-b border-slate-700/50 pb-1 font-mono">${log}</li>`).join('');
-}
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initChecklist);
+  } else {
+    initChecklist();
+  }
+{% endraw %}
 </script>
