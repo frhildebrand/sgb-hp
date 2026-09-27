@@ -2,7 +2,7 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzm4pz4LD6vwqwkDQXqI
 
 let roleConfig = window.DEFAULT_ROLE_CONFIG || {};
 let itemsData = window.DEFAULT_ITEMS || [];
-let appState = {};
+let appState = { sales: { waffel: 0, punsch: 0 } };
 let currentRole = 'betrachter';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -17,9 +17,47 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('searchInput')?.addEventListener('input', renderChecklist);
 });
 
+function toggleDarkMode() {
+  document.documentElement.classList.toggle('dark');
+}
+
+function toggleBurgerMenu() {
+  const drawer = document.getElementById('burgerDrawer');
+  drawer.classList.toggle('hidden');
+}
+
+function navTo(modalKey) {
+  toggleBurgerMenu();
+  if (modalKey === 'inventar') {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+  const modalId = 'modal' + modalKey.charAt(0).toUpperCase() + modalKey.slice(1);
+  openModal(modalId);
+}
+
+function openModal(id) {
+  if (id === 'modalAdminpanel' && currentRole !== 'admin') {
+    alert("Nur Admins haben Zugriff auf das Control Center!");
+    return;
+  }
+  document.getElementById(id)?.classList.remove('hidden');
+  if (id === 'modalBoxenuebersicht') renderBoxOverview();
+  if (id === 'modalLagerbestand') renderStockTable();
+  if (id === 'modalVerkabelung') renderPowerPlanner();
+  if (id === 'modalEinkaufsliste') renderShoppingTable();
+  if (id === 'modalVerkauf') updateSalesUI();
+  if (id === 'modalAdminpanel') renderAdminPermissions();
+}
+
+function closeModal(id) {
+  document.getElementById(id)?.classList.add('hidden');
+}
+
 function loadFromLocal() {
   const local = JSON.parse(localStorage.getItem('sg_wm_state_v26')) || {};
   appState = local;
+  if (!appState.sales) appState.sales = { waffel: 0, punsch: 0 };
   if (appState.roleConfig) roleConfig = appState.roleConfig;
 }
 
@@ -29,6 +67,7 @@ async function loadStateFromSheet() {
     const cloudData = await res.json();
     if (cloudData && Object.keys(cloudData).length > 0) {
       appState = cloudData;
+      if (!appState.sales) appState.sales = { waffel: 0, punsch: 0 };
       localStorage.setItem('sg_wm_state_v26', JSON.stringify(appState));
       itemsData.forEach(item => initItemState(item));
       renderChecklist();
@@ -40,7 +79,7 @@ async function loadStateFromSheet() {
 
 function setSyncStatus(isOk) {
   const el = document.getElementById('syncStatus');
-  if (el) el.innerText = isOk ? "🟢 Synced" : "🟡 Offline Mode";
+  if (el) el.innerText = isOk ? "🟢 Synchronisiert" : "🟡 Offline Modus";
 }
 
 function initItemState(item) {
@@ -60,35 +99,10 @@ async function saveState() {
   }
 }
 
-function openModal(id) {
-  document.getElementById(id)?.classList.remove('hidden');
-  if (id === 'modalBoxes') renderBoxOverview();
-  if (id === 'modalStock') renderStockTable();
-  if (id === 'modalPower') renderPowerPlanner();
-  if (id === 'modalShopping') renderShoppingTable();
-}
-
-function closeModal(id) {
-  document.getElementById(id)?.classList.add('hidden');
-}
-
-function updatePunschRecipe() {
-  const liters = parseFloat(document.getElementById('punschCalcInput')?.value || 8);
-  if (document.getElementById('recipeLitersLabel')) document.getElementById('recipeLitersLabel').innerText = `${liters} Liter`;
-  const factor = liters / 8.0;
-
-  const list = document.getElementById('recipeIngredientsList');
-  if (list) {
-    list.innerHTML = `
-      <li><b>${(2.0 * factor).toFixed(1).replace('.0','')} l</b> Wasser</li>
-      <li><b>${Math.ceil(10 * factor)} Btl.</b> Wintertee</li>
-      <li><b>${(1.0 * factor).toFixed(1).replace('.0','')} l</b> Orangensaft</li>
-      <li><b>${(2.5 * factor).toFixed(1).replace('.0','')} l</b> Apfelsaft</li>
-      <li><b>${(2.5 * factor).toFixed(1).replace('.0','')} l</b> Roter Traubensaft</li>
-      <li><b>${Math.ceil(2 * factor)} Stk.</b> Zimtstangen</li>
-      <li><b>${Math.ceil(5 * factor)} Btl.</b> Glühfix</li>
-    `;
-  }
+function canEdit(permKey) {
+  if (currentRole === 'admin') return true;
+  if (currentRole === 'betrachter') return false;
+  return !!(roleConfig[currentRole] && roleConfig[currentRole][permKey]);
 }
 
 function renderChecklist() {
@@ -107,40 +121,40 @@ function renderChecklist() {
 
     if (catItems.length > 0) {
       const card = document.createElement('div');
-      card.className = 'bg-white text-slate-900 rounded-2xl p-4 shadow-sm border border-slate-200 mb-4';
+      card.className = 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-slate-800 mb-4';
 
       let rows = catItems.map(item => {
         const st = appState[item.id];
         const isDone = st.status === 'Erledigt';
         return `
-          <tr class="border-b border-slate-100 text-xs hover:bg-slate-50 transition">
-            <td class="py-2.5 px-2 font-bold ${isDone ? 'line-through text-slate-400' : 'text-slate-900'}">
+          <tr class="border-b border-slate-100 dark:border-slate-800 text-xs hover:bg-slate-50 dark:hover:bg-slate-950 transition">
+            <td class="py-2.5 px-2 font-bold ${isDone ? 'line-through text-slate-400' : ''}">
               ${item.title} ${item.details ? `<br><span class="text-[10px] text-slate-500 font-normal">${item.details}</span>` : ''}
             </td>
             <td class="py-2.5 px-1">
-              <select onchange="updateItem(${item.id}, 'status', this.value)" class="border rounded-lg px-2 py-1 font-semibold text-xs ${getStatusClass(st.status)}">
+              <select ${!canEdit('canStatus') ? 'disabled' : ''} onchange="updateItem(${item.id}, 'status', this.value)" class="border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 font-semibold text-xs bg-slate-50 dark:bg-slate-950 focus:outline-none">
                 ${['Offen', 'Vorbereitet', 'Verteilt', 'Erledigt'].map(o => `<option value="${o}" ${st.status === o ? 'selected' : ''}>${o}</option>`).join('')}
               </select>
             </td>
             <td class="py-2.5 px-1">
-              <input type="text" value="${st.assignedTo || ''}" placeholder="Name..." onchange="updateItem(${item.id}, 'assignedTo', this.value)" class="border border-slate-300 rounded-lg px-2 py-1 text-xs w-full text-slate-900" />
+              <input type="text" ${!canEdit('canName') ? 'disabled' : ''} value="${st.assignedTo || ''}" placeholder="Name..." onchange="updateItem(${item.id}, 'assignedTo', this.value)" class="border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-lg px-2 py-1 text-xs w-full focus:outline-none" />
             </td>
             <td class="py-2.5 px-1 text-center">
-              <input type="checkbox" ${st.packed ? 'checked' : ''} onchange="updateItem(${item.id}, 'packed', this.checked)" class="w-4 h-4 accent-emerald-600 cursor-pointer" />
+              <input type="checkbox" ${!canEdit('canPacked') ? 'disabled' : ''} ${st.packed ? 'checked' : ''} onchange="updateItem(${item.id}, 'packed', this.checked)" class="w-4 h-4 accent-emerald-500 cursor-pointer" />
             </td>
             <td class="py-2.5 px-1 text-center">
-              <input type="number" min="1" max="12" value="${st.boxNum || ''}" onchange="updateItem(${item.id}, 'boxNum', this.value)" class="border border-slate-300 rounded-lg text-center w-10 text-xs py-1 text-slate-900 font-bold" />
+              <input type="number" ${!canEdit('canBox') ? 'disabled' : ''} min="1" max="12" value="${st.boxNum || ''}" onchange="updateItem(${item.id}, 'boxNum', this.value)" class="border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-lg text-center w-10 text-xs py-1 font-bold focus:outline-none" />
             </td>
           </tr>
         `;
       }).join('');
 
       card.innerHTML = `
-        <h3 class="font-bold border-b pb-2 mb-2 text-sm text-slate-900">${cat}</h3>
+        <h3 class="font-extrabold border-b border-slate-100 dark:border-slate-800 pb-2 mb-2 text-sm text-amber-600 dark:text-amber-400">${cat}</h3>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
-              <tr class="text-[11px] uppercase bg-slate-100 font-extrabold text-slate-700 border-b">
+              <tr class="text-[11px] uppercase bg-slate-50 dark:bg-slate-950 text-slate-500 font-extrabold border-b border-slate-200 dark:border-slate-800">
                 <th class="p-2">Gegenstand</th>
                 <th class="p-1 w-[20%]">Status</th>
                 <th class="p-1 w-[20%]">Wer</th>
@@ -164,19 +178,25 @@ function updateItem(id, field, value) {
   renderChecklist();
 }
 
-function getStatusClass(s) {
-  if (s === 'Vorbereitet') return 'bg-amber-100 text-amber-900 border-amber-300';
-  if (s === 'Verteilt') return 'bg-sky-100 text-sky-900 border-sky-300';
-  if (s === 'Erledigt') return 'bg-emerald-100 text-emerald-900 border-emerald-300';
-  return 'bg-slate-100 text-slate-800 border-slate-300';
-}
-
 function updateProgress() {
   const total = itemsData.length;
   const count = itemsData.filter(i => appState[i.id]?.status === 'Erledigt').length;
   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
   if (document.getElementById('progressBar')) document.getElementById('progressBar').style.width = pct + '%';
   if (document.getElementById('progressText')) document.getElementById('progressText').innerText = pct + '% erledigt (' + count + '/' + total + ')';
+}
+
+function addSale(type, amount) {
+  if (!canEdit('canCash')) { alert("Keine Berechtigung für die Kasse!"); return; }
+  if (!appState.sales) appState.sales = { waffel: 0, punsch: 0 };
+  appState.sales[type] = Math.max(0, (appState.sales[type] || 0) + amount);
+  saveState();
+  updateSalesUI();
+}
+
+function updateSalesUI() {
+  if (document.getElementById('countWaffeln')) document.getElementById('countWaffeln').innerText = appState.sales?.waffel || 0;
+  if (document.getElementById('countPunsch')) document.getElementById('countPunsch').innerText = appState.sales?.punsch || 0;
 }
 
 function renderBoxOverview() {
@@ -189,14 +209,14 @@ function renderBoxOverview() {
     const packedCount = boxItems.filter(i => appState[i.id]?.packed).length;
 
     const boxCard = document.createElement('div');
-    boxCard.className = 'bg-slate-50 border border-slate-200/80 p-3.5 rounded-xl space-y-2';
+    boxCard.className = 'bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl space-y-2';
     boxCard.innerHTML = `
-      <div class="flex justify-between items-center font-bold text-xs text-slate-800 border-b pb-1.5">
+      <div class="flex justify-between items-center font-bold text-xs border-b border-slate-200 dark:border-slate-800 pb-1.5">
         <span>📦 Box ${b}</span>
-        <span class="text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-md text-[10px] font-bold">${packedCount}/${boxItems.length} gepackt</span>
+        <span class="text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded text-[10px] font-bold">${packedCount}/${boxItems.length} gepackt</span>
       </div>
-      <ul class="text-xs text-slate-600 space-y-1 list-disc pl-4 font-medium">
-        ${boxItems.length > 0 ? boxItems.map(i => `<li class="${appState[i.id]?.packed ? 'line-through text-slate-400' : ''}">${i.title}</li>`).join('') : '<li class="italic text-slate-400 list-none">Noch keine Gegenstände dieser Box zugewiesen.</li>'}
+      <ul class="text-xs space-y-1 list-disc pl-4 font-medium">
+        ${boxItems.length > 0 ? boxItems.map(i => `<li class="${appState[i.id]?.packed ? 'line-through text-slate-400' : ''}">${i.title}</li>`).join('') : '<li class="italic text-slate-400 list-none">Keine Artikel zugewiesen</li>'}
       </ul>
     `;
     container.appendChild(boxCard);
@@ -212,13 +232,12 @@ function renderStockTable() {
     const st = appState[item.id];
     if (st && st.stockQty) {
       const tr = document.createElement('tr');
-      tr.className = 'hover:bg-slate-50';
+      tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-950';
       tr.innerHTML = `
-        <td class="p-2.5 font-bold text-slate-500">${item.cat}</td>
-        <td class="p-2.5 font-bold text-slate-900">${item.title}</td>
-        <td class="p-2.5 text-center font-extrabold text-amber-800 bg-amber-50">${st.stockQty}</td>
-        <td class="p-2.5 text-center text-slate-500 font-bold">${st.qty || '-'}</td>
-        <td class="p-2.5 text-center font-bold text-slate-700">${st.status}</td>
+        <td class="p-2 font-bold text-slate-500">${item.cat}</td>
+        <td class="p-2 font-bold">${item.title}</td>
+        <td class="p-2 text-center font-extrabold text-amber-500">${st.stockQty}</td>
+        <td class="p-2 text-center font-bold">${st.status}</td>
       `;
       tbody.appendChild(tr);
     }
@@ -233,8 +252,8 @@ function renderPowerPlanner() {
   const powerItems = itemsData.filter(i => i.defaultWatts || i.cat.includes('Elektrik') || i.cat.includes('Geräte'));
   powerItems.forEach(item => {
     const tag = document.createElement('div');
-    tag.className = 'bg-white border border-slate-300 rounded-lg px-2.5 py-1 font-bold text-slate-800 shadow-sm flex items-center gap-2 cursor-pointer hover:border-sky-400';
-    tag.innerHTML = `<span>${item.title}</span> <span class="bg-sky-100 text-sky-800 px-1.5 py-0.5 rounded text-[10px] font-extrabold">${item.defaultWatts || 0} W</span>`;
+    tag.className = 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1 font-bold flex items-center gap-2 shadow-sm';
+    tag.innerHTML = `<span>${item.title}</span> <span class="bg-sky-500/10 text-sky-500 px-1.5 py-0.5 rounded text-[10px] font-extrabold">${item.defaultWatts || 0} W</span>`;
     pool.appendChild(tag);
   });
 }
@@ -253,16 +272,14 @@ function renderShoppingTable() {
     totalCost += price;
 
     const tr = document.createElement('tr');
-    tr.className = 'hover:bg-slate-50';
+    tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-950';
     tr.innerHTML = `
-      <td class="p-2.5 text-center"><input type="checkbox" ${st.bought ? 'checked' : ''} onchange="updateItem(${item.id}, 'bought', this.checked)" class="w-4 h-4 accent-amber-600 rounded cursor-pointer" /></td>
-      <td class="p-2.5 font-bold text-slate-900">${item.title}</td>
-      <td class="p-2.5 text-slate-600">${st.qty || '-'}</td>
-      <td class="p-2.5 text-slate-500">${item.packageSize || '-'}</td>
-      <td class="p-2.5 text-center font-bold">1x</td>
-      <td class="p-2.5"><input type="text" value="${st.store || ''}" placeholder="Geschäft..." onchange="updateItem(${item.id}, 'store', this.value)" class="border border-slate-300 rounded-lg px-2 py-1 text-xs w-full text-slate-900" /></td>
-      <td class="p-2.5 text-right"><input type="number" step="0.01" value="${st.price || ''}" placeholder="0.00" onchange="updateItem(${item.id}, 'price', this.value); renderShoppingTable();" class="border border-slate-300 rounded-lg px-2 py-1 text-xs w-20 text-right text-slate-900 font-bold" /> €</td>
-      <td class="p-2.5 text-right font-extrabold text-slate-900">${price.toFixed(2).replace('.',',')} €</td>
+      <td class="p-2 text-center"><input type="checkbox" ${!canEdit('canShopBought') ? 'disabled' : ''} ${st.bought ? 'checked' : ''} onchange="updateItem(${item.id}, 'bought', this.checked)" class="w-4 h-4 accent-amber-500 rounded" /></td>
+      <td class="p-2 font-bold">${item.title}</td>
+      <td class="p-2 text-slate-500">${st.qty || '-'}</td>
+      <td class="p-2 text-slate-500">${item.packageSize || '-'}</td>
+      <td class="p-2"><input type="text" ${!canEdit('canShopStore') ? 'disabled' : ''} value="${st.store || ''}" placeholder="Laden..." onchange="updateItem(${item.id}, 'store', this.value)" class="border border-slate-200 dark:border-slate-800 bg-transparent rounded px-2 py-1 text-xs w-full" /></td>
+      <td class="p-2 text-right"><input type="number" step="0.01" ${!canEdit('canShopPrice') ? 'disabled' : ''} value="${st.price || ''}" placeholder="0.00" onchange="updateItem(${item.id}, 'price', this.value); renderShoppingTable();" class="border border-slate-200 dark:border-slate-800 bg-transparent rounded px-2 py-1 text-xs w-20 text-right font-bold" /> €</td>
     `;
     tbody.appendChild(tr);
   });
@@ -270,7 +287,59 @@ function renderShoppingTable() {
   if (document.getElementById('shoppingTotalCost')) document.getElementById('shoppingTotalCost').innerText = totalCost.toFixed(2).replace('.',',') + ' €';
 }
 
+function updatePunschRecipe() {
+  const liters = parseFloat(document.getElementById('punschCalcInput')?.value || 8);
+  const factor = liters / 8.0;
+
+  const list = document.getElementById('recipeIngredientsList');
+  if (list) {
+    list.innerHTML = `
+      <li><b>${(2.0 * factor).toFixed(1).replace('.0','')} l</b> Wasser</li>
+      <li><b>${Math.ceil(10 * factor)} Btl.</b> Wintertee</li>
+      <li><b>${(1.0 * factor).toFixed(1).replace('.0','')} l</b> Orangensaft</li>
+      <li><b>${(2.5 * factor).toFixed(1).replace('.0','')} l</b> Apfelsaft</li>
+      <li><b>${(2.5 * factor).toFixed(1).replace('.0','')} l</b> Roter Traubensaft</li>
+      <li><b>${Math.ceil(2 * factor)} Stk.</b> Zimtstangen</li>
+      <li><b>${Math.ceil(5 * factor)} Btl.</b> Glühfix</li>
+    `;
+  }
+}
+
+function renderAdminPermissions() {
+  const container = document.getElementById('adminPermissionsGrid');
+  if (!container) return;
+  container.innerHTML = '';
+
+  ['helfer', 'orga'].forEach(role => {
+    const roleBlock = document.createElement('div');
+    roleBlock.className = 'bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3';
+    
+    let checkboxes = Object.keys(roleConfig[role] || {})
+      .filter(k => k.startsWith('can'))
+      .map(perm => `
+        <label class="flex items-center gap-2 text-xs font-semibold cursor-pointer">
+          <input type="checkbox" ${roleConfig[role][perm] ? 'checked' : ''} onchange="toggleRolePerm('${role}', '${perm}', this.checked)" class="accent-amber-500 rounded" />
+          <span>${perm}</span>
+        </label>
+      `).join('');
+
+    roleBlock.innerHTML = `
+      <h4 class="font-extrabold text-xs uppercase tracking-wider text-amber-500">${role.toUpperCase()} Einzelrechte</h4>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">${checkboxes}</div>
+    `;
+    container.appendChild(roleBlock);
+  });
+}
+
+function toggleRolePerm(role, perm, val) {
+  if (!roleConfig[role]) roleConfig[role] = {};
+  roleConfig[role][perm] = val;
+  appState.roleConfig = roleConfig;
+  saveState();
+}
+
 function uploadRoshopImage(tag, input) {
+  if (!canEdit('canUpload')) { alert("Keine Berechtigung zum Upload!"); return; }
   if (input.files && input.files[0]) {
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -284,18 +353,13 @@ function uploadRoshopImage(tag, input) {
 function addNewItemPrompt() {
   const title = prompt("Name des neuen Gegenstands:");
   if (title) {
-    const cat = prompt("Kategorie (z.B. 📦 Material & Befestigung):", "📋 Sonstiges");
+    const cat = prompt("Kategorie:", "📋 Sonstiges");
     const newId = Date.now();
     itemsData.push({ id: newId, cat: cat || "📋 Sonstiges", title: title });
     initItemState({ id: newId });
     saveState();
     renderChecklist();
   }
-}
-
-function transferIngredientsToShopping() {
-  alert("Zutaten wurden erfolgreich mit der Einkaufsliste synchronisiert!");
-  openModal('modalShopping');
 }
 
 function downloadBackup() {
@@ -308,44 +372,28 @@ function downloadBackup() {
   downloadAnchor.remove();
 }
 
-function uploadBackup() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.onchange = e => {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.readAsText(file, 'UTF-8');
-    reader.onload = readerEvent => {
-      appState = JSON.parse(readerEvent.target.result);
-      saveState();
-      location.reload();
-    };
-  };
-  input.click();
-}
-
-function changePasswordPrompt() {
-  const newPwd = prompt("Neues Passwort für Admin:");
-  if (newPwd) { roleConfig.admin.pwd = newPwd; saveState(); alert("Passwort geändert!"); }
-}
-
 function resetSeasonPrompt() {
   if (confirm("Möchtest du wirklich alle Haken und Einträge für die neue Saison zurücksetzen?")) {
-    appState = {};
+    appState = { sales: { waffel: 0, punsch: 0 } };
     saveState();
     location.reload();
   }
 }
 
-function toggleRoleModal() { openModal('roleModal'); }
 function selectRoleWithPassword(role) {
   if (role === 'betrachter') { currentRole = 'betrachter'; closeModal('roleModal'); applyRolePermissions(); return; }
   const pwd = prompt(`Passwort für ${role.toUpperCase()}:`);
-  if (pwd === roleConfig[role]?.pwd) { currentRole = role; closeModal('roleModal'); applyRolePermissions(); }
-  else if (pwd !== null) alert("Falsches Passwort!");
+  if (pwd === (roleConfig[role]?.pwd || (role === 'admin' ? 'SGJugend26' : ''))) {
+    currentRole = role;
+    closeModal('roleModal');
+    applyRolePermissions();
+  } else if (pwd !== null) {
+    alert("Falsches Passwort!");
+  }
 }
 
 function applyRolePermissions() {
   const badge = document.getElementById('roleBadge');
   if (badge) badge.innerText = `${currentRole.toUpperCase()}`;
+  renderChecklist();
 }
