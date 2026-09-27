@@ -2,8 +2,9 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzm4pz4LD6vwqwkDQXqI
 
 let roleConfig = window.DEFAULT_ROLE_CONFIG || {};
 let itemsData = window.DEFAULT_ITEMS || [];
-let appState = { sales: { waffel: 0, punsch: 0 } };
+let appState = { sales: { waffel: 0, punsch: 0 }, roshopImg: {} };
 let currentRole = 'betrachter';
+let activeFilterTag = 'ALL';
 
 document.addEventListener('DOMContentLoaded', () => {
   loadFromLocal();
@@ -23,42 +24,76 @@ function toggleDarkMode() {
 
 function toggleBurgerMenu() {
   const drawer = document.getElementById('burgerDrawer');
-  drawer.classList.toggle('hidden');
+  if (drawer) drawer.classList.toggle('hidden');
 }
 
-function navTo(modalKey) {
-  toggleBurgerMenu();
-  if (modalKey === 'inventar') {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    return;
+// ZENTRALES FULLPAGE SEITEN-UMSCHALTEN (KEINE MODALS MEHR)
+function switchView(viewKey) {
+  if (document.getElementById('burgerDrawer') && !document.getElementById('burgerDrawer').classList.contains('hidden')) {
+    toggleBurgerMenu();
   }
-  const modalId = 'modal' + modalKey.charAt(0).toUpperCase() + modalKey.slice(1);
-  openModal(modalId);
-}
 
-function openModal(id) {
-  if (id === 'modalAdminpanel' && currentRole !== 'admin') {
+  // Schutz für Admin Panel
+  if (viewKey === 'adminpanel' && currentRole !== 'admin') {
     alert("Nur Admins haben Zugriff auf das Control Center!");
     return;
   }
-  document.getElementById(id)?.classList.remove('hidden');
-  if (id === 'modalBoxenuebersicht') renderBoxOverview();
-  if (id === 'modalLagerbestand') renderStockTable();
-  if (id === 'modalVerkabelung') renderPowerPlanner();
-  if (id === 'modalEinkaufsliste') renderShoppingTable();
-  if (id === 'modalVerkauf') updateSalesUI();
-  if (id === 'modalAdminpanel') renderAdminPermissions();
+
+  // Alle Views verbergen
+  const allViews = ['Aushang', 'Inventar', 'Verkauf', 'Einkaufsliste', 'Verkabelung', 'Lagerbestand', 'Boxenuebersicht', 'Rezepte', 'Adminpanel'];
+  allViews.forEach(v => {
+    document.getElementById('view' + v)?.classList.add('hidden');
+  });
+
+  // Gewählte View anzeigen
+  const targetKey = viewKey.charAt(0).toUpperCase() + viewKey.slice(1);
+  const targetView = document.getElementById('view' + targetKey);
+  if (targetView) {
+    targetView.classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // Spezifische Renderer aufrufen
+  if (viewKey === 'inventar') renderChecklist();
+  if (viewKey === 'verkauf') updateSalesUI();
+  if (viewKey === 'boxenuebersicht') renderBoxOverview();
+  if (viewKey === 'lagerbestand') renderStockTable();
+  if (viewKey === 'verkabelung') renderPowerPlanner();
+  if (viewKey === 'einkaufsliste') renderShoppingTable();
+  if (viewKey === 'adminpanel') renderAdminPermissions();
 }
 
 function closeModal(id) {
   document.getElementById(id)?.classList.add('hidden');
 }
 
+function openModal(id) {
+  document.getElementById(id)?.classList.remove('hidden');
+}
+
+function setFilterTag(tag) {
+  activeFilterTag = tag;
+  const buttons = document.querySelectorAll('#filterTags button');
+  
+  buttons.forEach(btn => {
+    btn.classList.remove('ring-2', 'ring-amber-500', 'scale-105');
+  });
+
+  if (event && event.target) {
+    event.target.classList.add('ring-2', 'ring-amber-500', 'scale-105');
+  }
+
+  renderChecklist();
+}
+
 function loadFromLocal() {
   const local = JSON.parse(localStorage.getItem('sg_wm_state_v26')) || {};
   appState = local;
   if (!appState.sales) appState.sales = { waffel: 0, punsch: 0 };
+  if (!appState.roshopImg) appState.roshopImg = {};
   if (appState.roleConfig) roleConfig = appState.roleConfig;
+
+  renderRoshopImages();
 }
 
 async function loadStateFromSheet() {
@@ -68,10 +103,13 @@ async function loadStateFromSheet() {
     if (cloudData && Object.keys(cloudData).length > 0) {
       appState = cloudData;
       if (!appState.sales) appState.sales = { waffel: 0, punsch: 0 };
+      if (!appState.roshopImg) appState.roshopImg = {};
       localStorage.setItem('sg_wm_state_v26', JSON.stringify(appState));
       itemsData.forEach(item => initItemState(item));
       renderChecklist();
+      renderRoshopImages();
       updateProgress();
+      updateSalesUI();
       setSyncStatus(true);
     }
   } catch(e) { setSyncStatus(false); }
@@ -84,7 +122,15 @@ function setSyncStatus(isOk) {
 
 function initItemState(item) {
   if (!appState[item.id]) {
-    appState[item.id] = { status: 'Offen', assignedTo: '', packed: false, boxNum: '', qty: item.defaultQty || '', stockQty: item.defaultStockQty || '', bought: false, store: '', price: 0 };
+    appState[item.id] = { 
+      status: 'Offen', 
+      assignedTo: '', 
+      packed: false, 
+      boxNum: '', 
+      reqQty: item.defaultQty || '1', 
+      stockQty: item.defaultStockQty || '0', 
+      bought: false, store: '', price: 0 
+    };
   }
 }
 
@@ -116,7 +162,14 @@ function renderChecklist() {
   categories.forEach(cat => {
     const catItems = itemsData.filter(i => {
       initItemState(i);
-      return i.cat === cat && i.title.toLowerCase().includes(search);
+      const st = appState[i.id];
+      const matchSearch = i.title.toLowerCase().includes(search) || (st.assignedTo || '').toLowerCase().includes(search);
+      
+      let matchTag = true;
+      if (activeFilterTag === 'GEPACKT') matchTag = st.packed;
+      else if (activeFilterTag !== 'ALL') matchTag = st.status === activeFilterTag;
+
+      return i.cat === cat && matchSearch && matchTag;
     });
 
     if (catItems.length > 0) {
@@ -130,6 +183,12 @@ function renderChecklist() {
           <tr class="border-b border-slate-100 dark:border-slate-800 text-xs hover:bg-slate-50 dark:hover:bg-slate-950 transition">
             <td class="py-2.5 px-2 font-bold ${isDone ? 'line-through text-slate-400' : ''}">
               ${item.title} ${item.details ? `<br><span class="text-[10px] text-slate-500 font-normal">${item.details}</span>` : ''}
+            </td>
+            <td class="py-2.5 px-1 text-center font-bold text-amber-600">
+              <input type="text" ${!canEdit('canQty') ? 'disabled' : ''} value="${st.reqQty || '1'}" onchange="updateItem(${item.id}, 'reqQty', this.value)" class="w-10 text-center bg-slate-50 dark:bg-slate-950 border rounded p-1 text-xs" />
+            </td>
+            <td class="py-2.5 px-1 text-center font-bold text-emerald-500">
+              <input type="text" ${!canEdit('canQty') ? 'disabled' : ''} value="${st.stockQty || '0'}" onchange="updateItem(${item.id}, 'stockQty', this.value)" class="w-10 text-center bg-slate-50 dark:bg-slate-950 border rounded p-1 text-xs" />
             </td>
             <td class="py-2.5 px-1">
               <select ${!canEdit('canStatus') ? 'disabled' : ''} onchange="updateItem(${item.id}, 'status', this.value)" class="border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 font-semibold text-xs bg-slate-50 dark:bg-slate-950 focus:outline-none">
@@ -150,16 +209,20 @@ function renderChecklist() {
       }).join('');
 
       card.innerHTML = `
-        <h3 class="font-extrabold border-b border-slate-100 dark:border-slate-800 pb-2 mb-2 text-sm text-amber-600 dark:text-amber-400">${cat}</h3>
+        <div class="bg-amber-100/80 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/60 rounded-xl px-3 py-2 mb-3">
+          <h3 class="font-black text-xs uppercase tracking-wider text-amber-950 dark:text-amber-300">${cat}</h3>
+        </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
-              <tr class="text-[11px] uppercase bg-slate-50 dark:bg-slate-950 text-slate-500 font-extrabold border-b border-slate-200 dark:border-slate-800">
+              <tr class="text-[10px] uppercase bg-slate-50 dark:bg-slate-950 text-slate-500 font-extrabold border-b border-slate-200 dark:border-slate-800">
                 <th class="p-2">Gegenstand</th>
-                <th class="p-1 w-[20%]">Status</th>
-                <th class="p-1 w-[20%]">Wer</th>
-                <th class="p-1 text-center w-[10%]">Pack</th>
-                <th class="p-1 text-center w-[10%]">Box</th>
+                <th class="p-1 text-center">Bedarf</th>
+                <th class="p-1 text-center">Lager</th>
+                <th class="p-1">Status</th>
+                <th class="p-1">Wer</th>
+                <th class="p-1 text-center">Pack</th>
+                <th class="p-1 text-center">Box</th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>
@@ -186,8 +249,31 @@ function updateProgress() {
   if (document.getElementById('progressText')) document.getElementById('progressText').innerText = pct + '% erledigt (' + count + '/' + total + ')';
 }
 
+function uploadRoshopImage(tag, input) {
+  if (currentRole !== 'admin') { alert("Nur Admins dürfen Plakate hochladen!"); return; }
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      if (!appState.roshopImg) appState.roshopImg = {};
+      appState.roshopImg[tag] = e.target.result;
+      saveState();
+      renderRoshopImages();
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function renderRoshopImages() {
+  ['samstag', 'sonntag'].forEach(tag => {
+    const container = document.getElementById(tag === 'samstag' ? 'imgSamstagContainer' : 'imgSonntagContainer');
+    if (container && appState.roshopImg && appState.roshopImg[tag]) {
+      container.innerHTML = `<img src="${appState.roshopImg[tag]}" class="max-h-80 rounded-xl mx-auto border shadow-sm object-cover" />`;
+    }
+  });
+}
+
 function addSale(type, amount) {
-  if (!canEdit('canCash')) { alert("Keine Berechtigung für die Kasse!"); return; }
+  if (!canEdit('canCash')) { alert("Keine Berechtigung!"); return; }
   if (!appState.sales) appState.sales = { waffel: 0, punsch: 0 };
   appState.sales[type] = Math.max(0, (appState.sales[type] || 0) + amount);
   saveState();
@@ -195,8 +281,31 @@ function addSale(type, amount) {
 }
 
 function updateSalesUI() {
-  if (document.getElementById('countWaffeln')) document.getElementById('countWaffeln').innerText = appState.sales?.waffel || 0;
-  if (document.getElementById('countPunsch')) document.getElementById('countPunsch').innerText = appState.sales?.punsch || 0;
+  const waffeln = appState.sales?.waffel || 0;
+  const punsch = appState.sales?.punsch || 0;
+
+  const priceWaffel = 2.50;
+  const pricePunsch = 2.00;
+
+  const waffelnEuro = waffeln * priceWaffel;
+  const punschEuro = punsch * pricePunsch;
+  const totalRev = waffelnEuro + punschEuro;
+  const totalCount = waffeln + punsch;
+
+  if (document.getElementById('countWaffeln')) document.getElementById('countWaffeln').innerText = waffeln;
+  if (document.getElementById('countPunsch')) document.getElementById('countPunsch').innerText = punsch;
+  
+  if (document.getElementById('totalWaffelnEuro')) document.getElementById('totalWaffelnEuro').innerText = waffelnEuro.toFixed(2).replace('.', ',') + " € Einnahmen";
+  if (document.getElementById('totalPunschEuro')) document.getElementById('totalPunschEuro').innerText = punschEuro.toFixed(2).replace('.', ',') + " € Einnahmen";
+
+  if (document.getElementById('statTotalItems')) document.getElementById('statTotalItems').innerText = totalCount + " Stk.";
+  if (document.getElementById('statTotalRevenue')) document.getElementById('statTotalRevenue').innerText = totalRev.toFixed(2).replace('.', ',') + " €";
+
+  let bestseller = "-";
+  if (waffeln > punsch) bestseller = "Waffeln 🥯";
+  else if (punsch > waffeln) bestseller = "Punsch ☕";
+  else if (waffeln > 0) bestseller = "Gleichstand";
+  if (document.getElementById('statBestseller')) document.getElementById('statBestseller').innerText = bestseller;
 }
 
 function renderBoxOverview() {
@@ -230,13 +339,14 @@ function renderStockTable() {
 
   itemsData.forEach(item => {
     const st = appState[item.id];
-    if (st && st.stockQty) {
+    if (st) {
       const tr = document.createElement('tr');
       tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-950';
       tr.innerHTML = `
         <td class="p-2 font-bold text-slate-500">${item.cat}</td>
         <td class="p-2 font-bold">${item.title}</td>
-        <td class="p-2 text-center font-extrabold text-amber-500">${st.stockQty}</td>
+        <td class="p-2 text-center font-bold text-amber-500">${st.reqQty || '1'}</td>
+        <td class="p-2 text-center font-extrabold text-emerald-500">${st.stockQty || '0'}</td>
         <td class="p-2 text-center font-bold">${st.status}</td>
       `;
       tbody.appendChild(tr);
@@ -276,7 +386,7 @@ function renderShoppingTable() {
     tr.innerHTML = `
       <td class="p-2 text-center"><input type="checkbox" ${!canEdit('canShopBought') ? 'disabled' : ''} ${st.bought ? 'checked' : ''} onchange="updateItem(${item.id}, 'bought', this.checked)" class="w-4 h-4 accent-amber-500 rounded" /></td>
       <td class="p-2 font-bold">${item.title}</td>
-      <td class="p-2 text-slate-500">${st.qty || '-'}</td>
+      <td class="p-2 text-slate-500">${st.reqQty || '-'}</td>
       <td class="p-2 text-slate-500">${item.packageSize || '-'}</td>
       <td class="p-2"><input type="text" ${!canEdit('canShopStore') ? 'disabled' : ''} value="${st.store || ''}" placeholder="Laden..." onchange="updateItem(${item.id}, 'store', this.value)" class="border border-slate-200 dark:border-slate-800 bg-transparent rounded px-2 py-1 text-xs w-full" /></td>
       <td class="p-2 text-right"><input type="number" step="0.01" ${!canEdit('canShopPrice') ? 'disabled' : ''} value="${st.price || ''}" placeholder="0.00" onchange="updateItem(${item.id}, 'price', this.value); renderShoppingTable();" class="border border-slate-200 dark:border-slate-800 bg-transparent rounded px-2 py-1 text-xs w-20 text-right font-bold" /> €</td>
@@ -338,18 +448,6 @@ function toggleRolePerm(role, perm, val) {
   saveState();
 }
 
-function uploadRoshopImage(tag, input) {
-  if (!canEdit('canUpload')) { alert("Keine Berechtigung zum Upload!"); return; }
-  if (input.files && input.files[0]) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const container = document.getElementById(tag === 'samstag' ? 'imgSamstagContainer' : 'imgSonntagContainer');
-      if (container) container.innerHTML = `<img src="${e.target.result}" class="max-h-56 rounded-xl mx-auto border shadow-sm object-cover" />`;
-    };
-    reader.readAsDataURL(input.files[0]);
-  }
-}
-
 function addNewItemPrompt() {
   const title = prompt("Name des neuen Gegenstands:");
   if (title) {
@@ -374,7 +472,7 @@ function downloadBackup() {
 
 function resetSeasonPrompt() {
   if (confirm("Möchtest du wirklich alle Haken und Einträge für die neue Saison zurücksetzen?")) {
-    appState = { sales: { waffel: 0, punsch: 0 } };
+    appState = { sales: { waffel: 0, punsch: 0 }, roshopImg: {} };
     saveState();
     location.reload();
   }
