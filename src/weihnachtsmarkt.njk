@@ -5,12 +5,12 @@ heroSubtitle: Interaktive Vorbereitungsliste für Kinderpunsch & Waffelstand
 permalink: /weihnachtsmarkt/index.html
 ---
 
-<!-- Tailwind CSS Fallback CDN für garantierte Styles -->
+<!-- Tailwind CSS Fallback CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
 
 <div class="max-w-6xl mx-auto px-2 sm:px-4 py-6 font-sans text-slate-800">
   
-  <!-- Header: Freundlich, Hell & Weihnachtlich -->
+  <!-- Header -->
   <div class="bg-gradient-to-r from-emerald-50 via-green-100 to-emerald-50 text-slate-900 border border-emerald-200 rounded-2xl p-6 text-center shadow-md mb-6">
     <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight mb-2 text-emerald-900">🎄 SG Barnstorf – Stand-Planung</h1>
     <p class="text-slate-600 text-sm sm:text-base mb-4 max-w-xl mx-auto">Vorbereitungsliste für Kinderpunsch & Waffelstand am 1. Advent</p>
@@ -35,21 +35,18 @@ permalink: /weihnachtsmarkt/index.html
     </div>
   </div>
 
-  <!-- Helfer & Teigspenden Listen Integration -->
-  <div class="bg-amber-50/80 border border-amber-200 rounded-2xl p-4 sm:p-5 shadow-sm mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+  <!-- Helfer & Teigspenden Listen (Aushang ROSHOP) -->
+  <div class="bg-amber-50/90 border border-amber-200 rounded-2xl p-4 sm:p-5 shadow-sm mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
     <div class="flex items-center gap-3">
-      <span class="text-2xl">📝</span>
+      <span class="text-3xl">📌</span>
       <div>
-        <h3 class="font-bold text-slate-900 text-sm sm:text-base">Helfer- & Teigspenden-Listen</h3>
-        <p class="text-xs sm:text-sm text-slate-600">Trage dich hier direkt für Schichten oder als Waffelteig-Spender ein:</p>
+        <h3 class="font-bold text-slate-900 text-sm sm:text-base">Helfer- & Waffelteig-Listen (ROSHOP Aushang)</h3>
+        <p class="text-xs sm:text-sm text-slate-600">Die Anmeldelisten hängen aktuell bei ROSHOP aus. Hier kannst du den aktuellen Aushang einsehen:</p>
       </div>
     </div>
-    <div class="flex flex-wrap gap-2 w-full sm:w-auto">
-      <a href="https://reshop.de" target="_blank" rel="noopener" class="flex-1 sm:flex-none text-center px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-sm transition">
-        🤝 Schicht eintragen (Reshop)
-      </a>
-      <a href="https://reshop.de" target="_blank" rel="noopener" class="flex-1 sm:flex-none text-center px-3.5 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-xs border border-amber-300 transition">
-        🧇 Teigspende eintragen
+    <div class="flex flex-wrap gap-2 w-full md:w-auto">
+      <a href="/downloads/helferliste_weihnachtsmarkt.pdf" target="_blank" class="flex-1 md:flex-none text-center px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-sm transition flex items-center justify-center gap-1.5">
+        📄 Aushang / Liste ansehen (PDF)
       </a>
     </div>
   </div>
@@ -75,7 +72,7 @@ permalink: /weihnachtsmarkt/index.html
 
 </div>
 
-<!-- Modal / Pop-Up für Boxen-Übersicht -->
+<!-- Modal für Boxen-Übersicht -->
 <div id="boxModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
   <div class="bg-white border border-slate-200 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl">
     <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
@@ -98,7 +95,6 @@ permalink: /weihnachtsmarkt/index.html
     background-color: #ffffff;
     color: #0f172a;
   }
-  /* Helle Status Farbklassen */
   .status-offen { background-color: #fef2f2; color: #991b1b; border-color: #fecaca; }
   .status-vorbereitet { background-color: #fefce8; color: #854d0e; border-color: #fef08a; }
   .status-verteilt { background-color: #f0f9ff; color: #075985; border-color: #bae6fd; }
@@ -112,7 +108,7 @@ permalink: /weihnachtsmarkt/index.html
     { id: 1, cat: "🏛️ Orga & Anträge", isShop: false, title: "Anmeldung Gemeinde", details: "Teilnahmebestätigung vorab sichern", defaultQty: "1x" },
     { id: 2, cat: "🏛️ Orga & Anträge", isShop: false, title: "Anzeige Gaststättengewerbe", details: "Erforderliche Anträge einreichen", defaultQty: "1x" },
     { id: 3, cat: "🏛️ Orga & Anträge", isShop: false, title: "Hütte Gemeinde", details: "Aufbauort, Tag & Uhrzeit genau abklären", defaultQty: "1x" },
-    { id: 4, cat: "🏛️ Orga & Anträge", isShop: false, title: "Helfer- & Teiglisten (Reshop)", details: "Unterstützung & Schichten koordinieren", defaultQty: "1x" },
+    { id: 4, cat: "🏛️ Orga & Anträge", isShop: false, title: "Helfer- & Teiglisten (Reshop)", details: "Aushang kontrollieren & abfotografieren", defaultQty: "1x" },
     
     // Strom & Technik
     { id: 5, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Einkochautomaten / Punschkocher", details: "Vorab auf Funktion prüfen", defaultQty: "2x" },
@@ -140,8 +136,8 @@ permalink: /weihnachtsmarkt/index.html
     { id: 21, cat: "☕ Zutaten & Zubehör Punsch", isShop: false, title: "Ausschank & Becher", details: "Thermobecher, Punschkelle, Suppenkellen", defaultQty: "Ausreich." },
 
     // Zutaten Waffeln (Einkauf)
-    { id: 22, cat: "GF Zutaten & Zubehör Waffeln", isShop: true, title: "Teig & Zutaten", details: "Waffelteig-Spenden, Öl, Puderzucker, Spekulatius", defaultQty: "Nach Liste" },
-    { id: 23, cat: "GF Zutaten & Zubehör Waffeln", isShop: false, title: "Waffel-Utensilien", details: "Teigkellen, Holzgabeln, Ölpinsel, Puderzuckersieb", defaultQty: "Set" },
+    { id: 22, cat: "🧇 Zutaten & Zubehör Waffeln", isShop: true, title: "Teig & Zutaten", details: "Waffelteig-Spenden, Öl, Puderzucker, Spekulatius", defaultQty: "Nach Liste" },
+    { id: 23, cat: "🧇 Zutaten & Zubehör Waffeln", isShop: false, title: "Waffel-Utensilien", details: "Teigkellen, Holzgabeln, Ölpinsel, Puderzuckersieb", defaultQty: "Set" },
 
     // Hygiene & Reinigung (Einkauf)
     { id: 24, cat: "🧹 Hygiene, Reinigung & Müll", isShop: true, title: "Reinigungsmittel", details: "Spülmittel, Lappen, Handtücher, Küchenrolle", defaultQty: "Set" },
@@ -153,7 +149,7 @@ permalink: /weihnachtsmarkt/index.html
     { id: 28, cat: "💶 Kasse, Preise & Finanzen", isShop: false, title: "Preisschilder & Spenden", details: "Preisschilder Waffeln & Punsch (DIN A4), Spendenente", defaultQty: "Set" }
   ];
 
-  let appState = JSON.parse(localStorage.getItem('sg_wm_state_light_v1')) || {};
+  let appState = JSON.parse(localStorage.getItem('sg_wm_state_light_v2')) || {};
   let currentFilter = 'all';
 
   function initItemState(item) {
@@ -165,7 +161,7 @@ permalink: /weihnachtsmarkt/index.html
   itemsData.forEach(item => initItemState(item));
 
   function saveState() {
-    localStorage.setItem('sg_wm_state_light_v1', JSON.stringify(appState));
+    localStorage.setItem('sg_wm_state_light_v2', JSON.stringify(appState));
     updateProgress();
   }
 
@@ -306,7 +302,7 @@ permalink: /weihnachtsmarkt/index.html
               <div class="text-xs text-slate-500">${item.details}</div>
             </td>
             <td class="py-3 px-2">
-              <input type="text" placeholder="Menge" value="${state.qty || ''}"
+              <input type="text" value="${state.qty || ''}"
                 onchange="updateItem(${item.id}, 'qty', this.value)"
                 class="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 focus:border-emerald-500 focus:outline-none w-20 shadow-sm" />
             </td>
@@ -347,7 +343,6 @@ permalink: /weihnachtsmarkt/index.html
     const content = document.getElementById('boxModalContent');
     content.innerHTML = '';
 
-    // Gruppen nach Box 1 bis 12
     for (let b = 1; b <= 12; b++) {
       const boxItems = itemsData.filter(item => {
         const state = appState[item.id];
