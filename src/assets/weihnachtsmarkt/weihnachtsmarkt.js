@@ -1,45 +1,153 @@
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzm4pz4LD6vwqwkDQXqIypYRVx9m49oliAevZPGolZYm_JKFmWN526TLE-2Z3fGP8tJ/exec";
-const storeOptions = ["Aldi", "E-Center", "Famila", "Kaufland", "Kruber", "Lidl", "Netto", "Online", "Penny", "Rewe"];
+
+// Passwörter & Detaillierte Rechte-Konfiguration
+let roleConfig = {
+  helfer: {
+    pwd: "SGHelfer",
+    canCash: true,
+    canPacked: true,
+    canQty: false,
+    canStock: false,
+    canBox: true,
+    canStatus: false,
+    canPrices: false,
+    canLog: false
+  },
+  orga: {
+    pwd: "SGOrga",
+    canCash: true,
+    canPacked: true,
+    canQty: true,
+    canStock: true,
+    canBox: true,
+    canStatus: true,
+    canPrices: true,
+    canLog: true
+  },
+  admin: {
+    pwd: "SGJugend26"
+    // Admin darf automatisch immer ALLES
+  }
+};
+
+const DEFAULT_ITEMS = [
+  {"id": 1, "cat": "🏛️ Orga", "title": "Anmeldung Teilnahme", "details": "An Gemeinde"},
+  {"id": 2, "cat": "🏛️ Orga", "title": "Hütte Gemeinde", "details": "Aufbau Tag & Zeit abklären"},
+  {"id": 3, "cat": "🏛️ Orga", "title": "Listen Roshop Unterstützung", "details": "Aufhängen Schwarzes Brett"},
+  {"id": 4, "cat": "🏛️ Orga", "title": "Anzeige Gaststättengewerbe", "details": "Gemeinde / Amt"},
+  {"id": 5, "cat": "🛠️ Werkzeuge", "title": "Hammer"},
+  {"id": 6, "cat": "🛠️ Werkzeuge", "title": "Nagelzange"},
+  {"id": 7, "cat": "🛠️ Werkzeuge", "title": "Schere"},
+  {"id": 8, "cat": "🛠️ Werkzeuge", "title": "Schraubendreher"},
+  {"id": 9, "cat": "🛠️ Werkzeuge", "title": "Seitenschneider"},
+  {"id": 10, "cat": "🛠️ Werkzeuge", "title": "Taschenlampe"},
+  {"id": 11, "cat": "📦 Material & Befestigung", "title": "Büroklammern"},
+  {"id": 12, "cat": "📦 Material & Befestigung", "title": "Draht"},
+  {"id": 13, "cat": "📦 Material & Befestigung", "title": "Heftzwecken"},
+  {"id": 14, "cat": "📦 Material & Befestigung", "title": "Kabelbinder"},
+  {"id": 15, "cat": "📦 Material & Befestigung", "title": "Kreppband"},
+  {"id": 16, "cat": "📦 Material & Befestigung", "title": "Nägel"},
+  {"id": 74, "cat": "📦 Material & Befestigung", "title": "Panzertape"},
+  {"id": 17, "cat": "📦 Material & Befestigung", "title": "Schrauben"},
+  {"id": 18, "cat": "⚡ Elektrik & Licht", "title": "Lichterketten Kurz", "defaultStockQty": "2", "defaultWatts": 10, "isPower": true},
+  {"id": 19, "cat": "⚡ Elektrik & Licht", "title": "Lichterketten Lang", "defaultStockQty": "2", "defaultWatts": 20, "isPower": true},
+  {"id": 20, "cat": "⚡ Elektrik & Licht", "title": "Lichterketten Sterne", "defaultStockQty": "2", "defaultWatts": 15, "isPower": true},
+  {"id": 76, "cat": "⚡ Elektrik & Licht", "title": "Lichtschlauch", "defaultStockQty": "1", "defaultWatts": 25, "isPower": true},
+  {"id": 21, "cat": "⚡ Elektrik & Licht", "title": "Mehrfachstecker 3er", "details": "3-fach Verteilungsstecker", "isPower": true, "defaultStockQty": "2", "defaultWatts": 3680, "isCable": true},
+  {"id": 22, "cat": "⚡ Elektrik & Licht", "title": "Mehrfachstecker 5er", "details": "5-fach Verteilungsstecker", "isPower": true, "defaultStockQty": "2", "defaultWatts": 3680, "isCable": true},
+  {"id": 23, "cat": "⚡ Elektrik & Licht", "title": "Verlängerungskabel 3m", "details": "Stromkabel Verlängerung", "isPower": true, "defaultStockQty": "2", "defaultWatts": 3680, "isCable": true},
+  {"id": 24, "cat": "🔌 Geräte", "title": "Einkochautomat", "defaultQty": "2", "defaultStockQty": "2", "defaultWatts": 1800, "isPower": true},
+  {"id": 25, "cat": "🔌 Geräte", "title": "Waffeleisen", "defaultQty": "3", "defaultStockQty": "3", "defaultWatts": 1200, "isPower": true},
+  {"id": 26, "cat": "🔌 Geräte", "title": "Wasserkocher", "defaultQty": "1", "defaultWatts": 2200, "defaultStockQty": "1", "isPower": true},
+  {"id": 27, "cat": "💶 Kasse & Finanzen", "title": "Geldtasche"},
+  {"id": 28, "cat": "💶 Kasse & Finanzen", "title": "Kasse"},
+  {"id": 29, "cat": "💶 Kasse & Finanzen", "title": "Preisschilder Punsch"},
+  {"id": 30, "cat": "💶 Kasse & Finanzen", "title": "Preisschilder Waffeln"},
+  {"id": 31, "cat": "💶 Kasse & Finanzen", "title": "Spendenente"},
+  {"id": 32, "cat": "💶 Kasse & Finanzen", "title": "Wechselgeld"},
+  {"id": 33, "cat": "✨ Standdeko", "title": "Bodenschutz/Malervlies"},
+  {"id": 34, "cat": "✨ Standdeko", "title": "Keksteller"},
+  {"id": 35, "cat": "✨ Standdeko", "title": "Kerzengläser"},
+  {"id": 36, "cat": "✨ Standdeko", "title": "SG Banner"},
+  {"id": 37, "cat": "✨ Standdeko", "title": "Tischdecken"},
+  {"id": 38, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Wintertee", "details": "Verschiedene Sorten", "defaultQty": "10 Btl.", "defaultPackageSize": "20 Btl.", "isShop": true, "isIngredient": true},
+  {"id": 39, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Glühfix", "defaultQty": "5 Btl.", "defaultPackageSize": "10 Btl.", "isShop": true, "isIngredient": true},
+  {"id": 40, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Zimtstangen", "defaultQty": "2 Stk", "defaultPackageSize": "5 Stk", "isShop": true, "isIngredient": true},
+  {"id": 41, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Orangensaft", "defaultQty": "1,0 l", "defaultPackageSize": "1 l", "isShop": true, "isIngredient": true},
+  {"id": 42, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Apfelsaft", "defaultQty": "2,5 l", "defaultPackageSize": "1 l", "isShop": true, "isIngredient": true},
+  {"id": 43, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Roter Traubensaft", "defaultQty": "2,5 l", "defaultPackageSize": "1 l", "isShop": true, "isIngredient": true},
+  {"id": 45, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Öl (Waffeln)", "defaultPackageSize": "1 Flasche", "isShop": true, "isIngredient": true},
+  {"id": 46, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Puderzucker", "defaultPackageSize": "250 g", "isShop": true, "isIngredient": true},
+  {"id": 47, "cat": "🍎 Zutaten (Waffeln & Punsch)", "title": "Servietten", "defaultPackageSize": "100 Stk", "isShop": true, "isIngredient": true},
+  {"id": 48, "cat": "🛒 Einkäufe & Verbrauchsmaterial", "title": "Geschirrhandtuch", "isShop": true},
+  {"id": 49, "cat": "🛒 Einkäufe & Verbrauchsmaterial", "title": "Küchenrolle", "isShop": true},
+  {"id": 50, "cat": "🛒 Einkäufe & Verbrauchsmaterial", "title": "Mülltüten", "isShop": true},
+  {"id": 51, "cat": "🛒 Einkäufe & Verbrauchsmaterial", "title": "Spekulatius", "isShop": true},
+  {"id": 52, "cat": "🛒 Einkäufe & Verbrauchsmaterial", "title": "Spülmittel", "isShop": true},
+  {"id": 53, "cat": "🛒 Einkäufe & Verbrauchsmaterial", "title": "Teelichter", "isShop": true},
+  {"id": 54, "cat": "🛒 Einkäufe & Verbrauchsmaterial", "title": "Waschlappen", "isShop": true},
+  {"id": 55, "cat": "🥣 Stand-Equipment & Zubehör", "title": "Esslöffel"},
+  {"id": 56, "cat": "🥣 Stand-Equipment & Zubehör", "title": "Holzgabeln"},
+  {"id": 57, "cat": "🥣 Stand-Equipment & Zubehör", "title": "Ölpinsel inkl. Flasche"},
+  {"id": 58, "cat": "🥣 Stand-Equipment & Zubehör", "title": "Sieb für Puderzucker"},
+  {"id": 59, "cat": "🥣 Stand-Equipment & Zubehör", "title": "Spaghettikelle (Punschkelle)"},
+  {"id": 60, "cat": "🥣 Stand-Equipment & Zubehör", "title": "Suppenkellen"},
+  {"id": 75, "cat": "📋 Sonstiges", "title": "Musikbox / Bluetooth-Lautsprecher"},
+  {"id": 61, "cat": "📋 Sonstiges", "title": "Eddings"},
+  {"id": 63, "cat": "📋 Sonstiges", "title": "Erste Hilfe Set"},
+  {"id": 64, "cat": "📋 Sonstiges", "title": "Feuerzeug"},
+  {"id": 65, "cat": "📋 Sonstiges", "title": "Kehrblech & Handfeger"},
+  {"id": 66, "cat": "📋 Sonstiges", "title": "Kugelschreiber"},
+  {"id": 67, "cat": "📋 Sonstiges", "title": "Listen Roshop"},
+  {"id": 68, "cat": "📋 Sonstiges", "title": "Rezeptzettel"},
+  {"id": 69, "cat": "📋 Sonstiges", "title": "Schüssel Lappen Waschen"},
+  {"id": 70, "cat": "📋 Sonstiges", "title": "Steckmülleimer"},
+  {"id": 71, "cat": "📋 Sonstiges", "title": "Stehtische"},
+  {"id": 72, "cat": "📋 Sonstiges", "title": "Taschenmesser"},
+  {"id": 73, "cat": "📋 Sonstiges", "title": "Weihnachtsmützen"}
+];
 
 let itemsData = [];
 let appState = {};
 let currentFilter = 'all';
 let currentRole = 'betrachter'; 
-let adminPassword = "SGJugend26";
-let editingItemId = null;
+let currentView = 'main'; // 'main', 'recipes', 'sales', 'admin'
 let activityLog = [];
 
 async function initApp() {
-  // 1. Lade Gegenstände aus dem Unterordner
   try {
     const res = await fetch('/assets/weihnachtsmarkt/weihnachtsmarkt-data.json');
-    itemsData = await res.json();
+    if (res.ok) itemsData = await res.json();
+    else throw new Error();
   } catch (e) {
-    console.error("Fehler beim Laden von weihnachtsmarkt-data.json", e);
+    try {
+      const resAlt = await fetch('/assets/weihnachtsmarkt-data.json');
+      if (resAlt.ok) itemsData = await resAlt.json();
+      else itemsData = [...DEFAULT_ITEMS];
+    } catch(err) {
+      itemsData = [...DEFAULT_ITEMS];
+    }
   }
 
-  // 2. Lokale Daten laden & Sofort darstellen
   loadFromLocal();
   itemsData.forEach(item => initItemState(item));
-  
-  renderChecklist();
+
+  switchView('main');
   updateProgress();
   updateRecipeScaling();
   calculateSalesStats();
   applyRolePermissions();
   renderActivityLog();
 
-  // 3. Online-Sync im Hintergrund
   loadStateFromSheet();
-
   document.getElementById('searchInput')?.addEventListener('input', renderChecklist);
 }
 
 function loadFromLocal() {
-  const local = JSON.parse(localStorage.getItem('sg_wm_state_v22')) || {};
+  const local = JSON.parse(localStorage.getItem('sg_wm_state_v25')) || {};
   appState = local;
-  if (appState.customItemsList) itemsData = appState.customItemsList;
-  if (appState.adminPassword) adminPassword = appState.adminPassword;
+  if (appState.customItemsList && appState.customItemsList.length > 0) itemsData = appState.customItemsList;
+  if (appState.roleConfig) roleConfig = appState.roleConfig;
   if (appState.globalNotice) showNoticeBanner(appState.globalNotice);
   if (appState.activityLog) activityLog = appState.activityLog;
 }
@@ -56,12 +164,12 @@ async function loadStateFromSheet() {
     const cloudData = await res.json();
     if (cloudData && Object.keys(cloudData).length > 0) {
       appState = cloudData;
-      if (appState.customItemsList && Array.isArray(appState.customItemsList)) itemsData = appState.customItemsList;
-      if (appState.adminPassword) adminPassword = appState.adminPassword;
+      if (appState.customItemsList && appState.customItemsList.length > 0) itemsData = appState.customItemsList;
+      if (appState.roleConfig) roleConfig = appState.roleConfig;
       if (appState.globalNotice) showNoticeBanner(appState.globalNotice);
       if (appState.activityLog) activityLog = appState.activityLog;
       
-      localStorage.setItem('sg_wm_state_v22', JSON.stringify(appState));
+      localStorage.setItem('sg_wm_state_v25', JSON.stringify(appState));
       setSyncStatus(true);
       
       itemsData.forEach(item => initItemState(item));
@@ -94,9 +202,9 @@ function initItemState(item) {
 
 async function saveState() {
   appState.customItemsList = itemsData;
-  appState.adminPassword = adminPassword;
+  appState.roleConfig = roleConfig;
   appState.activityLog = activityLog;
-  localStorage.setItem('sg_wm_state_v22', JSON.stringify(appState));
+  localStorage.setItem('sg_wm_state_v25', JSON.stringify(appState));
   updateProgress();
 
   if (SCRIPT_URL) {
@@ -111,115 +219,137 @@ async function saveState() {
   }
 }
 
-function logActivity(text) {
-  const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-  activityLog.unshift(`[${time}] [${currentRole.toUpperCase()}] ${text}`);
-  if (activityLog.length > 15) activityLog.pop();
-  renderActivityLog();
+function toggleNavMenu() {
+  document.getElementById('navDropdown')?.classList.toggle('hidden');
 }
 
-function renderActivityLog() {
-  const list = document.getElementById('activityLogList');
-  if (!list) return;
-  list.innerHTML = activityLog.length === 0 
-    ? `<li class="italic text-slate-400">Keine Aktivitäten.</li>`
-    : activityLog.map(log => `<li class="border-b border-amber-200/40 pb-0.5">${log}</li>`).join('');
-}
-
-function clearActivityLog() { activityLog = []; saveState(); renderActivityLog(); }
-
-function showNoticeBanner(text) {
-  const banner = document.getElementById('noticeBanner');
-  const txt = document.getElementById('noticeBannerText');
-  if (banner && txt && text) { txt.innerText = text; banner.classList.remove('hidden'); }
-}
-
-function dismissNotice() { document.getElementById('noticeBanner')?.classList.add('hidden'); }
-
-function setGlobalNotice() {
-  const msg = prompt("Wichtige Durchsage eingeben:", appState.globalNotice || "");
-  if (msg !== null) {
-    appState.globalNotice = msg.trim();
-    saveState();
-    if (appState.globalNotice) { showNoticeBanner(appState.globalNotice); logActivity(`Notice: "${appState.globalNotice}"`); } 
-    else dismissNotice();
+function switchView(viewName) {
+  if (viewName === 'admin' && currentRole !== 'admin') {
+    const pwdPrompt = prompt("Für das Admin Control Center ist das Admin-Passwort erforderlich:");
+    if (pwdPrompt === roleConfig.admin.pwd) {
+      currentRole = 'admin';
+      applyRolePermissions();
+    } else {
+      if (pwdPrompt !== null) alert("Falsches Admin-Passwort!");
+      return;
+    }
   }
+
+  currentView = viewName;
+  document.getElementById('navDropdown')?.classList.add('hidden');
+
+  // Bereiche schalten
+  document.getElementById('viewChecklist')?.classList.toggle('hidden', viewName !== 'main');
+  document.getElementById('viewRecipes')?.classList.toggle('hidden', viewName !== 'recipes');
+  document.getElementById('viewSales')?.classList.toggle('hidden', viewName !== 'sales');
+  document.getElementById('viewAdmin')?.classList.toggle('hidden', viewName !== 'admin');
+
+  const titleEl = document.getElementById('currentViewTitle');
+  if (titleEl) {
+    if (viewName === 'main') titleEl.innerText = "📋 Hauptliste & Inventar";
+    if (viewName === 'recipes') titleEl.innerText = "☕ Rezepte & Zutaten";
+    if (viewName === 'sales') titleEl.innerText = "🏬 Standkasse & Verkauf";
+    if (viewName === 'admin') titleEl.innerText = "👑 Admin Control Center";
+  }
+
+  if (viewName === 'main') renderChecklist();
+  if (viewName === 'admin') openRoleSettingsModal();
 }
 
-function toggleRoleModal() { document.getElementById('roleModal')?.classList.remove('hidden'); }
-function closeRoleModal() { document.getElementById('roleModal')?.classList.add('hidden'); }
+function selectRoleWithPassword(role) {
+  if (role === 'betrachter') {
+    currentRole = 'betrachter';
+    closeRoleModal();
+    applyRolePermissions();
+    logActivity("Rolle: Betrachter");
+    return;
+  }
 
-function selectRole(role) {
-  currentRole = role;
-  closeRoleModal();
-  applyRolePermissions();
-  logActivity(`Rolle gewechselt: ${role}`);
-}
-
-function promptAdminLogin() {
-  const pwd = prompt("Admin-Passwort:");
-  if (pwd === adminPassword) {
-    currentRole = 'admin'; closeRoleModal(); applyRolePermissions(); logActivity("Admin eingeloggt");
-  } else if (pwd !== null) alert("Falsches Passwort!");
+  const pwdPrompt = prompt(`Passwort für Rolle "${role.toUpperCase()}" eingeben:`);
+  if (pwdPrompt === roleConfig[role]?.pwd) {
+    currentRole = role;
+    closeRoleModal();
+    applyRolePermissions();
+    logActivity(`Rolle gewechselt zu: ${role.toUpperCase()}`);
+  } else if (pwdPrompt !== null) {
+    alert("Falsches Passwort!");
+  }
 }
 
 function applyRolePermissions() {
   const badge = document.getElementById('roleBadge');
-  const adminPanel = document.getElementById('adminPanel');
-  const isBetrachter = currentRole === 'betrachter';
-  const isHelfer = currentRole === 'helfer';
-  const isOrga = currentRole === 'orga';
   const isAdmin = currentRole === 'admin';
 
   if (badge) {
     if (isAdmin) badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-400 text-slate-950 shadow-sm', badge.innerHTML = '🔓 Rolle: ADMIN';
-    else if (isOrga) badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-500/30 text-sky-100 border border-sky-300/40 shadow-sm', badge.innerHTML = '📋 Rolle: ORGA-TEAM';
-    else if (isHelfer) badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/30 text-emerald-100 border border-emerald-300/40 shadow-sm', badge.innerHTML = '🤝 Rolle: HELFER';
-    else badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-white/10 text-emerald-100 border border-white/20 shadow-sm', badge.innerHTML = '👁️ Rolle: BETRACHTER (Nur Lesen)';
+    else if (currentRole === 'orga') badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-500/30 text-sky-100 border border-sky-300/40 shadow-sm', badge.innerHTML = '📋 Rolle: ORGA';
+    else if (currentRole === 'helfer') badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/30 text-emerald-100 border border-emerald-300/40 shadow-sm', badge.innerHTML = '🤝 Rolle: HELFER';
+    else badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-white/10 text-emerald-100 border border-white/20 shadow-sm', badge.innerHTML = '👁️ Rolle: BETRACHTER';
   }
 
-  if (adminPanel) adminPanel.classList.toggle('hidden', !isAdmin);
-
-  document.querySelectorAll('input, select').forEach(el => {
-    if (el.id === 'searchInput' || el.id === 'adminToggleBtn' || el.id === 'punschLiters') return;
-    if (isBetrachter) el.disabled = true;
-    else if (isHelfer) el.disabled = !(el.classList.contains('role-helfer-field') || el.type === 'checkbox' || el.tagName === 'SELECT');
-    else el.disabled = false;
-  });
+  const perms = roleConfig[currentRole] || {};
+  const cashBtns = document.querySelectorAll('.cash-btn');
+  cashBtns.forEach(btn => btn.disabled = !perms.canCash && !isAdmin);
 
   renderChecklist();
 }
 
-function updateRecipeScaling() {
-  const punschLiters = parseFloat(document.getElementById('punschLiters')?.value || 8);
-  if (document.getElementById('punschLitersLabel')) document.getElementById('punschLitersLabel').innerText = `${punschLiters} Liter`;
-  const factor = punschLiters / 8.0;
-  const list = document.getElementById('punschRecipeList');
-  if (list) {
-    list.innerHTML = `
-      <li><b>${(2.0 * factor).toFixed(1).replace('.0','')} l</b> Wasser</li>
-      <li><b>${Math.ceil(10 * factor)} Btl.</b> Wintertee</li>
-      <li><b>${(1.0 * factor).toFixed(1).replace('.0','')} l</b> Orangensaft</li>
-      <li><b>${(2.5 * factor).toFixed(1).replace('.0','')} l</b> Apfelsaft</li>
-      <li><b>${(2.5 * factor).toFixed(1).replace('.0','')} l</b> Roter Traubensaft</li>
-      <li><b>${Math.ceil(2 * factor)} Stk.</b> Zimtstangen <i>(nicht kaufen)</i></li>
-      <li><b>${Math.ceil(5 * factor)} Btl.</b> Glühfix</li>
-    `;
-  }
+function openRoleSettingsModal() {
+  ['helfer', 'orga', 'admin'].forEach(r => {
+    const pEl = document.getElementById(`pwd_${r}`);
+    if (pEl) pEl.value = roleConfig[r].pwd || '';
+    
+    if (r !== 'admin') {
+      ['cash', 'packed', 'qty', 'stock', 'box', 'status', 'prices', 'log'].forEach(p => {
+        const checkEl = document.getElementById(`perm_${r}_${p}`);
+        if (checkEl) checkEl.checked = !!roleConfig[r][`can${p.charAt(0).toUpperCase() + p.slice(1)}`];
+      });
+    }
+  });
 }
 
-function syncIngredientsToShoppingList() {
-  const factor = parseFloat(document.getElementById('punschLiters')?.value || 8) / 8.0;
-  const updates = { 38: `${Math.ceil(10 * factor)} Btl.`, 39: `${Math.ceil(5 * factor)} Btl.`, 40: `${Math.ceil(2 * factor)} Stk`, 41: `${(1.0 * factor).toFixed(1)} l`, 42: `${(2.5 * factor).toFixed(1)} l`, 43: `${(2.5 * factor).toFixed(1)} l` };
-  Object.keys(updates).forEach(id => { if (appState[id]) appState[id].qty = updates[id]; });
-  saveState(); renderChecklist(); logActivity("Punsch-Zutaten synchronisiert"); alert("Zutaten übernommen!");
+function saveRoleSettings() {
+  ['helfer', 'orga', 'admin'].forEach(r => {
+    const pEl = document.getElementById(`pwd_${r}`);
+    if (pEl) roleConfig[r].pwd = pEl.value.trim() || roleConfig[r].pwd;
+    
+    if (r !== 'admin') {
+      ['cash', 'packed', 'qty', 'stock', 'box', 'status', 'prices', 'log'].forEach(p => {
+        const checkEl = document.getElementById(`perm_${r}_${p}`);
+        if (checkEl) roleConfig[r][`can${p.charAt(0).toUpperCase() + p.slice(1)}`] = checkEl.checked;
+      });
+    }
+  });
+
+  saveState();
+  applyRolePermissions();
+  alert("Rollen-Rechte & Passwörter erfolgreich im System gespeichert!");
+}
+
+function addSale(type, amount) {
+  const perms = roleConfig[currentRole] || {};
+  if (!perms.canCash && currentRole !== 'admin') {
+    alert("Keine Berechtigung für die Standkasse.");
+    return;
+  }
+  
+  const el = document.getElementById(type === 'punsch' ? 'soldPunsch' : 'soldWaffles');
+  if (!el) return;
+  
+  let currentVal = parseInt(el.value || 0);
+  currentVal += amount;
+  if (currentVal < 0) currentVal = 0;
+  
+  el.value = currentVal;
+  calculateSalesStats();
+  logActivity(`Kasse: ${amount > 0 ? '+' : ''}${amount} ${type.toUpperCase()}`);
 }
 
 function calculateSalesStats() {
   const sPunsch = parseInt(document.getElementById('soldPunsch')?.value || 0);
-  const pPunsch = parseFloat(document.getElementById('pricePunsch')?.value || 2.50);
+  const pPunsch = 2.00;
   const sWaffles = parseInt(document.getElementById('soldWaffles')?.value || 0);
-  const pWaffles = parseFloat(document.getElementById('priceWaffles')?.value || 2.00);
+  const pWaffles = 2.00;
   const fee = parseFloat(document.getElementById('standFee')?.value || 0.00);
   const otherRev = parseFloat(document.getElementById('otherRevenue')?.value || 0.00);
 
@@ -263,7 +393,8 @@ function renderChecklist() {
   if (!container) return;
   container.innerHTML = '';
 
-  const isAdmin = currentRole === 'admin', isBetrachter = currentRole === 'betrachter';
+  const isAdmin = currentRole === 'admin';
+  const perms = roleConfig[currentRole] || {};
   const categories = [...new Set(itemsData.map(item => item.cat))];
 
   categories.forEach(cat => {
@@ -284,7 +415,13 @@ function renderChecklist() {
       let rowsHtml = catItems.map(item => {
         const state = appState[item.id];
         const isDone = state.status === 'Erledigt' || state.status === 'Eingekauft';
-        const disabledAttr = isBetrachter ? 'disabled' : '';
+        
+        const disQty = (!perms.canQty && !isAdmin) ? 'disabled' : '';
+        const disStock = (!perms.canStock && !isAdmin) ? 'disabled' : '';
+        const disStatus = (!perms.canStatus && !isAdmin) ? 'disabled' : '';
+        const disPacked = (!perms.canPacked && !isAdmin) ? 'disabled' : '';
+        const disBox = (!perms.canBox && !isAdmin) ? 'disabled' : '';
+
         const statusOpts = item.isShop ? ['Offen', 'Vorbereitet', 'Verteilt', 'Eingekauft'] : ['Offen', 'Vorbereitet', 'Verteilt', 'Erledigt'];
 
         return `
@@ -295,28 +432,28 @@ function renderChecklist() {
             </td>
             ${!isOrga ? `
               <td class="py-3 px-2">
-                <input type="text" value="${state.qty || ''}" placeholder="-" ${disabledAttr} onchange="updateItem(${item.id}, 'qty', this.value)" class="role-orga-field bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs w-20" />
+                <input type="text" value="${state.qty || ''}" placeholder="-" ${disQty} onchange="updateItem(${item.id}, 'qty', this.value)" class="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs w-20" />
               </td>
               ${!isIngredientCat ? `
                 <td class="py-3 px-2">
-                  <input type="text" value="${state.stockQty || ''}" placeholder="0" ${disabledAttr} onchange="updateItem(${item.id}, 'stockQty', this.value)" class="role-orga-field bg-amber-50/80 border border-amber-300 rounded-lg px-2 py-1 text-xs w-16" />
+                  <input type="text" value="${state.stockQty || ''}" placeholder="0" ${disStock} onchange="updateItem(${item.id}, 'stockQty', this.value)" class="bg-amber-50/80 border border-amber-300 rounded-lg px-2 py-1 text-xs w-16" />
                 </td>
               ` : ''}
             ` : ''}
             <td class="py-3 px-2">
-              <select onchange="updateItem(${item.id}, 'status', this.value)" ${disabledAttr} class="border rounded-lg px-2 py-1 text-xs font-semibold w-full ${getStatusClass(state.status)}">
+              <select onchange="updateItem(${item.id}, 'status', this.value)" ${disStatus} class="border rounded-lg px-2 py-1 text-xs font-semibold w-full ${getStatusClass(state.status)}">
                 ${statusOpts.map(o => `<option value="${o}" ${state.status === o ? 'selected' : ''}>${o}</option>`).join('')}
               </select>
             </td>
             <td class="py-3 px-2">
-              <input type="text" placeholder="Name..." value="${state.assignedTo || ''}" ${disabledAttr} onchange="updateItem(${item.id}, 'assignedTo', this.value)" class="role-orga-field bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs w-full" />
+              <input type="text" placeholder="Name..." value="${state.assignedTo || ''}" ${disStatus} onchange="updateItem(${item.id}, 'assignedTo', this.value)" class="bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs w-full" />
             </td>
             ${!isOrga ? `
               <td class="py-3 px-2 text-center align-middle">
-                <input type="checkbox" ${state.packed ? 'checked' : ''} ${disabledAttr} onchange="updateItem(${item.id}, 'packed', this.checked)" class="role-helfer-field w-5 h-5 accent-emerald-600 rounded cursor-pointer mx-auto block" />
+                <input type="checkbox" ${state.packed ? 'checked' : ''} ${disPacked} onchange="updateItem(${item.id}, 'packed', this.checked)" class="w-5 h-5 accent-emerald-600 rounded cursor-pointer mx-auto block" />
               </td>
               <td class="py-3 px-2 text-center">
-                <input type="number" min="1" max="12" value="${state.boxNum || ''}" ${disabledAttr} onchange="updateItem(${item.id}, 'boxNum', this.value)" class="role-orga-field bg-white border border-slate-300 rounded-lg px-1 py-1 text-xs text-center w-12 mx-auto" />
+                <input type="number" min="1" max="12" value="${state.boxNum || ''}" ${disBox} onchange="updateItem(${item.id}, 'boxNum', this.value)" class="bg-white border border-slate-300 rounded-lg px-1 py-1 text-xs text-center w-12 mx-auto" />
               </td>
             ` : ''}
             ${isAdmin ? `
@@ -371,14 +508,46 @@ function updateProgress() {
   if (document.getElementById('progressText')) document.getElementById('progressText').innerText = percent + '% erledigt (' + count + '/' + total + ')';
 }
 
-function setFilter(filter, btn) {
-  currentFilter = filter;
-  document.querySelectorAll('.filter-btn').forEach(b => b.className = 'filter-btn px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium text-xs sm:text-sm');
-  btn.className = 'filter-btn active px-4 py-2 rounded-xl border border-emerald-600 bg-emerald-600 text-white font-bold text-xs sm:text-sm shadow-sm';
-  renderChecklist();
+function updateRecipeScaling() {
+  const punschLiters = parseFloat(document.getElementById('punschLiters')?.value || 8);
+  if (document.getElementById('punschLitersLabel')) document.getElementById('punschLitersLabel').innerText = `${punschLiters} Liter`;
+  const factor = punschLiters / 8.0;
+  const list = document.getElementById('punschRecipeList');
+  if (list) {
+    list.innerHTML = `
+      <li><b>${(2.0 * factor).toFixed(1).replace('.0','')} l</b> Wasser</li>
+      <li><b>${Math.ceil(10 * factor)} Btl.</b> Wintertee</li>
+      <li><b>${(1.0 * factor).toFixed(1).replace('.0','')} l</b> Orangensaft</li>
+      <li><b>${(2.5 * factor).toFixed(1).replace('.0','')} l</b> Apfelsaft</li>
+      <li><b>${(2.5 * factor).toFixed(1).replace('.0','')} l</b> Roter Traubensaft</li>
+      <li><b>${Math.ceil(2 * factor)} Stk.</b> Zimtstangen <i>(nicht kaufen)</i></li>
+      <li><b>${Math.ceil(5 * factor)} Btl.</b> Glühfix</li>
+    `;
+  }
 }
 
-// Start beim Laden
+function logActivity(text) {
+  const perms = roleConfig[currentRole] || {};
+  if (!perms.canLog && currentRole !== 'admin') return;
+
+  const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+  activityLog.unshift(`[${time}] [${currentRole.toUpperCase()}] ${text}`);
+  if (activityLog.length > 20) activityLog.pop();
+  renderActivityLog();
+}
+
+function renderActivityLog() {
+  const list = document.getElementById('activityLogList');
+  if (!list) return;
+  list.innerHTML = activityLog.length === 0 
+    ? `<li class="italic text-slate-400">Keine Aktivitäten aufgezeichnet.</li>`
+    : activityLog.map(log => `<li class="border-b border-slate-700/50 pb-1 font-mono">${log}</li>`).join('');
+}
+
+function toggleRoleModal() { document.getElementById('roleModal')?.classList.remove('hidden'); }
+function closeRoleModal() { document.getElementById('roleModal')?.classList.add('hidden'); }
+
+// Init beim Start
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initApp);
 } else {
