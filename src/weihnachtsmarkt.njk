@@ -8,54 +8,84 @@ permalink: /weihnachtsmarkt/index.html
 <!-- Tailwind CSS Fallback CDN für garantierte Styles -->
 <script src="https://cdn.tailwindcss.com"></script>
 
-<div class="max-w-6xl mx-auto px-2 sm:px-4 py-6 font-sans text-slate-100">
+<div class="max-w-6xl mx-auto px-2 sm:px-4 py-6 font-sans text-slate-800">
   
-  <!-- Header: Zentriert & Ausgewogen -->
-  <div class="bg-gradient-to-r from-emerald-950 via-green-900 to-emerald-950 text-amber-300 border border-amber-500/40 rounded-2xl p-6 text-center shadow-2xl mb-8">
-    <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight mb-2">🎄 SG Barnstorf – Stand-Planung</h1>
-    <p class="text-emerald-200/90 text-sm sm:text-base mb-5 max-w-xl mx-auto">Vorbereitungsliste für Kinderpunsch & Waffelstand am 1. Advent</p>
+  <!-- Header: Freundlich, Hell & Weihnachtlich -->
+  <div class="bg-gradient-to-r from-emerald-50 via-green-100 to-emerald-50 text-slate-900 border border-emerald-200 rounded-2xl p-6 text-center shadow-md mb-6">
+    <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight mb-2 text-emerald-900">🎄 SG Barnstorf – Stand-Planung</h1>
+    <p class="text-slate-600 text-sm sm:text-base mb-4 max-w-xl mx-auto">Vorbereitungsliste für Kinderpunsch & Waffelstand am 1. Advent</p>
     
     <!-- Progress Bar -->
-    <div class="max-w-xl mx-auto bg-emerald-950 rounded-full h-6 border border-emerald-700 overflow-hidden relative shadow-inner mb-5">
-      <div id="progressBar" class="bg-gradient-to-r from-amber-400 to-amber-300 h-full w-0 transition-all duration-300"></div>
-      <div id="progressText" class="absolute inset-0 flex items-center justify-center text-xs sm:text-sm font-bold text-slate-950">0% erledigt</div>
+    <div class="max-w-xl mx-auto bg-slate-200 rounded-full h-6 border border-slate-300 overflow-hidden relative shadow-inner mb-5">
+      <div id="progressBar" class="bg-gradient-to-r from-emerald-500 to-green-600 h-full w-0 transition-all duration-300"></div>
+      <div id="progressText" class="absolute inset-0 flex items-center justify-center text-xs sm:text-sm font-bold text-slate-900">0% erledigt</div>
     </div>
 
-    <!-- Buttons -->
+    <!-- Top Action Buttons -->
     <div class="flex flex-wrap justify-center gap-3">
-      <button onclick="exportData()" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-amber-400 text-slate-950 hover:bg-amber-300 transition shadow-md">
-        📋 Stand als Text kopieren
+      <button onclick="openBoxOverview()" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-700 text-white hover:bg-emerald-800 transition shadow-sm flex items-center gap-1.5">
+        📦 Boxen-Übersicht
       </button>
-      <button onclick="importData()" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-900 border border-slate-700 text-slate-200 hover:bg-slate-800 transition">
-        📥 Stand-Text einfügen
+      <button onclick="exportData()" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition shadow-sm">
+        📋 Stand kopieren
+      </button>
+      <button onclick="importData()" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition shadow-sm">
+        📥 Stand einfügen
       </button>
     </div>
   </div>
 
-  <!-- Suche & Status-Filter (Alle Status als Buttons) -->
+  <!-- Helfer & Teigspenden Listen Integration -->
+  <div class="bg-amber-50/80 border border-amber-200 rounded-2xl p-4 sm:p-5 shadow-sm mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="text-2xl">📝</span>
+      <div>
+        <h3 class="font-bold text-slate-900 text-sm sm:text-base">Helfer- & Teigspenden-Listen</h3>
+        <p class="text-xs sm:text-sm text-slate-600">Trage dich hier direkt für Schichten oder als Waffelteig-Spender ein:</p>
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+      <a href="https://reshop.de" target="_blank" rel="noopener" class="flex-1 sm:flex-none text-center px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-sm transition">
+        🤝 Schicht eintragen (Reshop)
+      </a>
+      <a href="https://reshop.de" target="_blank" rel="noopener" class="flex-1 sm:flex-none text-center px-3.5 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-xs border border-amber-300 transition">
+        🧇 Teigspende eintragen
+      </a>
+    </div>
+  </div>
+
+  <!-- Suche & Status-Filter -->
   <div class="space-y-4 mb-8">
     <input type="text" id="searchInput" placeholder="🔍 Gegenstand, Person, Menge oder Box suchen..." 
-      class="w-full bg-slate-900 border border-slate-700 text-slate-100 placeholder-slate-400 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-400 transition shadow-md" />
+      class="w-full bg-white border border-slate-300 text-slate-900 placeholder-slate-400 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 transition shadow-sm" />
     
     <!-- Status Filter Buttons -->
     <div class="flex flex-wrap justify-center gap-2" id="filterContainer">
-      <button onclick="setFilter('all', this)" class="filter-btn active px-3.5 py-2 rounded-xl border border-amber-400 bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm shadow">Alle</button>
-      <button onclick="setFilter('Offen', this)" class="filter-btn px-3.5 py-2 rounded-xl border border-slate-700 bg-slate-900 text-red-400 font-medium text-xs sm:text-sm hover:border-red-500">Offen</button>
-      <button onclick="setFilter('Vorbereitet', this)" class="filter-btn px-3.5 py-2 rounded-xl border border-slate-700 bg-slate-900 text-amber-300 font-medium text-xs sm:text-sm hover:border-amber-400">Vorbereitet</button>
-      <button onclick="setFilter('Verteilt', this)" class="filter-btn px-3.5 py-2 rounded-xl border border-slate-700 bg-slate-900 text-sky-400 font-medium text-xs sm:text-sm hover:border-sky-400">Verteilt</button>
-      <button onclick="setFilter('Eingekauft', this)" class="filter-btn px-3.5 py-2 rounded-xl border border-slate-700 bg-slate-900 text-emerald-400 font-medium text-xs sm:text-sm hover:border-emerald-400">Eingekauft</button>
-      <button onclick="setFilter('Erledigt', this)" class="filter-btn px-3.5 py-2 rounded-xl border border-slate-700 bg-slate-900 text-emerald-400 font-medium text-xs sm:text-sm hover:border-emerald-400">Erledigt</button>
+      <button onclick="setFilter('all', this)" class="filter-btn active px-3.5 py-2 rounded-xl border border-emerald-600 bg-emerald-600 text-white font-bold text-xs sm:text-sm shadow-sm">Alle</button>
+      <button onclick="setFilter('Offen', this)" class="filter-btn px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-red-600 font-medium text-xs sm:text-sm hover:border-red-400">Offen</button>
+      <button onclick="setFilter('Vorbereitet', this)" class="filter-btn px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-amber-600 font-medium text-xs sm:text-sm hover:border-amber-400">Vorbereitet</button>
+      <button onclick="setFilter('Verteilt', this)" class="filter-btn px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-sky-600 font-medium text-xs sm:text-sm hover:border-sky-400">Verteilt</button>
+      <button onclick="setFilter('Eingekauft', this)" class="filter-btn px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-emerald-600 font-medium text-xs sm:text-sm hover:border-emerald-400">Eingekauft</button>
+      <button onclick="setFilter('Erledigt', this)" class="filter-btn px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-emerald-600 font-medium text-xs sm:text-sm hover:border-emerald-400">Erledigt</button>
     </div>
   </div>
 
   <!-- Checklist Container (Tables) -->
   <div id="checklist" class="space-y-8"></div>
 
-  <!-- Reset Button -->
-  <div class="text-center mt-12">
-    <button onclick="resetAll()" class="text-red-400 hover:text-red-300 border border-red-500/30 hover:border-red-500/60 bg-red-950/20 px-4 py-2 rounded-lg text-xs font-medium transition">
-      ⚠️ Alle Eingaben auf diesem Gerät zurücksetzen
-    </button>
+</div>
+
+<!-- Modal / Pop-Up für Boxen-Übersicht -->
+<div id="boxModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white border border-slate-200 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl">
+    <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
+      <h2 class="text-lg font-bold text-emerald-900 flex items-center gap-2">📦 Inhaltsübersicht der Boxen (1–12)</h2>
+      <button onclick="closeBoxOverview()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1">✕</button>
+    </div>
+    <div class="p-4 sm:p-6 overflow-y-auto space-y-6" id="boxModalContent"></div>
+    <div class="p-4 border-t border-slate-100 text-right bg-slate-50 rounded-b-2xl">
+      <button onclick="closeBoxOverview()" class="px-4 py-2 bg-emerald-700 text-white font-bold rounded-xl text-xs sm:text-sm hover:bg-emerald-800 transition">Schließen</button>
+    </div>
   </div>
 </div>
 
@@ -65,14 +95,14 @@ permalink: /weihnachtsmarkt/index.html
     -webkit-overflow-scrolling: touch;
   }
   select option {
-    background-color: #0f172a;
-    color: #f8fafc;
+    background-color: #ffffff;
+    color: #0f172a;
   }
-  /* Status Farbklassen */
-  .status-offen { background-color: #451a1a; color: #fca5a5; border-color: #991b1b; }
-  .status-vorbereitet { background-color: #45300f; color: #fde047; border-color: #854d0e; }
-  .status-verteilt { background-color: #0c2a4a; color: #7dd3fc; border-color: #075985; }
-  .status-erledigt, .status-eingekauft { background-color: #062e1b; color: #6ee7b7; border-color: #065f46; }
+  /* Helle Status Farbklassen */
+  .status-offen { background-color: #fef2f2; color: #991b1b; border-color: #fecaca; }
+  .status-vorbereitet { background-color: #fefce8; color: #854d0e; border-color: #fef08a; }
+  .status-verteilt { background-color: #f0f9ff; color: #075985; border-color: #bae6fd; }
+  .status-erledigt, .status-eingekauft { background-color: #f0fdf4; color: #166534; border-color: #bbf7d0; }
 </style>
 
 <script>
@@ -110,8 +140,8 @@ permalink: /weihnachtsmarkt/index.html
     { id: 21, cat: "☕ Zutaten & Zubehör Punsch", isShop: false, title: "Ausschank & Becher", details: "Thermobecher, Punschkelle, Suppenkellen", defaultQty: "Ausreich." },
 
     // Zutaten Waffeln (Einkauf)
-    { id: 22, cat: "🧇 Zutaten & Zubehör Waffeln", isShop: true, title: "Teig & Zutaten", details: "Waffelteig-Spenden, Öl, Puderzucker, Spekulatius", defaultQty: "Nach Liste" },
-    { id: 23, cat: "🧇 Zutaten & Zubehör Waffeln", isShop: false, title: "Waffel-Utensilien", details: "Teigkellen, Holzgabeln, Ölpinsel, Puderzuckersieb", defaultQty: "Set" },
+    { id: 22, cat: "GF Zutaten & Zubehör Waffeln", isShop: true, title: "Teig & Zutaten", details: "Waffelteig-Spenden, Öl, Puderzucker, Spekulatius", defaultQty: "Nach Liste" },
+    { id: 23, cat: "GF Zutaten & Zubehör Waffeln", isShop: false, title: "Waffel-Utensilien", details: "Teigkellen, Holzgabeln, Ölpinsel, Puderzuckersieb", defaultQty: "Set" },
 
     // Hygiene & Reinigung (Einkauf)
     { id: 24, cat: "🧹 Hygiene, Reinigung & Müll", isShop: true, title: "Reinigungsmittel", details: "Spülmittel, Lappen, Handtücher, Küchenrolle", defaultQty: "Set" },
@@ -123,7 +153,7 @@ permalink: /weihnachtsmarkt/index.html
     { id: 28, cat: "💶 Kasse, Preise & Finanzen", isShop: false, title: "Preisschilder & Spenden", details: "Preisschilder Waffeln & Punsch (DIN A4), Spendenente", defaultQty: "Set" }
   ];
 
-  let appState = JSON.parse(localStorage.getItem('sg_wm_state_v4')) || {};
+  let appState = JSON.parse(localStorage.getItem('sg_wm_state_light_v1')) || {};
   let currentFilter = 'all';
 
   function initItemState(item) {
@@ -135,7 +165,7 @@ permalink: /weihnachtsmarkt/index.html
   itemsData.forEach(item => initItemState(item));
 
   function saveState() {
-    localStorage.setItem('sg_wm_state_v4', JSON.stringify(appState));
+    localStorage.setItem('sg_wm_state_light_v1', JSON.stringify(appState));
     updateProgress();
   }
 
@@ -187,11 +217,11 @@ permalink: /weihnachtsmarkt/index.html
   function setFilter(filter, btn) {
     currentFilter = filter;
     document.querySelectorAll('.filter-btn').forEach(b => {
-      b.classList.remove('bg-amber-400', 'text-slate-950', 'border-amber-400', 'font-bold');
-      b.classList.add('bg-slate-900', 'text-slate-300', 'border-slate-700', 'font-medium');
+      b.classList.remove('bg-emerald-600', 'text-white', 'border-emerald-600', 'font-bold');
+      b.classList.add('bg-white', 'text-slate-700', 'border-slate-200', 'font-medium');
     });
-    btn.classList.remove('bg-slate-900', 'text-slate-300', 'border-slate-700', 'font-medium');
-    btn.classList.add('bg-amber-400', 'text-slate-950', 'border-amber-400', 'font-bold');
+    btn.classList.remove('bg-white', 'text-slate-700', 'border-slate-200', 'font-medium');
+    btn.classList.add('bg-emerald-600', 'text-white', 'border-emerald-600', 'font-bold');
     renderChecklist();
   }
 
@@ -230,10 +260,10 @@ permalink: /weihnachtsmarkt/index.html
 
       if (catItems.length > 0) {
         const catWrapper = document.createElement('div');
-        catWrapper.className = 'bg-slate-900/95 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl';
+        catWrapper.className = 'bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-sm';
 
         const catTitle = document.createElement('h2');
-        catTitle.className = 'text-lg font-bold text-amber-400 mb-4 flex items-center gap-2 border-b border-slate-800 pb-2';
+        catTitle.className = 'text-lg font-bold text-emerald-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-2';
         catTitle.innerText = cat;
         catWrapper.appendChild(catTitle);
 
@@ -241,20 +271,20 @@ permalink: /weihnachtsmarkt/index.html
         tableContainer.className = 'table-container';
 
         const table = document.createElement('table');
-        table.className = 'w-full text-left text-xs sm:text-sm text-slate-200 border-collapse min-w-[700px]';
+        table.className = 'w-full text-left text-xs sm:text-sm text-slate-800 border-collapse min-w-[700px]';
 
         table.innerHTML = `
           <thead>
-            <tr class="border-b border-slate-700/80 text-slate-400 text-xs uppercase tracking-wider">
-              <th class="py-2.5 px-2 w-[24%]">Gegenstand / Details</th>
+            <tr class="border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider bg-slate-50">
+              <th class="py-2.5 px-3 w-[26%]">Gegenstand / Details</th>
               <th class="py-2.5 px-2 w-[12%]">Menge</th>
               <th class="py-2.5 px-2 w-[18%]">Status</th>
               <th class="py-2.5 px-2 w-[20%]">Verteilt an</th>
-              <th class="py-2.5 px-2 w-[14%] text-center">Eingepackt?</th>
+              <th class="py-2.5 px-2 w-[12%] text-center">Eingepackt?</th>
               <th class="py-2.5 px-2 w-[12%] text-center">Box-Nr.</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-800/60"></tbody>
+          <tbody class="divide-y divide-slate-100"></tbody>
         `;
 
         const tbody = table.querySelector('tbody');
@@ -264,42 +294,42 @@ permalink: /weihnachtsmarkt/index.html
           const isDone = state.status === 'Erledigt' || state.status === 'Eingekauft';
           
           const tr = document.createElement('tr');
-          tr.className = `hover:bg-slate-800/50 transition ${isDone ? 'opacity-60 bg-emerald-950/10' : ''}`;
+          tr.className = `hover:bg-slate-50 transition ${isDone ? 'opacity-70 bg-emerald-50/40' : ''}`;
 
           const statusOptions = item.isShop 
             ? ['Offen', 'Vorbereitet', 'Verteilt', 'Eingekauft']
             : ['Offen', 'Vorbereitet', 'Verteilt', 'Erledigt'];
 
           tr.innerHTML = `
-            <td class="py-3 px-2">
-              <div class="font-semibold ${isDone ? 'line-through text-slate-400' : 'text-slate-100'}">${item.title}</div>
-              <div class="text-xs text-slate-400">${item.details}</div>
+            <td class="py-3 px-3">
+              <div class="font-semibold ${isDone ? 'line-through text-slate-400' : 'text-slate-900'}">${item.title}</div>
+              <div class="text-xs text-slate-500">${item.details}</div>
             </td>
             <td class="py-3 px-2">
               <input type="text" placeholder="Menge" value="${state.qty || ''}"
                 onchange="updateItem(${item.id}, 'qty', this.value)"
-                class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-100 focus:border-amber-400 focus:outline-none w-20" />
+                class="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 focus:border-emerald-500 focus:outline-none w-20 shadow-sm" />
             </td>
             <td class="py-3 px-2">
               <select onchange="updateItem(${item.id}, 'status', this.value)" 
-                class="border rounded-lg px-2 py-1 text-xs font-semibold focus:outline-none w-full ${getStatusClass(state.status)}">
+                class="border rounded-lg px-2 py-1 text-xs font-semibold focus:outline-none w-full shadow-sm ${getStatusClass(state.status)}">
                 ${statusOptions.map(opt => `<option value="${opt}" ${state.status === opt ? 'selected' : ''}>${opt}</option>`).join('')}
               </select>
             </td>
             <td class="py-3 px-2">
               <input type="text" placeholder="Name..." value="${state.assignedTo || ''}"
                 onchange="updateItem(${item.id}, 'assignedTo', this.value)"
-                class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-100 placeholder-slate-500 focus:border-amber-400 focus:outline-none w-full" />
+                class="bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none w-full shadow-sm" />
             </td>
             <td class="py-3 px-2 text-center align-middle">
               <input type="checkbox" ${state.packed ? 'checked' : ''} 
                 onchange="updateItem(${item.id}, 'packed', this.checked)"
-                class="w-5 h-5 accent-amber-400 rounded cursor-pointer mx-auto block" />
+                class="w-5 h-5 accent-emerald-600 rounded cursor-pointer mx-auto block" />
             </td>
             <td class="py-3 px-2 text-center">
-              <input type="number" min="1" max="12" placeholder="1-12" value="${state.boxNum || ''}"
+              <input type="number" min="1" max="12" value="${state.boxNum || ''}"
                 onchange="updateItem(${item.id}, 'boxNum', this.value)"
-                class="bg-slate-950 border border-slate-700 rounded-lg px-1.5 py-1 text-xs text-slate-100 text-center placeholder-slate-500 focus:border-amber-400 focus:outline-none w-14 mx-auto" />
+                class="bg-white border border-slate-300 rounded-lg px-1.5 py-1 text-xs text-slate-900 text-center focus:border-emerald-500 focus:outline-none w-14 mx-auto shadow-sm" />
             </td>
           `;
           tbody.appendChild(tr);
@@ -312,13 +342,58 @@ permalink: /weihnachtsmarkt/index.html
     });
   }
 
-  function resetAll() {
-    if (confirm("Möchtest du wirklich alle Eingaben zurücksetzen?")) {
-      appState = {};
-      itemsData.forEach(item => initItemState(item));
-      saveState();
-      renderChecklist();
+  function openBoxOverview() {
+    const modal = document.getElementById('boxModal');
+    const content = document.getElementById('boxModalContent');
+    content.innerHTML = '';
+
+    // Gruppen nach Box 1 bis 12
+    for (let b = 1; b <= 12; b++) {
+      const boxItems = itemsData.filter(item => {
+        const state = appState[item.id];
+        return state && parseInt(state.boxNum) === b;
+      });
+
+      const boxDiv = document.createElement('div');
+      boxDiv.className = 'border border-slate-200 rounded-xl p-4 bg-slate-50';
+
+      const boxHeader = document.createElement('h3');
+      boxHeader.className = 'font-bold text-emerald-900 text-base mb-2 flex justify-between items-center';
+      boxHeader.innerHTML = `<span>📦 Box ${b}</span> <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-semibold">${boxItems.length} Gegenstände</span>`;
+      boxDiv.appendChild(boxHeader);
+
+      if (boxItems.length > 0) {
+        const ul = document.createElement('ul');
+        ul.className = 'divide-y divide-slate-200 text-xs sm:text-sm';
+        boxItems.forEach(item => {
+          const state = appState[item.id];
+          const li = document.createElement('li');
+          li.className = 'py-1.5 flex justify-between items-center';
+          li.innerHTML = `
+            <div>
+              <span class="font-medium text-slate-800">${item.title}</span>
+              <span class="text-slate-400 text-xs">(${state.qty || '1x'})</span>
+            </div>
+            <span class="text-xs px-2 py-0.5 rounded border ${getStatusClass(state.status)}">${state.status}</span>
+          `;
+          ul.appendChild(li);
+        });
+        boxDiv.appendChild(ul);
+      } else {
+        const emptyMsg = document.createElement('p');
+        emptyMsg.className = 'text-xs text-slate-400 italic';
+        emptyMsg.innerText = 'Bisher keine Gegenstände dieser Box zugewiesen.';
+        boxDiv.appendChild(emptyMsg);
+      }
+
+      content.appendChild(boxDiv);
     }
+
+    modal.classList.remove('hidden');
+  }
+
+  function closeBoxOverview() {
+    document.getElementById('boxModal').classList.add('hidden');
   }
 
   function initChecklist() {
