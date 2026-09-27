@@ -123,7 +123,7 @@ permalink: /weihnachtsmarkt/index.html
     <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-amber-50 rounded-t-2xl">
       <div>
         <h2 class="text-lg font-bold text-amber-900 flex items-center gap-2">🛒 Interaktive Einkaufsliste & Preise</h2>
-        <p class="text-xs text-amber-800/80 mt-0.5">Berechnet aus Soll-Menge minus Lagerbestand</p>
+        <p class="text-xs text-amber-800/80 mt-0.5">Beim Abhaken werden Artikel als "Eingekauft" markiert und bleiben erhalten!</p>
       </div>
       <button onclick="closeShoppingModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1">✕</button>
     </div>
@@ -158,13 +158,13 @@ permalink: /weihnachtsmarkt/index.html
   </div>
 </div>
 
-<!-- Modal: Strom & Kabel-Planer (mit Drag & Drop Aufteilung) -->
+<!-- Modal: Strom & Modularer Verkabelungs-Planer (3 Steckdosen) -->
 <div id="wiringModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-  <div class="bg-white border border-slate-200 rounded-2xl max-w-5xl w-full max-h-[90vh] flex flex-col shadow-2xl">
+  <div class="bg-white border border-slate-200 rounded-2xl max-w-6xl w-full max-h-[92vh] flex flex-col shadow-2xl">
     <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-sky-50 rounded-t-2xl">
       <div>
-        <h2 class="text-lg font-bold text-sky-900 flex items-center gap-2">⚡ Stand-Elektrik & Drag-&-Drop Verkabelungs-Planer</h2>
-        <p class="text-xs text-sky-700 mt-0.5">Ziehe Geräte und Kabel per Drag & Drop in Phase A oder Phase B, um Überlastungen zu vermeiden!</p>
+        <h2 class="text-lg font-bold text-sky-900 flex items-center gap-2">⚡ Modularer Strom- & Kabel-Planer (3 Stromeingänge)</h2>
+        <p class="text-xs text-sky-700 mt-0.5">Ordnung für eure 3 Steckdosen: Verteile Kabel & Verbraucher per Drag & Drop auf die Stromeingänge!</p>
       </div>
       <button onclick="closeWiringModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1">✕</button>
     </div>
@@ -173,44 +173,92 @@ permalink: /weihnachtsmarkt/index.html
       
       <!-- Unassigned Pool -->
       <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
-        <h3 class="font-bold text-slate-900 text-sm mb-2 flex items-center gap-2">🔌 Nicht zugewiesene Geräte & Kabel (Ziehen oder Klicken):</h3>
+        <h3 class="font-bold text-slate-900 text-sm mb-2 flex items-center gap-2">🔌 Nicht zugewiesene Geräte & Kabel (Hier herausziehen):</h3>
         <div id="unassignedPool" ondragover="allowDrop(event)" ondrop="drop(event, 'unassigned')" class="flex flex-wrap gap-2 min-h-[50px] p-2 bg-white rounded-lg border border-dashed border-slate-300"></div>
       </div>
 
-      <!-- Drag & Drop Phases -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Modular 3 Outlets / Sockets Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         
-        <!-- Phase A -->
+        <!-- Outlet 1 -->
         <div class="bg-sky-50/50 border border-sky-200 rounded-xl p-4 flex flex-col justify-between">
           <div>
-            <div class="flex justify-between items-center mb-3">
-              <h4 class="font-bold text-sky-900 text-base">⚡ Phase A (Stromkreis 1)</h4>
-              <span id="phaseAWatts" class="px-2 py-1 rounded bg-sky-100 text-sky-900 font-bold font-mono">0 W / 0,0 A</span>
+            <div class="flex justify-between items-center mb-2">
+              <h4 class="font-bold text-sky-900 text-sm flex items-center gap-1.5">🔌 Steckdose 1</h4>
+              <span id="socket1Watts" class="px-2 py-0.5 rounded bg-sky-100 text-sky-900 font-bold font-mono text-xs">0 W / 0,0 A</span>
             </div>
-            <div id="phaseAPool" ondragover="allowDrop(event)" ondrop="drop(event, 'phaseA')" class="space-y-2 min-h-[120px] p-2 bg-white rounded-lg border border-dashed border-sky-300"></div>
+            
+            <!-- Cable Attachment Selector -->
+            <div class="mb-3">
+              <label class="block text-[11px] font-semibold text-slate-500 mb-1">Angeschlossenes Kabel / Verteilung:</label>
+              <select id="socket1Cable" onchange="updateSocketCable(1, this.value)" class="w-full text-xs border border-sky-200 rounded-lg p-1.5 bg-white font-medium text-sky-950 focus:outline-none">
+                <option value="Direkt / Mehrfachstecker 3er">➡️ Direkt Mehrfachstecker (3er)</option>
+                <option value="Direkt / Mehrfachstecker 5er">➡️ Direkt Mehrfachstecker (5er)</option>
+                <option value="Verlängerung 3m + 3er Stecker">➡️ Verlängerung 3m + Mehrfachstecker</option>
+                <option value="Verlängerung 3m + 5er Stecker">➡️ Verlängerung 3m + 5er Stecker</option>
+                <option value="Kabeltrommel + Mehrfachstecker">➡️ Kabeltrommel + Mehrfachstecker</option>
+              </select>
+            </div>
+
+            <div id="socket1Pool" ondragover="allowDrop(event)" ondrop="drop(event, 'socket1')" class="space-y-2 min-h-[140px] p-2 bg-white rounded-lg border border-dashed border-sky-300"></div>
           </div>
-          <div id="phaseAWarn" class="mt-3 text-xs hidden font-bold text-red-600">⚠️ Phase A ist überlastet (> 3.680W)!</div>
+          <div id="socket1Warn" class="mt-3 text-xs hidden font-bold text-red-600">⚠️ Steckdose 1 überlastet (> 3.680W)!</div>
         </div>
 
-        <!-- Phase B -->
+        <!-- Outlet 2 -->
         <div class="bg-indigo-50/50 border border-indigo-200 rounded-xl p-4 flex flex-col justify-between">
           <div>
-            <div class="flex justify-between items-center mb-3">
-              <h4 class="font-bold text-indigo-900 text-base">⚡ Phase B (Stromkreis 2)</h4>
-              <span id="phaseBWatts" class="px-2 py-1 rounded bg-indigo-100 text-indigo-900 font-bold font-mono">0 W / 0,0 A</span>
+            <div class="flex justify-between items-center mb-2">
+              <h4 class="font-bold text-indigo-900 text-sm flex items-center gap-1.5">🔌 Steckdose 2</h4>
+              <span id="socket2Watts" class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-900 font-bold font-mono text-xs">0 W / 0,0 A</span>
             </div>
-            <div id="phaseBPool" ondragover="allowDrop(event)" ondrop="drop(event, 'phaseB')" class="space-y-2 min-h-[120px] p-2 bg-white rounded-lg border border-dashed border-indigo-300"></div>
+            
+            <div class="mb-3">
+              <label class="block text-[11px] font-semibold text-slate-500 mb-1">Angeschlossenes Kabel / Verteilung:</label>
+              <select id="socket2Cable" onchange="updateSocketCable(2, this.value)" class="w-full text-xs border border-indigo-200 rounded-lg p-1.5 bg-white font-medium text-indigo-950 focus:outline-none">
+                <option value="Verlängerung 3m + 3er Stecker">➡️ Verlängerung 3m + Mehrfachstecker</option>
+                <option value="Verlängerung 3m + 5er Stecker">➡️ Verlängerung 3m + 5er Stecker</option>
+                <option value="Direkt / Mehrfachstecker 3er">➡️ Direkt Mehrfachstecker (3er)</option>
+                <option value="Direkt / Mehrfachstecker 5er">➡️ Direkt Mehrfachstecker (5er)</option>
+                <option value="Kabeltrommel + Mehrfachstecker">➡️ Kabeltrommel + Mehrfachstecker</option>
+              </select>
+            </div>
+
+            <div id="socket2Pool" ondragover="allowDrop(event)" ondrop="drop(event, 'socket2')" class="space-y-2 min-h-[140px] p-2 bg-white rounded-lg border border-dashed border-indigo-300"></div>
           </div>
-          <div id="phaseBWarn" class="mt-3 text-xs hidden font-bold text-red-600">⚠️ Phase B ist überlastet (> 3.680W)!</div>
+          <div id="socket2Warn" class="mt-3 text-xs hidden font-bold text-red-600">⚠️ Steckdose 2 überlastet (> 3.680W)!</div>
+        </div>
+
+        <!-- Outlet 3 -->
+        <div class="bg-emerald-50/50 border border-emerald-200 rounded-xl p-4 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <h4 class="font-bold text-emerald-900 text-sm flex items-center gap-1.5">🔌 Steckdose 3</h4>
+              <span id="socket3Watts" class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-bold font-mono text-xs">0 W / 0,0 A</span>
+            </div>
+            
+            <div class="mb-3">
+              <label class="block text-[11px] font-semibold text-slate-500 mb-1">Angeschlossenes Kabel / Verteilung:</label>
+              <select id="socket3Cable" onchange="updateSocketCable(3, this.value)" class="w-full text-xs border border-emerald-200 rounded-lg p-1.5 bg-white font-medium text-emerald-950 focus:outline-none">
+                <option value="Verlängerung 3m + 5er Stecker">➡️ Verlängerung 3m + 5er Stecker</option>
+                <option value="Verlängerung 3m + 3er Stecker">➡️ Verlängerung 3m + Mehrfachstecker</option>
+                <option value="Direkt / Mehrfachstecker 3er">➡️ Direkt Mehrfachstecker (3er)</option>
+                <option value="Direkt / Mehrfachstecker 5er">➡️ Direkt Mehrfachstecker (5er)</option>
+                <option value="Kabeltrommel + Mehrfachstecker">➡️ Kabeltrommel + Mehrfachstecker</option>
+              </select>
+            </div>
+
+            <div id="socket3Pool" ondragover="allowDrop(event)" ondrop="drop(event, 'socket3')" class="space-y-2 min-h-[140px] p-2 bg-white rounded-lg border border-dashed border-emerald-300"></div>
+          </div>
+          <div id="socket3Warn" class="mt-3 text-xs hidden font-bold text-red-600">⚠️ Steckdose 3 überlastet (> 3.680W)!</div>
         </div>
 
       </div>
 
       <div class="bg-amber-50/60 border border-amber-200 rounded-xl p-4 text-slate-700 space-y-1">
-        <h4 class="font-bold text-amber-900 mb-1 flex items-center gap-2">⚠️ Sicherheitsregeln für die Verkabelung</h4>
-        <p>• Maximale Dauerlast pro Phase/Sicherung liegt bei ca. <b>3.680 Watt (16 Ampere)</b>.</p>
-        <p>• Kabeltrommeln <b>immer vollständig abrollen</b> (Gefahr von Kabelbrand durch Hitzestau!).</p>
-        <p>• <b>Keine Mehrfachsteckdosen hintereinander</b> stecken.</p>
+        <h4 class="font-bold text-amber-900 mb-1 flex items-center gap-2">⚠️ Tipp für die 3 Anschlüsse</h4>
+        <p>• Verteilt die Großverbraucher (Einkochautomaten mit je 1.800W & Waffeleisen mit je 1.200W) am besten auf alle 3 Steckdosen!</p>
+        <p>• Maximale Dauerlast pro Steckdose: <b>3.680 Watt (16A)</b>.</p>
       </div>
 
     </div>
@@ -398,7 +446,7 @@ permalink: /weihnachtsmarkt/index.html
     { id: 73, cat: "📋 Sonstiges", title: "Weihnachtsmützen", details: "", isShop: false }
   ];
 
-  let appState = JSON.parse(localStorage.getItem('sg_wm_state_v11')) || {};
+  let appState = JSON.parse(localStorage.getItem('sg_wm_state_v12')) || {};
   let currentFilter = 'all';
 
   function initItemState(item) {
@@ -413,15 +461,24 @@ permalink: /weihnachtsmarkt/index.html
         store: '',
         price: '',
         watts: item.defaultWatts !== undefined ? item.defaultWatts : '',
-        phase: 'unassigned' // 'unassigned', 'phaseA', 'phaseB'
+        socket: 'unassigned' // 'unassigned', 'socket1', 'socket2', 'socket3'
       };
     }
+  }
+
+  // Init socket cable config
+  if (!appState.socketCables) {
+    appState.socketCables = {
+      1: "Direkt / Mehrfachstecker 3er",
+      2: "Verlängerung 3m + 3er Stecker",
+      3: "Verlängerung 3m + 5er Stecker"
+    };
   }
 
   itemsData.forEach(item => initItemState(item));
 
   function saveState() {
-    localStorage.setItem('sg_wm_state_v11', JSON.stringify(appState));
+    localStorage.setItem('sg_wm_state_v12', JSON.stringify(appState));
     updateProgress();
   }
 
@@ -595,7 +652,7 @@ permalink: /weihnachtsmarkt/index.html
     });
   }
 
-  // --- Einkaufs-Modal Logik ---
+  // --- Einkaufs-Modal Logik (Mit Erledigt-Umschaltung) ---
   function openShoppingModal() {
     const modal = document.getElementById('shoppingModal');
     const tbody = document.getElementById('shoppingTableBody');
@@ -620,7 +677,7 @@ permalink: /weihnachtsmarkt/index.html
       }
 
       const tr = document.createElement('tr');
-      tr.className = `hover:bg-slate-50 transition ${isBought ? 'bg-emerald-50/50' : ''}`;
+      tr.className = `hover:bg-slate-50 transition ${isBought ? 'bg-emerald-50/60' : ''}`;
 
       const storeOptionsHtml = `
         <option value="">-- Geschäft wählen --</option>
@@ -631,10 +688,10 @@ permalink: /weihnachtsmarkt/index.html
         <td class="py-2.5 px-3 text-center align-middle">
           <input type="checkbox" ${isBought ? 'checked' : ''} 
             onchange="toggleShopItemStatus(${item.id}, this.checked)"
-            class="w-5 h-5 accent-amber-600 rounded cursor-pointer mx-auto block" />
+            class="w-5 h-5 accent-emerald-600 rounded cursor-pointer mx-auto block" />
         </td>
         <td class="py-2.5 px-3">
-          <div class="font-semibold ${isBought ? 'line-through text-slate-400' : 'text-slate-900'}">${item.title}</div>
+          <div class="font-semibold ${isBought ? 'line-through text-emerald-800' : 'text-slate-900'}">${item.title}</div>
           ${item.details ? `<div class="text-xs text-slate-400">${item.details}</div>` : ''}
         </td>
         <td class="py-2.5 px-2 text-center text-slate-500">${state.qty || '-'}</td>
@@ -682,60 +739,77 @@ permalink: /weihnachtsmarkt/index.html
     document.getElementById('shoppingModal').classList.add('hidden');
   }
 
-  // --- Strom- & Drag & Drop Verkabelungs-Planer Logik ---
+  // --- Modularer Strom- & Verkabelungs-Planer (3 Steckdosen) ---
   function openWiringModal() {
+    // Sync cable selects
+    if (appState.socketCables) {
+      if (document.getElementById('socket1Cable')) document.getElementById('socket1Cable').value = appState.socketCables[1] || '';
+      if (document.getElementById('socket2Cable')) document.getElementById('socket2Cable').value = appState.socketCables[2] || '';
+      if (document.getElementById('socket3Cable')) document.getElementById('socket3Cable').value = appState.socketCables[3] || '';
+    }
     renderWiringModal();
     document.getElementById('wiringModal').classList.remove('hidden');
   }
 
+  function updateSocketCable(socketNum, val) {
+    if (!appState.socketCables) appState.socketCables = {};
+    appState.socketCables[socketNum] = val;
+    saveState();
+  }
+
   function renderWiringModal() {
     const poolUnassigned = document.getElementById('unassignedPool');
-    const poolPhaseA = document.getElementById('phaseAPool');
-    const poolPhaseB = document.getElementById('phaseBPool');
+    const poolSocket1 = document.getElementById('socket1Pool');
+    const poolSocket2 = document.getElementById('socket2Pool');
+    const poolSocket3 = document.getElementById('socket3Pool');
 
     poolUnassigned.innerHTML = '';
-    poolPhaseA.innerHTML = '';
-    poolPhaseB.innerHTML = '';
+    poolSocket1.innerHTML = '';
+    poolSocket2.innerHTML = '';
+    poolSocket3.innerHTML = '';
 
     const powerItems = itemsData.filter(i => i.isPower);
 
     powerItems.forEach(item => {
       initItemState(item);
       const state = appState[item.id];
-      const phase = state.phase || 'unassigned';
+      const socket = state.socket || 'unassigned';
       const watts = parseInt(state.watts || 0);
 
       const card = document.createElement('div');
       card.id = `drag-item-${item.id}`;
       card.draggable = true;
       card.ondragstart = (e) => drag(e, item.id);
-      card.className = `p-2.5 rounded-lg border bg-white shadow-sm flex items-center justify-between gap-2 cursor-grab active:cursor-grabbing hover:border-sky-400 transition select-none`;
+      card.className = `p-2 rounded-lg border bg-white shadow-sm flex items-center justify-between gap-1.5 cursor-grab active:cursor-grabbing hover:border-sky-400 transition select-none`;
 
       card.innerHTML = `
-        <div class="flex items-center gap-2">
-          <span class="text-slate-400 font-bold cursor-move">⋮⋮</span>
-          <span class="font-semibold text-slate-800 text-xs">${item.title}</span>
+        <div class="flex items-center gap-1.5 overflow-hidden">
+          <span class="text-slate-400 font-bold cursor-move text-xs">⋮⋮</span>
+          <span class="font-semibold text-slate-800 text-xs truncate">${item.title}</span>
         </div>
-        <div class="flex items-center gap-1">
-          <span class="text-[11px] font-mono bg-sky-50 text-sky-800 px-1.5 py-0.5 rounded border border-sky-100 font-bold">${watts} W</span>
-          <select onchange="moveItemPhase(${item.id}, this.value)" class="text-[10px] border rounded bg-slate-50 py-0.5 px-1 cursor-pointer">
-            <option value="unassigned" ${phase === 'unassigned' ? 'selected' : ''}>Pool</option>
-            <option value="phaseA" ${phase === 'phaseA' ? 'selected' : ''}>Phase A</option>
-            <option value="phaseB" ${phase === 'phaseB' ? 'selected' : ''}>Phase B</option>
+        <div class="flex items-center gap-1 shrink-0">
+          <span class="text-[10px] font-mono bg-sky-50 text-sky-800 px-1.5 py-0.5 rounded border border-sky-100 font-bold">${watts} W</span>
+          <select onchange="moveItemSocket(${item.id}, this.value)" class="text-[10px] border rounded bg-slate-50 py-0.5 px-1 cursor-pointer">
+            <option value="unassigned" ${socket === 'unassigned' ? 'selected' : ''}>Pool</option>
+            <option value="socket1" ${socket === 'socket1' ? 'selected' : ''}>Dose 1</option>
+            <option value="socket2" ${socket === 'socket2' ? 'selected' : ''}>Dose 2</option>
+            <option value="socket3" ${socket === 'socket3' ? 'selected' : ''}>Dose 3</option>
           </select>
         </div>
       `;
 
-      if (phase === 'phaseA') {
-        poolPhaseA.appendChild(card);
-      } else if (phase === 'phaseB') {
-        poolPhaseB.appendChild(card);
+      if (socket === 'socket1') {
+        poolSocket1.appendChild(card);
+      } else if (socket === 'socket2') {
+        poolSocket2.appendChild(card);
+      } else if (socket === 'socket3') {
+        poolSocket3.appendChild(card);
       } else {
         poolUnassigned.appendChild(card);
       }
     });
 
-    calculatePhasesPower();
+    calculateSocketsPower();
   }
 
   function drag(e, itemId) {
@@ -746,38 +820,41 @@ permalink: /weihnachtsmarkt/index.html
     e.preventDefault();
   }
 
-  function drop(e, targetPhase) {
+  function drop(e, targetSocket) {
     e.preventDefault();
     const itemId = e.dataTransfer.getData("text/plain");
     if (itemId) {
-      moveItemPhase(parseInt(itemId), targetPhase);
+      moveItemSocket(parseInt(itemId), targetSocket);
     }
   }
 
-  function moveItemPhase(itemId, targetPhase) {
-    updateItem(itemId, 'phase', targetPhase);
+  function moveItemSocket(itemId, targetSocket) {
+    updateItem(itemId, 'socket', targetSocket);
     renderWiringModal();
   }
 
-  function calculatePhasesPower() {
-    let wattsA = 0;
-    let wattsB = 0;
+  function calculateSocketsPower() {
+    let watts1 = 0, watts2 = 0, watts3 = 0;
 
     itemsData.filter(i => i.isPower).forEach(item => {
       const state = appState[item.id];
       const w = parseInt(state.watts || 0);
-      if (state.phase === 'phaseA') wattsA += w;
-      if (state.phase === 'phaseB') wattsB += w;
+      if (state.socket === 'socket1') watts1 += w;
+      if (state.socket === 'socket2') watts2 += w;
+      if (state.socket === 'socket3') watts3 += w;
     });
 
-    const ampsA = (wattsA / 230).toFixed(1).replace('.', ',');
-    const ampsB = (wattsB / 230).toFixed(1).replace('.', ',');
+    const amps1 = (watts1 / 230).toFixed(1).replace('.', ',');
+    const amps2 = (watts2 / 230).toFixed(1).replace('.', ',');
+    const amps3 = (watts3 / 230).toFixed(1).replace('.', ',');
 
-    document.getElementById('phaseAWatts').innerText = `${wattsA.toLocaleString('de-DE')} W / ${ampsA} A`;
-    document.getElementById('phaseBWatts').innerText = `${wattsB.toLocaleString('de-DE')} W / ${ampsB} A`;
+    document.getElementById('socket1Watts').innerText = `${watts1.toLocaleString('de-DE')} W / ${amps1} A`;
+    document.getElementById('socket2Watts').innerText = `${watts2.toLocaleString('de-DE')} W / ${amps2} A`;
+    document.getElementById('socket3Watts').innerText = `${watts3.toLocaleString('de-DE')} W / ${amps3} A`;
 
-    document.getElementById('phaseAWarn').classList.toggle('hidden', wattsA <= 3680);
-    document.getElementById('phaseBWarn').classList.toggle('hidden', wattsB <= 3680);
+    document.getElementById('socket1Warn').classList.toggle('hidden', watts1 <= 3680);
+    document.getElementById('socket2Warn').classList.toggle('hidden', watts2 <= 3680);
+    document.getElementById('socket3Warn').classList.toggle('hidden', watts3 <= 3680);
   }
 
   function closeWiringModal() {
