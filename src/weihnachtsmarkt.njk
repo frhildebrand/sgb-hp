@@ -61,15 +61,15 @@ title: SG Barnstorf Weihnachtsmarkt
 
         <nav class="space-y-2 font-bold text-sm">
           <button onclick="switchView('aushang')" class="w-full text-left px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:scale-[1.02] transition flex items-center gap-3">📌 Hauptseite & Aushänge</button>
-          <button onclick="switchView('verkauf')" class="w-full text-left px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300 hover:scale-[1.02] transition flex items-center gap-3">💰 Verkaufsstatistik & Kasse</button>
-          <button onclick="navTo('inventar')" class="w-full text-left px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 hover:scale-[1.02] transition flex items-center gap-3">📋 Inventar & Checkliste</button>
-          <button onclick="navTo('einkaufsliste')" class="w-full text-left px-4 py-3 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-orange-900 dark:text-orange-300 hover:scale-[1.02] transition flex items-center gap-3">🛒 Einkaufsliste</button>
-          <button onclick="navTo('verkabelung')" class="w-full text-left px-4 py-3 rounded-xl bg-sky-50 dark:bg-sky-950/40 text-sky-900 dark:text-sky-300 hover:scale-[1.02] transition flex items-center gap-3">⚡ Verkabelung</button>
-          <button onclick="navTo('lagerbestand')" class="w-full text-left px-4 py-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-300 hover:scale-[1.02] transition flex items-center gap-3">📊 Lagerbestand</button>
-          <button onclick="navTo('boxenuebersicht')" class="w-full text-left px-4 py-3 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-900 dark:text-purple-300 hover:scale-[1.02] transition flex items-center gap-3">📦 Boxenübersicht</button>
-          <button onclick="navTo('rezepte')" class="w-full text-left px-4 py-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-900 dark:text-rose-300 hover:scale-[1.02] transition flex items-center gap-3">☕ Rezepte</button>
+          <button onclick="switchView('inventar')" class="w-full text-left px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 hover:scale-[1.02] transition flex items-center gap-3">📋 Inventar</button>
+          <button onclick="switchView('verkauf')" class="w-full text-left px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300 hover:scale-[1.02] transition flex items-center gap-3">💰 Verkauf</button>
+          <button onclick="switchView('einkaufsliste')" class="w-full text-left px-4 py-3 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-orange-900 dark:text-orange-300 hover:scale-[1.02] transition flex items-center gap-3">🛒 Einkaufsliste</button>
+          <button onclick="switchView('verkabelung')" class="w-full text-left px-4 py-3 rounded-xl bg-sky-50 dark:bg-sky-950/40 text-sky-900 dark:text-sky-300 hover:scale-[1.02] transition flex items-center gap-3">⚡ Verkabelung</button>
+          <button onclick="switchView('lagerbestand')" class="w-full text-left px-4 py-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-300 hover:scale-[1.02] transition flex items-center gap-3">📊 Lagerbestand</button>
+          <button onclick="switchView('boxenuebersicht')" class="w-full text-left px-4 py-3 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-900 dark:text-purple-300 hover:scale-[1.02] transition flex items-center gap-3">📦 Boxenübersicht</button>
+          <button onclick="switchView('rezepte')" class="w-full text-left px-4 py-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-900 dark:text-rose-300 hover:scale-[1.02] transition flex items-center gap-3">☕ Rezepte</button>
           <button onclick="window.print()" class="w-full text-left px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:scale-[1.02] transition flex items-center gap-3">🖨️ Drucken</button>
-          <button onclick="navTo('adminpanel')" class="w-full text-left px-4 py-3 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:scale-[1.02] transition flex items-center gap-3 border border-amber-500/50 shadow-md">👑 Admin-Panel</button>
+          <button onclick="switchView('adminpanel')" class="w-full text-left px-4 py-3 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:scale-[1.02] transition flex items-center gap-3 border border-amber-500/50 shadow-md">👑 Admin-Panel</button>
         </nav>
       </div>
 
@@ -79,7 +79,7 @@ title: SG Barnstorf Weihnachtsmarkt
     </div>
   </div>
 
-  <!-- HAUPT-CONTENT-BEREICHE -->
+  <!-- HAUPT-CONTENT-BEREICHE (FULLPAGE VIEWS) -->
   <main class="max-w-7xl mx-auto px-4 pt-6 space-y-6">
 
     <!-- VIEW 1: AUSHÄNGE (HAUPTSEITE) -->
@@ -91,15 +91,15 @@ title: SG Barnstorf Weihnachtsmarkt
         </div>
         <div class="flex flex-wrap gap-2">
           <button onclick="switchView('verkauf')" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition whitespace-nowrap">
-            💰 Zur Verkaufsstatistik
+            💰 Zum Verkauf
           </button>
-          <button onclick="navTo('inventar')" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs rounded-xl shadow-lg transition whitespace-nowrap">
+          <button onclick="switchView('inventar')" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs rounded-xl shadow-lg transition whitespace-nowrap">
             📋 Zum Inventar
           </button>
         </div>
       </div>
 
-      <!-- ROSHOP AUSHANG CARD (REINE ANZEIGE) -->
+      <!-- ROSHOP AUSHANG CARD -->
       <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
         <h3 class="font-extrabold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
           📌 ROSHOP Aushang (Helfer- & Teigspendenlisten)
@@ -117,11 +117,47 @@ title: SG Barnstorf Weihnachtsmarkt
       </div>
     </div>
 
-    <!-- VIEW 2: FULLPAGE VERKAUFSSTATISTIK & STANDKASSE -->
+    <!-- VIEW 2: FULLPAGE INVENTAR -->
+    <div id="viewInventar" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div>
+          <h2 class="font-extrabold text-lg text-amber-500 flex items-center gap-2">📋 Inventar & Checkliste</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Übersicht aller Gegenstände, Status und Packfortschritt</p>
+        </div>
+        <button onclick="switchView('aushang')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition">
+          ⬅️ Zurück zu Aushänge
+        </button>
+      </div>
+
+      <div class="space-y-3 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+          <input type="text" id="searchInput" placeholder="🔍 Suche nach Name, Ort, Kiste..." class="w-full sm:w-1/2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500" />
+          <div class="text-xs font-bold text-amber-600 dark:text-amber-400" id="progressText">0% erledigt</div>
+        </div>
+        
+        <!-- FARBIGE FILTER-TAGS -->
+        <div class="flex flex-wrap gap-2 text-xs font-bold" id="filterTags">
+          <button onclick="setFilterTag('ALL')" class="tag-btn active-tag px-3 py-1.5 rounded-xl border bg-slate-200 text-slate-800 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 shadow-sm">Alle</button>
+          <button onclick="setFilterTag('Offen')" class="tag-btn px-3 py-1.5 rounded-xl border bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800 shadow-sm">Offen</button>
+          <button onclick="setFilterTag('Vorbereitet')" class="tag-btn px-3 py-1.5 rounded-xl border bg-blue-100 text-blue-900 border-blue-300 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800 shadow-sm">Vorbereitet</button>
+          <button onclick="setFilterTag('Verteilt')" class="tag-btn px-3 py-1.5 rounded-xl border bg-purple-100 text-purple-900 border-purple-300 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800 shadow-sm">Verteilt</button>
+          <button onclick="setFilterTag('Erledigt')" class="tag-btn px-3 py-1.5 rounded-xl border bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800 shadow-sm">Erledigt</button>
+          <button onclick="setFilterTag('GEPACKT')" class="tag-btn px-3 py-1.5 rounded-xl border bg-sky-100 text-sky-900 border-sky-300 dark:bg-sky-950/50 dark:text-sky-300 dark:border-sky-800 shadow-sm">📦 Nur Gepackt</button>
+        </div>
+
+        <div class="w-full bg-slate-200 dark:bg-slate-950 rounded-full h-2.5 overflow-hidden">
+          <div id="progressBar" class="bg-emerald-500 h-full w-0 transition-all duration-500"></div>
+        </div>
+      </div>
+
+      <div id="checklist" class="space-y-4"></div>
+    </div>
+
+    <!-- VIEW 3: FULLPAGE VERKAUF -->
     <div id="viewVerkauf" class="hidden space-y-6">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div>
-          <h2 class="font-extrabold text-lg text-emerald-600 dark:text-emerald-400 flex items-center gap-2">💰 Verkaufsstatistik & Standkasse</h2>
+          <h2 class="font-extrabold text-lg text-emerald-600 dark:text-emerald-400 flex items-center gap-2">💰 Verkauf & Standkasse</h2>
           <p class="text-xs text-slate-500 dark:text-slate-400">Echtzeit-Erfassung der Verkäufe und Einnahmen</p>
         </div>
         <button onclick="switchView('aushang')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition">
@@ -172,177 +208,134 @@ title: SG Barnstorf Weihnachtsmarkt
       </div>
     </div>
 
-  </main>
-</div>
-
-<!-- MODALS CONTAINER -->
-
-<!-- INVENTAR MODAL -->
-<div id="modalInventar" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-  <div class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-2xl max-w-6xl w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-slate-800">
-    <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
-      <h3 class="font-extrabold text-base text-amber-500 flex items-center gap-2">📋 Inventar & Checkliste</h3>
-      <button onclick="closeModal('modalInventar')" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-2xl font-bold">✕</button>
-    </div>
-
-    <!-- FILTER-TAGS (MIT BUNTEN FARBEN) & LIVE SEARCH -->
-    <div class="space-y-3 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
-      <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
-        <input type="text" id="searchInput" placeholder="🔍 Suche nach Name, Ort, Kiste..." class="w-full sm:w-1/2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500" />
-        <div class="text-xs font-bold text-amber-600 dark:text-amber-400" id="progressText">0% erledigt</div>
+    <!-- VIEW 4: FULLPAGE EINKAUFSLISTE -->
+    <div id="viewEinkaufsliste" class="hidden space-y-6">
+      <div class="flex justify-between items-center bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <h2 class="font-extrabold text-lg text-orange-600 dark:text-orange-400 flex items-center gap-2">🛒 Einkaufsliste & Preise</h2>
+        <button onclick="switchView('aushang')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition">⬅️ Zurück</button>
       </div>
-      
-      <!-- FARBIGE TAG-BUTTONS -->
-      <div class="flex flex-wrap gap-2 text-xs font-bold" id="filterTags">
-        <button onclick="setFilterTag('ALL')" class="tag-btn active-tag px-3 py-1.5 rounded-xl border bg-slate-200 text-slate-800 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 shadow-sm">Alle</button>
-        <button onclick="setFilterTag('Offen')" class="tag-btn px-3 py-1.5 rounded-xl border bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800 shadow-sm">Offen</button>
-        <button onclick="setFilterTag('Vorbereitet')" class="tag-btn px-3 py-1.5 rounded-xl border bg-blue-100 text-blue-900 border-blue-300 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800 shadow-sm">Vorbereitet</button>
-        <button onclick="setFilterTag('Verteilt')" class="tag-btn px-3 py-1.5 rounded-xl border bg-purple-100 text-purple-900 border-purple-300 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800 shadow-sm">Verteilt</button>
-        <button onclick="setFilterTag('Erledigt')" class="tag-btn px-3 py-1.5 rounded-xl border bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800 shadow-sm">Erledigt</button>
-        <button onclick="setFilterTag('GEPACKT')" class="tag-btn px-3 py-1.5 rounded-xl border bg-sky-100 text-sky-900 border-sky-300 dark:bg-sky-950/50 dark:text-sky-300 dark:border-sky-800 shadow-sm">📦 Nur Gepackt</button>
-      </div>
-
-      <div class="w-full bg-slate-200 dark:bg-slate-900 rounded-full h-2.5 overflow-hidden">
-        <div id="progressBar" class="bg-emerald-500 h-full w-0 transition-all duration-500"></div>
+      <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr class="bg-slate-100 dark:bg-slate-800 font-extrabold border-b border-slate-200 dark:border-slate-700">
+                <th class="p-2.5 text-center">Gekauft</th>
+                <th class="p-2.5">Artikel</th>
+                <th class="p-2.5">Bedarf</th>
+                <th class="p-2.5">Packung</th>
+                <th class="p-2.5">Laden</th>
+                <th class="p-2.5 text-right">Preis (€)</th>
+              </tr>
+            </thead>
+            <tbody id="shoppingTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
+          </table>
+        </div>
+        <div class="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-slate-800 font-bold text-xs">
+          <span>Gesamtkosten:</span>
+          <span id="shoppingTotalCost" class="text-base text-emerald-500 font-extrabold">0,00 €</span>
+        </div>
       </div>
     </div>
 
-    <div id="checklist" class="space-y-4"></div>
-  </div>
-</div>
-
-<!-- EINKAUFSLISTE MODAL -->
-<div id="modalEinkaufsliste" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-  <div class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-2xl max-w-4xl w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-slate-800">
-    <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
-      <h3 class="font-extrabold text-base text-orange-600 dark:text-orange-400 flex items-center gap-2">🛒 Einkaufsliste & Preise</h3>
-      <button onclick="closeModal('modalEinkaufsliste')" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-2xl font-bold">✕</button>
-    </div>
-    <div class="overflow-x-auto">
-      <table class="w-full text-left text-xs">
-        <thead>
-          <tr class="bg-slate-100 dark:bg-slate-800 font-extrabold border-b border-slate-200 dark:border-slate-700">
-            <th class="p-2.5 text-center">Gekauft</th>
-            <th class="p-2.5">Artikel</th>
-            <th class="p-2.5">Bedarf</th>
-            <th class="p-2.5">Packung</th>
-            <th class="p-2.5">Laden</th>
-            <th class="p-2.5 text-right">Preis (€)</th>
-          </tr>
-        </thead>
-        <tbody id="shoppingTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
-      </table>
-    </div>
-    <div class="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-slate-800 font-bold text-xs">
-      <span>Gesamtkosten:</span>
-      <span id="shoppingTotalCost" class="text-base text-emerald-500 font-extrabold">0,00 €</span>
-    </div>
-  </div>
-</div>
-
-<!-- VERKABELUNG MODAL -->
-<div id="modalVerkabelung" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-  <div class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-2xl max-w-4xl w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-slate-800">
-    <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
-      <h3 class="font-extrabold text-base text-sky-600 dark:text-sky-400 flex items-center gap-2">⚡ Strom- & Verkabelungsplaner</h3>
-      <button onclick="closeModal('modalVerkabelung')" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-2xl font-bold">✕</button>
-    </div>
-    <div id="powerPool" class="flex flex-wrap gap-2 text-xs bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800"></div>
-  </div>
-</div>
-
-<!-- LAGERBESTAND MODAL -->
-<div id="modalLagerbestand" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-  <div class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-2xl max-w-4xl w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-slate-800">
-    <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
-      <h3 class="font-extrabold text-base text-indigo-600 dark:text-indigo-400 flex items-center gap-2">📊 Lagerbestand Übersicht</h3>
-      <button onclick="closeModal('modalLagerbestand')" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-2xl font-bold">✕</button>
-    </div>
-    <div class="overflow-x-auto">
-      <table class="w-full text-left text-xs">
-        <thead>
-          <tr class="bg-slate-100 dark:bg-slate-800 font-extrabold border-b border-slate-200 dark:border-slate-700">
-            <th class="p-2.5">Kategorie</th>
-            <th class="p-2.5">Gegenstand</th>
-            <th class="p-2.5 text-center">Bedarf</th>
-            <th class="p-2.5 text-center">Auf Lager</th>
-            <th class="p-2.5 text-center">Status</th>
-          </tr>
-        </thead>
-        <tbody id="stockTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- BOXENÜBERSICHT MODAL -->
-<div id="modalBoxenuebersicht" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-  <div class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-2xl max-w-4xl w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-slate-800">
-    <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
-      <h3 class="font-extrabold text-base text-purple-600 dark:text-purple-400 flex items-center gap-2">📦 Boxenübersicht (1–12)</h3>
-      <button onclick="closeModal('modalBoxenuebersicht')" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-2xl font-bold">✕</button>
-    </div>
-    <div id="boxOverviewGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
-  </div>
-</div>
-
-<!-- REZEPTE MODAL -->
-<div id="modalRezepte" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-  <div class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-2xl max-w-2xl w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-slate-800">
-    <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
-      <h3 class="font-extrabold text-base text-rose-600 dark:text-rose-400 flex items-center gap-2">☕ Stand-Rezepte & Punschrechner</h3>
-      <button onclick="closeModal('modalRezepte')" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-2xl font-bold">✕</button>
-    </div>
-    <div class="space-y-4 text-xs">
-      <div class="bg-amber-50 dark:bg-amber-950/30 p-4 rounded-xl border border-amber-200 dark:border-amber-800/50 space-y-2">
-        <div class="font-extrabold text-amber-900 dark:text-amber-300">🥯 Belgische Waffeln (Pro Teigspende)</div>
-        <p class="text-slate-700 dark:text-slate-300 leading-relaxed">500g Butter, 300g Zucker, 2 Pck. Vanillezucker, 1 Prise Salz, 10 Eier, 1000g Mehl, 2 Pck. Backpulver, 400ml Milch.</p>
+    <!-- VIEW 5: FULLPAGE VERKABELUNG -->
+    <div id="viewVerkabelung" class="hidden space-y-6">
+      <div class="flex justify-between items-center bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <h2 class="font-extrabold text-lg text-sky-600 dark:text-sky-400 flex items-center gap-2">⚡ Strom- & Verkabelungsplaner</h2>
+        <button onclick="switchView('aushang')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition">⬅️ Zurück</button>
       </div>
-      <div class="bg-rose-50 dark:bg-rose-950/30 p-4 rounded-xl border border-rose-200 dark:border-rose-800/50 space-y-3">
-        <div class="flex justify-between items-center">
-          <span class="font-extrabold text-rose-900 dark:text-rose-300">☕ Kinderpunsch Rechner</span>
-          <div class="flex items-center gap-1 font-bold">
-            <input type="number" id="punschCalcInput" value="8" min="4" max="80" step="4" onchange="updatePunschRecipe()" class="w-16 p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-center bg-white dark:bg-slate-900 font-bold focus:ring-2 focus:ring-rose-500" />
-            <span>Liter</span>
+      <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div id="powerPool" class="flex flex-wrap gap-2 text-xs bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800"></div>
+      </div>
+    </div>
+
+    <!-- VIEW 6: FULLPAGE LAGERBESTAND -->
+    <div id="viewLagerbestand" class="hidden space-y-6">
+      <div class="flex justify-between items-center bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <h2 class="font-extrabold text-lg text-indigo-600 dark:text-indigo-400 flex items-center gap-2">📊 Lagerbestand Übersicht</h2>
+        <button onclick="switchView('aushang')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition">⬅️ Zurück</button>
+      </div>
+      <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="bg-slate-100 dark:bg-slate-800 font-extrabold border-b border-slate-200 dark:border-slate-700">
+              <th class="p-2.5">Kategorie</th>
+              <th class="p-2.5">Gegenstand</th>
+              <th class="p-2.5 text-center">Bedarf</th>
+              <th class="p-2.5 text-center">Auf Lager</th>
+              <th class="p-2.5 text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody id="stockTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- VIEW 7: FULLPAGE BOXENÜBERSICHT -->
+    <div id="viewBoxenuebersicht" class="hidden space-y-6">
+      <div class="flex justify-between items-center bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <h2 class="font-extrabold text-lg text-purple-600 dark:text-purple-400 flex items-center gap-2">📦 Boxenübersicht (1–12)</h2>
+        <button onclick="switchView('aushang')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition">⬅️ Zurück</button>
+      </div>
+      <div id="boxOverviewGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+    </div>
+
+    <!-- VIEW 8: FULLPAGE REZEPTE -->
+    <div id="viewRezepte" class="hidden space-y-6">
+      <div class="flex justify-between items-center bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <h2 class="font-extrabold text-lg text-rose-600 dark:text-rose-400 flex items-center gap-2">☕ Stand-Rezepte & Punschrechner</h2>
+        <button onclick="switchView('aushang')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition">⬅️ Zurück</button>
+      </div>
+      <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 text-xs">
+        <div class="bg-amber-50 dark:bg-amber-950/30 p-4 rounded-xl border border-amber-200 dark:border-amber-800/50 space-y-2">
+          <div class="font-extrabold text-amber-900 dark:text-amber-300">🥯 Belgische Waffeln (Pro Teigspende)</div>
+          <p class="text-slate-700 dark:text-slate-300 leading-relaxed">500g Butter, 300g Zucker, 2 Pck. Vanillezucker, 1 Prise Salz, 10 Eier, 1000g Mehl, 2 Pck. Backpulver, 400ml Milch.</p>
+        </div>
+        <div class="bg-rose-50 dark:bg-rose-950/30 p-4 rounded-xl border border-rose-200 dark:border-rose-800/50 space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="font-extrabold text-rose-900 dark:text-rose-300">☕ Kinderpunsch Rechner</span>
+            <div class="flex items-center gap-1 font-bold">
+              <input type="number" id="punschCalcInput" value="8" min="4" max="80" step="4" onchange="updatePunschRecipe()" class="w-16 p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-center bg-white dark:bg-slate-900 font-bold focus:ring-2 focus:ring-rose-500" />
+              <span>Liter</span>
+            </div>
+          </div>
+          <ul id="recipeIngredientsList" class="list-disc pl-4 space-y-1 font-medium text-slate-700 dark:text-slate-300"></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 9: FULLPAGE ADMIN PANEL -->
+    <div id="viewAdminpanel" class="hidden space-y-6">
+      <div class="flex justify-between items-center bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <h2 class="font-extrabold text-lg text-amber-500 flex items-center gap-2">👑 Admin Control Center</h2>
+        <button onclick="switchView('aushang')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition">⬅️ Zurück</button>
+      </div>
+
+      <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+        <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
+          <h4 class="font-extrabold text-xs text-amber-600 dark:text-amber-400 uppercase tracking-wider">📤 ROSHOP Listen Hochladen</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div class="space-y-1">
+              <label class="font-bold block">📅 Samstag Liste Upload:</label>
+              <input type="file" accept="image/*" onchange="uploadRoshopImage('samstag', this)" class="text-xs text-slate-500 block w-full cursor-pointer" />
+            </div>
+            <div class="space-y-1">
+              <label class="font-bold block">📅 Sonntag Liste Upload:</label>
+              <input type="file" accept="image/*" onchange="uploadRoshopImage('sonntag', this)" class="text-xs text-slate-500 block w-full cursor-pointer" />
+            </div>
           </div>
         </div>
-        <ul id="recipeIngredientsList" class="list-disc pl-4 space-y-1 font-medium text-slate-700 dark:text-slate-300"></ul>
-      </div>
-    </div>
-  </div>
-</div>
+        
+        <div id="adminPermissionsGrid" class="space-y-4"></div>
 
-<!-- ADMIN PANEL (MIT ROSHOP UPLOAD) -->
-<div id="modalAdminpanel" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-  <div class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-2xl max-w-3xl w-full p-6 space-y-6 max-h-[85vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-slate-800">
-    <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
-      <h3 class="font-extrabold text-base text-amber-500 flex items-center gap-2">👑 Admin Control Center</h3>
-      <button onclick="closeModal('modalAdminpanel')" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-2xl font-bold">✕</button>
-    </div>
-
-    <!-- UPLOAD SEKTION IM ADMIN PANEL -->
-    <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
-      <h4 class="font-extrabold text-xs text-amber-600 dark:text-amber-400 uppercase tracking-wider">📤 ROSHOP Listen Hochladen</h4>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-        <div class="space-y-1">
-          <label class="font-bold block">📅 Samstag Liste Upload:</label>
-          <input type="file" accept="image/*" onchange="uploadRoshopImage('samstag', this)" class="text-xs text-slate-500 block w-full cursor-pointer" />
-        </div>
-        <div class="space-y-1">
-          <label class="font-bold block">📅 Sonntag Liste Upload:</label>
-          <input type="file" accept="image/*" onchange="uploadRoshopImage('sonntag', this)" class="text-xs text-slate-500 block w-full cursor-pointer" />
+        <div class="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap gap-2 text-xs font-bold">
+          <button onclick="addNewItemPrompt()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow transition">⚙️ Item Hinzufügen</button>
+          <button onclick="downloadBackup()" class="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl shadow transition">💾 Backup Download</button>
+          <button onclick="resetSeasonPrompt()" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl shadow transition">🔄 Saison-Reset</button>
         </div>
       </div>
     </div>
-    
-    <div id="adminPermissionsGrid" class="space-y-4"></div>
 
-    <div class="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap gap-2 text-xs font-bold">
-      <button onclick="addNewItemPrompt()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow transition">⚙️ Item Hinzufügen</button>
-      <button onclick="downloadBackup()" class="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl shadow transition">💾 Backup Download</button>
-      <button onclick="resetSeasonPrompt()" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl shadow transition">🔄 Saison-Reset</button>
-    </div>
-  </div>
+  </main>
 </div>
 
 <!-- ROLE SWITCHER MODAL -->
