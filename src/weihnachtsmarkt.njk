@@ -5,138 +5,187 @@ heroSubtitle: Interaktive Vorbereitungsliste für Kinderpunsch & Waffelstand
 permalink: /weihnachtsmarkt/index.html
 ---
 
-<div class="max-w-4xl mx-auto px-4 py-8">
-  <!-- Progress Header -->
-  <div class="bg-gradient-to-r from-emerald-900 to-green-950 text-amber-300 border border-amber-500/40 rounded-2xl p-6 text-center shadow-xl mb-6">
-    <h1 class="text-2xl sm:text-3xl font-bold tracking-tight mb-2">🎄 SG Barnstorf – Weihnachtsmarkt</h1>
-    <p class="text-emerald-200/80 text-sm sm:text-base mb-4">Fortschritt eurer Standvorbereitung</p>
+<div class="max-w-6xl mx-auto px-2 sm:px-4 py-6">
+  <!-- Progress & Sync Header -->
+  <div class="bg-gradient-to-r from-emerald-900 via-green-950 to-emerald-900 text-amber-300 border border-amber-500/40 rounded-2xl p-5 shadow-xl mb-6">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">🎄 SG Barnstorf – Stand-Planung</h1>
+        <p class="text-emerald-200/80 text-xs sm:text-sm mt-1">Live synchronisiert über Vereinsspeicher</p>
+      </div>
+      <div id="syncStatus" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-950/80 border border-emerald-700/60 text-emerald-300 self-start md:self-auto">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Synchronisiert
+      </div>
+    </div>
     
     <!-- Progress Bar -->
-    <div class="w-full bg-emerald-950 rounded-full h-6 border border-emerald-800 overflow-hidden relative shadow-inner">
+    <div class="w-full bg-emerald-950 rounded-full h-5 border border-emerald-800 overflow-hidden relative shadow-inner">
       <div id="progressBar" class="bg-gradient-to-r from-amber-400 to-amber-300 h-full w-0 transition-all duration-300"></div>
-      <div id="progressText" class="absolute inset-0 flex items-center justify-center text-xs font-bold text-slate-900">0% erledigt</div>
+      <div id="progressText" class="absolute inset-0 flex items-center justify-center text-xs font-bold text-slate-950">0% erledigt</div>
     </div>
   </div>
 
   <!-- Search & Filter Controls -->
   <div class="flex flex-col sm:flex-row gap-3 mb-6">
-    <input type="text" id="searchInput" placeholder="🔍 Gegenstand oder To-Do suchen..." 
-      class="flex-1 bg-slate-900/90 border border-slate-700 text-slate-100 placeholder-slate-400 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-400 transition" />
+    <input type="text" id="searchInput" placeholder="🔍 Gegenstand, Person oder Box suchen..." 
+      class="flex-1 bg-slate-900/90 border border-slate-700 text-slate-100 placeholder-slate-400 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-400 transition" />
     <div class="flex gap-2">
-      <button onclick="setFilter('all', this)" class="filter-btn active flex-1 sm:flex-none px-4 py-3 rounded-xl border border-amber-400 bg-amber-400 text-slate-950 font-bold text-sm">Alle</button>
-      <button onclick="setFilter('open', this)" class="filter-btn flex-1 sm:flex-none px-4 py-3 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 font-medium text-sm">Offen</button>
-      <button onclick="setFilter('done', this)" class="filter-btn flex-1 sm:flex-none px-4 py-3 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 font-medium text-sm">Erledigt</button>
+      <button onclick="setFilter('all', this)" class="filter-btn active flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-amber-400 bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm">Alle</button>
+      <button onclick="setFilter('open', this)" class="filter-btn flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 font-medium text-xs sm:text-sm">Offen</button>
+      <button onclick="setFilter('done', this)" class="filter-btn flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 font-medium text-xs sm:text-sm">Erledigt</button>
     </div>
   </div>
 
-  <!-- Checklist Container -->
-  <div id="checklist" class="space-y-6"></div>
+  <!-- Checklist Container (Tables) -->
+  <div id="checklist" class="space-y-8"></div>
 
   <!-- Reset Button -->
   <div class="text-center mt-10">
     <button onclick="resetAll()" class="text-red-400 hover:text-red-300 border border-red-500/30 hover:border-red-500/60 bg-red-950/20 px-4 py-2 rounded-lg text-xs font-medium transition">
-      ⚠️ Alle Häkchen auf diesem Gerät zurücksetzen
+      ⚠️ Alle Eingaben in der Datenbank zurücksetzen
     </button>
   </div>
 </div>
 
 <style>
-  .task-card {
-    transition: all 0.2s ease;
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
-  .task-card.completed {
-    opacity: 0.5;
-  }
-  .task-card.completed .task-title {
-    text-decoration: line-through;
-  }
-  .checkbox-custom::after {
-    content: '✓';
-    font-weight: bold;
-    color: #0f1c15;
-    display: none;
-  }
-  .task-card.completed .checkbox-custom {
-    background-color: #f59e0b;
-    border-color: #f59e0b;
-  }
-  .task-card.completed .checkbox-custom::after {
-    display: block;
+  select option {
+    background-color: #0f172a;
+    color: #f8fafc;
   }
 </style>
 
 <script>
+{% raw %}
+  // Hier deine kopierte Web-App-URL aus Google Apps Script einfügen:
+  const GOOGLE_SCRIPT_URL = https://script.google.com/a/macros/sgbarnstorf.de/s/AKfycbx0J8qYfvLmKXqBsg_Km-QDp4RGk58pQfg9rDzX7kKa5iUFeVZqrCySYfxiSMM1No-W/exec;
+
   const itemsData = [
     // Orga
-    { id: 1, cat: "🏛️ Orga & Anträge", title: "Anmeldung Gemeinde", details: "Teilnahmebestätigung vorab sichern" },
-    { id: 2, cat: "🏛️ Orga & Anträge", title: "Anzeige Gaststättengewerbe", details: "Erforderliche Anträge einreichen" },
-    { id: 3, cat: "🏛️ Orga & Anträge", title: "Hütte Gemeinde", details: "Aufbauort, Tag & Uhrzeit genau abklären" },
-    { id: 4, cat: "🏛️ Orga & Anträge", title: "Helfer- & Teiglisten (Reshop)", details: "Unterstützung & Schichten koordinieren" },
+    { id: 1, cat: "🏛️ Orga & Anträge", isShop: false, title: "Anmeldung Gemeinde", details: "Teilnahmebestätigung vorab sichern" },
+    { id: 2, cat: "🏛️ Orga & Anträge", isShop: false, title: "Anzeige Gaststättengewerbe", details: "Erforderliche Anträge einreichen" },
+    { id: 3, cat: "🏛️ Orga & Anträge", isShop: false, title: "Hütte Gemeinde", details: "Aufbauort, Tag & Uhrzeit genau abklären" },
+    { id: 4, cat: "🏛️ Orga & Anträge", isShop: false, title: "Helfer- & Teiglisten (Reshop)", details: "Unterstützung & Schichten koordinieren" },
     
     // Strom & Technik
-    { id: 5, cat: "⚡ Strom, Licht & Aufbau", title: "Einkochautomaten / Punschkocher (2x)", details: "Vorab auf Funktion prüfen" },
-    { id: 6, cat: "⚡ Strom, Licht & Aufbau", title: "Waffeleisen (3x)", details: "2x SG + 1x KE" },
-    { id: 7, cat: "⚡ Strom, Licht & Aufbau", title: "Wasserkocher", details: "Für Heißwasser / schnelle Reinigung" },
-    { id: 8, cat: "⚡ Strom, Licht & Aufbau", title: "Lichterketten (Kurz, Lang, Sterne)", details: "2 Sterne, 4 normale (2 kurz / 2 lang)" },
-    { id: 9, cat: "⚡ Strom, Licht & Aufbau", title: "Mehrfachsteckdosen (3er & 5er)", details: "Für hohe Watt-Zahlen geeignet" },
-    { id: 10, cat: "⚡ Strom, Licht & Aufbau", title: "Verlängerungskabel (3m & Outdoor)", details: "Laufwege beachten" },
+    { id: 5, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Einkochautomaten / Punschkocher (2x)", details: "Vorab auf Funktion prüfen" },
+    { id: 6, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Waffeleisen (3x)", details: "2x SG + 1x KE" },
+    { id: 7, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Wasserkocher", details: "Für Heißwasser / schnelle Reinigung" },
+    { id: 8, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Lichterketten (Kurz, Lang, Sterne)", details: "2 Sterne, 4 normale (2 kurz / 2 lang)" },
+    { id: 9, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Mehrfachsteckdosen (3er & 5er)", details: "Für hohe Watt-Zahlen geeignet" },
+    { id: 10, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Verlängerungskabel (3m & Outdoor)", details: "Laufwege beachten" },
     
     // Werkzeug
-    { id: 11, cat: "🛠️ Werkzeug & Befestigung", title: "Werkzeugkiste", details: "Hammer, Schraubendreher, Nagelzange, Seitenschneider, Schere" },
-    { id: 12, cat: "🛠️ Werkzeug & Befestigung", title: "Befestigungsmaterial", details: "Kabelbinder, Draht, Heftzwecken, Kreppband, Nägel, Schrauben" },
-    { id: 13, cat: "🛠️ Werkzeug & Befestigung", title: "Beleuchtung & Sonstiges", details: "Taschenlampe / Kopflampe, Feuerzeug" },
+    { id: 11, cat: "🛠️ Werkzeug & Befestigung", isShop: false, title: "Werkzeugkiste", details: "Hammer, Schraubendreher, Nagelzange, Seitenschneider, Schere" },
+    { id: 12, cat: "🛠️ Werkzeug & Befestigung", isShop: false, title: "Befestigungsmaterial", details: "Kabelbinder, Draht, Heftzwecken, Kreppband, Nägel, Schrauben" },
+    { id: 13, cat: "🛠️ Werkzeug & Befestigung", isShop: false, title: "Beleuchtung & Sonstiges", details: "Taschenlampe / Kopflampe, Feuerzeug" },
 
     // Stand & Deko
-    { id: 14, cat: "✨ Stand-Deko & Atmosphäre", title: "SG Barnstorf Banner", details: "Gut sichtbar aufhängen" },
-    { id: 15, cat: "✨ Stand-Deko & Atmosphäre", title: "Stehtische mit Tischdecken", details: "Inkl. Servietten & Kerzengläser" },
-    { id: 16, cat: "✨ Stand-Deko & Atmosphäre", title: "Kerzen in größeren Gläsern", details: "Windgeschützt (gehen sonst aus) + Teelichter" },
-    { id: 17, cat: "✨ Stand-Deko & Atmosphäre", title: "Bodenschutz / Teppich / Malervlies", details: "Gegen kalte Füße im Stand" },
-    { id: 18, cat: "✨ Stand-Deko & Atmosphäre", title: "Deko & Zubehör", details: "Keksteller, Rezeptzettel, Weihnachtsmützen" },
+    { id: 14, cat: "✨ Stand-Deko & Atmosphäre", isShop: false, title: "SG Barnstorf Banner", details: "Gut sichtbar aufhängen" },
+    { id: 15, cat: "✨ Stand-Deko & Atmosphäre", isShop: false, title: "Stehtische mit Tischdecken", details: "Inkl. Servietten & Kerzengläser" },
+    { id: 16, cat: "✨ Stand-Deko & Atmosphäre", isShop: false, title: "Kerzen in größeren Gläsern", details: "Windgeschützt (gehen sonst aus) + Teelichter" },
+    { id: 17, cat: "✨ Stand-Deko & Atmosphäre", isShop: false, title: "Bodenschutz / Teppich / Malervlies", details: "Gegen kalte Füße im Stand" },
+    { id: 18, cat: "✨ Stand-Deko & Atmosphäre", isShop: false, title: "Deko & Zubehör", details: "Keksteller, Rezeptzettel, Weihnachtsmützen" },
 
-    // Zutaten Punsch
-    { id: 19, cat: "☕ Zutaten & Zubehör Punsch", title: "Säfte & Tee", details: "Apfelsaft (2,5l), Roter Traubensaft (2,5l), Orangensaft (1l), Wintertee (10 Btl)" },
-    { id: 20, cat: "☕ Zutaten & Zubehör Punsch", title: "Gewürze & Zutaten", details: "Glühfix (5 Btl), Zimtstangen (2 Stk)" },
-    { id: 21, cat: "☕ Zutaten & Zubehör Punsch", title: "Ausschank & Becher", details: "Thermobecher / Becher, Punschkelle (Spaghettikelle), Suppenkellen" },
+    // Zutaten Punsch (Einkauf)
+    { id: 19, cat: "☕ Zutaten & Zubehör Punsch", isShop: true, title: "Säfte & Tee", details: "Apfelsaft (2,5l), Roter Traubensaft (2,5l), Orangensaft (1l), Wintertee (10 Btl)" },
+    { id: 20, cat: "☕ Zutaten & Zubehör Punsch", isShop: true, title: "Gewürze & Zutaten", details: "Glühfix (5 Btl), Zimtstangen (2 Stk)" },
+    { id: 21, cat: "☕ Zutaten & Zubehör Punsch", isShop: false, title: "Ausschank & Becher", details: "Thermobecher / Becher, Punschkelle (Spaghettikelle), Suppenkellen" },
 
-    // Zutaten Waffeln
-    { id: 22, cat: "🧇 Zutaten & Zubehör Waffeln", title: "Teig & Zutaten", details: "Waffelteig-Spenden, Öl, Puderzucker, Spekulatius" },
-    { id: 23, cat: "🧇 Zutaten & Zubehör Waffeln", title: "Waffel-Utensilien", details: "Teigkellen, Holzgabeln, Ölpinsel inkl. Flasche, Sieb für Puderzucker" },
+    // Zutaten Waffeln (Einkauf)
+    { id: 22, cat: "🧇 Zutaten & Zubehör Waffeln", isShop: true, title: "Teig & Zutaten", details: "Waffelteig-Spenden, Öl, Puderzucker, Spekulatius" },
+    { id: 23, cat: "🧇 Zutaten & Zubehör Waffeln", isShop: false, title: "Waffel-Utensilien", details: "Teigkellen, Holzgabeln, Ölpinsel inkl. Flasche, Sieb für Puderzucker" },
 
-    // Hygiene & Reinigung
-    { id: 24, cat: "🧹 Hygiene, Reinigung & Müll", title: "Reinigungsmittel", details: "Spülmittel, Lappen, Geschirrhandtücher, Küchenrolle, Waschlappen" },
-    { id: 25, cat: "🧹 Hygiene, Reinigung & Müll", title: "Müllentsorgung", details: "Mülltüten, Steckmülleimer" },
-    { id: 26, cat: "🧹 Hygiene, Reinigung & Müll", title: "Sauberkeit & Schutz", details: "Schüssel zum Lappen waschen, Kehrblech & Handfeger, Einmalhandschuhe" },
+    // Hygiene & Reinigung (Einkauf)
+    { id: 24, cat: "🧹 Hygiene, Reinigung & Müll", isShop: true, title: "Reinigungsmittel", details: "Spülmittel, Lappen, Geschirrhandtücher, Küchenrolle, Waschlappen" },
+    { id: 25, cat: "🧹 Hygiene, Reinigung & Müll", isShop: true, title: "Müllentsorgung", details: "Mülltüten, Steckmülleimer" },
+    { id: 26, cat: "🧹 Hygiene, Reinigung & Müll", isShop: false, title: "Sauberkeit & Schutz", details: "Schüssel zum Lappen waschen, Kehrblech & Handfeger, Einmalhandschuhe" },
 
     // Kasse
-    { id: 27, cat: "💶 Kasse, Preise & Finanzen", title: "Kasse & Wechselgeld", details: "Geldtasche / Kasse mit Kleingeld-Reserve" },
-    { id: 28, cat: "💶 Kasse, Preise & Finanzen", title: "Preisschilder & Spenden", details: "Preisschilder Waffeln & Punsch (DIN A4), Spendenente" }
+    { id: 27, cat: "💶 Kasse, Preise & Finanzen", isShop: false, title: "Kasse & Wechselgeld", details: "Geldtasche / Kasse mit Kleingeld-Reserve" },
+    { id: 28, cat: "💶 Kasse, Preise & Finanzen", isShop: false, title: "Preisschilder & Spenden", details: "Preisschilder Waffeln & Punsch (DIN A4), Spendenente" }
   ];
 
-  let completedTasks = JSON.parse(localStorage.getItem('sg_wm_tasks')) || [];
+  let appState = {};
   let currentFilter = 'all';
 
-  function saveState() {
-    localStorage.setItem('sg_wm_tasks', JSON.stringify(completedTasks));
-    updateProgress();
+  function initItemState(id) {
+    if (!appState[id]) {
+      appState[id] = { status: 'Offen', assignedTo: '', packed: false, boxNum: '' };
+    }
   }
 
-  function toggleTask(id) {
-    if (completedTasks.includes(id)) {
-      completedTasks = completedTasks.filter(item => item !== id);
-    } else {
-      completedTasks.push(id);
+  itemsData.forEach(item => initItemState(item.id));
+
+  function setSyncStatus(text, colorClass) {
+    const el = document.getElementById('syncStatus');
+    if (!el) return;
+    el.className = `inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border ${colorClass}`;
+    el.innerHTML = `<span class="w-2 h-2 rounded-full bg-current animate-pulse"></span> ${text}`;
+  }
+
+  async function loadCloudData() {
+    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("HIER_DEINE")) return;
+    setSyncStatus("Lade Daten...", "bg-amber-950/80 border-amber-700/60 text-amber-300");
+    try {
+      const res = await fetch(GOOGLE_SCRIPT_URL);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Object.keys(data).length > 0) {
+          appState = data;
+          itemsData.forEach(item => initItemState(item.id));
+          setSyncStatus("Synchronisiert", "bg-emerald-950/80 border-emerald-700/60 text-emerald-300");
+          renderChecklist();
+          updateProgress();
+        }
+      }
+    } catch (e) {
+      setSyncStatus("Fehler beim Laden", "bg-red-950/80 border-red-700/60 text-red-300");
     }
+  }
+
+  let saveTimeout = null;
+  function saveState() {
+    updateProgress();
+    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("HIER_DEINE")) return;
+    setSyncStatus("Speichere...", "bg-amber-950/80 border-amber-700/60 text-amber-300");
+
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(async () => {
+      try {
+        await fetch(GOOGLE_SCRIPT_URL, {
+          method: "POST",
+          body: JSON.stringify(appState)
+        });
+        setSyncStatus("Synchronisiert", "bg-emerald-950/80 border-emerald-700/60 text-emerald-300");
+      } catch (e) {
+        setSyncStatus("Speicherfehler", "bg-red-950/80 border-red-700/60 text-red-300");
+      }
+    }, 600);
+  }
+
+  function updateItem(id, field, value) {
+    initItemState(id);
+    appState[id][field] = value;
     saveState();
     renderChecklist();
   }
 
   function updateProgress() {
     const total = itemsData.length;
-    const count = completedTasks.length;
+    const count = itemsData.filter(i => {
+      const s = appState[i.id] ? appState[i.id].status : 'Offen';
+      return s === 'Erledigt' || s === 'Eingekauft';
+    }).length;
     const percent = Math.round((count / total) * 100);
     
-    document.getElementById('progressBar').style.width = percent + '%';
-    document.getElementById('progressText').innerText = `${percent}% erledigt (${count}/${total})`;
+    const bar = document.getElementById('progressBar');
+    const txt = document.getElementById('progressText');
+    if (bar) bar.style.width = percent + '%';
+    if (txt) txt.innerText = percent + '% erledigt (' + count + '/' + total + ')';
   }
 
   function setFilter(filter, btn) {
@@ -151,18 +200,24 @@ permalink: /weihnachtsmarkt/index.html
   }
 
   function renderChecklist() {
-    const searchVal = document.getElementById('searchInput').value.toLowerCase();
+    const searchVal = (document.getElementById('searchInput')?.value || '').toLowerCase();
     const container = document.getElementById('checklist');
+    if (!container) return;
     container.innerHTML = '';
 
     const categories = [...new Set(itemsData.map(item => item.cat))];
 
     categories.forEach(cat => {
       const catItems = itemsData.filter(item => {
+        initItemState(item.id);
+        const state = appState[item.id];
         const matchesCat = item.cat === cat;
-        const matchesSearch = item.title.toLowerCase().includes(searchVal) || item.details.toLowerCase().includes(searchVal);
-        const isDone = completedTasks.includes(item.id);
+        const matchesSearch = item.title.toLowerCase().includes(searchVal) || 
+                              item.details.toLowerCase().includes(searchVal) ||
+                              (state.assignedTo && state.assignedTo.toLowerCase().includes(searchVal)) ||
+                              (state.boxNum && state.boxNum.toLowerCase().includes(searchVal));
         
+        const isDone = state.status === 'Erledigt' || state.status === 'Eingekauft';
         let matchesFilter = true;
         if (currentFilter === 'open') matchesFilter = !isDone;
         if (currentFilter === 'done') matchesFilter = isDone;
@@ -171,49 +226,106 @@ permalink: /weihnachtsmarkt/index.html
       });
 
       if (catItems.length > 0) {
-        const catBox = document.createElement('div');
-        
-        const catTitle = document.createElement('h2');
-        catTitle.className = 'text-lg font-bold text-amber-400 mb-3 flex items-center gap-2';
-        catTitle.innerText = cat;
-        catBox.appendChild(catTitle);
+        const catWrapper = document.createElement('div');
+        catWrapper.className = 'bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-lg';
 
-        const taskList = document.createElement('div');
-        taskList.className = 'grid grid-cols-1 gap-2.5';
+        const catTitle = document.createElement('h2');
+        catTitle.className = 'text-lg font-bold text-amber-400 mb-4 flex items-center gap-2 border-b border-slate-800 pb-2';
+        catTitle.innerText = cat;
+        catWrapper.appendChild(catTitle);
+
+        const tableContainer = document.createElement('div');
+        tableContainer.className = 'table-container';
+
+        const table = document.createElement('table');
+        table.className = 'w-full text-left text-xs sm:text-sm text-slate-200 border-collapse min-w-[650px]';
+
+        table.innerHTML = `
+          <thead>
+            <tr class="border-b border-slate-700/80 text-slate-400 text-xs uppercase tracking-wider">
+              <th class="py-2.5 px-2 w-[24%]">Gegenstand / Details</th>
+              <th class="py-2.5 px-2 w-[18%]">Status</th>
+              <th class="py-2.5 px-2 w-[22%]">Verteilt an</th>
+              <th class="py-2.5 px-2 w-[16%] text-center">Eingepackt?</th>
+              <th class="py-2.5 px-2 w-[20%]">Box-Nr.</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60"></tbody>
+        `;
+
+        const tbody = table.querySelector('tbody');
 
         catItems.forEach(item => {
-          const isDone = completedTasks.includes(item.id);
-          const card = document.createElement('div');
-          card.className = `task-card ${isDone ? 'completed' : ''} bg-slate-900/80 border border-slate-800 hover:border-amber-500/50 rounded-xl p-3.5 flex items-start gap-3 cursor-pointer select-none`;
-          card.onclick = () => toggleTask(item.id);
+          const state = appState[item.id];
+          const isDone = state.status === 'Erledigt' || state.status === 'Eingekauft';
+          
+          const tr = document.createElement('tr');
+          tr.className = `hover:bg-slate-800/40 transition ${isDone ? 'opacity-60 bg-emerald-950/10' : ''}`;
 
-          card.innerHTML = `
-            <div class="checkbox-custom w-6 h-6 border-2 border-amber-400 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"></div>
-            <div class="flex-1">
-              <div class="task-title font-semibold text-slate-100 text-sm sm:text-base">${item.title}</div>
-              <div class="text-xs sm:text-sm text-slate-400 mt-0.5">${item.details}</div>
-            </div>
+          const statusOptions = item.isShop 
+            ? ['Offen', 'Vorbereitet', 'Verteilt', 'Eingekauft']
+            : ['Offen', 'Vorbereitet', 'Verteilt', 'Erledigt'];
+
+          tr.innerHTML = `
+            <td class="py-3 px-2">
+              <div class="font-semibold ${isDone ? 'line-through text-slate-400' : 'text-slate-100'}">${item.title}</div>
+              <div class="text-xs text-slate-400">${item.details}</div>
+            </td>
+            <td class="py-3 px-2">
+              <select onchange="updateItem(${item.id}, 'status', this.value)" 
+                class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-100 focus:border-amber-400 focus:outline-none w-full">
+                ${statusOptions.map(opt => `<option value="${opt}" ${state.status === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+              </select>
+            </td>
+            <td class="py-3 px-2">
+              <input type="text" placeholder="Name eintragen..." value="${state.assignedTo || ''}"
+                onchange="updateItem(${item.id}, 'assignedTo', this.value)"
+                class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-100 placeholder-slate-500 focus:border-amber-400 focus:outline-none w-full" />
+            </td>
+            <td class="py-3 px-2 text-center">
+              <input type="checkbox" ${state.packed ? 'checked' : ''} 
+                onchange="updateItem(${item.id}, 'packed', this.checked)"
+                class="w-5 h-5 accent-amber-400 rounded cursor-pointer" />
+            </td>
+            <td class="py-3 px-2">
+              <input type="text" placeholder="z.B. Box 1" value="${state.boxNum || ''}"
+                onchange="updateItem(${item.id}, 'boxNum', this.value)"
+                class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-100 placeholder-slate-500 focus:border-amber-400 focus:outline-none w-full" />
+            </td>
           `;
-          taskList.appendChild(card);
+          tbody.appendChild(tr);
         });
 
-        catBox.appendChild(taskList);
-        container.appendChild(catBox);
+        tableContainer.appendChild(table);
+        catWrapper.appendChild(tableContainer);
+        container.appendChild(catWrapper);
       }
     });
   }
 
   function resetAll() {
-    if (confirm("Möchtest du wirklich alle abgehakten Punkte zurücksetzen?")) {
-      completedTasks = [];
+    if (confirm("Möchtest du wirklich alle Eingaben in der Datenbank zurücksetzen?")) {
+      appState = {};
+      itemsData.forEach(item => initItemState(item.id));
       saveState();
       renderChecklist();
     }
   }
 
-  document.getElementById('searchInput').addEventListener('input', renderChecklist);
-  document.addEventListener('DOMContentLoaded', () => {
+  function initChecklist() {
+    const input = document.getElementById('searchInput');
+    if (input) input.addEventListener('input', renderChecklist);
     renderChecklist();
     updateProgress();
-  });
+    loadCloudData();
+    // Alle 10 Sekunden automatisch im Hintergrund aktualisieren
+    setInterval(loadCloudData, 10000);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initChecklist);
+  } else {
+    initChecklist();
+  }
+{% endraw %}
 </script>
