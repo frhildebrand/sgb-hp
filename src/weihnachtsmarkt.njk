@@ -8,72 +8,143 @@ permalink: /weihnachtsmarkt/index.html
 <!-- Tailwind CSS Fallback CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
 
-<div class="max-w-6xl mx-auto px-2 sm:px-4 py-6 font-sans text-slate-800">
+<div class="max-w-6xl mx-auto px-2 sm:px-4 py-6 font-sans text-slate-800 print:p-0 print:max-w-none">
   
+  <!-- Live Notice Banner (Falls vom Admin gesetzt) -->
+  <div id="noticeBanner" class="hidden bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white rounded-2xl p-4 shadow-lg mb-6 flex items-center justify-between gap-3 animate-pulse print:hidden">
+    <div class="flex items-center gap-3">
+      <span class="text-2xl">📢</span>
+      <div>
+        <span class="font-extrabold uppercase text-xs tracking-wider opacity-90 block">Wichtige Durchsage</span>
+        <p id="noticeBannerText" class="text-sm font-bold sm:text-base"></p>
+      </div>
+    </div>
+    <button onclick="dismissNotice()" class="text-white/80 hover:text-white font-bold p-1 text-sm bg-black/10 rounded-lg px-2">Schließen</button>
+  </div>
+
   <!-- Header -->
-  <div class="bg-gradient-to-r from-emerald-50 via-green-100 to-emerald-50 text-slate-900 border border-emerald-200 rounded-2xl p-6 text-center shadow-md mb-6">
-    <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight mb-2 text-emerald-900">🎄 SG Barnstorf – Stand-Planung</h1>
-    <p class="text-slate-600 text-sm sm:text-base mb-4 max-w-xl mx-auto">Vorbereitungsliste für Kinderpunsch & Waffelstand am 1. Advent</p>
+  <div class="bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900 text-white rounded-3xl p-6 sm:p-8 text-center shadow-xl mb-6 relative overflow-hidden print:hidden">
+    <!-- Dekorative Blurs -->
+    <div class="absolute -top-12 -left-12 w-40 h-40 bg-emerald-500/20 rounded-full blur-2xl"></div>
+    <div class="absolute -bottom-12 -right-12 w-40 h-40 bg-amber-500/20 rounded-full blur-2xl"></div>
+
+    <!-- Header Top Row (Role Badge & Admin Switch) -->
+    <div class="flex items-center justify-between gap-2 mb-4 relative z-10">
+      <div id="roleBadge" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-white/10 backdrop-blur-md border border-white/20 text-emerald-100 flex items-center gap-1.5 shadow-sm">
+        👁️ Rolle: Betrachter
+      </div>
+      
+      <div class="flex items-center gap-2">
+        <span id="syncStatus" class="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-emerald-200">
+          🟢 Synced
+        </span>
+        <button id="adminToggleBtn" onclick="toggleRoleModal()" class="px-3 py-1.5 rounded-xl text-xs font-extrabold transition shadow-md flex items-center gap-1.5 bg-amber-400 text-slate-950 hover:bg-amber-300">
+          🔑 Rolle / Login
+        </button>
+      </div>
+    </div>
+
+    <h1 class="text-2xl sm:text-4xl font-black tracking-tight mb-2 text-amber-300 drop-shadow-sm">🎄 SG Barnstorf – Stand-Planung</h1>
+    <p class="text-emerald-100/90 text-sm sm:text-base mb-6 max-w-xl mx-auto font-medium">Vorbereitungsliste & Stand-Kasse für Kinderpunsch & Waffelstand am 1. Advent</p>
     
     <!-- Progress Bar -->
-    <div class="max-w-xl mx-auto bg-slate-200 rounded-full h-6 border border-slate-300 overflow-hidden relative shadow-inner mb-5">
-      <div id="progressBar" class="bg-gradient-to-r from-emerald-500 to-green-600 h-full w-0 transition-all duration-300"></div>
-      <div id="progressText" class="absolute inset-0 flex items-center justify-center text-xs sm:text-sm font-bold text-slate-900">0% erledigt</div>
+    <div class="max-w-xl mx-auto bg-black/20 backdrop-blur-md rounded-full h-6 border border-white/10 overflow-hidden relative shadow-inner mb-6">
+      <div id="progressBar" class="bg-gradient-to-r from-amber-400 via-amber-300 to-emerald-400 h-full w-0 transition-all duration-500"></div>
+      <div id="progressText" class="absolute inset-0 flex items-center justify-center text-xs sm:text-sm font-black text-white drop-shadow">0% erledigt</div>
     </div>
 
     <!-- Action Buttons -->
-    <div class="flex flex-wrap justify-center gap-3">
-      <button onclick="openShoppingModal()" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-amber-600 text-white hover:bg-amber-700 transition shadow-sm flex items-center gap-2">
+    <div class="flex flex-wrap justify-center gap-2.5 relative z-10">
+      <button onclick="openShoppingModal()" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 transition shadow-md flex items-center gap-2">
         🛒 Einkaufsliste & Preise
       </button>
-      <button onclick="openWiringModal()" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-sky-700 text-white hover:bg-sky-800 transition shadow-sm flex items-center gap-2">
-        ⚡ Strom & Kabel-Planer
+      <button onclick="openWiringModal()" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-sky-500/20 backdrop-blur-md border border-sky-300/30 text-sky-100 hover:bg-sky-500/30 transition shadow-md flex items-center gap-2">
+        ⚡ Strom-Planer
       </button>
-      <button onclick="openStockModal()" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-indigo-700 text-white hover:bg-indigo-800 transition shadow-sm flex items-center gap-2">
+      <button onclick="openStockModal()" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-indigo-500/20 backdrop-blur-md border border-indigo-300/30 text-indigo-100 hover:bg-indigo-500/30 transition shadow-md flex items-center gap-2">
         📊 Lagerbestand
       </button>
-      <button onclick="openBoxOverview()" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-emerald-700 text-white hover:bg-emerald-800 transition shadow-sm flex items-center gap-2">
+      <button onclick="openBoxOverview()" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-emerald-500/20 backdrop-blur-md border border-emerald-300/30 text-emerald-100 hover:bg-emerald-500/30 transition shadow-md flex items-center gap-2">
         📦 Boxen-Übersicht
+      </button>
+      <button onclick="window.print()" class="px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-white/10 hover:bg-white/20 text-white transition shadow-md flex items-center gap-2">
+        🖨️ Drucken
       </button>
     </div>
   </div>
 
-  <!-- Helfer- & Teigspenden Aushang Vorschau (ROSHOP) -->
-  <div class="bg-amber-50/90 border border-amber-200 rounded-2xl p-4 sm:p-5 shadow-sm mb-6">
+  <!-- Admin Panel Bar (Nur sichtbar im Admin-Modus) -->
+  <div id="adminPanel" class="hidden bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 border-2 border-amber-300 rounded-3xl p-5 shadow-lg mb-6 print:hidden">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-amber-200/80 pb-3 mb-4">
+      <span class="font-extrabold text-amber-950 text-base flex items-center gap-2">⚙️ Admin Control-Center</span>
+      <div class="flex flex-wrap gap-2">
+        <button onclick="openCreateItemModal()" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-700 text-white hover:bg-emerald-800 transition shadow-sm">➕ Neuer Gegenstand</button>
+        <button onclick="syncIngredientsToShoppingList()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-amber-700 text-white hover:bg-amber-800 transition">🛒 Punsch-Zutaten synchronisieren</button>
+        <button onclick="setGlobalNotice()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-orange-600 text-white hover:bg-orange-700 transition">📢 Durchsage / Notice setzen</button>
+        <button onclick="exportDataJSON()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-700 text-white hover:bg-slate-800 transition">💾 Backup</button>
+        <button onclick="importDataJSON()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-700 text-white hover:bg-slate-800 transition">📂 Import</button>
+        <button onclick="changeAdminPassword()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-sky-700 text-white hover:bg-sky-800 transition">🔑 PW Ändern</button>
+        <button onclick="resetSeason()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 text-white hover:bg-red-700 transition">🔄 Saison-Reset</button>
+      </div>
+    </div>
+
+    <!-- Admin Sub-Section: Audit-Logbuch -->
+    <div class="bg-white/80 backdrop-blur border border-amber-200/60 rounded-2xl p-3.5 text-xs text-slate-700">
+      <div class="flex justify-between items-center mb-2">
+        <span class="font-bold text-amber-950 flex items-center gap-1.5">⏱️ Aktivitäten-Logbuch (Letzte 10 Aktionen)</span>
+        <button onclick="clearActivityLog()" class="text-[10px] text-slate-400 hover:text-slate-600 underline">Log leeren</button>
+      </div>
+      <ul id="activityLogList" class="space-y-1 font-mono text-[11px] text-slate-600 max-h-28 overflow-y-auto">
+        <li class="italic text-slate-400">Noch keine Aktivitäten in dieser Sitzung.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ROSHOP Aushang -->
+  <div class="bg-amber-50/80 border border-amber-200/80 rounded-3xl p-5 shadow-sm mb-6 print:hidden">
     <div class="flex items-center gap-3 mb-4">
       <span class="text-2xl">📌</span>
       <div>
         <h3 class="font-bold text-slate-900 text-sm sm:text-base">Aktueller Aushang bei ROSHOP (Helfer & Teigspenden)</h3>
-        <p class="text-xs sm:text-sm text-slate-600">Fotos/Scans der ausgehängten Listen für Samstag und Sonntag:</p>
+        <p class="text-xs text-slate-600">Fotos/Scans der ausgehängten Listen für Samstag und Sonntag:</p>
       </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div class="bg-white border border-amber-200 rounded-xl p-3 text-center">
+      <div class="bg-white border border-amber-200/60 rounded-2xl p-3 text-center shadow-xs">
         <span class="font-bold text-xs sm:text-sm text-amber-900 block mb-2">📅 Samstag (1. Adventswochenende)</span>
-        <div class="bg-slate-50 border border-slate-100 rounded-lg p-2 flex justify-center items-center overflow-hidden min-h-[220px]">
-          <img src="/images/roshop_samstag.jpg" alt="Aushang Samstag" class="max-h-[500px] w-auto object-contain rounded shadow-sm" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'py-12 text-amber-700/70 text-xs italic\'>📷 Noch kein Foto für <b>Samstag</b> hochgeladen.</div>';" />
+        <div class="bg-slate-50 border border-slate-100 rounded-xl p-2 flex justify-center items-center overflow-hidden min-h-[200px]">
+          <img src="/images/roshop_samstag.jpg" alt="Aushang Samstag" class="max-h-[450px] w-auto object-contain rounded shadow-sm" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'py-12 text-amber-700/70 text-xs italic\'>📷 Noch kein Foto für <b>Samstag</b> hochgeladen.</div>';" />
         </div>
       </div>
-      <div class="bg-white border border-amber-200 rounded-xl p-3 text-center">
+      <div class="bg-white border border-amber-200/60 rounded-2xl p-3 text-center shadow-xs">
         <span class="font-bold text-xs sm:text-sm text-amber-900 block mb-2">📅 Sonntag (1. Adventswochenende)</span>
-        <div class="bg-slate-50 border border-slate-100 rounded-lg p-2 flex justify-center items-center overflow-hidden min-h-[220px]">
-          <img src="/images/roshop_sonntag.jpg" alt="Aushang Sonntag" class="max-h-[500px] w-auto object-contain rounded shadow-sm" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'py-12 text-amber-700/70 text-xs italic\'>📷 Noch kein Foto für <b>Sonntag</b> hochgeladen.</div>';" />
+        <div class="bg-slate-50 border border-slate-100 rounded-xl p-2 flex justify-center items-center overflow-hidden min-h-[200px]">
+          <img src="/images/roshop_sonntag.jpg" alt="Aushang Sonntag" class="max-h-[450px] w-auto object-contain rounded shadow-sm" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'py-12 text-amber-700/70 text-xs italic\'>📷 Noch kein Foto für <b>Sonntag</b> hochgeladen.</div>';" />
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Rezepte Sektion (Aktualisierte Rezepte aus den Vorlagen) -->
-  <div class="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-sm mb-6">
-    <h2 class="text-lg font-bold text-emerald-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-2">📜 Stand-Rezepte & Mengenangaben</h2>
+  <!-- Rezepte & Punsch-Skalierer -->
+  <div class="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-sm mb-6 print:break-inside-avoid">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3 mb-4">
+      <h2 class="text-lg font-bold text-emerald-950 flex items-center gap-2">📜 Stand-Rezepte</h2>
+      <div class="flex items-center gap-2 text-xs bg-emerald-50/60 px-3 py-1.5 rounded-xl border border-emerald-200">
+        <span class="font-bold text-emerald-900">☕ Punsch-Rechner:</span>
+        <label class="flex items-center gap-1.5 font-semibold text-slate-700">
+          Ziel-Menge:
+          <input type="number" id="punschLiters" value="8" min="1" max="200" step="1" onchange="updateRecipeScaling()" class="w-16 border border-slate-300 rounded-lg text-center py-0.5 text-xs font-bold bg-white focus:outline-none focus:border-emerald-500" /> Liter
+        </label>
+      </div>
+    </div>
+
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      
-      <!-- Belgische Waffeln -->
-      <div class="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 text-xs sm:text-sm">
-        <div class="flex items-center gap-2 font-bold text-emerald-900 text-sm sm:text-base mb-2"><span>🧇</span> Belgische Waffeln</div>
-        <p class="text-slate-600 mb-2 text-xs italic">Bitte eine ausreichend große Schüssel benutzen (2l reichen nicht)!</p>
-        <ul class="list-disc list-inside space-y-1 text-slate-700 mb-3">
+      <!-- Waffeln -->
+      <div class="bg-emerald-50/40 border border-emerald-100 rounded-2xl p-4 text-xs sm:text-sm">
+        <div class="flex items-center gap-2 font-bold text-emerald-900 text-sm sm:text-base mb-2"><span>🧇</span> Belgische Waffeln (Spenden-Rezept)</div>
+        <p class="text-slate-500 mb-2 text-xs italic">Bitte eine ausreichend große Schüssel benutzen (2l reichen nicht)!</p>
+        <ul class="list-disc list-inside space-y-1 text-slate-700 mb-3 font-medium">
           <li><b>5</b> Eier</li>
           <li><b>300 g</b> Zucker</li>
           <li><b>2 Pck.</b> Vanillezucker</li>
@@ -84,49 +155,89 @@ permalink: /weihnachtsmarkt/index.html
           <li><b>200 ml</b> Milch</li>
         </ul>
         <div class="border-t border-emerald-200/60 pt-2 text-slate-600 space-y-1 text-[11px]">
-          <p><b>Zubereitung:</b></p>
-          <p>1. Eier, Zucker, Vanillezucker, Salz verrühren, bis der Zucker aufgelöst & schaumig ist.</p>
-          <p>2. Weiche Butter dazu und kurz unterrühren.</p>
-          <p>3. Mehl mit Backpulver vermischen und mit Milch zur Masse geben und gut unterrühren.</p>
+          <p><b>Zubereitung:</b> Eier, Zucker, Vanillezucker, Salz schaumig schlagen. Weiche Butter einrühren. Mehl + Backpulver mit Milch abwechselnd unterrühren.</p>
         </div>
       </div>
 
-      <!-- Winter-Kinderpunsch -->
-      <div class="bg-red-50/50 border border-red-100 rounded-xl p-4 text-xs sm:text-sm">
-        <div class="flex items-center gap-2 font-bold text-red-900 text-sm sm:text-base mb-2"><span>☕</span> Winter-Kinderpunsch (ca. 8 Liter)</div>
-        <p class="text-slate-600 mb-2 text-xs italic">Im Einkochautomaten erhitzen – nicht kochen lassen!</p>
-        <ul class="list-disc list-inside space-y-1 text-slate-700 mb-3">
-          <li><b>2,0 l</b> Wasser</li>
-          <li><b>10 Btl.</b> Wintertee</li>
-          <li><b>1,0 l</b> Orangensaft</li>
-          <li><b>2,5 l</b> Apfelsaft</li>
-          <li><b>2,5 l</b> Roter Traubensaft</li>
-          <li><b>2 Stk.</b> Zimtstangen <i>(nicht kaufen)</i></li>
-          <li><b>5 Btl.</b> Glühfix</li>
-        </ul>
+      <!-- Kinderpunsch -->
+      <div class="bg-red-50/40 border border-red-100 rounded-2xl p-4 text-xs sm:text-sm">
+        <div class="flex items-center gap-2 font-bold text-red-900 text-sm sm:text-base mb-2"><span>☕</span> Winter-Kinderpunsch (<span id="punschLitersLabel">8 Liter</span>)</div>
+        <p class="text-slate-500 mb-2 text-xs italic">Im Einkochautomaten erhitzen – nicht kochen lassen!</p>
+        <ul id="punschRecipeList" class="list-disc list-inside space-y-1 text-slate-700 mb-3 font-medium"></ul>
         <div class="border-t border-red-200/60 pt-2 text-slate-600 space-y-1 text-[11px]">
-          <p><b>Zubereitung:</b></p>
-          <p>1. Tee kochen – ziehen lassen, Beutel raus.</p>
-          <p>2. Rest nach und nach zugeben.</p>
-          <p>3. Ziehen lassen.</p>
+          <p><b>Zubereitung:</b> Tee kochen, ziehen lassen, Beutel entfernen. Säfte & Glühfix zugeben und langsam erhitzen.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Verkaufsstatistik & Stand-Kasse -->
+  <div class="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-sm mb-6 print:hidden">
+    <h2 class="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2 border-b border-slate-100 pb-2">📈 Verkaufsstatistik & Stand-Kasse</h2>
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs sm:text-sm mb-4">
+      <div class="bg-slate-50 border border-slate-200/60 p-3 rounded-2xl">
+        <label class="block font-bold text-slate-700 mb-1">Tassen Punsch:</label>
+        <div class="flex items-center gap-1.5">
+          <input type="number" id="soldPunsch" value="0" min="0" onchange="calculateSalesStats()" class="role-helfer-field w-16 border border-slate-300 rounded-lg p-1.5 text-center font-bold text-slate-900 focus:outline-none" />
+          <span class="text-slate-400">x</span>
+          <input type="number" step="0.50" id="pricePunsch" value="2.50" onchange="calculateSalesStats()" class="role-orga-field w-16 border border-slate-300 rounded-lg p-1.5 text-right font-bold text-slate-900 focus:outline-none" /> €
         </div>
       </div>
 
+      <div class="bg-slate-50 border border-slate-200/60 p-3 rounded-2xl">
+        <label class="block font-bold text-slate-700 mb-1">Verkaufte Waffeln:</label>
+        <div class="flex items-center gap-1.5">
+          <input type="number" id="soldWaffles" value="0" min="0" onchange="calculateSalesStats()" class="role-helfer-field w-16 border border-slate-300 rounded-lg p-1.5 text-center font-bold text-slate-900 focus:outline-none" />
+          <span class="text-slate-400">x</span>
+          <input type="number" step="0.50" id="priceWaffles" value="2.00" onchange="calculateSalesStats()" class="role-orga-field w-16 border border-slate-300 rounded-lg p-1.5 text-right font-bold text-slate-900 focus:outline-none" /> €
+        </div>
+      </div>
+
+      <div class="bg-slate-50 border border-slate-200/60 p-3 rounded-2xl">
+        <label class="block font-bold text-slate-700 mb-1">Standgebühr (Fixkosten):</label>
+        <div class="flex items-center gap-1">
+          <input type="number" step="1.00" id="standFee" value="0.00" min="0" onchange="calculateSalesStats()" class="role-orga-field w-20 border border-slate-300 rounded-lg p-1.5 text-right font-bold text-slate-900 focus:outline-none" /> €
+        </div>
+      </div>
+
+      <div class="bg-slate-50 border border-slate-200/60 p-3 rounded-2xl">
+        <label class="block font-bold text-slate-700 mb-1">Sonstiges / Spenden:</label>
+        <div class="flex items-center gap-1">
+          <input type="number" step="1.00" id="otherRevenue" value="0.00" onchange="calculateSalesStats()" class="role-helfer-field w-20 border border-slate-300 rounded-lg p-1.5 text-right font-bold text-slate-900 focus:outline-none" /> €
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Kassen-Ergebnis -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center border-t border-slate-100 pt-3">
+      <div class="bg-blue-50/80 border border-blue-200/60 p-3 rounded-2xl">
+        <span class="block text-xs font-bold text-blue-800 uppercase tracking-wider">Einnahmen (Brutto)</span>
+        <span id="statRevenue" class="text-lg font-black text-blue-950">0,00 €</span>
+      </div>
+      <div class="bg-amber-50/80 border border-amber-200/60 p-3 rounded-2xl">
+        <span class="block text-xs font-bold text-amber-800 uppercase tracking-wider">Gesamtkosten (Einkauf + Gebühr)</span>
+        <span id="statExpenses" class="text-lg font-black text-amber-950">0,00 €</span>
+      </div>
+      <div class="bg-emerald-50/80 border border-emerald-200/60 p-3 rounded-2xl">
+        <span class="block text-xs font-bold text-emerald-800 uppercase tracking-wider">Reingewinn (SG Jugend)</span>
+        <span id="statProfit" class="text-lg font-black text-emerald-950">0,00 €</span>
+      </div>
     </div>
   </div>
 
   <!-- Suche & Status-Filter -->
-  <div class="space-y-4 mb-8">
+  <div class="space-y-4 mb-8 print:hidden">
     <input type="text" id="searchInput" placeholder="🔍 Gegenstand, Person, Menge oder Box suchen..." 
-      class="w-full bg-white border border-slate-300 text-slate-900 placeholder-slate-400 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 transition shadow-sm" />
+      class="w-full bg-white border border-slate-300 text-slate-900 placeholder-slate-400 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:border-emerald-500 transition shadow-sm" />
     
     <div class="flex flex-wrap justify-center gap-2" id="filterContainer">
-      <button onclick="setFilter('all', this)" class="filter-btn active px-3.5 py-2 rounded-xl border border-emerald-600 bg-emerald-600 text-white font-bold text-xs sm:text-sm shadow-sm">Alle</button>
-      <button onclick="setFilter('Offen', this)" class="filter-btn px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-red-600 font-medium text-xs sm:text-sm hover:border-red-400">Offen</button>
-      <button onclick="setFilter('Vorbereitet', this)" class="filter-btn px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-amber-600 font-medium text-xs sm:text-sm hover:border-amber-400">Vorbereitet</button>
-      <button onclick="setFilter('Verteilt', this)" class="filter-btn px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-sky-600 font-medium text-xs sm:text-sm hover:border-sky-400">Verteilt</button>
-      <button onclick="setFilter('Eingekauft', this)" class="filter-btn px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-emerald-600 font-medium text-xs sm:text-sm hover:border-emerald-400">Eingekauft</button>
-      <button onclick="setFilter('Erledigt', this)" class="filter-btn px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-emerald-600 font-medium text-xs sm:text-sm hover:border-emerald-400">Erledigt</button>
+      <button onclick="setFilter('all', this)" class="filter-btn active px-4 py-2 rounded-xl border border-emerald-600 bg-emerald-600 text-white font-bold text-xs sm:text-sm shadow-sm">Alle</button>
+      <button onclick="setFilter('Offen', this)" class="filter-btn px-4 py-2 rounded-xl border border-slate-200 bg-white text-red-600 font-medium text-xs sm:text-sm hover:border-red-400">Offen</button>
+      <button onclick="setFilter('Vorbereitet', this)" class="filter-btn px-4 py-2 rounded-xl border border-slate-200 bg-white text-amber-600 font-medium text-xs sm:text-sm hover:border-amber-400">Vorbereitet</button>
+      <button onclick="setFilter('Verteilt', this)" class="filter-btn px-4 py-2 rounded-xl border border-slate-200 bg-white text-sky-600 font-medium text-xs sm:text-sm hover:border-sky-400">Verteilt</button>
+      <button onclick="setFilter('Eingekauft', this)" class="filter-btn px-4 py-2 rounded-xl border border-slate-200 bg-white text-emerald-600 font-medium text-xs sm:text-sm hover:border-emerald-400">Eingekauft</button>
+      <button onclick="setFilter('Erledigt', this)" class="filter-btn px-4 py-2 rounded-xl border border-slate-200 bg-white text-emerald-600 font-medium text-xs sm:text-sm hover:border-emerald-400">Erledigt</button>
     </div>
   </div>
 
@@ -135,13 +246,84 @@ permalink: /weihnachtsmarkt/index.html
 
 </div>
 
+<!-- Modal: Rollen-Wechsel & Login -->
+<div id="roleModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 print:hidden">
+  <div class="bg-white border border-slate-200 rounded-3xl max-w-sm w-full p-6 shadow-2xl">
+    <h3 class="text-lg font-bold text-slate-900 mb-2">🔑 Rollen-Wechsel</h3>
+    <p class="text-xs text-slate-500 mb-4">Wähle deine Zugriffsrolle für die Bearbeitung aus:</p>
+
+    <div class="space-y-2 mb-6">
+      <button onclick="selectRole('betrachter')" class="w-full text-left p-3 rounded-2xl border border-slate-200 hover:border-emerald-500 transition flex items-center justify-between">
+        <div>
+          <span class="font-bold text-slate-900 text-sm block">👁️ Betrachter</span>
+          <span class="text-[11px] text-slate-500">Nur Lesen (Smartphone-Sicher)</span>
+        </div>
+      </button>
+
+      <button onclick="selectRole('helfer')" class="w-full text-left p-3 rounded-2xl border border-slate-200 hover:border-emerald-500 transition flex items-center justify-between">
+        <div>
+          <span class="font-bold text-slate-900 text-sm block">🤝 Helfer</span>
+          <span class="text-[11px] text-slate-500">Kann Gepackt-Haken & Kasse bedienen</span>
+        </div>
+      </button>
+
+      <button onclick="selectRole('orga')" class="w-full text-left p-3 rounded-2xl border border-slate-200 hover:border-emerald-500 transition flex items-center justify-between">
+        <div>
+          <span class="font-bold text-slate-900 text-sm block">📋 Orga-Team</span>
+          <span class="text-[11px] text-slate-500">Status, Mengen & Namen anpassen</span>
+        </div>
+      </button>
+
+      <button onclick="promptAdminLogin()" class="w-full text-left p-3 rounded-2xl border border-amber-300 bg-amber-50 hover:border-amber-500 transition flex items-center justify-between">
+        <div>
+          <span class="font-bold text-amber-950 text-sm block">🔒 Admin (Passwortgeschützt)</span>
+          <span class="text-[11px] text-amber-800">Vollzugriff, Artikel-Löschen, Reset</span>
+        </div>
+      </button>
+    </div>
+
+    <button onclick="closeRoleModal()" class="w-full py-2.5 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 text-xs">Schließen</button>
+  </div>
+</div>
+
+<!-- Modal: Admin Item Erstellen/Bearbeiten -->
+<div id="itemModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 print:hidden">
+  <div class="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl">
+    <h3 id="itemModalTitle" class="text-lg font-bold text-slate-900 mb-4">Gegenstand bearbeiten</h3>
+    
+    <div class="space-y-4 text-xs sm:text-sm">
+      <div>
+        <label class="block font-semibold text-slate-700 mb-1">Name des Gegenstands:</label>
+        <input type="text" id="modalItemTitle" class="w-full border border-slate-300 rounded-xl p-2.5 focus:border-emerald-500 focus:outline-none" />
+      </div>
+
+      <div>
+        <label class="block font-semibold text-slate-700 mb-1">Kategorie:</label>
+        <select id="modalItemCat" onchange="handleCatSelectChange(this)" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white focus:border-emerald-500 focus:outline-none">
+        </select>
+        <input type="text" id="modalCustomCat" placeholder="Neue Kategorie eingeben..." class="w-full border border-slate-300 rounded-xl p-2.5 mt-2 hidden focus:border-emerald-500 focus:outline-none" />
+      </div>
+
+      <div>
+        <label class="block font-semibold text-slate-700 mb-1">Zusatzdetails / Hinweistext (optional):</label>
+        <input type="text" id="modalItemDetails" placeholder="z. B. Verpackungs-Tipp..." class="w-full border border-slate-300 rounded-xl p-2.5 focus:border-emerald-500 focus:outline-none" />
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-2 mt-6">
+      <button onclick="closeItemModal()" class="px-4 py-2 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 text-xs sm:text-sm">Abbrechen</button>
+      <button onclick="saveItemFromModal()" class="px-4 py-2 bg-emerald-700 text-white font-bold rounded-xl hover:bg-emerald-800 text-xs sm:text-sm">Speichern</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: Einkaufsliste -->
-<div id="shoppingModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-  <div class="bg-white border border-slate-200 rounded-2xl max-w-5xl w-full max-h-[90vh] flex flex-col shadow-2xl">
-    <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-amber-50 rounded-t-2xl">
+<div id="shoppingModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 print:hidden">
+  <div class="bg-white border border-slate-200 rounded-3xl max-w-5xl w-full max-h-[90vh] flex flex-col shadow-2xl">
+    <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-amber-50 rounded-t-3xl">
       <div>
         <h2 class="text-lg font-bold text-amber-900 flex items-center gap-2">🛒 Interaktive Einkaufsliste & Preise</h2>
-        <p class="text-xs text-amber-800/80 mt-0.5">Gib Packungsgrößen & Einzelpreise ein. Die Gesamtmenge und Kosten berechnen sich automatisch!</p>
+        <p class="text-xs text-amber-800/80 mt-0.5">Packungsgrößen & Einzelpreise eingeben. Gesamtmenge und Kosten berechnen sich automatisch!</p>
       </div>
       <button onclick="closeShoppingModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1">✕</button>
     </div>
@@ -165,22 +347,25 @@ permalink: /weihnachtsmarkt/index.html
         </table>
       </div>
 
-      <div class="flex justify-end items-center gap-4 pt-4 border-t border-slate-200">
-        <span class="text-sm font-bold text-slate-700">Gesamtsumme Einkauf:</span>
-        <span id="shoppingTotal" class="text-lg font-black text-emerald-800 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200">0,00 €</span>
+      <div class="flex justify-between items-center gap-4 pt-4 border-t border-slate-200">
+        <button onclick="window.print()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-slate-200 text-slate-700 hover:bg-slate-300">🖨️ Einkaufsliste drucken</button>
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-bold text-slate-700">Gesamtsumme Einkauf:</span>
+          <span id="shoppingTotal" class="text-lg font-black text-emerald-800 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200">0,00 €</span>
+        </div>
       </div>
     </div>
 
-    <div class="p-4 border-t border-slate-100 text-right bg-slate-50 rounded-b-2xl">
+    <div class="p-4 border-t border-slate-100 text-right bg-slate-50 rounded-b-3xl">
       <button onclick="closeShoppingModal()" class="px-5 py-2 bg-amber-600 text-white font-bold rounded-xl text-xs sm:text-sm hover:bg-amber-700 transition">Schließen</button>
     </div>
   </div>
 </div>
 
 <!-- Modal: Strom & Modularer Verkabelungs-Planer -->
-<div id="wiringModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-  <div class="bg-white border border-slate-200 rounded-2xl max-w-6xl w-full max-h-[92vh] flex flex-col shadow-2xl">
-    <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-sky-50 rounded-t-2xl">
+<div id="wiringModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 print:hidden">
+  <div class="bg-white border border-slate-200 rounded-3xl max-w-6xl w-full max-h-[92vh] flex flex-col shadow-2xl">
+    <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-sky-50 rounded-t-3xl">
       <div>
         <h2 class="text-lg font-bold text-sky-900 flex items-center gap-2">⚡ Modularer Strom- & Kabel-Planer (3 Stromeingänge)</h2>
         <p class="text-xs text-sky-700 mt-0.5">Wattzahlen für jedes einzelne Gerät direkt anpassen und per Drag & Drop Verteilen!</p>
@@ -189,121 +374,99 @@ permalink: /weihnachtsmarkt/index.html
     </div>
 
     <div class="p-4 sm:p-6 overflow-y-auto space-y-6 text-xs sm:text-sm">
-      
-      <!-- Unassigned Pool -->
       <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
-        <h3 class="font-bold text-slate-900 text-sm mb-2 flex items-center gap-2">🔌 Nicht zugewiesene Geräte & Kabel (Hier herausziehen):</h3>
+        <h3 class="font-bold text-slate-900 text-sm mb-2 flex items-center gap-2">🔌 Nicht zugewiesene Geräte & Kabel:</h3>
         <div id="unassignedPool" ondragover="allowDrop(event)" ondrop="drop(event, 'unassigned')" class="flex flex-wrap gap-2 min-h-[50px] p-2 bg-white rounded-lg border border-dashed border-slate-300"></div>
       </div>
 
-      <!-- Modular 3 Outlets / Sockets Grid -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        
-        <!-- Outlet 1 -->
-        <div class="bg-sky-50/50 border border-sky-200 rounded-xl p-4 flex flex-col justify-between">
+        <!-- Steckdose 1 -->
+        <div class="bg-sky-50/50 border border-sky-200 rounded-2xl p-4 flex flex-col justify-between">
           <div>
             <div class="flex justify-between items-center mb-2">
-              <h4 class="font-bold text-sky-900 text-sm flex items-center gap-1.5">🔌 Steckdose 1</h4>
+              <h4 class="font-bold text-sky-900 text-sm">🔌 Steckdose 1</h4>
               <span id="socket1Watts" class="px-2 py-0.5 rounded bg-sky-100 text-sky-900 font-bold font-mono text-xs">0 W / 0,0 A</span>
             </div>
-            
-            <div class="mb-3 space-y-1.5 bg-white p-2.5 rounded-lg border border-sky-100">
-              <label class="block text-[11px] font-semibold text-slate-600">Angeschlossenes Kabel / Verteilung:</label>
-              <select id="socket1Cable" onchange="updateSocketCable(1, this.value)" class="w-full text-xs border border-sky-200 rounded-lg p-1.5 bg-white font-medium text-sky-950 focus:outline-none">
-              </select>
+            <div class="mb-3 space-y-1.5 bg-white p-2.5 rounded-xl border border-sky-100">
+              <label class="block text-[11px] font-semibold text-slate-600">Angeschlossenes Kabel:</label>
+              <select id="socket1Cable" onchange="updateSocketCable(1, this.value)" class="role-orga-field w-full text-xs border border-sky-200 rounded-lg p-1.5 bg-white font-medium text-sky-950 focus:outline-none"></select>
               <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100">
-                <span class="text-slate-500">Max. Kapazität Kabel:</span>
+                <span class="text-slate-500">Max Limit:</span>
                 <div class="flex items-center gap-1">
-                  <input type="number" id="socket1CableMax" value="3680" step="100" onchange="updateCableMaxWatt(1, this.value)" class="w-16 border rounded px-1 text-right font-mono font-bold text-sky-900" />
+                  <input type="number" id="socket1CableMax" value="3680" step="100" onchange="updateCableMaxWatt(1, this.value)" class="role-orga-field w-16 border rounded px-1 text-right font-mono font-bold text-sky-900" />
                   <span class="text-slate-500 font-bold">W</span>
                 </div>
               </div>
             </div>
-
-            <div id="socket1Pool" ondragover="allowDrop(event)" ondrop="drop(event, 'socket1')" class="space-y-2 min-h-[140px] p-2 bg-white rounded-lg border border-dashed border-sky-300"></div>
+            <div id="socket1Pool" ondragover="allowDrop(event)" ondrop="drop(event, 'socket1')" class="space-y-2 min-h-[140px] p-2 bg-white rounded-xl border border-dashed border-sky-300"></div>
           </div>
-          <div id="socket1Warn" class="mt-3 text-xs hidden font-bold text-red-600">⚠️ Überlastung Steckdose 1 (> 3.680W oder Kabel-Limit)!</div>
+          <div id="socket1Warn" class="mt-3 text-xs hidden font-bold text-red-600">⚠️ Überlastung Steckdose 1!</div>
         </div>
 
-        <!-- Outlet 2 -->
-        <div class="bg-indigo-50/50 border border-indigo-200 rounded-xl p-4 flex flex-col justify-between">
+        <!-- Steckdose 2 -->
+        <div class="bg-indigo-50/50 border border-indigo-200 rounded-2xl p-4 flex flex-col justify-between">
           <div>
             <div class="flex justify-between items-center mb-2">
-              <h4 class="font-bold text-indigo-900 text-sm flex items-center gap-1.5">🔌 Steckdose 2</h4>
+              <h4 class="font-bold text-indigo-900 text-sm">🔌 Steckdose 2</h4>
               <span id="socket2Watts" class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-900 font-bold font-mono text-xs">0 W / 0,0 A</span>
             </div>
-            
-            <div class="mb-3 space-y-1.5 bg-white p-2.5 rounded-lg border border-indigo-100">
-              <label class="block text-[11px] font-semibold text-slate-600">Angeschlossenes Kabel / Verteilung:</label>
-              <select id="socket2Cable" onchange="updateSocketCable(2, this.value)" class="w-full text-xs border border-indigo-200 rounded-lg p-1.5 bg-white font-medium text-indigo-950 focus:outline-none">
-              </select>
+            <div class="mb-3 space-y-1.5 bg-white p-2.5 rounded-xl border border-indigo-100">
+              <label class="block text-[11px] font-semibold text-slate-600">Angeschlossenes Kabel:</label>
+              <select id="socket2Cable" onchange="updateSocketCable(2, this.value)" class="role-orga-field w-full text-xs border border-indigo-200 rounded-lg p-1.5 bg-white font-medium text-indigo-950 focus:outline-none"></select>
               <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100">
-                <span class="text-slate-500">Max. Kapazität Kabel:</span>
+                <span class="text-slate-500">Max Limit:</span>
                 <div class="flex items-center gap-1">
-                  <input type="number" id="socket2CableMax" value="3680" step="100" onchange="updateCableMaxWatt(2, this.value)" class="w-16 border rounded px-1 text-right font-mono font-bold text-indigo-900" />
+                  <input type="number" id="socket2CableMax" value="3680" step="100" onchange="updateCableMaxWatt(2, this.value)" class="role-orga-field w-16 border rounded px-1 text-right font-mono font-bold text-indigo-900" />
                   <span class="text-slate-500 font-bold">W</span>
                 </div>
               </div>
             </div>
-
-            <div id="socket2Pool" ondragover="allowDrop(event)" ondrop="drop(event, 'socket2')" class="space-y-2 min-h-[140px] p-2 bg-white rounded-lg border border-dashed border-indigo-300"></div>
+            <div id="socket2Pool" ondragover="allowDrop(event)" ondrop="drop(event, 'socket2')" class="space-y-2 min-h-[140px] p-2 bg-white rounded-xl border border-dashed border-indigo-300"></div>
           </div>
-          <div id="socket2Warn" class="mt-3 text-xs hidden font-bold text-red-600">⚠️ Überlastung Steckdose 2 (> 3.680W oder Kabel-Limit)!</div>
+          <div id="socket2Warn" class="mt-3 text-xs hidden font-bold text-red-600">⚠️ Überlastung Steckdose 2!</div>
         </div>
 
-        <!-- Outlet 3 -->
-        <div class="bg-emerald-50/50 border border-emerald-200 rounded-xl p-4 flex flex-col justify-between">
+        <!-- Steckdose 3 -->
+        <div class="bg-emerald-50/50 border border-emerald-200 rounded-2xl p-4 flex flex-col justify-between">
           <div>
             <div class="flex justify-between items-center mb-2">
-              <h4 class="font-bold text-emerald-900 text-sm flex items-center gap-1.5">🔌 Steckdose 3</h4>
+              <h4 class="font-bold text-emerald-900 text-sm">🔌 Steckdose 3</h4>
               <span id="socket3Watts" class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-bold font-mono text-xs">0 W / 0,0 A</span>
             </div>
-            
-            <div class="mb-3 space-y-1.5 bg-white p-2.5 rounded-lg border border-emerald-100">
-              <label class="block text-[11px] font-semibold text-slate-600">Angeschlossenes Kabel / Verteilung:</label>
-              <select id="socket3Cable" onchange="updateSocketCable(3, this.value)" class="w-full text-xs border border-emerald-200 rounded-lg p-1.5 bg-white font-medium text-emerald-950 focus:outline-none">
-              </select>
+            <div class="mb-3 space-y-1.5 bg-white p-2.5 rounded-xl border border-emerald-100">
+              <label class="block text-[11px] font-semibold text-slate-600">Angeschlossenes Kabel:</label>
+              <select id="socket3Cable" onchange="updateSocketCable(3, this.value)" class="role-orga-field w-full text-xs border border-emerald-200 rounded-lg p-1.5 bg-white font-medium text-emerald-950 focus:outline-none"></select>
               <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100">
-                <span class="text-slate-500">Max. Kapazität Kabel:</span>
+                <span class="text-slate-500">Max Limit:</span>
                 <div class="flex items-center gap-1">
-                  <input type="number" id="socket3CableMax" value="3680" step="100" onchange="updateCableMaxWatt(3, this.value)" class="w-16 border rounded px-1 text-right font-mono font-bold text-emerald-900" />
+                  <input type="number" id="socket3CableMax" value="3680" step="100" onchange="updateCableMaxWatt(3, this.value)" class="role-orga-field w-16 border rounded px-1 text-right font-mono font-bold text-emerald-900" />
                   <span class="text-slate-500 font-bold">W</span>
                 </div>
               </div>
             </div>
-
-            <div id="socket3Pool" ondragover="allowDrop(event)" ondrop="drop(event, 'socket3')" class="space-y-2 min-h-[140px] p-2 bg-white rounded-lg border border-dashed border-emerald-300"></div>
+            <div id="socket3Pool" ondragover="allowDrop(event)" ondrop="drop(event, 'socket3')" class="space-y-2 min-h-[140px] p-2 bg-white rounded-xl border border-dashed border-emerald-300"></div>
           </div>
-          <div id="socket3Warn" class="mt-3 text-xs hidden font-bold text-red-600">⚠️ Überlastung Steckdose 3 (> 3.680W oder Kabel-Limit)!</div>
+          <div id="socket3Warn" class="mt-3 text-xs hidden font-bold text-red-600">⚠️ Überlastung Steckdose 3!</div>
         </div>
-
       </div>
-
-      <div class="bg-amber-50/60 border border-amber-200 rounded-xl p-4 text-slate-700 space-y-1">
-        <h4 class="font-bold text-amber-900 mb-1 flex items-center gap-2">⚠️ Tipp für die 3 Anschlüsse</h4>
-        <p>• Die Wattzahlen können für jedes einzelne Gerät direkt auf den Karten angepasst werden.</p>
-        <p>• Verteilt die Großverbraucher (Einkochautomaten mit je 1.800W & Waffeleisen mit je 1.200W) am besten auf alle 3 Steckdosen!</p>
-      </div>
-
     </div>
 
-    <div class="p-4 border-t border-slate-100 text-right bg-slate-50 rounded-b-2xl">
+    <div class="p-4 border-t border-slate-100 text-right bg-slate-50 rounded-b-3xl">
       <button onclick="closeWiringModal()" class="px-5 py-2 bg-sky-700 text-white font-bold rounded-xl text-xs sm:text-sm hover:bg-sky-800 transition">Schließen</button>
     </div>
   </div>
 </div>
 
 <!-- Modal: Lagerbestand-Übersicht -->
-<div id="stockModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-  <div class="bg-white border border-slate-200 rounded-2xl max-w-4xl w-full max-h-[85vh] flex flex-col shadow-2xl">
-    <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-indigo-50 rounded-t-2xl">
+<div id="stockModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 print:hidden">
+  <div class="bg-white border border-slate-200 rounded-3xl max-w-4xl w-full max-h-[85vh] flex flex-col shadow-2xl">
+    <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-indigo-50 rounded-t-3xl">
       <div>
         <h2 class="text-lg font-bold text-indigo-900 flex items-center gap-2">📊 Aktueller Lagerbestand</h2>
-        <p class="text-xs text-indigo-700 mt-0.5">Übersicht aller bereits vorhandenen Materialien & Gegenstände (ohne Zutaten)</p>
+        <p class="text-xs text-indigo-700 mt-0.5">Übersicht aller vorhandenen Materialien (ohne Zutaten)</p>
       </div>
       <button onclick="closeStockModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1">✕</button>
     </div>
-    
     <div class="p-4 sm:p-6 overflow-y-auto">
       <div class="table-container">
         <table class="w-full text-left text-xs sm:text-sm text-slate-800 border-collapse min-w-[500px]">
@@ -320,29 +483,26 @@ permalink: /weihnachtsmarkt/index.html
         </table>
       </div>
     </div>
-
-    <div class="p-4 border-t border-slate-100 text-right bg-slate-50 rounded-b-2xl">
+    <div class="p-4 border-t border-slate-100 text-right bg-slate-50 rounded-b-3xl">
       <button onclick="closeStockModal()" class="px-5 py-2 bg-indigo-700 text-white font-bold rounded-xl text-xs sm:text-sm hover:bg-indigo-800 transition">Schließen</button>
     </div>
   </div>
 </div>
 
 <!-- Modal: Boxen-Übersicht -->
-<div id="boxModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-  <div class="bg-white border border-slate-200 rounded-2xl max-w-4xl w-full max-h-[85vh] flex flex-col shadow-2xl">
-    <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-emerald-50/60 rounded-t-2xl">
+<div id="boxModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 print:hidden">
+  <div class="bg-white border border-slate-200 rounded-3xl max-w-4xl w-full max-h-[85vh] flex flex-col shadow-2xl">
+    <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-emerald-50/60 rounded-t-3xl">
       <div>
         <h2 class="text-lg font-bold text-emerald-900 flex items-center gap-2">📦 Inhaltsübersicht & Packstatus der Boxen (1–12)</h2>
         <p class="text-xs text-slate-500 mt-0.5">Übersicht aller Gegenstände und Pack-Fortschritt pro Kiste</p>
       </div>
       <button onclick="closeBoxOverview()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1">✕</button>
     </div>
-    
     <div class="p-4 sm:p-6 overflow-y-auto">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="boxModalContent"></div>
     </div>
-
-    <div class="p-4 border-t border-slate-100 text-right bg-slate-50 rounded-b-2xl">
+    <div class="p-4 border-t border-slate-100 text-right bg-slate-50 rounded-b-3xl">
       <button onclick="closeBoxOverview()" class="px-5 py-2 bg-emerald-700 text-white font-bold rounded-xl text-xs sm:text-sm hover:bg-emerald-800 transition">Schließen</button>
     </div>
   </div>
@@ -362,22 +522,19 @@ permalink: /weihnachtsmarkt/index.html
   .status-verteilt { background-color: #f0f9ff; color: #075985; border-color: #bae6fd; }
   .status-erledigt, .status-eingekauft { background-color: #f0fdf4; color: #166534; border-color: #bbf7d0; }
 
-  /* Dark Mode Verbesserungen für Tabellen-Header */
-  @media (prefers-color-scheme: dark) {
-    th {
-      color: #0f172a !important;
-    }
+  @media print {
+    body { background: white !important; color: black !important; }
+    .table-container { overflow: visible !important; }
+    input, select { border: none !important; background: transparent !important; }
   }
 </style>
 
 <script>
 {% raw %}
-  const storeOptions = [
-    "Aldi", "E-Center", "Famila", "Kaufland", "Kruber", "Lidl", "Netto", "Online", "Penny", "Rewe"
-  ];
+  const storeOptions = ["Aldi", "E-Center", "Famila", "Kaufland", "Kruber", "Lidl", "Netto", "Online", "Penny", "Rewe"];
 
-  const itemsData = [
-    // 🏛️ Orga
+  let itemsData = [
+    // Orga
     { id: 1, cat: "🏛️ Orga", title: "Anmeldung Teilnahme", details: "An Gemeinde", isShop: false },
     { id: 2, cat: "🏛️ Orga", title: "Hütte Gemeinde", details: "Aufbau Tag & Zeit abklären", isShop: false },
     { id: 3, cat: "🏛️ Orga", title: "Listen Roshop Unterstützung", details: "Aufhängen Schwarzes Brett", isShop: false },
@@ -391,7 +548,7 @@ permalink: /weihnachtsmarkt/index.html
     { id: 9, cat: "🛠️ Werkzeuge", title: "Seitenschneider", details: "", isShop: false },
     { id: 10, cat: "🛠️ Werkzeuge", title: "Taschenlampe", details: "", isShop: false },
     
-    // Material (Panzertape schlicht ohne Beschreibung)
+    // Material
     { id: 11, cat: "📦 Material & Befestigung", title: "Büroklammern", details: "", isShop: false },
     { id: 12, cat: "📦 Material & Befestigung", title: "Draht", details: "", isShop: false },
     { id: 13, cat: "📦 Material & Befestigung", title: "Heftzwecken", details: "", isShop: false },
@@ -410,7 +567,7 @@ permalink: /weihnachtsmarkt/index.html
     { id: 22, cat: "⚡ Elektrik & Licht", title: "Mehrfachstecker 5er", details: "5-fach Verteilungsstecker", isPower: true, defaultStockQty: "2", defaultWatts: 3680, isCable: true, isShop: false },
     { id: 23, cat: "⚡ Elektrik & Licht", title: "Verlängerungskabel 3m", details: "Stromkabel Verlängerung", isPower: true, defaultStockQty: "2", defaultWatts: 3680, isCable: true, isShop: false },
     
-    // Geräte (Gezielt als einzelne Zeilen mit anpassbarem Bedarf)
+    // Geräte
     { id: 24, cat: "🔌 Geräte", title: "Einkochautomat", details: "", defaultQty: "2", defaultStockQty: "2", defaultWatts: 1800, isPower: true, isShop: false },
     { id: 25, cat: "🔌 Geräte", title: "Waffeleisen", details: "", defaultQty: "3", defaultStockQty: "3", defaultWatts: 1200, isPower: true, isShop: false },
     { id: 26, cat: "🔌 Geräte", title: "Wasserkocher", details: "", defaultQty: "1", defaultWatts: 2200, defaultStockQty: "1", isPower: true, isShop: false },
@@ -430,18 +587,18 @@ permalink: /weihnachtsmarkt/index.html
     { id: 36, cat: "✨ Standdeko", title: "SG Banner", details: "", isShop: false },
     { id: 37, cat: "✨ Standdeko", title: "Tischdecken", details: "", defaultQty: "", isShop: false },
     
-    // 🍎 Zutaten
-    { id: 38, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Wintertee", details: "Verschiedene Sorten", defaultQty: "25 Btl.", defaultPackageSize: "20 Btl.", isShop: true, isIngredient: true },
-    { id: 39, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Glühfix", details: "", defaultQty: "12 Btl.", defaultPackageSize: "10 Btl.", isShop: true, isIngredient: true },
-    { id: 40, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Zimtstangen", details: "", defaultQty: "5 Stk", defaultPackageSize: "5 Stk", isShop: true, isIngredient: true },
-    { id: 41, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Orangensaft", details: "", defaultQty: "2,5 l", defaultPackageSize: "1 l", isShop: true, isIngredient: true },
-    { id: 42, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Apfelsaft", details: "", defaultQty: "6,25 l", defaultPackageSize: "1 l", isShop: true, isIngredient: true },
-    { id: 43, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Roter Traubensaft", details: "", defaultQty: "6,25 l", defaultPackageSize: "1 l", isShop: true, isIngredient: true },
+    // Zutaten
+    { id: 38, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Wintertee", details: "Verschiedene Sorten", defaultQty: "10 Btl.", defaultPackageSize: "20 Btl.", isShop: true, isIngredient: true },
+    { id: 39, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Glühfix", details: "", defaultQty: "5 Btl.", defaultPackageSize: "10 Btl.", isShop: true, isIngredient: true },
+    { id: 40, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Zimtstangen", details: "", defaultQty: "2 Stk", defaultPackageSize: "5 Stk", isShop: true, isIngredient: true },
+    { id: 41, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Orangensaft", details: "", defaultQty: "1,0 l", defaultPackageSize: "1 l", isShop: true, isIngredient: true },
+    { id: 42, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Apfelsaft", details: "", defaultQty: "2,5 l", defaultPackageSize: "1 l", isShop: true, isIngredient: true },
+    { id: 43, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Roter Traubensaft", details: "", defaultQty: "2,5 l", defaultPackageSize: "1 l", isShop: true, isIngredient: true },
     { id: 45, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Öl (Waffeln)", details: "", defaultPackageSize: "1 Flasche", isShop: true, isIngredient: true },
     { id: 46, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Puderzucker", details: "", defaultPackageSize: "250 g", isShop: true, isIngredient: true },
     { id: 47, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Servietten", details: "", defaultPackageSize: "100 Stk", isShop: true, isIngredient: true },
     
-    // 🛒 Einkäufe
+    // Einkäufe
     { id: 48, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Geschirrhandtuch", details: "", isShop: true },
     { id: 49, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Küchenrolle", details: "", isShop: true },
     { id: 50, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Mülltüten", details: "", isShop: true },
@@ -450,7 +607,7 @@ permalink: /weihnachtsmarkt/index.html
     { id: 53, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Teelichter", details: "", isShop: true },
     { id: 54, cat: "🛒 Einkäufe & Verbrauchsmaterial", title: "Waschlappen", details: "", isShop: true },
     
-    // 🥣 Equipment
+    // Equipment
     { id: 55, cat: "🥣 Stand-Equipment & Zubehör", title: "Esslöffel", details: "", isShop: false },
     { id: 56, cat: "🥣 Stand-Equipment & Zubehör", title: "Holzgabeln", details: "", isShop: false },
     { id: 57, cat: "🥣 Stand-Equipment & Zubehör", title: "Ölpinsel inkl. Flasche", details: "", isShop: false },
@@ -458,8 +615,8 @@ permalink: /weihnachtsmarkt/index.html
     { id: 59, cat: "🥣 Stand-Equipment & Zubehör", title: "Spaghettikelle (Punschkelle)", details: "", isShop: false },
     { id: 60, cat: "🥣 Stand-Equipment & Zubehör", title: "Suppenkellen", details: "", isShop: false },
     
-    // 📋 Sonstiges
-    { id: 75, cat: "📋 Sonstiges", title: "Musikbox / Bluetooth-Lautsprecher", details: "Akku-Betrieb, inkl. Ladekabel & Powerbank", isShop: false },
+    // Sonstiges
+    { id: 75, cat: "📋 Sonstiges", title: "Musikbox / Bluetooth-Lautsprecher", details: "", isShop: false },
     { id: 61, cat: "📋 Sonstiges", title: "Eddings", details: "", isShop: false },
     { id: 63, cat: "📋 Sonstiges", title: "Erste Hilfe Set", details: "", isShop: false },
     { id: 64, cat: "📋 Sonstiges", title: "Feuerzeug", details: "", isShop: false },
@@ -477,6 +634,10 @@ permalink: /weihnachtsmarkt/index.html
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzm4pz4LD6vwqwkDQXqIypYRVx9m49oliAevZPGolZYm_JKFmWN526TLE-2Z3fGP8tJ/exec";
   let appState = {};
   let currentFilter = 'all';
+  let currentRole = 'betrachter'; // Rollen: 'betrachter', 'helfer', 'orga', 'admin'
+  let adminPassword = "SGJugend26";
+  let editingItemId = null;
+  let activityLog = [];
 
   async function loadStateFromSheet() {
     try {
@@ -484,74 +645,482 @@ permalink: /weihnachtsmarkt/index.html
       const cloudData = await res.json();
       if (cloudData && Object.keys(cloudData).length > 0) {
         appState = cloudData;
-        localStorage.setItem('sg_wm_state_v15', JSON.stringify(appState));
+        if (appState.customItemsList && Array.isArray(appState.customItemsList)) itemsData = appState.customItemsList;
+        if (appState.adminPassword) adminPassword = appState.adminPassword;
+        if (appState.globalNotice) showNoticeBanner(appState.globalNotice);
+        if (appState.activityLog) activityLog = appState.activityLog;
+        localStorage.setItem('sg_wm_state_v20', JSON.stringify(appState));
+        setSyncStatus(true);
       } else {
-        appState = JSON.parse(localStorage.getItem('sg_wm_state_v15')) || {};
+        loadFromLocal();
       }
     } catch(e) {
-      console.error("Fehler beim Laden aus Google Sheets:", e);
-      appState = JSON.parse(localStorage.getItem('sg_wm_state_v15')) || {};
+      console.error("Ladefehler:", e);
+      loadFromLocal();
+      setSyncStatus(false);
     }
     itemsData.forEach(item => initItemState(item));
     renderChecklist();
     updateProgress();
+    updateRecipeScaling();
+    
+    if (appState.salesStats) {
+      if (document.getElementById('soldPunsch')) document.getElementById('soldPunsch').value = appState.salesStats.soldPunsch || 0;
+      if (document.getElementById('pricePunsch')) document.getElementById('pricePunsch').value = appState.salesStats.pricePunsch || 2.50;
+      if (document.getElementById('soldWaffles')) document.getElementById('soldWaffles').value = appState.salesStats.soldWaffles || 0;
+      if (document.getElementById('priceWaffles')) document.getElementById('priceWaffles').value = appState.salesStats.priceWaffles || 2.00;
+      if (document.getElementById('standFee')) document.getElementById('standFee').value = appState.salesStats.standFee || 0.00;
+      if (document.getElementById('otherRevenue')) document.getElementById('otherRevenue').value = appState.salesStats.otherRevenue || 0.00;
+    }
+    calculateSalesStats();
+    applyRolePermissions();
+    renderActivityLog();
+  }
+
+  function loadFromLocal() {
+    const local = JSON.parse(localStorage.getItem('sg_wm_state_v20')) || {};
+    appState = local;
+    if (appState.customItemsList) itemsData = appState.customItemsList;
+    if (appState.adminPassword) adminPassword = appState.adminPassword;
+    if (appState.globalNotice) showNoticeBanner(appState.globalNotice);
+    if (appState.activityLog) activityLog = appState.activityLog;
+  }
+
+  function setSyncStatus(isOk) {
+    const el = document.getElementById('syncStatus');
+    if (!el) return;
+    if (isOk) {
+      const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      el.innerHTML = `🟢 Synced (${time})`;
+    } else {
+      el.innerHTML = `🔴 Offline`;
+    }
   }
 
   function initItemState(item) {
     if (!appState[item.id]) {
       appState[item.id] = { 
-        status: 'Offen', 
-        assignedTo: '', 
-        packed: false, 
-        boxNum: '', 
-        qty: item.defaultQty || '',
-        stockQty: item.defaultStockQty || '',
-        packageSize: item.defaultPackageSize || '',
-        store: '',
-        price: ''
+        status: 'Offen', assignedTo: '', packed: false, boxNum: '', 
+        qty: item.defaultQty || '', stockQty: item.defaultStockQty || '',
+        packageSize: item.defaultPackageSize || '', store: '', price: ''
       };
     }
   }
 
-  if (!appState.socketCables) {
-    appState.socketCables = {
-      1: "Direkt Mehrfachstecker 3er",
-      2: "Verlängerung 3m + Mehrfachstecker 3er",
-      3: "Verlängerung 3m + Mehrfachstecker 5er"
-    };
-  }
-  if (!appState.socketCableMaxWatts) {
-    appState.socketCableMaxWatts = {
-      1: 3680,
-      2: 3680,
-      3: 3680
-    };
-  }
-
-  if (!appState.powerAssignments) {
-    appState.powerAssignments = {};
-  }
-
-  if (!appState.instanceWatts) {
-    appState.instanceWatts = {};
-  }
+  if (!appState.socketCables) appState.socketCables = { 1: "Direkt Mehrfachstecker 3er", 2: "Verlängerung 3m + Mehrfachstecker 3er", 3: "Verlängerung 3m + Mehrfachstecker 5er" };
+  if (!appState.socketCableMaxWatts) appState.socketCableMaxWatts = { 1: 3680, 2: 3680, 3: 3680 };
+  if (!appState.powerAssignments) appState.powerAssignments = {};
+  if (!appState.instanceWatts) appState.instanceWatts = {};
+  if (!appState.salesStats) appState.salesStats = { soldPunsch: 0, pricePunsch: 2.50, soldWaffles: 0, priceWaffles: 2.00, standFee: 0.00, otherRevenue: 0.00 };
 
   async function saveState() {
-    localStorage.setItem('sg_wm_state_v15', JSON.stringify(appState));
+    appState.customItemsList = itemsData;
+    appState.adminPassword = adminPassword;
+    appState.activityLog = activityLog;
+    localStorage.setItem('sg_wm_state_v20', JSON.stringify(appState));
     updateProgress();
 
     if (SCRIPT_URL) {
       try {
         await fetch(SCRIPT_URL, {
           method: "POST",
-          headers: {
-            "Content-Type": "text/plain;charset=utf-8"
-          },
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(appState)
         });
+        setSyncStatus(true);
       } catch (err) {
-        console.error("Fehler beim Speichern in Google Sheets:", err);
+        console.error("Speicherfehler:", err);
+        setSyncStatus(false);
       }
+    }
+  }
+
+  // --- Aktivitäten Logbuch & Notice Banner ---
+  function logActivity(text) {
+    const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    const roleLabel = currentRole.toUpperCase();
+    activityLog.unshift(`[${time}] [${roleLabel}] ${text}`);
+    if (activityLog.length > 15) activityLog.pop();
+    renderActivityLog();
+  }
+
+  function renderActivityLog() {
+    const list = document.getElementById('activityLogList');
+    if (!list) return;
+    if (activityLog.length === 0) {
+      list.innerHTML = `<li class="italic text-slate-400">Noch keine Aktivitäten protokolliert.</li>`;
+    } else {
+      list.innerHTML = activityLog.map(log => `<li class="border-b border-amber-200/40 pb-0.5">${log}</li>`).join('');
+    }
+  }
+
+  function clearActivityLog() {
+    activityLog = [];
+    saveState();
+    renderActivityLog();
+  }
+
+  function showNoticeBanner(text) {
+    const banner = document.getElementById('noticeBanner');
+    const txt = document.getElementById('noticeBannerText');
+    if (banner && txt && text) {
+      txt.innerText = text;
+      banner.classList.remove('hidden');
+    }
+  }
+
+  function dismissNotice() {
+    document.getElementById('noticeBanner')?.classList.add('hidden');
+  }
+
+  function setGlobalNotice() {
+    const msg = prompt("Wichtige Durchsage/Hinweis für alle Helfer eingeben:", appState.globalNotice || "");
+    if (msg !== null) {
+      appState.globalNotice = msg.trim();
+      saveState();
+      if (appState.globalNotice) {
+        showNoticeBanner(appState.globalNotice);
+        logActivity(`Notice gesetzt: "${appState.globalNotice}"`);
+      } else {
+        dismissNotice();
+      }
+    }
+  }
+
+  // --- Rollen-System ---
+  function toggleRoleModal() {
+    document.getElementById('roleModal')?.classList.remove('hidden');
+  }
+
+  function closeRoleModal() {
+    document.getElementById('roleModal')?.classList.add('hidden');
+  }
+
+  function selectRole(role) {
+    currentRole = role;
+    closeRoleModal();
+    applyRolePermissions();
+    logActivity(`Rolle gewechselt zu ${role}`);
+  }
+
+  function promptAdminLogin() {
+    const pwd = prompt("Bitte Admin-Passwort eingeben:");
+    if (pwd === adminPassword) {
+      currentRole = 'admin';
+      closeRoleModal();
+      applyRolePermissions();
+      logActivity("Admin eingeloggt");
+    } else if (pwd !== null) {
+      alert("Falsches Passwort!");
+    }
+  }
+
+  function applyRolePermissions() {
+    const badge = document.getElementById('roleBadge');
+    const adminPanel = document.getElementById('adminPanel');
+    const isBetrachter = currentRole === 'betrachter';
+    const isHelfer = currentRole === 'helfer';
+    const isOrga = currentRole === 'orga';
+    const isAdmin = currentRole === 'admin';
+
+    if (badge) {
+      if (isAdmin) {
+        badge.innerHTML = '🔓 Rolle: ADMIN';
+        badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-400 text-slate-950 shadow-sm';
+      } else if (isOrga) {
+        badge.innerHTML = '📋 Rolle: ORGA-TEAM';
+        badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-500/30 text-sky-100 border border-sky-300/40 shadow-sm';
+      } else if (isHelfer) {
+        badge.innerHTML = '🤝 Rolle: HELFER';
+        badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/30 text-emerald-100 border border-emerald-300/40 shadow-sm';
+      } else {
+        badge.innerHTML = '👁️ Rolle: BETRACHTER (Nur Lesen)';
+        badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-white/10 text-emerald-100 border border-white/20 shadow-sm';
+      }
+    }
+
+    if (adminPanel) {
+      adminPanel.classList.toggle('hidden', !isAdmin);
+    }
+
+    // Eingabefelder im Dokument sperren / freigeben
+    document.querySelectorAll('input, select').forEach(el => {
+      if (el.id === 'searchInput' || el.id === 'adminToggleBtn' || el.id === 'punschLiters') return;
+      
+      if (isBetrachter) {
+        el.disabled = true;
+      } else if (isHelfer) {
+        const isHelferAllowed = el.classList.contains('role-helfer-field') || el.type === 'checkbox' || el.tagName === 'SELECT';
+        el.disabled = !isHelferAllowed;
+      } else {
+        el.disabled = false;
+      }
+    });
+
+    renderChecklist();
+  }
+
+  // --- Rezept Punsch-Skalierer ---
+  function updateRecipeScaling() {
+    const punschLiters = parseFloat(document.getElementById('punschLiters')?.value || 8);
+    document.getElementById('punschLitersLabel').innerText = `${punschLiters} Liter`;
+
+    const factor = punschLiters / 8.0;
+    const punschList = document.getElementById('punschRecipeList');
+    if (punschList) {
+      punschList.innerHTML = `
+        <li><b>${(2.0 * factor).toFixed(1).replace('.0','')} l</b> Wasser</li>
+        <li><b>${Math.ceil(10 * factor)} Btl.</b> Wintertee</li>
+        <li><b>${(1.0 * factor).toFixed(1).replace('.0','')} l</b> Orangensaft</li>
+        <li><b>${(2.5 * factor).toFixed(1).replace('.0','')} l</b> Apfelsaft</li>
+        <li><b>${(2.5 * factor).toFixed(1).replace('.0','')} l</b> Roter Traubensaft</li>
+        <li><b>${Math.ceil(2 * factor)} Stk.</b> Zimtstangen <i>(nicht kaufen)</i></li>
+        <li><b>${Math.ceil(5 * factor)} Btl.</b> Glühfix</li>
+      `;
+    }
+  }
+
+  function syncIngredientsToShoppingList() {
+    const punschLiters = parseFloat(document.getElementById('punschLiters')?.value || 8);
+    const factor = punschLiters / 8.0;
+
+    const ingredientUpdates = {
+      38: `${Math.ceil(10 * factor)} Btl.`,
+      39: `${Math.ceil(5 * factor)} Btl.`,
+      40: `${Math.ceil(2 * factor)} Stk`,
+      41: `${(1.0 * factor).toFixed(1).replace('.0','')} l`,
+      42: `${(2.5 * factor).toFixed(1).replace('.0','')} l`,
+      43: `${(2.5 * factor).toFixed(1).replace('.0','')} l`
+    };
+
+    Object.keys(ingredientUpdates).forEach(id => {
+      if (appState[id]) appState[id].qty = ingredientUpdates[id];
+    });
+
+    saveState();
+    renderChecklist();
+    logActivity(`Punsch-Zutaten für ${punschLiters}L in Einkaufsliste synchronisiert`);
+    alert("Die Punsch-Zutaten wurden direkt in die Einkaufsliste übernommen!");
+  }
+
+  // --- Verkaufsstatistik Rechner ---
+  function calculateSalesStats() {
+    const sPunsch = parseInt(document.getElementById('soldPunsch')?.value || 0);
+    const pPunsch = parseFloat(document.getElementById('pricePunsch')?.value || 2.50);
+    const sWaffles = parseInt(document.getElementById('soldWaffles')?.value || 0);
+    const pWaffles = parseFloat(document.getElementById('priceWaffles')?.value || 2.00);
+    const fee = parseFloat(document.getElementById('standFee')?.value || 0.00);
+    const otherRev = parseFloat(document.getElementById('otherRevenue')?.value || 0.00);
+
+    const revenue = (sPunsch * pPunsch) + (sWaffles * pWaffles) + otherRev;
+
+    let shoppingCost = 0;
+    itemsData.filter(i => i.isShop).forEach(item => {
+      const state = appState[item.id];
+      if (state) {
+        const needNum = parseVal(state.qty);
+        const packNum = parseVal(state.packageSize);
+        let calcPackages = 1;
+        if (needNum > 0 && packNum > 0) calcPackages = Math.ceil(needNum / packNum);
+        else if (needNum > 0) calcPackages = Math.ceil(needNum);
+        const unitPrice = parseVal(state.price);
+        shoppingCost += calcPackages * unitPrice;
+      }
+    });
+
+    const totalExpenses = shoppingCost + fee;
+    const profit = revenue - totalExpenses;
+
+    document.getElementById('statRevenue').innerText = revenue.toFixed(2).replace('.', ',') + ' €';
+    document.getElementById('statExpenses').innerText = totalExpenses.toFixed(2).replace('.', ',') + ' €';
+    document.getElementById('statProfit').innerText = profit.toFixed(2).replace('.', ',') + ' €';
+
+    appState.salesStats = { soldPunsch: sPunsch, pricePunsch: pPunsch, soldWaffles: sWaffles, priceWaffles: pWaffles, standFee: fee, otherRevenue: otherRev };
+    saveState();
+  }
+
+  function changeAdminPassword() {
+    const newPwd = prompt("Neues Admin-Passwort eingeben:", adminPassword);
+    if (newPwd && newPwd.trim() !== "") {
+      adminPassword = newPwd.trim();
+      saveState();
+      logActivity("Admin-Passwort geändert");
+      alert("Admin-Passwort geändert!");
+    }
+  }
+
+  function resetSeason() {
+    if (confirm("⚠️ Bist du sicher? Das setzt alle Gepackt-Haken, Erledigt-Statusse und Namen für die nächste Saison zurück!")) {
+      itemsData.forEach(item => {
+        if (appState[item.id]) {
+          appState[item.id].status = 'Offen';
+          appState[item.id].assignedTo = '';
+          appState[item.id].packed = false;
+        }
+      });
+      saveState();
+      renderChecklist();
+      logActivity("Saison-Reset durchgeführt");
+      alert("Saison-Reset abgeschlossen!");
+    }
+  }
+
+  function exportDataJSON() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+    const dlAnchorElem = document.createElement('a');
+    dlAnchorElem.setAttribute("href", dataStr);
+    dlAnchorElem.setAttribute("download", `SG_Barnstorf_Weihnachtsmarkt_Backup_${new Date().toISOString().slice(0,10)}.json`);
+    dlAnchorElem.click();
+  }
+
+  function importDataJSON() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json';
+    input.onchange = e => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.readAsText(file, 'UTF-8');
+      reader.onload = readerEvent => {
+        try {
+          const content = JSON.parse(readerEvent.target.result);
+          if (content) {
+            appState = content;
+            if (appState.customItemsList) itemsData = appState.customItemsList;
+            if (appState.adminPassword) adminPassword = appState.adminPassword;
+            saveState();
+            renderChecklist();
+            alert("Backup wiederhergestellt!");
+          }
+        } catch(err) {
+          alert("Fehler beim Einlesen der Datei!");
+        }
+      }
+    }
+    input.click();
+  }
+
+  function getExistingCategories() {
+    return [...new Set(itemsData.map(item => item.cat))];
+  }
+
+  function openCreateItemModal() {
+    editingItemId = null;
+    document.getElementById('itemModalTitle').innerText = "➕ Neuer Gegenstand";
+    document.getElementById('modalItemTitle').value = "";
+    document.getElementById('modalItemDetails').value = "";
+    populateCategoryDropdown();
+    document.getElementById('itemModal').classList.remove('hidden');
+  }
+
+  function openEditItemModal(id) {
+    editingItemId = id;
+    const item = itemsData.find(i => i.id === id);
+    if (!item) return;
+
+    document.getElementById('itemModalTitle').innerText = "✏️ Gegenstand bearbeiten";
+    document.getElementById('modalItemTitle').value = item.title;
+    document.getElementById('modalItemDetails').value = item.details || "";
+    populateCategoryDropdown(item.cat);
+    document.getElementById('itemModal').classList.remove('hidden');
+  }
+
+  function populateCategoryDropdown(selectedCat = "") {
+    const select = document.getElementById('modalItemCat');
+    const customInput = document.getElementById('modalCustomCat');
+    select.innerHTML = "";
+
+    const cats = getExistingCategories();
+    cats.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.innerText = c;
+      if (c === selectedCat) opt.selected = true;
+      select.appendChild(opt);
+    });
+
+    const newOpt = document.createElement('option');
+    newOpt.value = "__NEW__";
+    newOpt.innerText = "➕ [ Neue Kategorie erstellen ]";
+    select.appendChild(newOpt);
+
+    customInput.value = "";
+    customInput.classList.add('hidden');
+  }
+
+  function handleCatSelectChange(selectEl) {
+    const customInput = document.getElementById('modalCustomCat');
+    if (selectEl.value === "__NEW__") customInput.classList.remove('hidden');
+    else customInput.classList.add('hidden');
+  }
+
+  function saveItemFromModal() {
+    const title = document.getElementById('modalItemTitle').value.trim();
+    if (!title) { alert("Bitte einen Namen angeben!"); return; }
+
+    const selectCat = document.getElementById('modalItemCat').value;
+    const customCat = document.getElementById('modalCustomCat').value.trim();
+    let finalCat = (selectCat === "__NEW__") ? customCat : selectCat;
+
+    if (selectCat === "__NEW__" && !customCat) { alert("Bitte Kategorie-Namen eingeben!"); return; }
+
+    const details = document.getElementById('modalItemDetails').value.trim();
+
+    if (editingItemId !== null) {
+      const item = itemsData.find(i => i.id === editingItemId);
+      if (item) {
+        item.title = title;
+        item.cat = finalCat;
+        item.details = details;
+        logActivity(`Gegenstand bearbeited: "${title}"`);
+      }
+    } else {
+      const newId = Date.now();
+      const newItem = { id: newId, cat: finalCat, title: title, details: details, isShop: false };
+      itemsData.push(newItem);
+      initItemState(newItem);
+      logActivity(`Neuer Gegenstand angelegt: "${title}"`);
+    }
+
+    saveState();
+    closeItemModal();
+    renderChecklist();
+  }
+
+  function closeItemModal() {
+    document.getElementById('itemModal').classList.add('hidden');
+  }
+
+  function deleteItem(id) {
+    if (confirm("Gegenstand unwiderruflich löschen?")) {
+      const idx = itemsData.findIndex(i => i.id === id);
+      if (idx !== -1) {
+        const title = itemsData[idx].title;
+        itemsData.splice(idx, 1);
+        delete appState[id];
+        saveState();
+        renderChecklist();
+        logActivity(`Gegenstand gelöscht: "${title}"`);
+      }
+    }
+  }
+
+  function renameCategory(oldCat) {
+    const newCat = prompt("Neuer Name für Kategorie:", oldCat);
+    if (newCat && newCat.trim() !== "" && newCat !== oldCat) {
+      itemsData.forEach(i => { if (i.cat === oldCat) i.cat = newCat.trim(); });
+      saveState();
+      renderChecklist();
+      logActivity(`Kategorie umbenannt: "${oldCat}" -> "${newCat.trim()}"`);
+    }
+  }
+
+  function deleteCategory(cat) {
+    if (confirm(`Ganze Kategorie "${cat}" inklusive aller Gegenstände löschen?`)) {
+      itemsData = itemsData.filter(i => i.cat !== cat);
+      saveState();
+      renderChecklist();
+      logActivity(`Kategorie gelöscht: "${cat}"`);
     }
   }
 
@@ -560,42 +1129,8 @@ permalink: /weihnachtsmarkt/index.html
     appState[id][field] = value;
     saveState();
     renderChecklist();
-  }
-
-  // --- Hinzufügen & Löschen von Items ---
-  function addNewItem() {
-    const title = prompt("Name des Gegenstands:");
-    if (!title) return;
-
-    const cat = prompt("Kategorie (z. B. 🔌 Geräte, 🛠️ Werkzeuge, 📦 Material & Befestigung):", "🔌 Geräte");
-    if (!cat) return;
-
-    const newId = Date.now();
-    const newItem = {
-      id: newId,
-      cat: cat,
-      title: title,
-      details: "",
-      isShop: false,
-      isCustom: true
-    };
-
-    itemsData.push(newItem);
-    initItemState(newItem);
-    saveState();
-    renderChecklist();
-  }
-
-  function deleteCustomItem(id) {
-    if (confirm("Möchtest du diesen Eintrag wirklich löschen?")) {
-      const index = itemsData.findIndex(item => item.id === id);
-      if (index !== -1) {
-        itemsData.splice(index, 1);
-        delete appState[id];
-        saveState();
-        renderChecklist();
-      }
-    }
+    const item = itemsData.find(i => i.id === id);
+    if (item) logActivity(`"${item.title}" -> ${field}: ${value}`);
   }
 
   function updateProgress() {
@@ -604,7 +1139,7 @@ permalink: /weihnachtsmarkt/index.html
       const s = appState[i.id] ? appState[i.id].status : 'Offen';
       return s === 'Erledigt' || s === 'Eingekauft';
     }).length;
-    const percent = Math.round((count / total) * 100);
+    const percent = total > 0 ? Math.round((count / total) * 100) : 0;
     
     const bar = document.getElementById('progressBar');
     const txt = document.getElementById('progressText');
@@ -636,15 +1171,8 @@ permalink: /weihnachtsmarkt/index.html
     if (!container) return;
     container.innerHTML = '';
 
-    // Button zum Hinzufügen neuer Gegenstände oben anhängen
-    const addBtnContainer = document.createElement('div');
-    addBtnContainer.className = 'flex justify-end mb-4';
-    addBtnContainer.innerHTML = `
-      <button onclick="addNewItem()" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-700 text-white hover:bg-emerald-800 transition shadow-sm flex items-center gap-1.5">
-        ➕ Gegenstand hinzufügen
-      </button>
-    `;
-    container.appendChild(addBtnContainer);
+    const isAdmin = currentRole === 'admin';
+    const isBetrachter = currentRole === 'betrachter';
 
     const categories = [...new Set(itemsData.map(item => item.cat))];
 
@@ -654,25 +1182,30 @@ permalink: /weihnachtsmarkt/index.html
         const state = appState[item.id];
         const matchesCat = item.cat === cat;
         const matchesSearch = item.title.toLowerCase().includes(searchVal) || 
-                              item.details.toLowerCase().includes(searchVal) ||
+                              (item.details && item.details.toLowerCase().includes(searchVal)) ||
                               (state.assignedTo && state.assignedTo.toLowerCase().includes(searchVal)) ||
                               (state.boxNum && state.boxNum.toString().includes(searchVal));
-        
         let matchesFilter = true;
-        if (currentFilter !== 'all') {
-          matchesFilter = (state.status === currentFilter);
-        }
+        if (currentFilter !== 'all') matchesFilter = (state.status === currentFilter);
 
         return matchesCat && matchesSearch && matchesFilter;
       });
 
-      if (catItems.length > 0) {
+      if (catItems.length > 0 || isAdmin) {
         const catWrapper = document.createElement('div');
-        catWrapper.className = 'bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-sm';
+        catWrapper.className = 'bg-white border border-slate-200/80 rounded-3xl p-4 sm:p-6 shadow-sm print:border-none print:shadow-none print:p-0 print:mb-6';
 
         const catTitle = document.createElement('h2');
-        catTitle.className = 'text-lg font-bold text-emerald-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-2';
-        catTitle.innerText = cat;
+        catTitle.className = 'text-lg font-bold text-emerald-950 mb-4 flex items-center justify-between border-b border-slate-100 pb-2';
+        catTitle.innerHTML = `
+          <span>${cat}</span>
+          ${isAdmin ? `
+            <div class="flex items-center gap-2 print:hidden">
+              <button onclick="renameCategory('${cat}')" class="text-xs font-semibold px-2 py-1 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200">✏️ Umbenennen</button>
+              <button onclick="deleteCategory('${cat}')" class="text-xs font-semibold px-2 py-1 bg-red-50 text-red-600 rounded-lg hover:bg-red-100">🗑️ Löschen</button>
+            </div>
+          ` : ''}
+        `;
         catWrapper.appendChild(catTitle);
 
         const tableContainer = document.createElement('div');
@@ -682,19 +1215,19 @@ permalink: /weihnachtsmarkt/index.html
         const isIngredientCat = (cat === '🍎 Zutaten (Waffeln & Punsch)');
 
         const table = document.createElement('table');
-        table.className = 'w-full text-left text-xs sm:text-sm text-slate-800 border-collapse min-w-[650px]';
+        table.className = 'w-full text-left text-xs sm:text-sm text-slate-800 border-collapse min-w-[650px] print:min-w-0';
 
         table.innerHTML = `
           <thead>
-            <tr class="border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider bg-slate-50">
-              <th class="py-2.5 px-3 ${isOrga ? 'w-[40%]' : 'w-[23%]'}">${isOrga ? 'Aufgabe / Details' : 'Gegenstand'}</th>
+            <tr class="border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider bg-slate-50/50 print:bg-transparent">
+              <th class="py-2.5 px-3 ${isOrga ? 'w-[38%]' : 'w-[22%]'}">${isOrga ? 'Aufgabe / Details' : 'Gegenstand'}</th>
               ${!isOrga ? '<th class="py-2.5 px-2 w-[12%]">Benötigt</th>' : ''}
               ${!isOrga && !isIngredientCat ? '<th class="py-2.5 px-2 w-[10%] text-amber-900 font-bold">Auf Lager</th>' : ''}
               <th class="py-2.5 px-2 w-[16%]">Status</th>
               <th class="py-2.5 px-2 w-[16%]">${isOrga ? 'Ansprechpartner' : 'Verantwortlich'}</th>
               ${!isOrga ? '<th class="py-2.5 px-2 w-[7%] text-center">Gepackt?</th>' : ''}
               ${!isOrga ? '<th class="py-2.5 px-2 w-[8%] text-center">Box</th>' : ''}
-              <th class="py-2.5 px-2 w-[5%] text-center"></th>
+              ${isAdmin ? '<th class="py-2.5 px-2 w-[8%] text-center print:hidden">Admin</th>' : ''}
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100"></tbody>
@@ -707,11 +1240,13 @@ permalink: /weihnachtsmarkt/index.html
           const isDone = state.status === 'Erledigt' || state.status === 'Eingekauft';
           
           const tr = document.createElement('tr');
-          tr.className = `hover:bg-slate-50 transition ${isDone ? 'opacity-70 bg-emerald-50/40' : ''}`;
+          tr.className = `hover:bg-slate-50 transition ${isDone ? 'opacity-70 bg-emerald-50/30' : ''}`;
 
           const statusOptions = item.isShop 
             ? ['Offen', 'Vorbereitet', 'Verteilt', 'Eingekauft']
             : ['Offen', 'Vorbereitet', 'Verteilt', 'Erledigt'];
+
+          const disabledAttr = isBetrachter ? 'disabled' : '';
 
           tr.innerHTML = `
             <td class="py-3 px-3">
@@ -720,44 +1255,47 @@ permalink: /weihnachtsmarkt/index.html
             </td>
             ${!isOrga ? `
               <td class="py-3 px-2">
-                <input type="text" value="${state.qty || ''}" placeholder="-"
+                <input type="text" value="${state.qty \vert{}\vert{} ''}" placeholder="-" ${disabledAttr}
                   onchange="updateItem(${item.id}, 'qty', this.value)"
-                  class="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 focus:border-emerald-500 focus:outline-none w-20 shadow-sm" />
+                  class="role-orga-field bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 focus:border-emerald-500 focus:outline-none w-20 shadow-xs" />
               </td>
               ${!isIngredientCat ? `
                 <td class="py-3 px-2">
-                  <input type="text" value="${state.stockQty || ''}" placeholder="0"
+                  <input type="text" value="${state.stockQty || ''}" placeholder="0" ${disabledAttr}
                     onchange="updateItem(${item.id}, 'stockQty', this.value)"
-                    class="bg-amber-50/80 border border-amber-300 rounded-lg px-2 py-1 text-xs text-amber-900 font-medium focus:border-amber-500 focus:outline-none w-16 shadow-sm" />
+                    class="role-orga-field bg-amber-50/80 border border-amber-300 rounded-lg px-2 py-1 text-xs text-amber-900 font-medium focus:border-amber-500 focus:outline-none w-16 shadow-xs" />
                 </td>
               ` : ''}
             ` : ''}
             <td class="py-3 px-2">
-              <select onchange="updateItem(${item.id}, 'status', this.value)" 
-                class="border rounded-lg px-2 py-1 text-xs font-semibold focus:outline-none w-full shadow-sm ${getStatusClass(state.status)}">
+              <select onchange="updateItem(${item.id}, 'status', this.value)" ${disabledAttr}
+                class="border rounded-lg px-2 py-1 text-xs font-semibold focus:outline-none w-full shadow-xs ${getStatusClass(state.status)}">
                 ${statusOptions.map(opt => `<option value="${opt}" ${state.status === opt ? 'selected' : ''}>${opt}</option>`).join('')}
               </select>
             </td>
             <td class="py-3 px-2">
-              <input type="text" placeholder="Name..." value="${state.assignedTo || ''}"
+              <input type="text" placeholder="Name..." value="${state.assignedTo || ''}" ${disabledAttr}
                 onchange="updateItem(${item.id}, 'assignedTo', this.value)"
-                class="bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none w-full shadow-sm" />
+                class="role-orga-field bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none w-full shadow-xs" />
             </td>
             ${!isOrga ? `
               <td class="py-3 px-2 text-center align-middle">
-                <input type="checkbox" ${state.packed ? 'checked' : ''} 
+                <input type="checkbox" ${state.packed ? 'checked' : ''} ${disabledAttr}
                   onchange="updateItem(${item.id}, 'packed', this.checked)"
-                  class="w-5 h-5 accent-emerald-600 rounded cursor-pointer mx-auto block" />
+                  class="role-helfer-field w-5 h-5 accent-emerald-600 rounded cursor-pointer mx-auto block" />
               </td>
               <td class="py-3 px-2 text-center">
-                <input type="number" min="1" max="12" value="${state.boxNum || ''}"
+                <input type="number" min="1" max="12" value="${state.boxNum \vert{}\vert{} ''}" ${disabledAttr}
                   onchange="updateItem(${item.id}, 'boxNum', this.value)"
-                  class="bg-white border border-slate-300 rounded-lg px-1 py-1 text-xs text-slate-900 text-center focus:border-emerald-500 focus:outline-none w-12 mx-auto shadow-sm" />
+                  class="role-orga-field bg-white border border-slate-300 rounded-lg px-1 py-1 text-xs text-slate-900 text-center focus:border-emerald-500 focus:outline-none w-12 mx-auto shadow-xs" />
               </td>
             ` : ''}
-            <td class="py-3 px-2 text-center">
-              ${item.isCustom ? `<button onclick="deleteCustomItem(${item.id})" class="text-red-500 hover:text-red-700 font-bold px-1" title="Löschen">🗑️</button>` : ''}
-            </td>
+            ${isAdmin ? `
+              <td class="py-3 px-2 text-center whitespace-nowrap print:hidden">
+                <button onclick="openEditItemModal(${item.id})" class="text-slate-500 hover:text-emerald-700 font-bold px-1 text-sm">✏️</button>
+                <button onclick="deleteItem(${item.id})" class="text-slate-500 hover:text-red-700 font-bold px-1 text-sm">🗑️</button>
+              </td>
+            ` : ''}
           `;
           tbody.appendChild(tr);
         });
@@ -791,11 +1329,8 @@ permalink: /weihnachtsmarkt/index.html
       const packNum = parseVal(state.packageSize);
 
       let calcPackages = 1;
-      if (needNum > 0 && packNum > 0) {
-        calcPackages = Math.ceil(needNum / packNum);
-      } else if (needNum > 0) {
-        calcPackages = Math.ceil(needNum);
-      }
+      if (needNum > 0 && packNum > 0) calcPackages = Math.ceil(needNum / packNum);
+      else if (needNum > 0) calcPackages = Math.ceil(needNum);
 
       const unitPrice = parseVal(state.price);
       const totalPrice = calcPackages * unitPrice;
@@ -822,21 +1357,21 @@ permalink: /weihnachtsmarkt/index.html
         <td class="py-2.5 px-2 text-center">
           <input type="text" value="${state.packageSize || ''}" placeholder="z.B. 1 l"
             onchange="updateItem(${item.id}, 'packageSize', this.value); openShoppingModal();"
-            class="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 text-center w-20 shadow-sm focus:border-amber-500 focus:outline-none" />
+            class="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 text-center w-20 shadow-xs focus:border-amber-500 focus:outline-none" />
         </td>
         <td class="py-2.5 px-2 text-center font-bold text-amber-900 bg-amber-50/60 rounded-lg whitespace-nowrap">
           ${calcPackages}x
         </td>
         <td class="py-2.5 px-2">
           <select onchange="updateItem(${item.id}, 'store', this.value)"
-            class="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 w-full shadow-sm focus:border-amber-500 focus:outline-none">
+            class="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 w-full shadow-xs focus:border-amber-500 focus:outline-none">
             ${storeOptionsHtml}
           </select>
         </td>
         <td class="py-2.5 px-2 text-right whitespace-nowrap">
           <input type="number" step="0.01" value="${state.price || ''}" placeholder="0.00"
             onchange="updateItem(${item.id}, 'price', this.value); openShoppingModal();"
-            class="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 text-right w-16 shadow-sm inline-block mr-1 focus:border-amber-500 focus:outline-none" /> €
+            class="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 text-right w-16 shadow-xs inline-block mr-1 focus:border-amber-500 focus:outline-none" /> €
         </td>
         <td class="py-2.5 px-2 text-right font-bold text-emerald-800 whitespace-nowrap">
           ${totalPrice.toFixed(2).replace('.', ',')} €
@@ -863,11 +1398,8 @@ permalink: /weihnachtsmarkt/index.html
         const needNum = parseVal(state.qty);
         const packNum = parseVal(state.packageSize);
         let calcPackages = 1;
-        if (needNum > 0 && packNum > 0) {
-          calcPackages = Math.ceil(needNum / packNum);
-        } else if (needNum > 0) {
-          calcPackages = Math.ceil(needNum);
-        }
+        if (needNum > 0 && packNum > 0) calcPackages = Math.ceil(needNum / packNum);
+        else if (needNum > 0) calcPackages = Math.ceil(needNum);
         const unitPrice = parseVal(state.price);
         sum += calcPackages * unitPrice;
       }
@@ -880,7 +1412,7 @@ permalink: /weihnachtsmarkt/index.html
     document.getElementById('shoppingModal').classList.add('hidden');
   }
 
-  // --- Modularer Strom- & Verkabelungs-Planer ---
+  // --- Strom & Verkabelungs Planer ---
   function openWiringModal() {
     renderWiringModal();
     document.getElementById('wiringModal').classList.remove('hidden');
@@ -899,17 +1431,13 @@ permalink: /weihnachtsmarkt/index.html
     calculateSocketsPower();
   }
 
-  // Ermittelt dynamisch die Anzahl der Geräte-Instanzen aus 'qty' oder 'stockQty'
   function getItemCount(item) {
     const state = appState[item.id] || {};
     const need = parseInt(state.qty);
     const stock = parseInt(state.stockQty);
     let count = 1;
-    if (!isNaN(need) && need > 0) {
-      count = need;
-    } else if (!isNaN(stock) && stock > 0) {
-      count = stock;
-    }
+    if (!isNaN(need) && need > 0) count = need;
+    else if (!isNaN(stock) && stock > 0) count = stock;
     return Math.max(1, count);
   }
 
@@ -920,19 +1448,15 @@ permalink: /weihnachtsmarkt/index.html
       for (let i = 1; i <= count; i++) {
         const key = `${item.id}-${i}`;
         const socket = (appState.powerAssignments && appState.powerAssignments[key]) || 'unassigned';
-        
         const savedWatts = appState.instanceWatts && appState.instanceWatts[key] !== undefined 
           ? appState.instanceWatts[key] 
           : item.defaultWatts || 0;
 
         instances.push({
-          key: key,
-          itemId: item.id,
+          key: key, itemId: item.id,
           title: count > 1 ? `${item.title} #${i}` : item.title,
-          baseTitle: item.title,
-          watts: parseInt(savedWatts),
-          isCable: item.isCable,
-          socket: socket
+          baseTitle: item.title, watts: parseInt(savedWatts),
+          isCable: item.isCable, socket: socket
         });
       }
     });
@@ -988,7 +1512,7 @@ permalink: /weihnachtsmarkt/index.html
       card.id = `drag-item-${inst.key}`;
       card.draggable = true;
       card.ondragstart = (e) => drag(e, inst.key);
-      card.className = `p-2 rounded-lg border bg-white shadow-sm flex items-center justify-between gap-1.5 cursor-grab active:cursor-grabbing hover:border-sky-400 transition select-none`;
+      card.className = `p-2 rounded-xl border bg-white shadow-xs flex items-center justify-between gap-1.5 cursor-grab active:cursor-grabbing hover:border-sky-400 transition select-none`;
 
       card.innerHTML = `
         <div class="flex items-center gap-1.5 overflow-hidden">
@@ -1008,15 +1532,10 @@ permalink: /weihnachtsmarkt/index.html
         </div>
       `;
 
-      if (inst.socket === 'socket1') {
-        poolSocket1.appendChild(card);
-      } else if (inst.socket === 'socket2') {
-        poolSocket2.appendChild(card);
-      } else if (inst.socket === 'socket3') {
-        poolSocket3.appendChild(card);
-      } else {
-        poolUnassigned.appendChild(card);
-      }
+      if (inst.socket === 'socket1') poolSocket1.appendChild(card);
+      else if (inst.socket === 'socket2') poolSocket2.appendChild(card);
+      else if (inst.socket === 'socket3') poolSocket3.appendChild(card);
+      else poolUnassigned.appendChild(card);
     });
 
     calculateSocketsPower();
@@ -1033,9 +1552,7 @@ permalink: /weihnachtsmarkt/index.html
   function drop(e, targetSocket) {
     e.preventDefault();
     const instKey = e.dataTransfer.getData("text/plain");
-    if (instKey) {
-      moveInstanceSocket(instKey, targetSocket);
-    }
+    if (instKey) moveInstanceSocket(instKey, targetSocket);
   }
 
   function moveInstanceSocket(instKey, targetSocket) {
@@ -1078,7 +1595,6 @@ permalink: /weihnachtsmarkt/index.html
     document.getElementById('wiringModal').classList.add('hidden');
   }
 
-  // --- Lagerbestand Modal Logik (ohne Zutaten) ---
   function openStockModal() {
     const modal = document.getElementById('stockModal');
     const tbody = document.getElementById('stockTableBody');
@@ -1092,7 +1608,7 @@ permalink: /weihnachtsmarkt/index.html
     });
 
     if (stockedItems.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400 italic">Noch kein Lagerbestand eingetragen. Trage Bestand direkt in der Hauptliste ein!</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400 italic">Noch kein Lagerbestand eingetragen.</td></tr>`;
     } else {
       stockedItems.forEach(item => {
         const state = appState[item.id];
@@ -1118,7 +1634,6 @@ permalink: /weihnachtsmarkt/index.html
     document.getElementById('stockModal').classList.add('hidden');
   }
 
-  // --- Boxen-Modal Logik ---
   function openBoxOverview() {
     const modal = document.getElementById('boxModal');
     const content = document.getElementById('boxModalContent');
@@ -1135,7 +1650,7 @@ permalink: /weihnachtsmarkt/index.html
       const isComplete = totalCount > 0 && packedCount === totalCount;
 
       const boxDiv = document.createElement('div');
-      boxDiv.className = `border rounded-xl p-4 transition shadow-sm ${totalCount === 0 ? 'bg-slate-50/60 border-slate-200 opacity-60' : isComplete ? 'bg-emerald-50/60 border-emerald-300' : 'bg-white border-slate-200'}`;
+      boxDiv.className = `border rounded-2xl p-4 transition shadow-xs ${totalCount === 0 ? 'bg-slate-50/60 border-slate-200 opacity-60' : isComplete ? 'bg-emerald-50/60 border-emerald-300' : 'bg-white border-slate-200'}`;
 
       const boxHeader = document.createElement('div');
       boxHeader.className = 'border-b border-slate-100 pb-2 mb-3';
@@ -1143,7 +1658,7 @@ permalink: /weihnachtsmarkt/index.html
         <div class="flex justify-between items-center mb-1">
           <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2">
             <span>📦 Box ${b}</span>
-            ${isComplete ? '<span class="text-xs bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold">✓ Fertig gepackt</span>' : ''}
+            ${isComplete ? '<span class="text-xs bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold">✓ Gepackt</span>' : ''}
           </h3>
           <span class="text-xs font-semibold ${totalCount === 0 ? 'text-slate-400' : 'text-slate-600'}">
             ${packedCount}/${totalCount} gepackt
@@ -1180,7 +1695,7 @@ permalink: /weihnachtsmarkt/index.html
       } else {
         const emptyMsg = document.createElement('p');
         emptyMsg.className = 'text-xs text-slate-400 italic py-2';
-        emptyMsg.innerText = 'Noch keine Gegenstände dieser Box zugewiesen.';
+        emptyMsg.innerText = 'Noch keine Gegenstände zugewiesen.';
         boxDiv.appendChild(emptyMsg);
       }
 
