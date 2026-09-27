@@ -452,8 +452,23 @@ permalink: /weihnachtsmarkt/index.html
     { id: 73, cat: "📋 Sonstiges", title: "Weihnachtsmützen", details: "", isShop: false }
   ];
 
-  let appState = JSON.parse(localStorage.getItem('sg_wm_state_v15')) || {};
+    // 🔗 Füge hier deine Google Script Web-App-URL ein:
+  const SCRIPT_URL = "https://script.google.com/a/macros/sgbarnstorf.de/s/AKfycbx0J8qYfvLmKXqBsg_Km-QDp4RGk58pQfg9rDzX7kKa5iUFeVZqrCySYfxiSMM1No-W/exec";
+  let appState = {};
   let currentFilter = 'all';
+
+  async function loadStateFromSheet() {
+    try {
+      const res = await fetch(SCRIPT_URL);
+      appState = await res.json();
+    } catch(e) {
+      console.error("Fehler beim Laden aus Google Sheets:", e);
+      appState = JSON.parse(localStorage.getItem('sg_wm_state_v15')) || {};
+    }
+    itemsData.forEach(item => initItemState(item));
+    renderChecklist();
+    updateProgress();
+  }
 
   function initItemState(item) {
     if (!appState[item.id]) {
@@ -498,8 +513,19 @@ permalink: /weihnachtsmarkt/index.html
   itemsData.forEach(item => initItemState(item));
 
   function saveState() {
+    // Weiterhin lokal speichern als Backup
     localStorage.setItem('sg_wm_state_v15', JSON.stringify(appState));
     updateProgress();
+
+    // Live an das Google Sheet senden
+    if (SCRIPT_URL && !SCRIPT_URL.includes("https://script.google.com/a/macros/sgbarnstorf.de/s/AKfycbx0J8qYfvLmKXqBsg_Km-QDp4RGk58pQfg9rDzX7kKa5iUFeVZqrCySYfxiSMM1No-W/exec")) {
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(appState)
+      });
+    }
   }
 
   function updateItem(id, field, value) {
@@ -1092,11 +1118,10 @@ permalink: /weihnachtsmarkt/index.html
     document.getElementById('boxModal').classList.add('hidden');
   }
 
-  function initChecklist() {
+    function initChecklist() {
     const input = document.getElementById('searchInput');
     if (input) input.addEventListener('input', renderChecklist);
-    renderChecklist();
-    updateProgress();
+    loadStateFromSheet(); // Lädt jetzt live die Daten aus Google Sheets!
   }
 
   if (document.readyState === 'loading') {
