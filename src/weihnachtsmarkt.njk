@@ -158,13 +158,13 @@ permalink: /weihnachtsmarkt/index.html
   </div>
 </div>
 
-<!-- Modal: Strom & Modularer Verkabelungs-Planer (3 Steckdosen) -->
+<!-- Modal: Strom & Modularer Verkabelungs-Planer (3 Steckdosen mit Kabel-Kapazitäten) -->
 <div id="wiringModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
   <div class="bg-white border border-slate-200 rounded-2xl max-w-6xl w-full max-h-[92vh] flex flex-col shadow-2xl">
     <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-sky-50 rounded-t-2xl">
       <div>
         <h2 class="text-lg font-bold text-sky-900 flex items-center gap-2">⚡ Modularer Strom- & Kabel-Planer (3 Stromeingänge)</h2>
-        <p class="text-xs text-sky-700 mt-0.5">Ordnung für eure 3 Steckdosen: Verteile Kabel & Verbraucher per Drag & Drop auf die Stromeingänge!</p>
+        <p class="text-xs text-sky-700 mt-0.5">Ordnung für eure 3 Steckdosen: Verteile Kabel & Verbraucher inkl. Kabel-Belastbarkeit!</p>
       </div>
       <button onclick="closeWiringModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1">✕</button>
     </div>
@@ -188,21 +188,28 @@ permalink: /weihnachtsmarkt/index.html
               <span id="socket1Watts" class="px-2 py-0.5 rounded bg-sky-100 text-sky-900 font-bold font-mono text-xs">0 W / 0,0 A</span>
             </div>
             
-            <!-- Cable Attachment Selector -->
-            <div class="mb-3">
-              <label class="block text-[11px] font-semibold text-slate-500 mb-1">Angeschlossenes Kabel / Verteilung:</label>
+            <!-- Cable Attachment Selector & Cable Max Power -->
+            <div class="mb-3 space-y-1.5 bg-white p-2.5 rounded-lg border border-sky-100">
+              <label class="block text-[11px] font-semibold text-slate-600">Angeschlossenes Kabel / Verteilung:</label>
               <select id="socket1Cable" onchange="updateSocketCable(1, this.value)" class="w-full text-xs border border-sky-200 rounded-lg p-1.5 bg-white font-medium text-sky-950 focus:outline-none">
-                <option value="Direkt / Mehrfachstecker 3er">➡️ Direkt Mehrfachstecker (3er)</option>
-                <option value="Direkt / Mehrfachstecker 5er">➡️ Direkt Mehrfachstecker (5er)</option>
-                <option value="Verlängerung 3m + 3er Stecker">➡️ Verlängerung 3m + Mehrfachstecker</option>
-                <option value="Verlängerung 3m + 5er Stecker">➡️ Verlängerung 3m + 5er Stecker</option>
-                <option value="Kabeltrommel + Mehrfachstecker">➡️ Kabeltrommel + Mehrfachstecker</option>
+                <option value="Direkt / Mehrfachstecker 3er">➡️ Direkt Mehrfachstecker 3er</option>
+                <option value="Direkt / Mehrfachstecker 5er">➡️ Direkt Mehrfachstecker 5er</option>
+                <option value="Verlängerung 3m + Mehrfachstecker 3er">➡️ Verlängerung 3m + Mehrfachstecker 3er</option>
+                <option value="Verlängerung 3m + Mehrfachstecker 5er">➡️ Verlängerung 3m + Mehrfachstecker 5er</option>
+                <option value="Kabeltrommel + Mehrfachstecker 3er">➡️ Kabeltrommel + Mehrfachstecker 3er</option>
               </select>
+              <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100">
+                <span class="text-slate-500">Max. Kapazität Kabel:</span>
+                <div class="flex items-center gap-1">
+                  <input type="number" id="socket1CableMax" value="3680" step="100" onchange="updateCableMaxWatt(1, this.value)" class="w-16 border rounded px-1 text-right font-mono font-bold text-sky-900" />
+                  <span class="text-slate-500 font-bold">W</span>
+                </div>
+              </div>
             </div>
 
             <div id="socket1Pool" ondragover="allowDrop(event)" ondrop="drop(event, 'socket1')" class="space-y-2 min-h-[140px] p-2 bg-white rounded-lg border border-dashed border-sky-300"></div>
           </div>
-          <div id="socket1Warn" class="mt-3 text-xs hidden font-bold text-red-600">⚠️ Steckdose 1 überlastet (> 3.680W)!</div>
+          <div id="socket1Warn" class="mt-3 text-xs hidden font-bold text-red-600">⚠️ Überlastung Steckdose 1 (> 3.680W oder Kabel-Limit)!</div>
         </div>
 
         <!-- Outlet 2 -->
@@ -213,20 +220,27 @@ permalink: /weihnachtsmarkt/index.html
               <span id="socket2Watts" class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-900 font-bold font-mono text-xs">0 W / 0,0 A</span>
             </div>
             
-            <div class="mb-3">
-              <label class="block text-[11px] font-semibold text-slate-500 mb-1">Angeschlossenes Kabel / Verteilung:</label>
+            <div class="mb-3 space-y-1.5 bg-white p-2.5 rounded-lg border border-indigo-100">
+              <label class="block text-[11px] font-semibold text-slate-600">Angeschlossenes Kabel / Verteilung:</label>
               <select id="socket2Cable" onchange="updateSocketCable(2, this.value)" class="w-full text-xs border border-indigo-200 rounded-lg p-1.5 bg-white font-medium text-indigo-950 focus:outline-none">
-                <option value="Verlängerung 3m + 3er Stecker">➡️ Verlängerung 3m + Mehrfachstecker</option>
-                <option value="Verlängerung 3m + 5er Stecker">➡️ Verlängerung 3m + 5er Stecker</option>
-                <option value="Direkt / Mehrfachstecker 3er">➡️ Direkt Mehrfachstecker (3er)</option>
-                <option value="Direkt / Mehrfachstecker 5er">➡️ Direkt Mehrfachstecker (5er)</option>
-                <option value="Kabeltrommel + Mehrfachstecker">➡️ Kabeltrommel + Mehrfachstecker</option>
+                <option value="Verlängerung 3m + Mehrfachstecker 3er">➡️ Verlängerung 3m + Mehrfachstecker 3er</option>
+                <option value="Verlängerung 3m + Mehrfachstecker 5er">➡️ Verlängerung 3m + Mehrfachstecker 5er</option>
+                <option value="Direkt / Mehrfachstecker 3er">➡️ Direkt Mehrfachstecker 3er</option>
+                <option value="Direkt / Mehrfachstecker 5er">➡️ Direkt Mehrfachstecker 5er</option>
+                <option value="Kabeltrommel + Mehrfachstecker 3er">➡️ Kabeltrommel + Mehrfachstecker 3er</option>
               </select>
+              <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100">
+                <span class="text-slate-500">Max. Kapazität Kabel:</span>
+                <div class="flex items-center gap-1">
+                  <input type="number" id="socket2CableMax" value="3680" step="100" onchange="updateCableMaxWatt(2, this.value)" class="w-16 border rounded px-1 text-right font-mono font-bold text-indigo-900" />
+                  <span class="text-slate-500 font-bold">W</span>
+                </div>
+              </div>
             </div>
 
             <div id="socket2Pool" ondragover="allowDrop(event)" ondrop="drop(event, 'socket2')" class="space-y-2 min-h-[140px] p-2 bg-white rounded-lg border border-dashed border-indigo-300"></div>
           </div>
-          <div id="socket2Warn" class="mt-3 text-xs hidden font-bold text-red-600">⚠️ Steckdose 2 überlastet (> 3.680W)!</div>
+          <div id="socket2Warn" class="mt-3 text-xs hidden font-bold text-red-600">⚠️ Überlastung Steckdose 2 (> 3.680W oder Kabel-Limit)!</div>
         </div>
 
         <!-- Outlet 3 -->
@@ -237,28 +251,35 @@ permalink: /weihnachtsmarkt/index.html
               <span id="socket3Watts" class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-bold font-mono text-xs">0 W / 0,0 A</span>
             </div>
             
-            <div class="mb-3">
-              <label class="block text-[11px] font-semibold text-slate-500 mb-1">Angeschlossenes Kabel / Verteilung:</label>
+            <div class="mb-3 space-y-1.5 bg-white p-2.5 rounded-lg border border-emerald-100">
+              <label class="block text-[11px] font-semibold text-slate-600">Angeschlossenes Kabel / Verteilung:</label>
               <select id="socket3Cable" onchange="updateSocketCable(3, this.value)" class="w-full text-xs border border-emerald-200 rounded-lg p-1.5 bg-white font-medium text-emerald-950 focus:outline-none">
-                <option value="Verlängerung 3m + 5er Stecker">➡️ Verlängerung 3m + 5er Stecker</option>
-                <option value="Verlängerung 3m + 3er Stecker">➡️ Verlängerung 3m + Mehrfachstecker</option>
-                <option value="Direkt / Mehrfachstecker 3er">➡️ Direkt Mehrfachstecker (3er)</option>
-                <option value="Direkt / Mehrfachstecker 5er">➡️ Direkt Mehrfachstecker (5er)</option>
-                <option value="Kabeltrommel + Mehrfachstecker">➡️ Kabeltrommel + Mehrfachstecker</option>
+                <option value="Verlängerung 3m + Mehrfachstecker 5er">➡️ Verlängerung 3m + Mehrfachstecker 5er</option>
+                <option value="Verlängerung 3m + Mehrfachstecker 3er">➡️ Verlängerung 3m + Mehrfachstecker 3er</option>
+                <option value="Direkt / Mehrfachstecker 3er">➡️ Direkt Mehrfachstecker 3er</option>
+                <option value="Direkt / Mehrfachstecker 5er">➡️ Direkt Mehrfachstecker 5er</option>
+                <option value="Kabeltrommel + Mehrfachstecker 3er">➡️ Kabeltrommel + Mehrfachstecker 3er</option>
               </select>
+              <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100">
+                <span class="text-slate-500">Max. Kapazität Kabel:</span>
+                <div class="flex items-center gap-1">
+                  <input type="number" id="socket3CableMax" value="3680" step="100" onchange="updateCableMaxWatt(3, this.value)" class="w-16 border rounded px-1 text-right font-mono font-bold text-emerald-900" />
+                  <span class="text-slate-500 font-bold">W</span>
+                </div>
+              </div>
             </div>
 
             <div id="socket3Pool" ondragover="allowDrop(event)" ondrop="drop(event, 'socket3')" class="space-y-2 min-h-[140px] p-2 bg-white rounded-lg border border-dashed border-emerald-300"></div>
           </div>
-          <div id="socket3Warn" class="mt-3 text-xs hidden font-bold text-red-600">⚠️ Steckdose 3 überlastet (> 3.680W)!</div>
+          <div id="socket3Warn" class="mt-3 text-xs hidden font-bold text-red-600">⚠️ Überlastung Steckdose 3 (> 3.680W oder Kabel-Limit)!</div>
         </div>
 
       </div>
 
       <div class="bg-amber-50/60 border border-amber-200 rounded-xl p-4 text-slate-700 space-y-1">
         <h4 class="font-bold text-amber-900 mb-1 flex items-center gap-2">⚠️ Tipp für die 3 Anschlüsse</h4>
+        <p>• In der Hauptliste kannst du für jedes Kabel/Mehrfachstecker die **Max. W-Leitung** anpassen (z. B. 2300W bei leichten Kabeln vs. 3680W bei Schwerlast-Kabeln).</p>
         <p>• Verteilt die Großverbraucher (Einkochautomaten mit je 1.800W & Waffeleisen mit je 1.200W) am besten auf alle 3 Steckdosen!</p>
-        <p>• Maximale Dauerlast pro Steckdose: <b>3.680 Watt (16A)</b>.</p>
       </div>
 
     </div>
@@ -370,14 +391,14 @@ permalink: /weihnachtsmarkt/index.html
     { id: 74, cat: "📦 Material & Befestigung", title: "Panzertape / Gewebeband", details: "Zum Fixieren von Kabeln & Deko", isShop: false },
     { id: 17, cat: "📦 Material & Befestigung", title: "Schrauben", details: "", isShop: false },
     
-    // Elektrik (mit Default-Watts)
+    // Elektrik (mit Default-Watts / Kabel-Limits)
     { id: 18, cat: "⚡ Elektrik & Licht", title: "Lichterketten Kurz", details: "", defaultStockQty: "2", defaultWatts: 10, isPower: true, isShop: false },
     { id: 19, cat: "⚡ Elektrik & Licht", title: "Lichterketten Lang", details: "", defaultStockQty: "2", defaultWatts: 20, isPower: true, isShop: false },
     { id: 20, cat: "⚡ Elektrik & Licht", title: "Lichterketten Sterne", details: "", defaultStockQty: "2", defaultWatts: 15, isPower: true, isShop: false },
     { id: 76, cat: "⚡ Elektrik & Licht", title: "Lichtschlauch", details: "", defaultStockQty: "1", defaultWatts: 25, isPower: true, isShop: false },
-    { id: 21, cat: "⚡ Elektrik & Licht", title: "Mehrfachsteckdose 3er", details: "", isPower: true, defaultWatts: 0, isShop: false },
-    { id: 22, cat: "⚡ Elektrik & Licht", title: "Mehrfachsteckdose 5er", details: "", isPower: true, defaultWatts: 0, isShop: false },
-    { id: 23, cat: "⚡ Elektrik & Licht", title: "Verlängerungskabel 3m", details: "", isPower: true, defaultWatts: 0, isShop: false },
+    { id: 21, cat: "⚡ Elektrik & Licht", title: "Mehrfachstecker 3er", details: "3-fach Verteilungsstecker", isPower: true, defaultWatts: 3680, isCable: true, isShop: false },
+    { id: 22, cat: "⚡ Elektrik & Licht", title: "Mehrfachstecker 5er", details: "5-fach Verteilungsstecker", isPower: true, defaultWatts: 3680, isCable: true, isShop: false },
+    { id: 23, cat: "⚡ Elektrik & Licht", title: "Verlängerungskabel 3m", details: "Stromkabel Verlängerung", isPower: true, defaultWatts: 3680, isCable: true, isShop: false },
     
     // Geräte
     { id: 24, cat: "🔌 Geräte", title: "Einkochautomat 1", details: "", defaultStockQty: "1", defaultWatts: 1800, isPower: true, isShop: false },
@@ -446,7 +467,7 @@ permalink: /weihnachtsmarkt/index.html
     { id: 73, cat: "📋 Sonstiges", title: "Weihnachtsmützen", details: "", isShop: false }
   ];
 
-  let appState = JSON.parse(localStorage.getItem('sg_wm_state_v12')) || {};
+  let appState = JSON.parse(localStorage.getItem('sg_wm_state_v13')) || {};
   let currentFilter = 'all';
 
   function initItemState(item) {
@@ -461,24 +482,31 @@ permalink: /weihnachtsmarkt/index.html
         store: '',
         price: '',
         watts: item.defaultWatts !== undefined ? item.defaultWatts : '',
-        socket: 'unassigned' // 'unassigned', 'socket1', 'socket2', 'socket3'
+        socket: 'unassigned'
       };
     }
   }
 
-  // Init socket cable config
+  // Init socket cable config & cable max capacity watts
   if (!appState.socketCables) {
     appState.socketCables = {
       1: "Direkt / Mehrfachstecker 3er",
-      2: "Verlängerung 3m + 3er Stecker",
-      3: "Verlängerung 3m + 5er Stecker"
+      2: "Verlängerung 3m + Mehrfachstecker 3er",
+      3: "Verlängerung 3m + Mehrfachstecker 5er"
+    };
+  }
+  if (!appState.socketCableMaxWatts) {
+    appState.socketCableMaxWatts = {
+      1: 3680,
+      2: 3680,
+      3: 3680
     };
   }
 
   itemsData.forEach(item => initItemState(item));
 
   function saveState() {
-    localStorage.setItem('sg_wm_state_v12', JSON.stringify(appState));
+    localStorage.setItem('sg_wm_state_v13', JSON.stringify(appState));
     updateProgress();
   }
 
@@ -571,7 +599,7 @@ permalink: /weihnachtsmarkt/index.html
               <th class="py-2.5 px-3 ${isOrga ? 'w-[40%]' : 'w-[23%]'}">${isOrga ? 'Aufgabe / Details' : 'Gegenstand'}</th>
               ${!isOrga ? '<th class="py-2.5 px-2 w-[10%]">Benötigt</th>' : ''}
               ${!isOrga ? '<th class="py-2.5 px-2 w-[10%] text-amber-900 font-bold">Auf Lager</th>' : ''}
-              ${isPowerCat ? '<th class="py-2.5 px-2 w-[10%] text-sky-900 font-bold">Leistung</th>' : ''}
+              ${isPowerCat ? '<th class="py-2.5 px-2 w-[12%] text-sky-900 font-bold">Leistung / Max. W</th>' : ''}
               <th class="py-2.5 px-2 w-[16%]">Status</th>
               <th class="py-2.5 px-2 w-[16%]">${isOrga ? 'Ansprechpartner' : 'Verantwortlich'}</th>
               ${!isOrga ? '<th class="py-2.5 px-2 w-[7%] text-center">Gepackt?</th>' : ''}
@@ -616,6 +644,7 @@ permalink: /weihnachtsmarkt/index.html
                 <input type="number" value="${state.watts !== undefined ? state.watts : ''}" placeholder="0"
                   onchange="updateItem(${item.id}, 'watts', this.value)"
                   class="bg-sky-50/80 border border-sky-300 rounded-lg px-2 py-1 text-xs text-sky-900 font-mono w-16 shadow-sm inline-block focus:border-sky-500 focus:outline-none" /> <span class="text-xs text-slate-500">W</span>
+                ${item.isCable ? '<span class="block text-[10px] text-sky-700 font-semibold">(Max. Leitung)</span>' : ''}
               </td>
             ` : ''}
             <td class="py-3 px-2">
@@ -652,7 +681,7 @@ permalink: /weihnachtsmarkt/index.html
     });
   }
 
-  // --- Einkaufs-Modal Logik (Mit Erledigt-Umschaltung) ---
+  // --- Einkaufs-Modal Logik ---
   function openShoppingModal() {
     const modal = document.getElementById('shoppingModal');
     const tbody = document.getElementById('shoppingTableBody');
@@ -741,11 +770,15 @@ permalink: /weihnachtsmarkt/index.html
 
   // --- Modularer Strom- & Verkabelungs-Planer (3 Steckdosen) ---
   function openWiringModal() {
-    // Sync cable selects
     if (appState.socketCables) {
       if (document.getElementById('socket1Cable')) document.getElementById('socket1Cable').value = appState.socketCables[1] || '';
       if (document.getElementById('socket2Cable')) document.getElementById('socket2Cable').value = appState.socketCables[2] || '';
       if (document.getElementById('socket3Cable')) document.getElementById('socket3Cable').value = appState.socketCables[3] || '';
+    }
+    if (appState.socketCableMaxWatts) {
+      if (document.getElementById('socket1CableMax')) document.getElementById('socket1CableMax').value = appState.socketCableMaxWatts[1] || 3680;
+      if (document.getElementById('socket2CableMax')) document.getElementById('socket2CableMax').value = appState.socketCableMaxWatts[2] || 3680;
+      if (document.getElementById('socket3CableMax')) document.getElementById('socket3CableMax').value = appState.socketCableMaxWatts[3] || 3680;
     }
     renderWiringModal();
     document.getElementById('wiringModal').classList.remove('hidden');
@@ -755,6 +788,13 @@ permalink: /weihnachtsmarkt/index.html
     if (!appState.socketCables) appState.socketCables = {};
     appState.socketCables[socketNum] = val;
     saveState();
+  }
+
+  function updateCableMaxWatt(socketNum, val) {
+    if (!appState.socketCableMaxWatts) appState.socketCableMaxWatts = {};
+    appState.socketCableMaxWatts[socketNum] = parseInt(val || 3680);
+    saveState();
+    calculateSocketsPower();
   }
 
   function renderWiringModal() {
@@ -788,7 +828,7 @@ permalink: /weihnachtsmarkt/index.html
           <span class="font-semibold text-slate-800 text-xs truncate">${item.title}</span>
         </div>
         <div class="flex items-center gap-1 shrink-0">
-          <span class="text-[10px] font-mono bg-sky-50 text-sky-800 px-1.5 py-0.5 rounded border border-sky-100 font-bold">${watts} W</span>
+          <span class="text-[10px] font-mono bg-sky-50 text-sky-800 px-1.5 py-0.5 rounded border border-sky-100 font-bold">${watts} ${item.isCable ? 'W max' : 'W'}</span>
           <select onchange="moveItemSocket(${item.id}, this.value)" class="text-[10px] border rounded bg-slate-50 py-0.5 px-1 cursor-pointer">
             <option value="unassigned" ${socket === 'unassigned' ? 'selected' : ''}>Pool</option>
             <option value="socket1" ${socket === 'socket1' ? 'selected' : ''}>Dose 1</option>
@@ -852,9 +892,13 @@ permalink: /weihnachtsmarkt/index.html
     document.getElementById('socket2Watts').innerText = `${watts2.toLocaleString('de-DE')} W / ${amps2} A`;
     document.getElementById('socket3Watts').innerText = `${watts3.toLocaleString('de-DE')} W / ${amps3} A`;
 
-    document.getElementById('socket1Warn').classList.toggle('hidden', watts1 <= 3680);
-    document.getElementById('socket2Warn').classList.toggle('hidden', watts2 <= 3680);
-    document.getElementById('socket3Warn').classList.toggle('hidden', watts3 <= 3680);
+    const max1 = (appState.socketCableMaxWatts && appState.socketCableMaxWatts[1]) || 3680;
+    const max2 = (appState.socketCableMaxWatts && appState.socketCableMaxWatts[2]) || 3680;
+    const max3 = (appState.socketCableMaxWatts && appState.socketCableMaxWatts[3]) || 3680;
+
+    document.getElementById('socket1Warn').classList.toggle('hidden', watts1 <= Math.min(3680, max1));
+    document.getElementById('socket2Warn').classList.toggle('hidden', watts2 <= Math.min(3680, max2));
+    document.getElementById('socket3Warn').classList.toggle('hidden', watts3 <= Math.min(3680, max3));
   }
 
   function closeWiringModal() {
