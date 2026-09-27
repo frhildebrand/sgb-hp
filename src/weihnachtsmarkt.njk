@@ -3,238 +3,338 @@ layout: base.njk
 title: SG Barnstorf Weihnachtsmarkt
 ---
 
-<!-- Tailwind CSS Fallback/Direct Embed, damit das Styling garantiert lädt -->
+<!-- CDN Embed für Stylesheet -->
 <script src="https://cdn.tailwindcss.com"></script>
 
-<div class="max-w-6xl mx-auto px-4 py-6 font-sans text-slate-800">
-  
-  <!-- HEADER & MENU -->
-  <header class="flex items-center justify-between gap-3 bg-slate-900 text-white p-4 rounded-3xl mb-6 border border-slate-800 shadow-lg relative">
-    <div class="flex items-center gap-3">
-      <span class="text-2xl">🎄</span>
-      <div>
-        <h1 class="font-bold text-sm sm:text-base leading-tight">SG Barnstorf – Weihnachtsmarkt</h1>
-        <div id="currentViewTitle" class="text-xs text-amber-400 font-medium">📋 Hauptliste & Inventar</div>
-      </div>
-    </div>
-
-    <div class="flex items-center gap-2">
-      <button onclick="toggleRoleModal()" id="roleBadge" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-white/10 text-emerald-100 border border-white/20">
-        👁️ Rolle: BETRACHTER
-      </button>
-
-      <!-- Burger Navigation Menu -->
-      <div class="relative">
-        <button onclick="toggleNavMenu()" class="p-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-white font-bold text-lg leading-none transition">
-          ☰
-        </button>
-
-        <div id="navDropdown" class="hidden absolute right-0 mt-2 w-60 bg-slate-900 border border-slate-800 text-slate-200 rounded-2xl shadow-2xl p-2 z-50">
-          <button onclick="switchView('main')" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-800 font-semibold text-xs flex items-center gap-2">
-            <span>📋</span> Hauptliste & Inventar
-          </button>
-          <button onclick="switchView('recipes')" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-800 font-semibold text-xs flex items-center gap-2">
-            <span>☕</span> Rezepte & Zutaten
-          </button>
-          <button onclick="switchView('sales')" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-800 font-semibold text-xs flex items-center gap-2">
-            <span>🏬</span> Standkasse & Verkauf
-          </button>
-          
-          <div class="my-1 border-t border-slate-800"></div>
-
-          <!-- Goldener Admin-Button -->
-          <button onclick="switchView('admin')" class="w-full text-left px-3 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold text-xs flex items-center gap-2">
-            <span>👑</span> Admin Control Center
-          </button>
+<div class="min-h-screen bg-slate-950 text-slate-100 font-sans pb-12">
+  <div class="max-w-6xl mx-auto px-4 py-6 space-y-6">
+    
+    <!-- HEADER & NAVIGATION -->
+    <header class="flex items-center justify-between gap-4 bg-slate-900/90 backdrop-blur-md p-4 rounded-2xl border border-slate-800 shadow-2xl relative">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-xl">
+          🎄
         </div>
-      </div>
-    </div>
-  </header>
-
-  <!-- VIEW 1: CHECKLIST & MAIN -->
-  <section id="viewChecklist" class="space-y-6">
-    <div class="bg-white p-4 sm:p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
-      <div class="flex flex-col sm:flex-row gap-3 justify-between items-center">
-        <div class="w-full sm:w-1/2">
-          <input type="text" id="searchInput" placeholder="🔍 Suchen nach Gegenstand oder Helfer..." class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-        </div>
-        <div id="syncStatus" class="text-xs text-slate-500 font-medium">⏳ Verbinde...</div>
-      </div>
-
-      <div>
-        <div class="flex justify-between text-xs font-semibold mb-1.5 text-slate-700">
-          <span>Gesamtfortschritt</span>
-          <span id="progressText">0% erledigt</span>
-        </div>
-        <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden border border-slate-200">
-          <div id="progressBar" class="bg-emerald-500 h-full w-0 transition-all duration-300"></div>
-        </div>
-      </div>
-
-      <div class="flex gap-2 overflow-x-auto pb-1 text-xs">
-        <button onclick="filterCategory('all')" class="px-3 py-1.5 rounded-xl bg-slate-900 text-white font-medium">Alle</button>
-        <button onclick="filterCategory('Offen')" class="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200">Offen</button>
-        <button onclick="filterCategory('Vorbereitet')" class="px-3 py-1.5 rounded-xl bg-amber-100 text-amber-800 hover:bg-amber-200">Vorbereitet</button>
-        <button onclick="filterCategory('Verteilt')" class="px-3 py-1.5 rounded-xl bg-sky-100 text-sky-800 hover:bg-sky-200">Verteilt</button>
-        <button onclick="filterCategory('Erledigt')" class="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-800 hover:bg-emerald-200">Erledigt</button>
-      </div>
-    </div>
-
-    <div id="checklist"></div>
-  </section>
-
-  <!-- VIEW 2: RECIPES -->
-  <section id="viewRecipes" class="hidden space-y-6">
-    <div class="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm space-y-4">
-      <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">☕ Kinderpunsch-Rechner</h2>
-      <p class="text-xs text-slate-500">Stelle die Menge an Litern ein, um die benötigten Zutaten automatisch hochzurechnen.</p>
-      
-      <div class="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-        <input type="range" id="punschLiters" min="4" max="40" step="4" value="8" oninput="updateRecipeScaling()" class="w-full accent-emerald-600" />
-        <span id="punschLitersLabel" class="font-bold text-slate-800 text-sm whitespace-nowrap">8 Liter</span>
-      </div>
-
-      <ul id="punschRecipeList" class="space-y-2 text-xs sm:text-sm text-slate-700 list-disc pl-5"></ul>
-    </div>
-  </section>
-
-  <!-- VIEW 3: SALES / KASSE -->
-  <section id="viewSales" class="hidden space-y-6">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      
-      <!-- Punsch Kasse -->
-      <div class="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm space-y-4 text-center">
-        <h3 class="font-bold text-slate-900 text-base">☕ Kinderpunsch (2,00 €)</h3>
-        <div class="flex items-center justify-center gap-3">
-          <button onclick="addSale('punsch', -1)" class="cash-btn w-12 h-12 bg-slate-100 hover:bg-slate-200 font-bold text-xl rounded-2xl border border-slate-300">-1</button>
-          <input type="number" id="soldPunsch" value="0" onchange="calculateSalesStats()" class="w-20 text-center font-extrabold text-2xl border border-slate-300 rounded-2xl py-2" />
-          <button onclick="addSale('punsch', 1)" class="cash-btn w-12 h-12 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xl rounded-2xl border border-emerald-700 shadow-md">+1</button>
-        </div>
-      </div>
-
-      <!-- Waffeln Kasse -->
-      <div class="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm space-y-4 text-center">
-        <h3 class="font-bold text-slate-900 text-base">🧇 Waffeln (2,00 €)</h3>
-        <div class="flex items-center justify-center gap-3">
-          <button onclick="addSale('waffles', -1)" class="cash-btn w-12 h-12 bg-slate-100 hover:bg-slate-200 font-bold text-xl rounded-2xl border border-slate-300">-1</button>
-          <input type="number" id="soldWaffles" value="0" onchange="calculateSalesStats()" class="w-20 text-center font-extrabold text-2xl border border-slate-300 rounded-2xl py-2" />
-          <button onclick="addSale('waffles', 1)" class="cash-btn w-12 h-12 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xl rounded-2xl border border-emerald-700 shadow-md">+1</button>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Live Bilanz -->
-    <div class="bg-slate-900 text-white rounded-3xl p-6 shadow-xl space-y-4">
-      <h3 class="font-bold text-amber-400 text-sm uppercase tracking-wider">📊 Live Umsatz-Übersicht</h3>
-      <div class="grid grid-cols-3 gap-2 text-center">
-        <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700">
-          <div class="text-xs text-slate-400">Einnahmen</div>
-          <div id="statRevenue" class="text-base sm:text-lg font-bold text-emerald-400">0,00 €</div>
-        </div>
-        <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700">
-          <div class="text-xs text-slate-400">Ausgaben</div>
-          <div id="statExpenses" class="text-base sm:text-lg font-bold text-red-400">0,00 €</div>
-        </div>
-        <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700">
-          <div class="text-xs text-slate-400">Gewinn</div>
-          <div id="statProfit" class="text-base sm:text-lg font-extrabold text-amber-300">0,00 €</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- VIEW 4: ADMIN CONTROL CENTER -->
-  <section id="viewAdmin" class="hidden space-y-6">
-    <div class="bg-slate-900 border border-amber-500/30 text-slate-100 rounded-3xl p-6 shadow-2xl max-w-2xl mx-auto">
-      <div class="flex items-center justify-between pb-4 mb-6 border-b border-slate-800">
         <div>
-          <h2 class="text-lg font-bold text-amber-400 flex items-center gap-2">
-            <span>👑</span> Admin Control Center
-          </h2>
-          <p class="text-xs text-slate-400">Verwalte Passwörter & Einzelberechtigungen aller Rollen.</p>
+          <h1 class="font-bold text-sm sm:text-base text-slate-100 leading-tight">SG Barnstorf – Weihnachtsmarkt</h1>
+          <div id="currentViewTitle" class="text-xs text-amber-400 font-semibold flex items-center gap-1.5 mt-0.5">
+            <span>📦</span> Inventar
+          </div>
         </div>
-        <button onclick="saveRoleSettings()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-xl text-xs transition shadow-lg">
-          💾 Alle Speichern
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button onclick="toggleRoleModal()" id="roleBadge" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 transition shadow-sm">
+          👁️ Rolle: BETRACHTER
         </button>
+
+        <div class="relative">
+          <button onclick="toggleNavMenu()" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-200 transition">
+            ☰
+          </button>
+
+          <div id="navDropdown" class="hidden absolute right-0 mt-2 w-64 bg-slate-900/95 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl p-2 z-50 text-xs font-medium">
+            <button onclick="switchView('inventory')" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-800/80 flex items-center gap-2.5 text-slate-200">
+              <span>📦</span> Inventar
+            </button>
+            <button onclick="switchView('shopping')" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-800/80 flex items-center gap-2.5 text-slate-200">
+              <span>🛒</span> Einkaufsliste
+            </button>
+            <button onclick="switchView('boxes')" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-800/80 flex items-center gap-2.5 text-slate-200">
+              <span>🏷️</span> Lagerbestand & Boxen
+            </button>
+            <button onclick="switchView('recipes')" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-800/80 flex items-center gap-2.5 text-slate-200">
+              <span>☕</span> Rezepte & Zutaten
+            </button>
+            <button onclick="switchView('power')" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-800/80 flex items-center gap-2.5 text-slate-200">
+              <span>⚡</span> Stromverbrauch-Rechner
+            </button>
+            <button onclick="switchView('sales')" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-800/80 flex items-center gap-2.5 text-slate-200">
+              <span>💰</span> Verkauf & Kasse
+            </button>
+            
+            <div class="my-1.5 border-t border-slate-800"></div>
+
+            <button onclick="switchView('admin')" class="w-full text-left px-3 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold flex items-center gap-2.5">
+              <span>👑</span> Admin Control Center
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- VIEW 1: INVENTAR -->
+    <section id="viewInventory" class="space-y-6">
+      <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 shadow-xl space-y-4">
+        <div class="flex flex-col sm:flex-row gap-3 justify-between items-center">
+          <div class="w-full sm:w-1/2">
+            <input type="text" id="searchInput" onkeyup="renderChecklist()" placeholder="🔍 Suchen nach Gegenstand, Helfer, Box..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs font-medium text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50" />
+          </div>
+          <div id="syncStatus" class="text-xs text-slate-400 font-mono">⏳ Verbinde...</div>
+        </div>
+
+        <div>
+          <div class="flex justify-between text-xs font-semibold mb-2 text-slate-300">
+            <span>Gesamtfortschritt</span>
+            <span id="progressText" class="text-amber-400">0% erledigt</span>
+          </div>
+          <div class="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-slate-800">
+            <div id="progressBar" class="bg-gradient-to-r from-amber-500 to-emerald-500 h-full w-0 transition-all duration-300"></div>
+          </div>
+        </div>
+
+        <!-- Status Filter mit starkem Farbkontrast -->
+        <div class="flex gap-2 overflow-x-auto pb-1 text-xs font-medium">
+          <button onclick="filterCategory('all')" id="btnFilterAll" class="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">Alle</button>
+          <button onclick="filterCategory('Offen')" id="btnFilterOffen" class="px-3.5 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40">🔴 Offen</button>
+          <button onclick="filterCategory('Vorbereitet')" id="btnFilterVorbereitet" class="px-3.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40">🟡 Vorbereitet</button>
+          <button onclick="filterCategory('Verteilt')" id="btnFilterVerteilt" class="px-3.5 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40">🔵 Verteilt</button>
+          <button onclick="filterCategory('Erledigt')" id="btnFilterErledigt" class="px-3.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40">🟢 Erledigt</button>
+        </div>
       </div>
 
-      <div class="space-y-6 text-xs">
+      <!-- Item Formular -->
+      <div id="addItemCard" class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
+        <h3 class="font-bold text-xs uppercase tracking-wider text-amber-400">➕ Neues Item anlegen</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 text-xs">
+          <input type="text" id="newItemName" placeholder="Gegenstand..." class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 placeholder-slate-500" />
+          <select id="newItemCategory" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100">
+            <option value="Orga">🏛️ Orga</option>
+            <option value="Stand">🎪 Stand & Aufbauten</option>
+            <option value="Küche & Verpflegung">☕ Küche & Verpflegung</option>
+            <option value="Technik & Licht">🔌 Technik & Licht</option>
+          </select>
+          <input type="text" id="newItemOwner" placeholder="Verantwortlicher..." class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 placeholder-slate-500" />
+          <button onclick="addNewItem()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl py-2 px-4 transition shadow-md">Hinzufügen</button>
+        </div>
+      </div>
+
+      <div id="checklist" class="space-y-3"></div>
+    </section>
+
+    <!-- VIEW 2: EINKAUFSLISTE -->
+    <section id="viewShopping" class="hidden space-y-6">
+      <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <div class="flex justify-between items-center">
+          <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">🛒 Einkaufsliste Weihnachtsmarkt</h2>
+          <button onclick="addShoppingItem()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition shadow">+ Artikel</button>
+        </div>
+        <div id="shoppingListContainer" class="space-y-2"></div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: LAGERBESTAND & BOXEN -->
+    <section id="viewBoxes" class="hidden space-y-6">
+      <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">🏷️ Boxenübersicht & Lagerort</h2>
+        <div id="boxOverviewGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: REZEPTE & ZUTATEN -->
+    <section id="viewRecipes" class="hidden space-y-6">
+      <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">☕ Mengen-Rechner</h2>
+        <div class="flex items-center gap-4 bg-slate-950 p-4 rounded-xl border border-slate-800">
+          <input type="range" id="punschLiters" min="4" max="40" step="4" value="8" oninput="updateRecipeScaling()" class="w-full accent-amber-500" />
+          <span id="punschLitersLabel" class="font-bold text-amber-400 text-sm whitespace-nowrap">8 Liter Punsch</span>
+        </div>
+        <ul id="punschRecipeList" class="space-y-2 text-xs text-slate-300 list-disc pl-5"></ul>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-3">
+          <h3 class="font-bold text-amber-400 text-sm">☕ Kinderpunsch (Grundrezept 4L)</h3>
+          <ul class="text-xs text-slate-300 space-y-1.5 list-disc pl-4">
+            <li><strong>2,0 Liter</strong> Früchtetee / Rotbuschtee</li>
+            <li><strong>1,5 Liter</strong> Apfelsaft (naturtrüb)</li>
+            <li><strong>0,5 Liter</strong> Kirschsaft</li>
+            <li><strong>2 Stangen</strong> Zimt & 4 Sternanise</li>
+            <li><strong>1 Bio-Orange</strong> (Scheiben)</li>
+            <li><strong>2 EL</strong> Honig</li>
+          </ul>
+        </div>
+
+        <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-3">
+          <h3 class="font-bold text-emerald-400 text-sm">🧇 SG Barnstorf Herzwaffeln (ca. 30 Stk.)</h3>
+          <ul class="text-xs text-slate-300 space-y-1.5 list-disc pl-4">
+            <li><strong>500g</strong> Butter (weich)</li>
+            <li><strong>300g</strong> Zucker & 2 Pck. Vanillezucker</li>
+            <li><strong>1 Prise</strong> Salz</li>
+            <li><strong>10 Stück</strong> Eier</li>
+            <li><strong>1.000g</strong> Mehl (Typ 405)</li>
+            <li><strong>2 Pck.</strong> Backpulver</li>
+            <li><strong>ca. 400ml</strong> Milch</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 5: STROMVERBRAUCH-RECHNER -->
+    <section id="viewPower" class="hidden space-y-6">
+      <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">⚡ Stromverbrauch & Last-Rechner</h2>
+        <div class="space-y-2 text-xs font-medium">
+          <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+            <span class="text-slate-300">🧇 Waffeleisen (ca. 2000W)</span>
+            <input type="number" id="pwrWaffel" value="2" onchange="calculatePowerLoad()" class="w-16 bg-slate-900 border border-slate-700 text-amber-400 rounded-lg p-1 text-center font-bold" />
+          </div>
+          <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+            <span class="text-slate-300">☕ Glühwein-/Punschkocher (ca. 1800W)</span>
+            <input type="number" id="pwrPunsch" value="1" onchange="calculatePowerLoad()" class="w-16 bg-slate-900 border border-slate-700 text-amber-400 rounded-lg p-1 text-center font-bold" />
+          </div>
+          <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+            <span class="text-slate-300">💡 Beleuchtung & Deko (ca. 150W)</span>
+            <input type="number" id="pwrLicht" value="1" onchange="calculatePowerLoad()" class="w-16 bg-slate-900 border border-slate-700 text-amber-400 rounded-lg p-1 text-center font-bold" />
+          </div>
+        </div>
+
+        <div id="powerSummary" class="p-4 bg-amber-500/10 border border-amber-500/30 text-amber-300 rounded-xl font-semibold text-xs text-center">
+          Gesamtleistung: <span class="text-amber-400 font-bold" id="totalWatts">5950 Watt</span> (Achtung: Auf 2 getrennte Phasen aufteilen!)
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 6: VERKAUF & KASSE -->
+    <section id="viewSales" class="hidden space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4 text-center">
+          <h3 class="font-bold text-slate-100 text-base">☕ Kinderpunsch (<span id="pricePunschLabel" class="text-amber-400">2,00</span> €)</h3>
+          <div class="flex items-center justify-center gap-3">
+            <button onclick="addSale('punsch', -1)" class="w-12 h-12 bg-slate-800 hover:bg-slate-700 font-bold text-xl rounded-xl border border-slate-700 text-slate-200 transition">-1</button>
+            <input type="number" id="soldPunsch" value="0" readonly class="w-24 text-center font-extrabold text-2xl border border-slate-800 rounded-xl py-2 bg-slate-950 text-amber-400 cursor-not-allowed" />
+            <button onclick="addSale('punsch', 1)" class="w-12 h-12 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xl rounded-xl shadow-lg transition">+1</button>
+          </div>
+        </div>
+
+        <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4 text-center">
+          <h3 class="font-bold text-slate-100 text-base">🧇 Waffeln (<span id="priceWaffleLabel" class="text-amber-400">2,00</span> €)</h3>
+          <div class="flex items-center justify-center gap-3">
+            <button onclick="addSale('waffles', -1)" class="w-12 h-12 bg-slate-800 hover:bg-slate-700 font-bold text-xl rounded-xl border border-slate-700 text-slate-200 transition">-1</button>
+            <input type="number" id="soldWaffles" value="0" readonly class="w-24 text-center font-extrabold text-2xl border border-slate-800 rounded-xl py-2 bg-slate-950 text-amber-400 cursor-not-allowed" />
+            <button onclick="addSale('waffles', 1)" class="w-12 h-12 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xl rounded-xl shadow-lg transition">+1</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <h3 class="font-bold text-amber-400 text-xs uppercase tracking-wider">📊 Live Bilanz & Kassenstand</h3>
+        <div class="grid grid-cols-3 gap-3 text-center">
+          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+            <div class="text-[11px] text-slate-400">Einnahmen</div>
+            <div id="statRevenue" class="text-base font-bold text-emerald-400">0,00 €</div>
+          </div>
+          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+            <div class="text-[11px] text-slate-400">Ausgaben</div>
+            <div id="statExpenses" class="text-base font-bold text-red-400">0,00 €</div>
+          </div>
+          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+            <div class="text-[11px] text-slate-400">Gewinn</div>
+            <div id="statProfit" class="text-base font-extrabold text-amber-400">0,00 €</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 7: ADMIN CONTROL CENTER -->
+    <section id="viewAdmin" class="hidden space-y-6">
+      <div class="bg-slate-900/90 border border-amber-500/30 rounded-2xl p-6 shadow-2xl space-y-6">
         
-        <!-- HELFER ROLLE -->
-        <div class="bg-slate-950/70 p-4 rounded-2xl border border-slate-800">
-          <div class="flex items-center justify-between mb-3">
-            <span class="font-bold text-emerald-400 text-sm flex items-center gap-2">🤝 Helfer Rolle</span>
-            <div class="flex items-center gap-2">
-              <span class="text-slate-400">PW:</span>
-              <input type="text" id="pwd_helfer" class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-white font-mono w-32" />
+        <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+          <div>
+            <h2 class="text-base font-bold text-amber-400 flex items-center gap-2">
+              <span>👑</span> Admin Control Center
+            </h2>
+            <p class="text-xs text-slate-400">Verwaltung von Preisen, Berechtigungen & Passwörtern.</p>
+          </div>
+          <button onclick="saveRoleSettings()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs transition shadow-md">
+            💾 Speichern
+          </button>
+        </div>
+
+        <!-- Preis-Editor -->
+        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+          <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider">💶 Preise & Kosten</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div>
+              <label class="text-slate-400 block mb-1">Preis Punsch (€)</label>
+              <input type="number" step="0.5" id="adminPricePunsch" value="2.00" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-100 font-bold" />
+            </div>
+            <div>
+              <label class="text-slate-400 block mb-1">Preis Waffel (€)</label>
+              <input type="number" step="0.5" id="adminPriceWaffle" value="2.00" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-100 font-bold" />
+            </div>
+            <div>
+              <label class="text-slate-400 block mb-1">Standgebühren (€)</label>
+              <input type="number" id="adminStandFee" value="50.00" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-100 font-bold" />
             </div>
           </div>
+        </div>
+
+        <!-- Berechtigungen -->
+        <div class="space-y-4 text-xs">
           
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-300 pt-2 border-t border-slate-800/60">
-            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_cash" class="accent-emerald-500 rounded" /> 🛒 Kasse bedienen (+1/-1)</label>
-            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_packed" class="accent-emerald-500 rounded" /> ✅ Gepackt-Haken setzen</label>
-            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_qty" class="accent-emerald-500 rounded" /> 🔢 Benötigte Mengen ändern</label>
-            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_stock" class="accent-emerald-500 rounded" /> 📦 "Auf Lager" ändern</label>
-            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_box" class="accent-emerald-500 rounded" /> 🏷️ Boxen-Nummer ändern</label>
-            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_status" class="accent-emerald-500 rounded" /> 🔄 Status & Namen anpassen</label>
-            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_prices" class="accent-emerald-500 rounded" /> 💶 Preise & Kosten sehen/ändern</label>
-            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_log" class="accent-emerald-500 rounded" /> 📜 Aktivitäten protokollieren</label>
-          </div>
-        </div>
-
-        <!-- ORGA ROLLE -->
-        <div class="bg-slate-950/70 p-4 rounded-2xl border border-slate-800">
-          <div class="flex items-center justify-between mb-3">
-            <span class="font-bold text-sky-400 text-sm flex items-center gap-2">📋 Orga-Team Rolle</span>
-            <div class="flex items-center gap-2">
-              <span class="text-slate-400">PW:</span>
-              <input type="text" id="pwd_orga" class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-white font-mono w-32" />
+          <!-- Helfer -->
+          <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-emerald-400">🤝 Helfer Rolle</span>
+              <div class="flex items-center gap-2">
+                <span class="text-slate-400">PW:</span>
+                <input type="text" id="pwd_helfer" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 font-mono w-28" />
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-300 pt-2 border-t border-slate-800">
+              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_cash" class="accent-amber-500 rounded" /> 🛒 Kasse (+1/-1)</label>
+              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_override_sales" class="accent-amber-500 rounded" /> 🔢 Gesamtzahlen anpassen</label>
+              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_add_item" class="accent-amber-500 rounded" /> ➕ Items anlegen</label>
+              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_status" class="accent-amber-500 rounded" /> 🔄 Status ändern</label>
+              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_box" class="accent-amber-500 rounded" /> 🏷️ Boxen verwalten</label>
+              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_shopping" class="accent-amber-500 rounded" /> 🛒 Einkaufsliste abhaken</label>
+              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_power" class="accent-amber-500 rounded" /> ⚡ Strom-Rechner nutzen</label>
+              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_helfer_prices" class="accent-amber-500 rounded" /> 💶 Finanzen einsehen</label>
             </div>
           </div>
-          
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-300 pt-2 border-t border-slate-800/60">
-            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_cash" class="accent-sky-500 rounded" /> 🛒 Kasse bedienen (+1/-1)</label>
-            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_packed" class="accent-sky-500 rounded" /> ✅ Gepackt-Haken setzen</label>
-            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_qty" class="accent-sky-500 rounded" /> 🔢 Benötigte Mengen ändern</label>
-            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_stock" class="accent-sky-500 rounded" /> 📦 "Auf Lager" ändern</label>
-            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_box" class="accent-sky-500 rounded" /> 🏷️ Boxen-Nummer ändern</label>
-            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_status" class="accent-sky-500 rounded" /> 🔄 Status & Namen anpassen</label>
-            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_prices" class="accent-sky-500 rounded" /> 💶 Preise & Kosten sehen/ändern</label>
-            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_log" class="accent-sky-500 rounded" /> 📜 Aktivitäten protokollieren</label>
-          </div>
-        </div>
 
-        <!-- ADMIN ROLLE -->
-        <div class="bg-slate-950/70 p-4 rounded-2xl border border-slate-800">
-          <div class="flex items-center justify-between mb-2">
-            <span class="font-bold text-amber-400 text-sm flex items-center gap-2">🔓 Admin Rolle</span>
-            <div class="flex items-center gap-2">
-              <span class="text-slate-400">PW:</span>
-              <input type="text" id="pwd_admin" class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-white font-mono w-32" />
+          <!-- Orga -->
+          <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-sky-400">📋 Orga-Team Rolle</span>
+              <div class="flex items-center gap-2">
+                <span class="text-slate-400">PW:</span>
+                <input type="text" id="pwd_orga" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 font-mono w-28" />
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-300 pt-2 border-t border-slate-800">
+              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_cash" class="accent-amber-500 rounded" /> 🛒 Kasse (+1/-1)</label>
+              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_override_sales" class="accent-amber-500 rounded" /> 🔢 Gesamtzahlen anpassen</label>
+              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_add_item" class="accent-amber-500 rounded" /> ➕ Items anlegen</label>
+              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_status" class="accent-amber-500 rounded" /> 🔄 Status ändern</label>
+              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_box" class="accent-amber-500 rounded" /> 🏷️ Boxen verwalten</label>
+              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_shopping" class="accent-amber-500 rounded" /> 🛒 Einkaufsliste abhaken</label>
+              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_power" class="accent-amber-500 rounded" /> ⚡ Strom-Rechner nutzen</label>
+              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="perm_orga_prices" class="accent-amber-500 rounded" /> 💶 Finanzen einsehen</label>
             </div>
           </div>
-          <p class="text-slate-500 text-[11px]">Der Admin besitzt automatisch immer alle Berechtigungen.</p>
-        </div>
 
+        </div>
+      </div>
+    </section>
+
+    <!-- ROLE MODAL -->
+    <div id="roleModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div class="bg-slate-900 border border-slate-800 text-slate-100 rounded-2xl p-6 w-full max-w-sm space-y-4 text-center shadow-2xl">
+        <h3 class="font-bold text-sm">Rolle auswählen</h3>
+        <div class="space-y-2 text-xs">
+          <button onclick="selectRoleWithPassword('betrachter')" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl font-semibold">👁️ Betrachter (Nur Lesen)</button>
+          <button onclick="selectRoleWithPassword('helfer')" class="w-full py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-xl font-semibold">🤝 Helfer</button>
+          <button onclick="selectRoleWithPassword('orga')" class="w-full py-2.5 bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/30 rounded-xl font-semibold">📋 Orga-Team</button>
+          <button onclick="selectRoleWithPassword('admin')" class="w-full py-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-xl font-bold">👑 Admin</button>
+        </div>
+        <button onclick="closeRoleModal()" class="text-xs text-slate-500 hover:text-slate-300 pt-1">Abbrechen</button>
       </div>
     </div>
-  </section>
 
-  <!-- ROLE SWITCH MODAL -->
-  <div id="roleModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-    <div class="bg-slate-900 border border-slate-800 text-white rounded-3xl p-6 w-full max-w-sm space-y-4 text-center shadow-2xl">
-      <h3 class="font-bold text-base">Rolle auswählen</h3>
-      <div class="space-y-2">
-        <button onclick="selectRoleWithPassword('betrachter')" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-semibold">👁️ Betrachter (Nur Lesen)</button>
-        <button onclick="selectRoleWithPassword('helfer')" class="w-full py-2.5 bg-emerald-600/30 hover:bg-emerald-600/40 text-emerald-200 border border-emerald-500/30 rounded-xl text-xs font-semibold">🤝 Helfer</button>
-        <button onclick="selectRoleWithPassword('orga')" class="w-full py-2.5 bg-sky-600/30 hover:bg-sky-600/40 text-sky-200 border border-sky-500/30 rounded-xl text-xs font-semibold">📋 Orga-Team</button>
-        <button onclick="selectRoleWithPassword('admin')" class="w-full py-2.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-bold">👑 Admin</button>
-      </div>
-      <button onclick="closeRoleModal()" class="text-xs text-slate-400 hover:text-white pt-2">Abbrechen</button>
-    </div>
   </div>
-
 </div>
 
 <script src="/assets/weihnachtsmarkt/weihnachtsmarkt-data.js"></script>
