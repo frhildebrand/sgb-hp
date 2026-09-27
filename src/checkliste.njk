@@ -1,0 +1,368 @@
+---
+title: Weihnachtsmarkt Checkliste
+permalink: /weihnachtsmarkt/checkliste/
+---
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weihnachtsmarkt Checkliste – SG Barnstorf</title>
+<style>
+  :root{
+    --red:#ef4444;--red-bg:#fee2e2;--amber:#d97706;--amber-bg:#fef3c7;
+    --blue:#2563eb;--blue-bg:#dbeafe;--teal:#0d9488;--teal-bg:#ccfbf1;
+    --green:#16a34a;--green-bg:#dcfce7;--ink:#1f2937;--muted:#6b7280;
+    --line:#e5e7eb;--card:#ffffff;--bg:#f3f4f6;--accent:#ea580c;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  .wrap{max-width:1200px;margin:0 auto;padding:16px}
+  h1{font-size:1.4rem;margin:.2rem 0 1rem}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .btn{border:none;border-radius:8px;padding:9px 14px;font-size:.85rem;font-weight:600;cursor:pointer;color:#fff;background:var(--accent)}
+  .btn.secondary{background:#374151}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+  .btn:active{transform:translateY(1px)}
+  .card{background:var(--card);border-radius:14px;padding:18px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  .card h2{margin:0 0 4px;font-size:1.05rem;display:flex;align-items:center;gap:8px}
+  .card .sub{color:var(--muted);font-size:.82rem;margin-bottom:12px}
+  .kasse-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:12px}
+  .kasse-grid label{font-size:.78rem;color:var(--muted);display:block;margin-bottom:4px}
+  .kasse-grid input{width:100%;padding:7px;border:1px solid var(--line);border-radius:6px}
+  .kasse-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .kasse-sum div{border-radius:8px;padding:10px;text-align:center;font-weight:700}
+  .sum-in{background:var(--blue-bg);color:var(--blue)}
+  .sum-cost{background:var(--amber-bg);color:var(--amber)}
+  .sum-net{background:var(--green-bg);color:var(--green)}
+  .search{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--line);margin-bottom:10px;font-size:.95rem}
+  .filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+  .filters button{border:1px solid var(--line);background:#fff;border-radius:20px;padding:6px 14px;font-size:.8rem;cursor:pointer;font-weight:600;color:var(--muted)}
+  .filters button.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+  table{width:100%;border-collapse:collapse;font-size:.85rem}
+  th{text-align:left;color:var(--muted);font-weight:700;font-size:.7rem;letter-spacing:.03em;text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--line)}
+  td{padding:6px 8px;border-bottom:1px solid #f1f2f4;vertical-align:middle}
+  tr.hidden{display:none}
+  .item-name{font-weight:600}
+  .item-sub{color:var(--muted);font-size:.75rem}
+  input.field,select.field{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:.82rem}
+  select.status{font-weight:700;border:none;border-radius:16px;padding:5px 10px}
+  select.status.s-offen{background:var(--red-bg);color:var(--red)}
+  select.status.s-vorbereitet{background:var(--amber-bg);color:var(--amber)}
+  select.status.s-verteilt{background:var(--blue-bg);color:var(--blue)}
+  select.status.s-eingekauft{background:var(--teal-bg);color:var(--teal)}
+  select.status.s-erledigt{background:var(--green-bg);color:var(--green)}
+  .icon-btn{background:none;border:none;cursor:pointer;font-size:1rem;padding:2px 4px}
+  .admin-only{display:none}
+  body.admin .admin-only{display:table-cell}
+  body.admin .admin-only-inline{display:inline-flex}
+  .add-row{display:none;gap:6px;margin-top:10px;flex-wrap:wrap}
+  body.admin .add-row{display:flex}
+  .add-row input{flex:1;min-width:120px;padding:7px;border:1px solid var(--line);border-radius:6px}
+  .cat-head{display:flex;justify-content:space-between;align-items:center}
+  .status-pill{font-size:.7rem;color:var(--muted)}
+  footer{text-align:center;color:var(--muted);font-size:.75rem;padding:20px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎄 Weihnachtsmarkt Checkliste</h1>
+
+  <div class="toolbar">
+    <button class="btn ghost" id="adminToggle">🔒 Admin-Modus</button>
+    <button class="btn ghost" id="refreshBtn">↻ Aktualisieren</button>
+    <span class="status-pill" id="syncStatus" style="align-self:center"></span>
+  </div>
+
+  <div class="card">
+    <h2>📊 Verkaufsstatistik &amp; Stand-Kasse</h2>
+    <div class="kasse-grid">
+      <div><label>Verkaufte Tassen Punsch (Anzahl × Preis €)</label>
+        <div style="display:flex;gap:6px"><input class="field" type="number" id="k_punschAnz" value="0"><input class="field" type="number" step="0.1" id="k_punschPreis" value="2"></div></div>
+      <div><label>Verkaufte Waffeln (Anzahl × Preis €)</label>
+        <div style="display:flex;gap:6px"><input class="field" type="number" id="k_waffelAnz" value="0"><input class="field" type="number" step="0.1" id="k_waffelPreis" value="2"></div></div>
+      <div><label>Standgebühr (Fixkosten €)</label><input class="field" type="number" id="k_standgebuehr" value="0"></div>
+      <div><label>Sonstige Einnahmen/Spenden €</label><input class="field" type="number" id="k_sonstige" value="0"></div>
+    </div>
+    <div class="kasse-sum">
+      <div class="sum-in">Gesamteinnahmen (Brutto)<br><span id="k_ein">0,00 €</span></div>
+      <div class="sum-cost">Gesamtkosten (Einkauf+Standgebühr)<br><span id="k_kost">0,00 €</span></div>
+      <div class="sum-net">Reingewinn (SG Jugend)<br><span id="k_gewinn">0,00 €</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="cat-head"><h2>🍩 Stand-Rezepte</h2>
+      <div><label class="status-pill">Punsch-Mengenrechner – Ziel-Menge (Liter): </label><input class="field" style="width:70px;display:inline-block" type="number" id="r_liter" value="8"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:10px">
+      <div>
+        <strong>Belgische Waffeln (Rezept pro Spende)</strong>
+        <ul id="r_waffeln" style="font-size:.85rem"></ul>
+      </div>
+      <div>
+        <strong>Winter-Kinderpunsch (<span id="r_literLabel">8</span> Liter)</strong>
+        <ul id="r_punsch" style="font-size:.85rem"></ul>
+      </div>
+    </div>
+  </div>
+
+  <input class="search" id="search" placeholder="Gegenstand, Person, Menge oder Box suchen…">
+  <div class="filters" id="filters">
+    <button data-f="Alle" class="active">Alle</button>
+    <button data-f="Offen">Offen</button>
+    <button data-f="Vorbereitet">Vorbereitet</button>
+    <button data-f="Verteilt">Verteilt</button>
+    <button data-f="Eingekauft">Eingekauft</button>
+    <button data-f="Erledigt">Erledigt</button>
+  </div>
+
+  <div id="categories"></div>
+
+  <div class="add-row" style="margin-bottom:24px">
+    <input id="newCatName" placeholder="Neue Kategorie…">
+    <select id="newCatType" class="field" style="max-width:160px"><option value="item">Artikel-Liste</option><option value="task">Aufgaben-Liste</option></select>
+    <button class="btn" id="addCatBtn">+ Kategorie</button>
+  </div>
+
+  <footer>SG Barnstorf · Weihnachtsmarkt-Checkliste</footer>
+</div>
+
+<script>
+const STORAGE_URL = "https://script.google.com/macros/s/AKfycbzm4pz4LD6vwqwkDQXqIypYRVx9m49oliAevZPGolZYm_JKFmWN526TLE-2Z3fGP8tJ/exec";
+const ADMIN_PASSWORD = "sgbarnstorf"; // TODO: eigenes Passwort setzen (nur einfacher Client-Schutz, keine echte Sicherheit)
+const STATUSES = ["Offen","Vorbereitet","Verteilt","Eingekauft","Erledigt"];
+let uidCounter = 1;
+const uid = () => uidCounter++;
+const mk = (name, benoetigt="", aufLager=0, subtitle="") => ({id:uid(), name, subtitle, benoetigt, aufLager, status:"Offen", verantwortlich:"", gepackt:false, box:""});
+const mkTask = (title, subtitle="") => ({id:uid(), title, subtitle, status:"Offen", verantwortlich:""});
+
+function defaultState(){
+  return {
+    kasse:{punschAnz:0,punschPreis:2,waffelAnz:0,waffelPreis:2,standgebuehr:0,sonstige:0},
+    rezepte:{liter:8},
+    categories:[
+      {id:"orga",name:"Orga",icon:"🏛️",type:"task",items:[
+        mkTask("Anmeldung Teilnahme","An Gemeinde"),
+        mkTask("Hütte Gemeinde","Aufbau Tag & Zeit abklären"),
+        mkTask("Listen Roshop Unterstützung","Aufhängen Schwarzes Brett"),
+        mkTask("Anzeige Gaststättengewerbe","Gemeinde / Amt")]},
+      {id:"werkzeuge",name:"Werkzeuge",icon:"🛠️",type:"item",items:
+        ["Hammer","Nagelzange","Schere","Schraubendreher","Seitenschneider","Taschenlampe"].map(n=>mk(n))},
+      {id:"material",name:"Material & Befestigung",icon:"📦",type:"item",items:
+        ["Büroklammern","Draht","Heftzwecken","Kabelbinder","Kreppband","Nägel","Panzertape","Schrauben"].map(n=>mk(n))},
+      {id:"elektrik",name:"Elektrik & Licht",icon:"⚡",type:"item",items:[
+        mk("Lichterketten Kurz","",2), mk("Lichterketten Lang","",2), mk("Lichterketten Sterne","",2),
+        mk("Lichtschlauch","",1), mk("Mehrfachstecker 3er","",2,"3-fach Verteilungsstecker"),
+        mk("Mehrfachstecker 5er","",2,"5-fach Verteilungsstecker"), mk("Verlängerungskabel 3m","",2,"Stromkabel Verlängerung")]},
+      {id:"geraete",name:"Geräte",icon:"🔌",type:"item",items:[
+        mk("Einkochautomat",2,2), mk("Waffeleisen",3,3), mk("Wasserkocher",1,1)]},
+      {id:"kassefin",name:"Kasse & Finanzen",icon:"💶",type:"item",items:
+        ["Geldtasche","Kasse","Preisschilder Punsch","Preisschilder Waffeln","Spendenente","Wechselgeld"].map(n=>mk(n))},
+      {id:"standdeko",name:"Standdeko",icon:"✨",type:"item",items:
+        ["Bodenschutz/Malervlies","Keksteller","Kerzengläser","SG Banner","Tischdecken"].map(n=>mk(n))},
+      {id:"zutaten",name:"Zutaten (Waffeln & Punsch)",icon:"🍎",type:"item",items:[
+        mk("Wintertee","10 Btl.","-","Verschiedene Sorten"), mk("Glühfix","5 Btl."), mk("Zimtstangen","2 Stk"),
+        mk("Orangensaft","1,0 l"), mk("Apfelsaft","2,5 l"), mk("Roter Traubensaft","2,5 l"),
+        mk("Öl (Waffeln)"), mk("Puderzucker"), mk("Servietten")]},
+      {id:"einkaeufe",name:"Einkäufe & Verbrauchsmaterial",icon:"🛒",type:"item",items:
+        ["Geschirrhandtuch","Küchenrolle","Mülltüten","Spekulatius","Spülmittel","Teelichter","Waschlappen"].map(n=>mk(n))},
+      {id:"equipment",name:"Stand-Equipment & Zubehör",icon:"🍲",type:"item",items:
+        ["Esslöffel","Holzgabeln","Ölpinsel inkl. Flasche","Sieb für Puderzucker","Spaghettikelle (Punschkelle)","Suppenkellen"].map(n=>mk(n))},
+      {id:"sonstiges",name:"Sonstiges",icon:"🗂️",type:"item",items:
+        ["Musikbox / Bluetooth-Lautsprecher","Eddings","Erste Hilfe Set","Feuerzeug","Kehrblech & Handfeger","Kugelschreiber","Listen Roshop","Rezeptzettel","Schüssel Lappen Waschen","Steckmülleimer","Stehtische","Taschenmesser","Weihnachtsmützen"].map(n=>mk(n))}
+    ]
+  };
+}
+
+let state = JSON.parse(localStorage.getItem("wm_state") || "null") || defaultState();
+let activeFilter = "Alle";
+let saveTimer = null;
+
+function setSync(msg){ document.getElementById("syncStatus").textContent = msg; }
+
+async function loadFromBackend(){
+  try{
+    setSync("lädt…");
+    const res = await fetch(STORAGE_URL);
+    const text = await res.text();
+    const data = JSON.parse(text || "{}");
+    if(data && data.categories){ state = data; localStorage.setItem("wm_state", JSON.stringify(state)); renderAll(); }
+    setSync("✓ synchron");
+  }catch(e){ setSync("⚠ offline (lokal gespeichert)"); }
+}
+
+function saveToBackend(){
+  localStorage.setItem("wm_state", JSON.stringify(state));
+  clearTimeout(saveTimer);
+  setSync("speichert…");
+  saveTimer = setTimeout(async ()=>{
+    try{
+      await fetch(STORAGE_URL, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body: JSON.stringify(state)});
+      setSync("✓ gespeichert");
+    }catch(e){ setSync("⚠ Speichern fehlgeschlagen"); }
+  }, 800);
+}
+
+function statusClass(s){ return "s-" + s.toLowerCase().replace("ü","u"); }
+function euro(n){ return n.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2}) + " €"; }
+
+function renderKasse(){
+  const k = state.kasse;
+  document.getElementById("k_punschAnz").value = k.punschAnz;
+  document.getElementById("k_punschPreis").value = k.punschPreis;
+  document.getElementById("k_waffelAnz").value = k.waffelAnz;
+  document.getElementById("k_waffelPreis").value = k.waffelPreis;
+  document.getElementById("k_standgebuehr").value = k.standgebuehr;
+  document.getElementById("k_sonstige").value = k.sonstige;
+  const einnahmen = k.punschAnz*k.punschPreis + k.waffelAnz*k.waffelPreis + Number(k.sonstige||0);
+  const kosten = Number(k.standgebuehr||0);
+  document.getElementById("k_ein").textContent = euro(einnahmen);
+  document.getElementById("k_kost").textContent = euro(kosten);
+  document.getElementById("k_gewinn").textContent = euro(einnahmen - kosten);
+}
+["k_punschAnz","k_punschPreis","k_waffelAnz","k_waffelPreis","k_standgebuehr","k_sonstige"].forEach(id=>{
+  document.getElementById(id).addEventListener("input", e=>{
+    const map = {k_punschAnz:"punschAnz",k_punschPreis:"punschPreis",k_waffelAnz:"waffelAnz",k_waffelPreis:"waffelPreis",k_standgebuehr:"standgebuehr",k_sonstige:"sonstige"};
+    state.kasse[map[id]] = Number(e.target.value)||0; renderKasse(); saveToBackend();
+  });
+});
+
+function renderRezepte(){
+  const liter = state.rezepte.liter;
+  document.getElementById("r_liter").value = liter;
+  document.getElementById("r_literLabel").textContent = liter;
+  document.getElementById("r_waffeln").innerHTML = ["5 Eier","300 g Zucker","2 Pck. Vanillezucker","2 Prisen Salz","400 g Butter (weich)","500 g Mehl","½ Pck. Backpulver","200 ml Milch"].map(i=>`<li>${i}</li>`).join("");
+  const f = liter/8;
+  const round = (v,unit)=> (Math.round(v*10)/10) + " " + unit;
+  document.getElementById("r_punsch").innerHTML = [
+    round(2*f,"l Wasser"), round(10*f,"Btl. Wintertee"), round(1*f,"l Orangensaft"),
+    round(2.5*f,"l Apfelsaft"), round(2.5*f,"l Roter Traubensaft"), Math.ceil(2*f)+" Stk. Zimtstangen",
+    round(5*f,"Btl. Glühfix")
+  ].map(i=>`<li>${i}</li>`).join("");
+}
+document.getElementById("r_liter").addEventListener("input", e=>{ state.rezepte.liter = Number(e.target.value)||8; renderRezepte(); saveToBackend(); });
+
+function matchesSearch(text, q){ return text.toLowerCase().includes(q); }
+
+function renderCategories(){
+  const root = document.getElementById("categories");
+  const q = document.getElementById("search").value.trim().toLowerCase();
+  root.innerHTML = "";
+  state.categories.forEach(cat=>{
+    const card = document.createElement("div");
+    card.className = "card";
+    const isTask = cat.type === "task";
+    card.innerHTML = `
+      <div class="cat-head">
+        <h2>${cat.icon} ${cat.name}</h2>
+        <span class="admin-only-inline" style="display:none;gap:6px">
+          <button class="btn ghost" data-act="rename" data-cat="${cat.id}">✏️ Umbenennen</button>
+          <button class="btn ghost" data-act="delcat" data-cat="${cat.id}">🗑️ Löschen</button>
+        </span>
+      </div>
+      <table>
+        <thead><tr>
+          <th>${isTask?"Aufgabe / Details":"Gegenstand"}</th>
+          ${isTask?"":"<th>Benötigt</th><th>Auf Lager</th>"}
+          <th>Status</th><th>${isTask?"Ansprechpartner":"Verantwortlich"}</th>
+          ${isTask?"":"<th>Gepackt?</th><th>Box</th>"}
+          <th class="admin-only">Admin</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="add-row">
+        <input placeholder="${isTask?'Neue Aufgabe…':'Neuer Gegenstand…'}" data-newitem="${cat.id}">
+        <button class="btn" data-act="additem" data-cat="${cat.id}">+ Hinzufügen</button>
+      </div>`;
+    const tbody = card.querySelector("tbody");
+    let visibleCount = 0;
+    cat.items.forEach(item=>{
+      const label = isTask ? item.title : item.name;
+      const searchText = [label, item.subtitle, item.verantwortlich, item.box].filter(Boolean).join(" ").toLowerCase();
+      const matchQ = !q || matchesSearch(searchText, q);
+      const matchF = activeFilter === "Alle" || item.status === activeFilter;
+      const tr = document.createElement("tr");
+      if(!matchQ || !matchF){ tr.className = "hidden"; }
+      else visibleCount++;
+      tr.innerHTML = `
+        <td><div class="item-name">${label}</div>${item.subtitle?`<div class="item-sub">${item.subtitle}</div>`:""}</td>
+        ${isTask?"":`<td>${item.benoetigt||"-"}</td><td><input class="field" type="text" data-f="aufLager" value="${item.aufLager}"></td>`}
+        <td><select class="status field ${statusClass(item.status)}" data-f="status">${STATUSES.map(s=>`<option ${s===item.status?"selected":""}>${s}</option>`).join("")}</select></td>
+        <td><input class="field" type="text" placeholder="Name…" data-f="verantwortlich" value="${item.verantwortlich||""}"></td>
+        ${isTask?"":`<td style="text-align:center"><input type="checkbox" data-f="gepackt" ${item.gepackt?"checked":""}></td><td><input class="field" style="width:60px" data-f="box" value="${item.box||""}"></td>`}
+        <td class="admin-only"><button class="icon-btn" data-act="delitem">🗑️</button></td>`;
+      tr.querySelectorAll("[data-f]").forEach(el=>{
+        const field = el.dataset.f;
+        el.addEventListener("input", ()=>{
+          const val = el.type==="checkbox" ? el.checked : el.value;
+          item[field] = val;
+          if(field==="status"){ el.className = "status field " + statusClass(val); }
+          saveToBackend();
+        });
+      });
+      tr.querySelector('[data-act="delitem"]').addEventListener("click", ()=>{
+        if(confirm(`"${label}" wirklich löschen?`)){
+          cat.items = cat.items.filter(i=>i.id!==item.id);
+          renderCategories(); saveToBackend();
+        }
+      });
+      tbody.appendChild(tr);
+    });
+    card.querySelector('[data-act="rename"]').addEventListener("click", ()=>{
+      const n = prompt("Neuer Name für die Kategorie:", cat.name);
+      if(n){ cat.name = n; renderCategories(); saveToBackend(); }
+    });
+    card.querySelector('[data-act="delcat"]').addEventListener("click", ()=>{
+      if(confirm(`Kategorie "${cat.name}" inkl. aller Einträge löschen?`)){
+        state.categories = state.categories.filter(c=>c.id!==cat.id);
+        renderCategories(); saveToBackend();
+      }
+    });
+    card.querySelector('[data-act="additem"]').addEventListener("click", ()=>{
+      const input = card.querySelector(`[data-newitem="${cat.id}"]`);
+      const val = input.value.trim();
+      if(!val) return;
+      cat.items.push(isTask ? mkTask(val) : mk(val));
+      input.value = "";
+      renderCategories(); saveToBackend();
+    });
+    if(!q || visibleCount>0 || cat.items.length===0) root.appendChild(card);
+  });
+}
+
+function renderAll(){ renderKasse(); renderRezepte(); renderCategories(); }
+
+document.getElementById("search").addEventListener("input", renderCategories);
+document.getElementById("filters").addEventListener("click", e=>{
+  if(e.target.dataset.f){
+    activeFilter = e.target.dataset.f;
+    document.querySelectorAll("#filters button").forEach(b=>b.classList.toggle("active", b===e.target));
+    renderCategories();
+  }
+});
+document.getElementById("refreshBtn").addEventListener("click", loadFromBackend);
+document.getElementById("adminToggle").addEventListener("click", ()=>{
+  if(document.body.classList.contains("admin")){
+    document.body.classList.remove("admin"); sessionStorage.removeItem("wm_admin");
+  } else {
+    const pw = prompt("Admin-Passwort:");
+    if(pw === ADMIN_PASSWORD){ document.body.classList.add("admin"); sessionStorage.setItem("wm_admin","1"); }
+    else if(pw !== null){ alert("Falsches Passwort."); }
+  }
+});
+document.getElementById("addCatBtn").addEventListener("click", ()=>{
+  const name = document.getElementById("newCatName").value.trim();
+  const type = document.getElementById("newCatType").value;
+  if(!name) return;
+  state.categories.push({id:"cat"+uid(), name, icon:"📁", type, items:[]});
+  document.getElementById("newCatName").value = "";
+  renderCategories(); saveToBackend();
+});
+
+if(sessionStorage.getItem("wm_admin")==="1") document.body.classList.add("admin");
+renderAll();
+loadFromBackend();
+</script>
+</body>
+</html>
