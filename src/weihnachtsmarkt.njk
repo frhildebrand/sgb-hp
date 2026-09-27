@@ -408,7 +408,7 @@ permalink: /weihnachtsmarkt/index.html
     { id: 36, cat: "✨ Standdeko", title: "SG Banner", details: "", isShop: false },
     { id: 37, cat: "✨ Standdeko", title: "Tischdecken", details: "", defaultQty: "", isShop: false },
     
-    // 🍎 Zutaten (Kein Lagerbestand nötig!)
+    // 🍎 Zutaten
     { id: 38, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Wintertee", details: "Verschiedene Sorten", defaultQty: "25 Btl.", defaultPackageSize: "20 Btl.", isShop: true, isIngredient: true },
     { id: 39, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Glühfix", details: "", defaultQty: "12 Btl.", defaultPackageSize: "10 Btl.", isShop: true, isIngredient: true },
     { id: 40, cat: "🍎 Zutaten (Waffeln & Punsch)", title: "Zimtstangen", details: "", defaultQty: "5 Stk", defaultPackageSize: "5 Stk", isShop: true, isIngredient: true },
@@ -452,14 +452,12 @@ permalink: /weihnachtsmarkt/index.html
     { id: 73, cat: "📋 Sonstiges", title: "Weihnachtsmützen", details: "", isShop: false }
   ];
 
-  // 🔗 Google Script Web-App-URL:
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzm4pz4LD6vwqwkDQXqIypYRVx9m49oliAevZPGolZYm_JKFmWN526TLE-2Z3fGP8tJ/exec";
   let appState = {};
   let currentFilter = 'all';
 
   async function loadStateFromSheet() {
     try {
-      // Timestamp verhindert Caching auf iPad/Handy
       const res = await fetch(SCRIPT_URL + '?t=' + new Date().getTime());
       const cloudData = await res.json();
       if (cloudData && Object.keys(cloudData).length > 0) {
@@ -493,7 +491,6 @@ permalink: /weihnachtsmarkt/index.html
     }
   }
 
-  // Init socket cable config & cable max capacity watts
   if (!appState.socketCables) {
     appState.socketCables = {
       1: "Direkt Mehrfachstecker 3er",
@@ -518,11 +515,9 @@ permalink: /weihnachtsmarkt/index.html
   }
 
   async function saveState() {
-    // 1. Lokales Backup sofort aktualisieren
     localStorage.setItem('sg_wm_state_v15', JSON.stringify(appState));
     updateProgress();
 
-    // 2. Direkt an Google Sheets senden
     if (SCRIPT_URL) {
       try {
         await fetch(SCRIPT_URL, {
@@ -702,7 +697,6 @@ permalink: /weihnachtsmarkt/index.html
     });
   }
 
-  // --- Einkaufs-Modal Logik (mit Packungsgrößen & automatischer Packungsanzahl) ---
   function parseVal(valStr) {
     if (!valStr) return 0;
     const match = valStr.toString().replace(',', '.').match(/([0-9.]+)/);
@@ -814,7 +808,6 @@ permalink: /weihnachtsmarkt/index.html
     document.getElementById('shoppingModal').classList.add('hidden');
   }
 
-  // --- Modularer Strom- & Verkabelungs-Planer ---
   function openWiringModal() {
     renderWiringModal();
     document.getElementById('wiringModal').classList.remove('hidden');
@@ -854,7 +847,6 @@ permalink: /weihnachtsmarkt/index.html
         const key = `${item.id}-${i}`;
         const socket = (appState.powerAssignments && appState.powerAssignments[key]) || 'unassigned';
         
-        // Individuelle Wattzahl pro Instanz abrufen oder Default nehmen
         const savedWatts = appState.instanceWatts && appState.instanceWatts[key] !== undefined 
           ? appState.instanceWatts[key] 
           : item.defaultWatts || 0;
@@ -1012,7 +1004,6 @@ permalink: /weihnachtsmarkt/index.html
     document.getElementById('wiringModal').classList.add('hidden');
   }
 
-  // --- Lagerbestand Modal Logik (ohne Zutaten) ---
   function openStockModal() {
     const modal = document.getElementById('stockModal');
     const tbody = document.getElementById('stockTableBody');
@@ -1052,7 +1043,6 @@ permalink: /weihnachtsmarkt/index.html
     document.getElementById('stockModal').classList.add('hidden');
   }
 
-  // --- Boxen-Modal Logik ---
   function openBoxOverview() {
     const modal = document.getElementById('boxModal');
     const content = document.getElementById('boxModalContent');
