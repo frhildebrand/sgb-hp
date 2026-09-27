@@ -5,34 +5,46 @@ heroSubtitle: Interaktive Vorbereitungsliste für Kinderpunsch & Waffelstand
 permalink: /weihnachtsmarkt/index.html
 ---
 
-<div class="max-w-6xl mx-auto px-2 sm:px-4 py-6">
-  <!-- Progress & Sync Header -->
-  <div class="bg-gradient-to-r from-emerald-900 via-green-950 to-emerald-900 text-amber-300 border border-amber-500/40 rounded-2xl p-5 shadow-xl mb-6">
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-      <div>
-        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">🎄 SG Barnstorf – Stand-Planung</h1>
-        <p class="text-emerald-200/80 text-xs sm:text-sm mt-1">Live synchronisiert über Vereinsspeicher</p>
-      </div>
-      <div id="syncStatus" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-950/80 border border-emerald-700/60 text-emerald-300 self-start md:self-auto">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Synchronisiert
-      </div>
-    </div>
+<!-- Tailwind CSS Fallback CDN für garantierte Styles -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<div class="max-w-6xl mx-auto px-2 sm:px-4 py-6 font-sans text-slate-100">
+  
+  <!-- Header: Zentriert & Ausgewogen -->
+  <div class="bg-gradient-to-r from-emerald-950 via-green-900 to-emerald-950 text-amber-300 border border-amber-500/40 rounded-2xl p-6 text-center shadow-2xl mb-8">
+    <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight mb-2">🎄 SG Barnstorf – Stand-Planung</h1>
+    <p class="text-emerald-200/90 text-sm sm:text-base mb-5 max-w-xl mx-auto">Vorbereitungsliste für Kinderpunsch & Waffelstand am 1. Advent</p>
     
     <!-- Progress Bar -->
-    <div class="w-full bg-emerald-950 rounded-full h-5 border border-emerald-800 overflow-hidden relative shadow-inner">
+    <div class="max-w-xl mx-auto bg-emerald-950 rounded-full h-6 border border-emerald-700 overflow-hidden relative shadow-inner mb-5">
       <div id="progressBar" class="bg-gradient-to-r from-amber-400 to-amber-300 h-full w-0 transition-all duration-300"></div>
-      <div id="progressText" class="absolute inset-0 flex items-center justify-center text-xs font-bold text-slate-950">0% erledigt</div>
+      <div id="progressText" class="absolute inset-0 flex items-center justify-center text-xs sm:text-sm font-bold text-slate-950">0% erledigt</div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="flex flex-wrap justify-center gap-3">
+      <button onclick="exportData()" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-amber-400 text-slate-950 hover:bg-amber-300 transition shadow-md">
+        📋 Stand als Text kopieren
+      </button>
+      <button onclick="importData()" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-900 border border-slate-700 text-slate-200 hover:bg-slate-800 transition">
+        📥 Stand-Text einfügen
+      </button>
     </div>
   </div>
 
-  <!-- Search & Filter Controls -->
-  <div class="flex flex-col sm:flex-row gap-3 mb-6">
-    <input type="text" id="searchInput" placeholder="🔍 Gegenstand, Person oder Box suchen..." 
-      class="flex-1 bg-slate-900/90 border border-slate-700 text-slate-100 placeholder-slate-400 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-400 transition" />
-    <div class="flex gap-2">
-      <button onclick="setFilter('all', this)" class="filter-btn active flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-amber-400 bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm">Alle</button>
-      <button onclick="setFilter('open', this)" class="filter-btn flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 font-medium text-xs sm:text-sm">Offen</button>
-      <button onclick="setFilter('done', this)" class="filter-btn flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 font-medium text-xs sm:text-sm">Erledigt</button>
+  <!-- Suche & Status-Filter (Alle Status als Buttons) -->
+  <div class="space-y-4 mb-8">
+    <input type="text" id="searchInput" placeholder="🔍 Gegenstand, Person, Menge oder Box suchen..." 
+      class="w-full bg-slate-900 border border-slate-700 text-slate-100 placeholder-slate-400 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-400 transition shadow-md" />
+    
+    <!-- Status Filter Buttons -->
+    <div class="flex flex-wrap justify-center gap-2" id="filterContainer">
+      <button onclick="setFilter('all', this)" class="filter-btn active px-3.5 py-2 rounded-xl border border-amber-400 bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm shadow">Alle</button>
+      <button onclick="setFilter('Offen', this)" class="filter-btn px-3.5 py-2 rounded-xl border border-slate-700 bg-slate-900 text-red-400 font-medium text-xs sm:text-sm hover:border-red-500">Offen</button>
+      <button onclick="setFilter('Vorbereitet', this)" class="filter-btn px-3.5 py-2 rounded-xl border border-slate-700 bg-slate-900 text-amber-300 font-medium text-xs sm:text-sm hover:border-amber-400">Vorbereitet</button>
+      <button onclick="setFilter('Verteilt', this)" class="filter-btn px-3.5 py-2 rounded-xl border border-slate-700 bg-slate-900 text-sky-400 font-medium text-xs sm:text-sm hover:border-sky-400">Verteilt</button>
+      <button onclick="setFilter('Eingekauft', this)" class="filter-btn px-3.5 py-2 rounded-xl border border-slate-700 bg-slate-900 text-emerald-400 font-medium text-xs sm:text-sm hover:border-emerald-400">Eingekauft</button>
+      <button onclick="setFilter('Erledigt', this)" class="filter-btn px-3.5 py-2 rounded-xl border border-slate-700 bg-slate-900 text-emerald-400 font-medium text-xs sm:text-sm hover:border-emerald-400">Erledigt</button>
     </div>
   </div>
 
@@ -40,9 +52,9 @@ permalink: /weihnachtsmarkt/index.html
   <div id="checklist" class="space-y-8"></div>
 
   <!-- Reset Button -->
-  <div class="text-center mt-10">
+  <div class="text-center mt-12">
     <button onclick="resetAll()" class="text-red-400 hover:text-red-300 border border-red-500/30 hover:border-red-500/60 bg-red-950/20 px-4 py-2 rounded-lg text-xs font-medium transition">
-      ⚠️ Alle Eingaben in der Datenbank zurücksetzen
+      ⚠️ Alle Eingaben auf diesem Gerät zurücksetzen
     </button>
   </div>
 </div>
@@ -56,122 +68,106 @@ permalink: /weihnachtsmarkt/index.html
     background-color: #0f172a;
     color: #f8fafc;
   }
+  /* Status Farbklassen */
+  .status-offen { background-color: #451a1a; color: #fca5a5; border-color: #991b1b; }
+  .status-vorbereitet { background-color: #45300f; color: #fde047; border-color: #854d0e; }
+  .status-verteilt { background-color: #0c2a4a; color: #7dd3fc; border-color: #075985; }
+  .status-erledigt, .status-eingekauft { background-color: #062e1b; color: #6ee7b7; border-color: #065f46; }
 </style>
 
 <script>
 {% raw %}
-  // Hier deine kopierte Web-App-URL aus Google Apps Script einfügen:
-  const GOOGLE_SCRIPT_URL = "https://script.google.com/a/macros/sgbarnstorf.de/s/AKfycbx0J8qYfvLmKXqBsg_Km-QDp4RGk58pQfg9rDzX7kKa5iUFeVZqrCySYfxiSMM1No-W/exec";
-
   const itemsData = [
     // Orga
-    { id: 1, cat: "🏛️ Orga & Anträge", isShop: false, title: "Anmeldung Gemeinde", details: "Teilnahmebestätigung vorab sichern" },
-    { id: 2, cat: "🏛️ Orga & Anträge", isShop: false, title: "Anzeige Gaststättengewerbe", details: "Erforderliche Anträge einreichen" },
-    { id: 3, cat: "🏛️ Orga & Anträge", isShop: false, title: "Hütte Gemeinde", details: "Aufbauort, Tag & Uhrzeit genau abklären" },
-    { id: 4, cat: "🏛️ Orga & Anträge", isShop: false, title: "Helfer- & Teiglisten (Reshop)", details: "Unterstützung & Schichten koordinieren" },
+    { id: 1, cat: "🏛️ Orga & Anträge", isShop: false, title: "Anmeldung Gemeinde", details: "Teilnahmebestätigung vorab sichern", defaultQty: "1x" },
+    { id: 2, cat: "🏛️ Orga & Anträge", isShop: false, title: "Anzeige Gaststättengewerbe", details: "Erforderliche Anträge einreichen", defaultQty: "1x" },
+    { id: 3, cat: "🏛️ Orga & Anträge", isShop: false, title: "Hütte Gemeinde", details: "Aufbauort, Tag & Uhrzeit genau abklären", defaultQty: "1x" },
+    { id: 4, cat: "🏛️ Orga & Anträge", isShop: false, title: "Helfer- & Teiglisten (Reshop)", details: "Unterstützung & Schichten koordinieren", defaultQty: "1x" },
     
     // Strom & Technik
-    { id: 5, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Einkochautomaten / Punschkocher (2x)", details: "Vorab auf Funktion prüfen" },
-    { id: 6, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Waffeleisen (3x)", details: "2x SG + 1x KE" },
-    { id: 7, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Wasserkocher", details: "Für Heißwasser / schnelle Reinigung" },
-    { id: 8, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Lichterketten (Kurz, Lang, Sterne)", details: "2 Sterne, 4 normale (2 kurz / 2 lang)" },
-    { id: 9, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Mehrfachsteckdosen (3er & 5er)", details: "Für hohe Watt-Zahlen geeignet" },
-    { id: 10, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Verlängerungskabel (3m & Outdoor)", details: "Laufwege beachten" },
+    { id: 5, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Einkochautomaten / Punschkocher", details: "Vorab auf Funktion prüfen", defaultQty: "2x" },
+    { id: 6, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Waffeleisen", details: "2x SG + 1x KE", defaultQty: "3x" },
+    { id: 7, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Wasserkocher", details: "Für Heißwasser / schnelle Reinigung", defaultQty: "1x" },
+    { id: 8, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Lichterketten", details: "2 Sterne, 4 normale (2 kurz / 2 lang)", defaultQty: "6x" },
+    { id: 9, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Mehrfachsteckdosen", details: "Für hohe Watt-Zahlen geeignet", defaultQty: "3er & 5er" },
+    { id: 10, cat: "⚡ Strom, Licht & Aufbau", isShop: false, title: "Verlängerungskabel", details: "Laufwege beachten (Outdoor)", defaultQty: "3m+" },
     
     // Werkzeug
-    { id: 11, cat: "🛠️ Werkzeug & Befestigung", isShop: false, title: "Werkzeugkiste", details: "Hammer, Schraubendreher, Nagelzange, Seitenschneider, Schere" },
-    { id: 12, cat: "🛠️ Werkzeug & Befestigung", isShop: false, title: "Befestigungsmaterial", details: "Kabelbinder, Draht, Heftzwecken, Kreppband, Nägel, Schrauben" },
-    { id: 13, cat: "🛠️ Werkzeug & Befestigung", isShop: false, title: "Beleuchtung & Sonstiges", details: "Taschenlampe / Kopflampe, Feuerzeug" },
+    { id: 11, cat: "🛠️ Werkzeug & Befestigung", isShop: false, title: "Werkzeugkiste", details: "Hammer, Schraubendreher, Nagelzange, Schere", defaultQty: "1 Kiste" },
+    { id: 12, cat: "🛠️ Werkzeug & Befestigung", isShop: false, title: "Befestigungsmaterial", details: "Kabelbinder, Draht, Heftzwecken, Nägel", defaultQty: "Set" },
+    { id: 13, cat: "🛠️ Werkzeug & Befestigung", isShop: false, title: "Beleuchtung & Sonstiges", details: "Taschenlampe / Kopflampe, Feuerzeug", defaultQty: "2x" },
 
     // Stand & Deko
-    { id: 14, cat: "✨ Stand-Deko & Atmosphäre", isShop: false, title: "SG Barnstorf Banner", details: "Gut sichtbar aufhängen" },
-    { id: 15, cat: "✨ Stand-Deko & Atmosphäre", isShop: false, title: "Stehtische mit Tischdecken", details: "Inkl. Servietten & Kerzengläser" },
-    { id: 16, cat: "✨ Stand-Deko & Atmosphäre", isShop: false, title: "Kerzen in größeren Gläsern", details: "Windgeschützt (gehen sonst aus) + Teelichter" },
-    { id: 17, cat: "✨ Stand-Deko & Atmosphäre", isShop: false, title: "Bodenschutz / Teppich / Malervlies", details: "Gegen kalte Füße im Stand" },
-    { id: 18, cat: "✨ Stand-Deko & Atmosphäre", isShop: false, title: "Deko & Zubehör", details: "Keksteller, Rezeptzettel, Weihnachtsmützen" },
+    { id: 14, cat: "✨ Stand-Deko & Atmosphäre", isShop: false, title: "SG Barnstorf Banner", details: "Gut sichtbar aufhängen", defaultQty: "1x" },
+    { id: 15, cat: "✨ Stand-Deko & Atmosphäre", isShop: false, title: "Stehtische mit Tischdecken", details: "Inkl. Servietten & Kerzengläser", defaultQty: "2 Stk" },
+    { id: 16, cat: "✨ Stand-Deko & Atmosphäre", isShop: false, title: "Kerzen in größeren Gläsern", details: "Windgeschützt + Teelichter", defaultQty: "4 Gläser" },
+    { id: 17, cat: "✨ Stand-Deko & Atmosphäre", isShop: false, title: "Bodenschutz / Teppich / Malervlies", details: "Gegen kalte Füße im Stand", defaultQty: "1 Rolle" },
+    { id: 18, cat: "✨ Stand-Deko & Atmosphäre", isShop: false, title: "Deko & Zubehör", details: "Keksteller, Rezeptzettel, Weihnachtsmützen", defaultQty: "Set" },
 
     // Zutaten Punsch (Einkauf)
-    { id: 19, cat: "☕ Zutaten & Zubehör Punsch", isShop: true, title: "Säfte & Tee", details: "Apfelsaft (2,5l), Roter Traubensaft (2,5l), Orangensaft (1l), Wintertee (10 Btl)" },
-    { id: 20, cat: "☕ Zutaten & Zubehör Punsch", isShop: true, title: "Gewürze & Zutaten", details: "Glühfix (5 Btl), Zimtstangen (2 Stk)" },
-    { id: 21, cat: "☕ Zutaten & Zubehör Punsch", isShop: false, title: "Ausschank & Becher", details: "Thermobecher / Becher, Punschkelle (Spaghettikelle), Suppenkellen" },
+    { id: 19, cat: "☕ Zutaten & Zubehör Punsch", isShop: true, title: "Säfte & Tee", details: "Apfel-, Trauben-, Orangensaft & Wintertee", defaultQty: "2,5l / 10Btl" },
+    { id: 20, cat: "☕ Zutaten & Zubehör Punsch", isShop: true, title: "Gewürze & Zutaten", details: "Glühfix & Zimtstangen", defaultQty: "5 Btl / 2 Stk" },
+    { id: 21, cat: "☕ Zutaten & Zubehör Punsch", isShop: false, title: "Ausschank & Becher", details: "Thermobecher, Punschkelle, Suppenkellen", defaultQty: "Ausreich." },
 
     // Zutaten Waffeln (Einkauf)
-    { id: 22, cat: "🧇 Zutaten & Zubehör Waffeln", isShop: true, title: "Teig & Zutaten", details: "Waffelteig-Spenden, Öl, Puderzucker, Spekulatius" },
-    { id: 23, cat: "🧇 Zutaten & Zubehör Waffeln", isShop: false, title: "Waffel-Utensilien", details: "Teigkellen, Holzgabeln, Ölpinsel inkl. Flasche, Sieb für Puderzucker" },
+    { id: 22, cat: "🧇 Zutaten & Zubehör Waffeln", isShop: true, title: "Teig & Zutaten", details: "Waffelteig-Spenden, Öl, Puderzucker, Spekulatius", defaultQty: "Nach Liste" },
+    { id: 23, cat: "🧇 Zutaten & Zubehör Waffeln", isShop: false, title: "Waffel-Utensilien", details: "Teigkellen, Holzgabeln, Ölpinsel, Puderzuckersieb", defaultQty: "Set" },
 
     // Hygiene & Reinigung (Einkauf)
-    { id: 24, cat: "🧹 Hygiene, Reinigung & Müll", isShop: true, title: "Reinigungsmittel", details: "Spülmittel, Lappen, Geschirrhandtücher, Küchenrolle, Waschlappen" },
-    { id: 25, cat: "🧹 Hygiene, Reinigung & Müll", isShop: true, title: "Müllentsorgung", details: "Mülltüten, Steckmülleimer" },
-    { id: 26, cat: "🧹 Hygiene, Reinigung & Müll", isShop: false, title: "Sauberkeit & Schutz", details: "Schüssel zum Lappen waschen, Kehrblech & Handfeger, Einmalhandschuhe" },
+    { id: 24, cat: "🧹 Hygiene, Reinigung & Müll", isShop: true, title: "Reinigungsmittel", details: "Spülmittel, Lappen, Handtücher, Küchenrolle", defaultQty: "Set" },
+    { id: 25, cat: "🧹 Hygiene, Reinigung & Müll", isShop: true, title: "Müllentsorgung", details: "Mülltüten, Steckmülleimer", defaultQty: "1 Rolle" },
+    { id: 26, cat: "🧹 Hygiene, Reinigung & Müll", isShop: false, title: "Sauberkeit & Schutz", details: "Spülschüssel, Kehrblech, Einmalhandschuhe", defaultQty: "Set" },
 
     // Kasse
-    { id: 27, cat: "💶 Kasse, Preise & Finanzen", isShop: false, title: "Kasse & Wechselgeld", details: "Geldtasche / Kasse mit Kleingeld-Reserve" },
-    { id: 28, cat: "💶 Kasse, Preise & Finanzen", isShop: false, title: "Preisschilder & Spenden", details: "Preisschilder Waffeln & Punsch (DIN A4), Spendenente" }
+    { id: 27, cat: "💶 Kasse, Preise & Finanzen", isShop: false, title: "Kasse & Wechselgeld", details: "Geldtasche / Kasse mit Kleingeld-Reserve", defaultQty: "1 Kasse" },
+    { id: 28, cat: "💶 Kasse, Preise & Finanzen", isShop: false, title: "Preisschilder & Spenden", details: "Preisschilder Waffeln & Punsch (DIN A4), Spendenente", defaultQty: "Set" }
   ];
 
-  let appState = {};
+  let appState = JSON.parse(localStorage.getItem('sg_wm_state_v4')) || {};
   let currentFilter = 'all';
 
-  function initItemState(id) {
-    if (!appState[id]) {
-      appState[id] = { status: 'Offen', assignedTo: '', packed: false, boxNum: '' };
+  function initItemState(item) {
+    if (!appState[item.id]) {
+      appState[item.id] = { status: 'Offen', assignedTo: '', packed: false, boxNum: '', qty: item.defaultQty || '' };
     }
   }
 
-  itemsData.forEach(item => initItemState(item.id));
+  itemsData.forEach(item => initItemState(item));
 
-  function setSyncStatus(text, colorClass) {
-    const el = document.getElementById('syncStatus');
-    if (!el) return;
-    el.className = `inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border ${colorClass}`;
-    el.innerHTML = `<span class="w-2 h-2 rounded-full bg-current animate-pulse"></span> ${text}`;
-  }
-
-  async function loadCloudData() {
-    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("HIER_DEINE")) return;
-    setSyncStatus("Lade Daten...", "bg-amber-950/80 border-amber-700/60 text-amber-300");
-    try {
-      const res = await fetch(GOOGLE_SCRIPT_URL);
-      if (res.ok) {
-        const data = await res.json();
-        if (data && Object.keys(data).length > 0) {
-          appState = data;
-          itemsData.forEach(item => initItemState(item.id));
-          setSyncStatus("Synchronisiert", "bg-emerald-950/80 border-emerald-700/60 text-emerald-300");
-          renderChecklist();
-          updateProgress();
-        }
-      }
-    } catch (e) {
-      setSyncStatus("Fehler beim Laden", "bg-red-950/80 border-red-700/60 text-red-300");
-    }
-  }
-
-  let saveTimeout = null;
   function saveState() {
+    localStorage.setItem('sg_wm_state_v4', JSON.stringify(appState));
     updateProgress();
-    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("HIER_DEINE")) return;
-    setSyncStatus("Speichere...", "bg-amber-950/80 border-amber-700/60 text-amber-300");
-
-    clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(async () => {
-      try {
-        await fetch(GOOGLE_SCRIPT_URL, {
-          method: "POST",
-          body: JSON.stringify(appState)
-        });
-        setSyncStatus("Synchronisiert", "bg-emerald-950/80 border-emerald-700/60 text-emerald-300");
-      } catch (e) {
-        setSyncStatus("Speicherfehler", "bg-red-950/80 border-red-700/60 text-red-300");
-      }
-    }, 600);
   }
 
   function updateItem(id, field, value) {
-    initItemState(id);
+    if (!appState[id]) appState[id] = {};
     appState[id][field] = value;
     saveState();
     renderChecklist();
+  }
+
+  function exportData() {
+    const jsonStr = JSON.stringify(appState);
+    navigator.clipboard.writeText(jsonStr).then(() => {
+      alert("📋 Aktueller Stand kopiert! Du kannst den Text jetzt z.B. per WhatsApp verschicken.");
+    }).catch(() => {
+      prompt("Kopiere diesen Daten-Text:", jsonStr);
+    });
+  }
+
+  function importData() {
+    const jsonStr = prompt("Füge hier den kopierten Stand-Text ein:");
+    if (jsonStr) {
+      try {
+        appState = JSON.parse(jsonStr);
+        itemsData.forEach(item => initItemState(item));
+        saveState();
+        renderChecklist();
+        alert("✅ Stand erfolgreich geladen!");
+      } catch (e) {
+        alert("❌ Ungültiger Text!");
+      }
+    }
   }
 
   function updateProgress() {
@@ -199,6 +195,13 @@ permalink: /weihnachtsmarkt/index.html
     renderChecklist();
   }
 
+  function getStatusClass(status) {
+    if (status === 'Vorbereitet') return 'status-vorbereitet';
+    if (status === 'Verteilt') return 'status-verteilt';
+    if (status === 'Erledigt' || status === 'Eingekauft') return 'status-erledigt';
+    return 'status-offen';
+  }
+
   function renderChecklist() {
     const searchVal = (document.getElementById('searchInput')?.value || '').toLowerCase();
     const container = document.getElementById('checklist');
@@ -209,25 +212,25 @@ permalink: /weihnachtsmarkt/index.html
 
     categories.forEach(cat => {
       const catItems = itemsData.filter(item => {
-        initItemState(item.id);
+        initItemState(item);
         const state = appState[item.id];
         const matchesCat = item.cat === cat;
         const matchesSearch = item.title.toLowerCase().includes(searchVal) || 
                               item.details.toLowerCase().includes(searchVal) ||
                               (state.assignedTo && state.assignedTo.toLowerCase().includes(searchVal)) ||
-                              (state.boxNum && state.boxNum.toLowerCase().includes(searchVal));
+                              (state.boxNum && state.boxNum.toString().includes(searchVal));
         
-        const isDone = state.status === 'Erledigt' || state.status === 'Eingekauft';
         let matchesFilter = true;
-        if (currentFilter === 'open') matchesFilter = !isDone;
-        if (currentFilter === 'done') matchesFilter = isDone;
+        if (currentFilter !== 'all') {
+          matchesFilter = (state.status === currentFilter);
+        }
 
         return matchesCat && matchesSearch && matchesFilter;
       });
 
       if (catItems.length > 0) {
         const catWrapper = document.createElement('div');
-        catWrapper.className = 'bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-lg';
+        catWrapper.className = 'bg-slate-900/95 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl';
 
         const catTitle = document.createElement('h2');
         catTitle.className = 'text-lg font-bold text-amber-400 mb-4 flex items-center gap-2 border-b border-slate-800 pb-2';
@@ -238,16 +241,17 @@ permalink: /weihnachtsmarkt/index.html
         tableContainer.className = 'table-container';
 
         const table = document.createElement('table');
-        table.className = 'w-full text-left text-xs sm:text-sm text-slate-200 border-collapse min-w-[650px]';
+        table.className = 'w-full text-left text-xs sm:text-sm text-slate-200 border-collapse min-w-[700px]';
 
         table.innerHTML = `
           <thead>
             <tr class="border-b border-slate-700/80 text-slate-400 text-xs uppercase tracking-wider">
               <th class="py-2.5 px-2 w-[24%]">Gegenstand / Details</th>
+              <th class="py-2.5 px-2 w-[12%]">Menge</th>
               <th class="py-2.5 px-2 w-[18%]">Status</th>
-              <th class="py-2.5 px-2 w-[22%]">Verteilt an</th>
-              <th class="py-2.5 px-2 w-[16%] text-center">Eingepackt?</th>
-              <th class="py-2.5 px-2 w-[20%]">Box-Nr.</th>
+              <th class="py-2.5 px-2 w-[20%]">Verteilt an</th>
+              <th class="py-2.5 px-2 w-[14%] text-center">Eingepackt?</th>
+              <th class="py-2.5 px-2 w-[12%] text-center">Box-Nr.</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-800/60"></tbody>
@@ -260,7 +264,7 @@ permalink: /weihnachtsmarkt/index.html
           const isDone = state.status === 'Erledigt' || state.status === 'Eingekauft';
           
           const tr = document.createElement('tr');
-          tr.className = `hover:bg-slate-800/40 transition ${isDone ? 'opacity-60 bg-emerald-950/10' : ''}`;
+          tr.className = `hover:bg-slate-800/50 transition ${isDone ? 'opacity-60 bg-emerald-950/10' : ''}`;
 
           const statusOptions = item.isShop 
             ? ['Offen', 'Vorbereitet', 'Verteilt', 'Eingekauft']
@@ -272,25 +276,30 @@ permalink: /weihnachtsmarkt/index.html
               <div class="text-xs text-slate-400">${item.details}</div>
             </td>
             <td class="py-3 px-2">
+              <input type="text" placeholder="Menge" value="${state.qty || ''}"
+                onchange="updateItem(${item.id}, 'qty', this.value)"
+                class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-100 focus:border-amber-400 focus:outline-none w-20" />
+            </td>
+            <td class="py-3 px-2">
               <select onchange="updateItem(${item.id}, 'status', this.value)" 
-                class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-100 focus:border-amber-400 focus:outline-none w-full">
+                class="border rounded-lg px-2 py-1 text-xs font-semibold focus:outline-none w-full ${getStatusClass(state.status)}">
                 ${statusOptions.map(opt => `<option value="${opt}" ${state.status === opt ? 'selected' : ''}>${opt}</option>`).join('')}
               </select>
             </td>
             <td class="py-3 px-2">
-              <input type="text" placeholder="Name eintragen..." value="${state.assignedTo || ''}"
+              <input type="text" placeholder="Name..." value="${state.assignedTo || ''}"
                 onchange="updateItem(${item.id}, 'assignedTo', this.value)"
                 class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-100 placeholder-slate-500 focus:border-amber-400 focus:outline-none w-full" />
             </td>
-            <td class="py-3 px-2 text-center">
+            <td class="py-3 px-2 text-center align-middle">
               <input type="checkbox" ${state.packed ? 'checked' : ''} 
                 onchange="updateItem(${item.id}, 'packed', this.checked)"
-                class="w-5 h-5 accent-amber-400 rounded cursor-pointer" />
+                class="w-5 h-5 accent-amber-400 rounded cursor-pointer mx-auto block" />
             </td>
-            <td class="py-3 px-2">
-              <input type="text" placeholder="z.B. Box 1" value="${state.boxNum || ''}"
+            <td class="py-3 px-2 text-center">
+              <input type="number" min="1" max="12" placeholder="1-12" value="${state.boxNum || ''}"
                 onchange="updateItem(${item.id}, 'boxNum', this.value)"
-                class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-100 placeholder-slate-500 focus:border-amber-400 focus:outline-none w-full" />
+                class="bg-slate-950 border border-slate-700 rounded-lg px-1.5 py-1 text-xs text-slate-100 text-center placeholder-slate-500 focus:border-amber-400 focus:outline-none w-14 mx-auto" />
             </td>
           `;
           tbody.appendChild(tr);
@@ -304,9 +313,9 @@ permalink: /weihnachtsmarkt/index.html
   }
 
   function resetAll() {
-    if (confirm("Möchtest du wirklich alle Eingaben in der Datenbank zurücksetzen?")) {
+    if (confirm("Möchtest du wirklich alle Eingaben zurücksetzen?")) {
       appState = {};
-      itemsData.forEach(item => initItemState(item.id));
+      itemsData.forEach(item => initItemState(item));
       saveState();
       renderChecklist();
     }
@@ -317,9 +326,6 @@ permalink: /weihnachtsmarkt/index.html
     if (input) input.addEventListener('input', renderChecklist);
     renderChecklist();
     updateProgress();
-    loadCloudData();
-    // Alle 10 Sekunden automatisch im Hintergrund aktualisieren
-    setInterval(loadCloudData, 10000);
   }
 
   if (document.readyState === 'loading') {
