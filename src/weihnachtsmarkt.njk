@@ -814,20 +814,14 @@ permalink: /weihnachtsmarkt/index.html
   }
 
   function populateCableDropdowns(instances) {
-    // Verfügbare Kabel-Optionen basierend auf vorhandenen Kabel-Instanzen
-    const cableInstances = instances.filter(i => i.isCable);
+    // Nur die festen Kabel-/Verteilungs-Optionen im Dropdown anzeigen
     const cableOptionsHtml = [
-      `<option value="Direkt / Mehrfachstecker 3er">➡️ Direkt Mehrfachstecker 3er</option>`,
-      `<option value="Direkt / Mehrfachstecker 5er">➡️ Direkt Mehrfachstecker 5er</option>`,
+      `<option value="Direkt Mehrfachstecker 3er">➡️ Direkt Mehrfachstecker 3er</option>`,
+      `<option value="Direkt Mehrfachstecker 5er">➡️ Direkt Mehrfachstecker 5er</option>`,
       `<option value="Verlängerung 3m + Mehrfachstecker 3er">➡️ Verlängerung 3m + Mehrfachstecker 3er</option>`,
       `<option value="Verlängerung 3m + Mehrfachstecker 5er">➡️ Verlängerung 3m + Mehrfachstecker 5er</option>`,
       `<option value="Kabeltrommel + Mehrfachstecker 3er">➡️ Kabeltrommel + Mehrfachstecker 3er</option>`
     ];
-
-    // Vorhandene Kabel als konkrete Option ergänzen
-    cableInstances.forEach(c => {
-      cableOptionsHtml.push(`<option value="${c.title}">🔌 Vorhanden: ${c.title} (${c.watts}W max)</option>`);
-    });
 
     [1, 2, 3].forEach(sNum => {
       const el = document.getElementById(`socket${sNum}Cable`);
