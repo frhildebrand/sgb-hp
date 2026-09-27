@@ -158,13 +158,13 @@ permalink: /weihnachtsmarkt/index.html
   </div>
 </div>
 
-<!-- Modal: Strom & Modularer Verkabelungs-Planer (3 Steckdosen mit Kabel-Kapazitäten) -->
+<!-- Modal: Strom & Modularer Verkabelungs-Planer (Dynamic Multi-Instance Items) -->
 <div id="wiringModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
   <div class="bg-white border border-slate-200 rounded-2xl max-w-6xl w-full max-h-[92vh] flex flex-col shadow-2xl">
     <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-sky-50 rounded-t-2xl">
       <div>
         <h2 class="text-lg font-bold text-sky-900 flex items-center gap-2">⚡ Modularer Strom- & Kabel-Planer (3 Stromeingänge)</h2>
-        <p class="text-xs text-sky-700 mt-0.5">Ordnung für eure 3 Steckdosen: Verteile Kabel & Verbraucher inkl. Kabel-Belastbarkeit!</p>
+        <p class="text-xs text-sky-700 mt-0.5">Dynamische Anzahl aller Geräte & Kabel gemäß Mengen-Eingabe verteilen!</p>
       </div>
       <button onclick="closeWiringModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1">✕</button>
     </div>
@@ -192,11 +192,6 @@ permalink: /weihnachtsmarkt/index.html
             <div class="mb-3 space-y-1.5 bg-white p-2.5 rounded-lg border border-sky-100">
               <label class="block text-[11px] font-semibold text-slate-600">Angeschlossenes Kabel / Verteilung:</label>
               <select id="socket1Cable" onchange="updateSocketCable(1, this.value)" class="w-full text-xs border border-sky-200 rounded-lg p-1.5 bg-white font-medium text-sky-950 focus:outline-none">
-                <option value="Direkt / Mehrfachstecker 3er">➡️ Direkt Mehrfachstecker 3er</option>
-                <option value="Direkt / Mehrfachstecker 5er">➡️ Direkt Mehrfachstecker 5er</option>
-                <option value="Verlängerung 3m + Mehrfachstecker 3er">➡️ Verlängerung 3m + Mehrfachstecker 3er</option>
-                <option value="Verlängerung 3m + Mehrfachstecker 5er">➡️ Verlängerung 3m + Mehrfachstecker 5er</option>
-                <option value="Kabeltrommel + Mehrfachstecker 3er">➡️ Kabeltrommel + Mehrfachstecker 3er</option>
               </select>
               <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100">
                 <span class="text-slate-500">Max. Kapazität Kabel:</span>
@@ -223,11 +218,6 @@ permalink: /weihnachtsmarkt/index.html
             <div class="mb-3 space-y-1.5 bg-white p-2.5 rounded-lg border border-indigo-100">
               <label class="block text-[11px] font-semibold text-slate-600">Angeschlossenes Kabel / Verteilung:</label>
               <select id="socket2Cable" onchange="updateSocketCable(2, this.value)" class="w-full text-xs border border-indigo-200 rounded-lg p-1.5 bg-white font-medium text-indigo-950 focus:outline-none">
-                <option value="Verlängerung 3m + Mehrfachstecker 3er">➡️ Verlängerung 3m + Mehrfachstecker 3er</option>
-                <option value="Verlängerung 3m + Mehrfachstecker 5er">➡️ Verlängerung 3m + Mehrfachstecker 5er</option>
-                <option value="Direkt / Mehrfachstecker 3er">➡️ Direkt Mehrfachstecker 3er</option>
-                <option value="Direkt / Mehrfachstecker 5er">➡️ Direkt Mehrfachstecker 5er</option>
-                <option value="Kabeltrommel + Mehrfachstecker 3er">➡️ Kabeltrommel + Mehrfachstecker 3er</option>
               </select>
               <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100">
                 <span class="text-slate-500">Max. Kapazität Kabel:</span>
@@ -254,11 +244,6 @@ permalink: /weihnachtsmarkt/index.html
             <div class="mb-3 space-y-1.5 bg-white p-2.5 rounded-lg border border-emerald-100">
               <label class="block text-[11px] font-semibold text-slate-600">Angeschlossenes Kabel / Verteilung:</label>
               <select id="socket3Cable" onchange="updateSocketCable(3, this.value)" class="w-full text-xs border border-emerald-200 rounded-lg p-1.5 bg-white font-medium text-emerald-950 focus:outline-none">
-                <option value="Verlängerung 3m + Mehrfachstecker 5er">➡️ Verlängerung 3m + Mehrfachstecker 5er</option>
-                <option value="Verlängerung 3m + Mehrfachstecker 3er">➡️ Verlängerung 3m + Mehrfachstecker 3er</option>
-                <option value="Direkt / Mehrfachstecker 3er">➡️ Direkt Mehrfachstecker 3er</option>
-                <option value="Direkt / Mehrfachstecker 5er">➡️ Direkt Mehrfachstecker 5er</option>
-                <option value="Kabeltrommel + Mehrfachstecker 3er">➡️ Kabeltrommel + Mehrfachstecker 3er</option>
               </select>
               <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100">
                 <span class="text-slate-500">Max. Kapazität Kabel:</span>
@@ -278,7 +263,7 @@ permalink: /weihnachtsmarkt/index.html
 
       <div class="bg-amber-50/60 border border-amber-200 rounded-xl p-4 text-slate-700 space-y-1">
         <h4 class="font-bold text-amber-900 mb-1 flex items-center gap-2">⚠️ Tipp für die 3 Anschlüsse</h4>
-        <p>• In der Hauptliste kannst du für jedes Kabel/Mehrfachstecker die **Max. W-Leitung** anpassen (z. B. 2300W bei leichten Kabeln vs. 3680W bei Schwerlast-Kabeln).</p>
+        <p>• Die Karten im Pool werden automatisch entsprechend der angegebenen Anzahl in der Hauptliste dupliziert.</p>
         <p>• Verteilt die Großverbraucher (Einkochautomaten mit je 1.800W & Waffeleisen mit je 1.200W) am besten auf alle 3 Steckdosen!</p>
       </div>
 
@@ -391,14 +376,14 @@ permalink: /weihnachtsmarkt/index.html
     { id: 74, cat: "📦 Material & Befestigung", title: "Panzertape / Gewebeband", details: "Zum Fixieren von Kabeln & Deko", isShop: false },
     { id: 17, cat: "📦 Material & Befestigung", title: "Schrauben", details: "", isShop: false },
     
-    // Elektrik (mit Default-Watts / Kabel-Limits)
+    // Elektrik (mit Default-Watts & Kapazitäten)
     { id: 18, cat: "⚡ Elektrik & Licht", title: "Lichterketten Kurz", details: "", defaultStockQty: "2", defaultWatts: 10, isPower: true, isShop: false },
     { id: 19, cat: "⚡ Elektrik & Licht", title: "Lichterketten Lang", details: "", defaultStockQty: "2", defaultWatts: 20, isPower: true, isShop: false },
     { id: 20, cat: "⚡ Elektrik & Licht", title: "Lichterketten Sterne", details: "", defaultStockQty: "2", defaultWatts: 15, isPower: true, isShop: false },
     { id: 76, cat: "⚡ Elektrik & Licht", title: "Lichtschlauch", details: "", defaultStockQty: "1", defaultWatts: 25, isPower: true, isShop: false },
-    { id: 21, cat: "⚡ Elektrik & Licht", title: "Mehrfachstecker 3er", details: "3-fach Verteilungsstecker", isPower: true, defaultWatts: 3680, isCable: true, isShop: false },
-    { id: 22, cat: "⚡ Elektrik & Licht", title: "Mehrfachstecker 5er", details: "5-fach Verteilungsstecker", isPower: true, defaultWatts: 3680, isCable: true, isShop: false },
-    { id: 23, cat: "⚡ Elektrik & Licht", title: "Verlängerungskabel 3m", details: "Stromkabel Verlängerung", isPower: true, defaultWatts: 3680, isCable: true, isShop: false },
+    { id: 21, cat: "⚡ Elektrik & Licht", title: "Mehrfachstecker 3er", details: "3-fach Verteilungsstecker", isPower: true, defaultStockQty: "2", defaultWatts: 3680, isCable: true, isShop: false },
+    { id: 22, cat: "⚡ Elektrik & Licht", title: "Mehrfachstecker 5er", details: "5-fach Verteilungsstecker", isPower: true, defaultStockQty: "2", defaultWatts: 3680, isCable: true, isShop: false },
+    { id: 23, cat: "⚡ Elektrik & Licht", title: "Verlängerungskabel 3m", details: "Stromkabel Verlängerung", isPower: true, defaultStockQty: "2", defaultWatts: 3680, isCable: true, isShop: false },
     
     // Geräte
     { id: 24, cat: "🔌 Geräte", title: "Einkochautomat 1", details: "", defaultStockQty: "1", defaultWatts: 1800, isPower: true, isShop: false },
@@ -406,7 +391,7 @@ permalink: /weihnachtsmarkt/index.html
     { id: 25, cat: "🔌 Geräte", title: "Waffeleisen 1", details: "", defaultStockQty: "1", defaultWatts: 1200, isPower: true, isShop: false },
     { id: 78, cat: "🔌 Geräte", title: "Waffeleisen 2", details: "", defaultStockQty: "1", defaultWatts: 1200, isPower: true, isShop: false },
     { id: 79, cat: "🔌 Geräte", title: "Waffeleisen 3", details: "", defaultStockQty: "1", defaultWatts: 1200, isPower: true, isShop: false },
-    { id: 26, cat: "🔌 Geräte", title: "Wasserkocher", details: "", defaultWatts: 2200, isPower: true, isShop: false },
+    { id: 26, cat: "🔌 Geräte", title: "Wasserkocher", details: "", defaultWatts: 2200, defaultStockQty: "1", isPower: true, isShop: false },
     
     // Kasse
     { id: 27, cat: "💶 Kasse & Finanzen", title: "Geldtasche", details: "", isShop: false },
@@ -453,7 +438,7 @@ permalink: /weihnachtsmarkt/index.html
     
     // 📋 Sonstiges
     { id: 75, cat: "📋 Sonstiges", title: "Musikbox / Bluetooth-Lautsprecher", details: "Akku-Betrieb, inkl. Ladekabel & Powerbank", isShop: false },
-    { id: 61, cat: "📋 Sonstiges", title: "Edding", details: "", isShop: false },
+    { id: 61, cat: "📋 Sonstiges", title: "Eddings", details: "", isShop: false },
     { id: 63, cat: "📋 Sonstiges", title: "Erste Hilfe Set", details: "", isShop: false },
     { id: 64, cat: "📋 Sonstiges", title: "Feuerzeug", details: "", isShop: false },
     { id: 65, cat: "📋 Sonstiges", title: "Kehrblech & Handfeger", details: "", isShop: false },
@@ -467,7 +452,7 @@ permalink: /weihnachtsmarkt/index.html
     { id: 73, cat: "📋 Sonstiges", title: "Weihnachtsmützen", details: "", isShop: false }
   ];
 
-  let appState = JSON.parse(localStorage.getItem('sg_wm_state_v13')) || {};
+  let appState = JSON.parse(localStorage.getItem('sg_wm_state_v14')) || {};
   let currentFilter = 'all';
 
   function initItemState(item) {
@@ -481,8 +466,7 @@ permalink: /weihnachtsmarkt/index.html
         stockQty: item.defaultStockQty || '',
         store: '',
         price: '',
-        watts: item.defaultWatts !== undefined ? item.defaultWatts : '',
-        socket: 'unassigned'
+        watts: item.defaultWatts !== undefined ? item.defaultWatts : ''
       };
     }
   }
@@ -503,10 +487,15 @@ permalink: /weihnachtsmarkt/index.html
     };
   }
 
+  // Power assignments for multi-instance items (key: itemKey e.g. "18-1", "18-2")
+  if (!appState.powerAssignments) {
+    appState.powerAssignments = {};
+  }
+
   itemsData.forEach(item => initItemState(item));
 
   function saveState() {
-    localStorage.setItem('sg_wm_state_v13', JSON.stringify(appState));
+    localStorage.setItem('sg_wm_state_v14', JSON.stringify(appState));
     updateProgress();
   }
 
@@ -768,18 +757,8 @@ permalink: /weihnachtsmarkt/index.html
     document.getElementById('shoppingModal').classList.add('hidden');
   }
 
-  // --- Modularer Strom- & Verkabelungs-Planer (3 Steckdosen) ---
+  // --- Modularer Strom- & Verkabelungs-Planer (mit Mehrfach-Instanzen) ---
   function openWiringModal() {
-    if (appState.socketCables) {
-      if (document.getElementById('socket1Cable')) document.getElementById('socket1Cable').value = appState.socketCables[1] || '';
-      if (document.getElementById('socket2Cable')) document.getElementById('socket2Cable').value = appState.socketCables[2] || '';
-      if (document.getElementById('socket3Cable')) document.getElementById('socket3Cable').value = appState.socketCables[3] || '';
-    }
-    if (appState.socketCableMaxWatts) {
-      if (document.getElementById('socket1CableMax')) document.getElementById('socket1CableMax').value = appState.socketCableMaxWatts[1] || 3680;
-      if (document.getElementById('socket2CableMax')) document.getElementById('socket2CableMax').value = appState.socketCableMaxWatts[2] || 3680;
-      if (document.getElementById('socket3CableMax')) document.getElementById('socket3CableMax').value = appState.socketCableMaxWatts[3] || 3680;
-    }
     renderWiringModal();
     document.getElementById('wiringModal').classList.remove('hidden');
   }
@@ -797,6 +776,73 @@ permalink: /weihnachtsmarkt/index.html
     calculateSocketsPower();
   }
 
+  // Ermittelt wie viele Exemplare eines Power-Items vorhanden/benötigt sind
+  function getItemCount(item) {
+    const state = appState[item.id] || {};
+    const stock = parseInt(state.stockQty);
+    const need = parseInt(state.qty);
+    let count = 1;
+    if (!isNaN(stock) && stock > 0) {
+      count = stock;
+    } else if (!isNaN(need) && need > 0) {
+      count = need;
+    }
+    return Math.max(1, count);
+  }
+
+  function getPowerInstances() {
+    const instances = [];
+    itemsData.filter(i => i.isPower).forEach(item => {
+      const count = getItemCount(item);
+      for (let i = 1; i <= count; i++) {
+        const key = `${item.id}-${i}`;
+        const state = appState[item.id] || {};
+        const watts = parseInt(state.watts !== undefined ? state.watts : item.defaultWatts || 0);
+        const socket = (appState.powerAssignments && appState.powerAssignments[key]) || 'unassigned';
+        instances.push({
+          key: key,
+          itemId: item.id,
+          title: count > 1 ? `${item.title} #${i}` : item.title,
+          baseTitle: item.title,
+          watts: watts,
+          isCable: item.isCable,
+          socket: socket
+        });
+      }
+    });
+    return instances;
+  }
+
+  function populateCableDropdowns(instances) {
+    // Verfügbare Kabel-Optionen basierend auf vorhandenen Kabel-Instanzen
+    const cableInstances = instances.filter(i => i.isCable);
+    const cableOptionsHtml = [
+      `<option value="Direkt / Mehrfachstecker 3er">➡️ Direkt Mehrfachstecker 3er</option>`,
+      `<option value="Direkt / Mehrfachstecker 5er">➡️ Direkt Mehrfachstecker 5er</option>`,
+      `<option value="Verlängerung 3m + Mehrfachstecker 3er">➡️ Verlängerung 3m + Mehrfachstecker 3er</option>`,
+      `<option value="Verlängerung 3m + Mehrfachstecker 5er">➡️ Verlängerung 3m + Mehrfachstecker 5er</option>`,
+      `<option value="Kabeltrommel + Mehrfachstecker 3er">➡️ Kabeltrommel + Mehrfachstecker 3er</option>`
+    ];
+
+    // Vorhandene Kabel als konkrete Option ergänzen
+    cableInstances.forEach(c => {
+      cableOptionsHtml.push(`<option value="${c.title}">🔌 Vorhanden: ${c.title} (${c.watts}W max)</option>`);
+    });
+
+    [1, 2, 3].forEach(sNum => {
+      const el = document.getElementById(`socket${sNum}Cable`);
+      if (el) {
+        const curVal = (appState.socketCables && appState.socketCables[sNum]) || el.value;
+        el.innerHTML = cableOptionsHtml.join('');
+        if (curVal) el.value = curVal;
+      }
+      const maxEl = document.getElementById(`socket${sNum}CableMax`);
+      if (maxEl && appState.socketCableMaxWatts) {
+        maxEl.value = appState.socketCableMaxWatts[sNum] || 3680;
+      }
+    });
+  }
+
   function renderWiringModal() {
     const poolUnassigned = document.getElementById('unassignedPool');
     const poolSocket1 = document.getElementById('socket1Pool');
@@ -808,41 +854,37 @@ permalink: /weihnachtsmarkt/index.html
     poolSocket2.innerHTML = '';
     poolSocket3.innerHTML = '';
 
-    const powerItems = itemsData.filter(i => i.isPower);
+    const instances = getPowerInstances();
+    populateCableDropdowns(instances);
 
-    powerItems.forEach(item => {
-      initItemState(item);
-      const state = appState[item.id];
-      const socket = state.socket || 'unassigned';
-      const watts = parseInt(state.watts || 0);
-
+    instances.forEach(inst => {
       const card = document.createElement('div');
-      card.id = `drag-item-${item.id}`;
+      card.id = `drag-item-${inst.key}`;
       card.draggable = true;
-      card.ondragstart = (e) => drag(e, item.id);
+      card.ondragstart = (e) => drag(e, inst.key);
       card.className = `p-2 rounded-lg border bg-white shadow-sm flex items-center justify-between gap-1.5 cursor-grab active:cursor-grabbing hover:border-sky-400 transition select-none`;
 
       card.innerHTML = `
         <div class="flex items-center gap-1.5 overflow-hidden">
           <span class="text-slate-400 font-bold cursor-move text-xs">⋮⋮</span>
-          <span class="font-semibold text-slate-800 text-xs truncate">${item.title}</span>
+          <span class="font-semibold text-slate-800 text-xs truncate">${inst.title}</span>
         </div>
         <div class="flex items-center gap-1 shrink-0">
-          <span class="text-[10px] font-mono bg-sky-50 text-sky-800 px-1.5 py-0.5 rounded border border-sky-100 font-bold">${watts} ${item.isCable ? 'W max' : 'W'}</span>
-          <select onchange="moveItemSocket(${item.id}, this.value)" class="text-[10px] border rounded bg-slate-50 py-0.5 px-1 cursor-pointer">
-            <option value="unassigned" ${socket === 'unassigned' ? 'selected' : ''}>Pool</option>
-            <option value="socket1" ${socket === 'socket1' ? 'selected' : ''}>Dose 1</option>
-            <option value="socket2" ${socket === 'socket2' ? 'selected' : ''}>Dose 2</option>
-            <option value="socket3" ${socket === 'socket3' ? 'selected' : ''}>Dose 3</option>
+          <span class="text-[10px] font-mono bg-sky-50 text-sky-800 px-1.5 py-0.5 rounded border border-sky-100 font-bold">${inst.watts} ${inst.isCable ? 'W max' : 'W'}</span>
+          <select onchange="moveInstanceSocket('${inst.key}', this.value)" class="text-[10px] border rounded bg-slate-50 py-0.5 px-1 cursor-pointer">
+            <option value="unassigned" ${inst.socket === 'unassigned' ? 'selected' : ''}>Pool</option>
+            <option value="socket1" ${inst.socket === 'socket1' ? 'selected' : ''}>Dose 1</option>
+            <option value="socket2" ${inst.socket === 'socket2' ? 'selected' : ''}>Dose 2</option>
+            <option value="socket3" ${inst.socket === 'socket3' ? 'selected' : ''}>Dose 3</option>
           </select>
         </div>
       `;
 
-      if (socket === 'socket1') {
+      if (inst.socket === 'socket1') {
         poolSocket1.appendChild(card);
-      } else if (socket === 'socket2') {
+      } else if (inst.socket === 'socket2') {
         poolSocket2.appendChild(card);
-      } else if (socket === 'socket3') {
+      } else if (inst.socket === 'socket3') {
         poolSocket3.appendChild(card);
       } else {
         poolUnassigned.appendChild(card);
@@ -852,8 +894,8 @@ permalink: /weihnachtsmarkt/index.html
     calculateSocketsPower();
   }
 
-  function drag(e, itemId) {
-    e.dataTransfer.setData("text/plain", itemId);
+  function drag(e, instKey) {
+    e.dataTransfer.setData("text/plain", instKey);
   }
 
   function allowDrop(e) {
@@ -862,26 +904,30 @@ permalink: /weihnachtsmarkt/index.html
 
   function drop(e, targetSocket) {
     e.preventDefault();
-    const itemId = e.dataTransfer.getData("text/plain");
-    if (itemId) {
-      moveItemSocket(parseInt(itemId), targetSocket);
+    const instKey = e.dataTransfer.getData("text/plain");
+    if (instKey) {
+      moveInstanceSocket(instKey, targetSocket);
     }
   }
 
-  function moveItemSocket(itemId, targetSocket) {
-    updateItem(itemId, 'socket', targetSocket);
+  function moveInstanceSocket(instKey, targetSocket) {
+    if (!appState.powerAssignments) appState.powerAssignments = {};
+    appState.powerAssignments[instKey] = targetSocket;
+    saveState();
     renderWiringModal();
   }
 
   function calculateSocketsPower() {
     let watts1 = 0, watts2 = 0, watts3 = 0;
+    const instances = getPowerInstances();
 
-    itemsData.filter(i => i.isPower).forEach(item => {
-      const state = appState[item.id];
-      const w = parseInt(state.watts || 0);
-      if (state.socket === 'socket1') watts1 += w;
-      if (state.socket === 'socket2') watts2 += w;
-      if (state.socket === 'socket3') watts3 += w;
+    instances.forEach(inst => {
+      // Nutzkabel verbrauchen selbst keine Energie, sondern Geräte
+      if (!inst.isCable) {
+        if (inst.socket === 'socket1') watts1 += inst.watts;
+        if (inst.socket === 'socket2') watts2 += inst.watts;
+        if (inst.socket === 'socket3') watts3 += inst.watts;
+      }
     });
 
     const amps1 = (watts1 / 230).toFixed(1).replace('.', ',');
