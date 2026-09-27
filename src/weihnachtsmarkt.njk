@@ -453,7 +453,7 @@ permalink: /weihnachtsmarkt/index.html
   ];
 
     // 🔗 Füge hier deine Google Script Web-App-URL ein:
-  const SCRIPT_URL = "https://script.google.com/a/macros/sgbarnstorf.de/s/AKfycbx0J8qYfvLmKXqBsg_Km-QDp4RGk58pQfg9rDzX7kKa5iUFeVZqrCySYfxiSMM1No-W/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzm4pz4LD6vwqwkDQXqIypYRVx9m49oliAevZPGolZYm_JKFmWN526TLE-2Z3fGP8tJ/exec";
   let appState = {};
   let currentFilter = 'all';
 
@@ -518,7 +518,7 @@ permalink: /weihnachtsmarkt/index.html
     updateProgress();
 
     // Live an das Google Sheet senden
-    if (SCRIPT_URL && !SCRIPT_URL.includes("https://script.google.com/a/macros/sgbarnstorf.de/s/AKfycbx0J8qYfvLmKXqBsg_Km-QDp4RGk58pQfg9rDzX7kKa5iUFeVZqrCySYfxiSMM1No-W/exec")) {
+    if (SCRIPT_URL && !SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbzm4pz4LD6vwqwkDQXqIypYRVx9m49oliAevZPGolZYm_JKFmWN526TLE-2Z3fGP8tJ/exec")) {
       fetch(SCRIPT_URL, {
         method: "POST",
         mode: "no-cors",
