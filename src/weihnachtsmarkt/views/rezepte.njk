@@ -1,0 +1,22 @@
+<div id="viewRezepte" class="hidden space-y-6">
+  <div class="flex justify-between items-center bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+    <h2 class="font-extrabold text-lg text-rose-600 dark:text-rose-400 flex items-center gap-2">☕ Stand-Rezepte & Punschrechner</h2>
+    <button onclick="switchView('aushang')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition">⬅️ Zurück</button>
+  </div>
+  <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 text-xs">
+    <div class="bg-amber-50 dark:bg-amber-950/30 p-4 rounded-xl border border-amber-200 dark:border-amber-800/50 space-y-2">
+      <div class="font-extrabold text-amber-900 dark:text-amber-300">🥯 Belgische Waffeln (Pro Teigspende)</div>
+      <p class="text-slate-700 dark:text-slate-300 leading-relaxed">500g Butter, 300g Zucker, 2 Pck. Vanillezucker, 1 Prise Salz, 10 Eier, 1000g Mehl, 2 Pck. Backpulver, 400ml Milch.</p>
+    </div>
+    <div class="bg-rose-50 dark:bg-rose-950/30 p-4 rounded-xl border border-rose-200 dark:border-rose-800/50 space-y-3">
+      <div class="flex justify-between items-center">
+        <span class="font-extrabold text-rose-900 dark:text-rose-300">☕ Kinderpunsch Rechner</span>
+        <div class="flex items-center gap-1 font-bold">
+          <input type="number" id="punschCalcInput" value="8" min="4" max="80" step="4" onchange="updatePunschRecipe()" class="w-16 p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-center bg-white dark:bg-slate-900 font-bold focus:ring-2 focus:ring-rose-500" />
+          <span>Liter</span>
+        </div>
+      </div>
+      <ul id="recipeIngredientsList" class="list-disc pl-4 space-y-1 font-medium text-slate-700 dark:text-slate-300"></ul>
+    </div>
+  </div>
+</div>
