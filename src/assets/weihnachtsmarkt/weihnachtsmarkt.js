@@ -10,7 +10,6 @@ window.inventarData = [];
 window.isEditMode = false;
 window.currentFilterStatus = 'alle';
 window.currentSearchTerm = '';
-window.onlyPackedFilter = false;
 
 // ------------------------------------------
 // 1. THEME ENGINE (DARK / LIGHT MODE)
@@ -144,9 +143,10 @@ window.loadInventarFromGoogleSheets = async function() {
   const progressText = document.getElementById('inventarProgressText');
   if (progressText) progressText.innerText = 'Lade Daten...';
 
-  // Fallback auf die lokalen Beispieldaten aus `weihnachtsmarkt-data.js`
-  if ((!window.inventarData || window.inventarData.length === 0) && window.inventarCategories) {
+  // Sofortiger Fallback auf die lokalen Kategorien aus `weihnachtsmarkt-data.js`
+  if (window.inventarCategories && (!window.inventarData || window.inventarData.length === 0)) {
     window.inventarData = JSON.parse(JSON.stringify(window.inventarCategories));
+    window.renderInventar();
   }
 
   try {
@@ -155,24 +155,20 @@ window.loadInventarFromGoogleSheets = async function() {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
         window.inventarData = data;
+        window.renderInventar();
       }
     }
   } catch (e) {
-    console.warn('Google Sheets Offline/Fehler - nutze lokale Daten:', e);
+    console.warn('Google Sheets Offline/Fehler - benutze lokale Daten:', e);
+    if (window.inventarCategories && (!window.inventarData || window.inventarData.length === 0)) {
+      window.inventarData = JSON.parse(JSON.stringify(window.inventarCategories));
+      window.renderInventar();
+    }
   }
-
-  window.renderInventar();
 };
 
 window.setInventarFilter = function(filterStatus) {
   window.currentFilterStatus = filterStatus;
-  window.onlyPackedFilter = false;
-  window.updateFilterButtonsUI();
-  window.renderInventar();
-};
-
-window.togglePackedFilter = function() {
-  window.onlyPackedFilter = !window.onlyPackedFilter;
   window.updateFilterButtonsUI();
   window.renderInventar();
 };
@@ -186,17 +182,31 @@ window.updateFilterButtonsUI = function() {
   const buttons = document.querySelectorAll('[data-filter-btn]');
   buttons.forEach(btn => {
     const status = btn.getAttribute('data-filter-btn');
-    if (status === 'packed') {
-      if (window.onlyPackedFilter) {
-        btn.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition bg-amber-500/20 text-amber-300 border border-amber-500/50";
-      } else {
-        btn.className = "px-3 py-1.5 rounded-lg text-xs font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700";
+    const isActive = (window.currentFilterStatus === status);
+
+    if (isActive) {
+      if (status === 'alle') {
+        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-slate-900 text-white dark:bg-amber-500 dark:text-slate-950 shadow-md";
+      } else if (status === 'Offen') {
+        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-rose-500 text-white shadow-md";
+      } else if (status === 'Vorbereitet') {
+        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-amber-500 text-slate-950 shadow-md";
+      } else if (status === 'Verteilt') {
+        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-sky-500 text-white shadow-md";
+      } else if (status === 'Erledigt') {
+        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-emerald-500 text-white shadow-md";
       }
     } else {
-      if (!window.onlyPackedFilter && window.currentFilterStatus === status) {
-        btn.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition bg-amber-500 text-slate-950 shadow-md";
+      if (status === 'Offen') {
+        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 hover:bg-rose-100 dark:hover:bg-rose-900/40";
+      } else if (status === 'Vorbereitet') {
+        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 hover:bg-amber-100 dark:hover:bg-amber-900/40";
+      } else if (status === 'Verteilt') {
+        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-900/50 hover:bg-sky-100 dark:hover:bg-sky-900/40";
+      } else if (status === 'Erledigt') {
+        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/40";
       } else {
-        btn.className = "px-3 py-1.5 rounded-lg text-xs font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700";
+        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700";
       }
     }
   });
@@ -207,11 +217,10 @@ window.renderInventar = function() {
   if (!container) return;
 
   if (!window.inventarData || window.inventarData.length === 0) {
-    // Falls noch keine Daten vorhanden sind, mit lokaler Data initialisieren
     if (window.inventarCategories) {
       window.inventarData = JSON.parse(JSON.stringify(window.inventarCategories));
     } else {
-      container.innerHTML = '<div class="p-8 text-center text-slate-400 text-sm">Keine Inventardaten vorhanden.</div>';
+      container.innerHTML = '<div class="p-8 text-center text-slate-500 dark:text-slate-400 text-xs">Keine Inventardaten vorhanden.</div>';
       return;
     }
   }
@@ -223,14 +232,14 @@ window.renderInventar = function() {
   const isReadonly = window.currentUserRole === 'gast';
 
   window.inventarData.forEach((cat, catIdx) => {
-    // Filterung der Items nach Suche und Status-Buttons
+    // Filterung der Items nach Suche und Status
     const matchingItems = (cat.items || []).filter(item => {
       totalItems++;
       if (item.status === 'Erledigt' || item.pack) {
         completedItems++;
       }
 
-      // 1. Textsuche
+      // Textsuche
       if (window.currentSearchTerm) {
         const matchName = (item.name || '').toLowerCase().includes(window.currentSearchTerm);
         const matchSub = (item.sub || '').toLowerCase().includes(window.currentSearchTerm);
@@ -239,12 +248,7 @@ window.renderInventar = function() {
         if (!matchName && !matchSub && !matchWer && !matchBox) return false;
       }
 
-      // 2. Gepackt-Filter
-      if (window.onlyPackedFilter) {
-        return !!item.pack;
-      }
-
-      // 3. Status-Filter
+      // Status-Filter
       if (window.currentFilterStatus !== 'alle') {
         const itemStatus = (item.status || 'Offen').toLowerCase();
         if (itemStatus !== window.currentFilterStatus.toLowerCase()) return false;
@@ -253,78 +257,87 @@ window.renderInventar = function() {
       return true;
     });
 
-    // Wenn nach Filterung Items in der Kategorie übrig sind
     if (matchingItems.length > 0) {
       html += `
-        <div class="bg-slate-900/90 rounded-2xl border border-slate-800/80 shadow-lg overflow-hidden">
-          <div class="px-5 py-3.5 bg-slate-900 border-b border-slate-800/80 flex items-center justify-between">
-            <h3 class="text-sm font-black tracking-wide text-amber-400 uppercase flex items-center gap-2">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-sm dark:shadow-lg overflow-hidden">
+          <div class="px-5 py-3.5 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800/80 flex items-center justify-between">
+            <h3 class="text-xs sm:text-sm font-black tracking-wide text-amber-600 dark:text-amber-400 uppercase flex items-center gap-2">
               ${escapeHtml(cat.title)}
             </h3>
-            <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+            <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
               ${matchingItems.length} Einträge
             </span>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse text-xs">
               <thead>
-                <tr class="border-b border-slate-800 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider bg-slate-950/40">
+                <tr class="border-b border-slate-200 dark:border-slate-800 text-[10px] font-extrabold uppercase text-slate-500 dark:text-slate-400 tracking-wider bg-slate-100/70 dark:bg-slate-950/40">
                   <th class="py-2.5 px-4">Gegenstand</th>
                   <th class="py-2.5 px-2 text-center w-16">Bedarf</th>
                   <th class="py-2.5 px-2 text-center w-16">Lager</th>
-                  <th class="py-2.5 px-2 w-32">Status</th>
+                  <th class="py-2.5 px-2 w-36">Status</th>
                   <th class="py-2.5 px-2 w-44">Wer</th>
                   <th class="py-2.5 px-2 text-center w-14">Pack</th>
                   <th class="py-2.5 px-2 w-20">Box</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-800/60">
+              <tbody class="divide-y divide-slate-200 dark:divide-slate-800/60">
       `;
 
       cat.items.forEach((item) => {
         const itemIdx = cat.items.indexOf(item);
         if (!matchingItems.includes(item)) return;
 
+        // Dynamic status styling for select input
+        let statusStyle = "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-300 dark:border-rose-800";
+        if (item.status === 'Vorbereitet') {
+          statusStyle = "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-800";
+        } else if (item.status === 'Verteilt') {
+          statusStyle = "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-300 dark:border-sky-800";
+        } else if (item.status === 'Erledigt') {
+          statusStyle = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800";
+        }
+
         html += `
-          <tr class="hover:bg-slate-800/40 transition">
-            <td class="py-2 px-4 font-semibold text-slate-100">
+          <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+            <td class="py-2 px-4 font-semibold text-slate-800 dark:text-slate-100">
               <div class="leading-tight">${escapeHtml(item.name)}</div>
-              ${item.sub ? `<div class="text-[10px] font-normal text-slate-400 mt-0.5">${escapeHtml(item.sub)}</div>` : ''}
+              ${item.sub ? `<div class="text-[10px] font-normal text-slate-500 dark:text-slate-400 mt-0.5">${escapeHtml(item.sub)}</div>` : ''}
             </td>
             <td class="py-2 px-2 text-center">
               <input type="number" value="${item.bedarf ?? 1}" min="0" ${isReadonly ? 'disabled' : ''}
                 onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'bedarf', parseInt(this.value) || 0)"
-                class="w-12 text-center bg-slate-950/80 border border-slate-700/70 rounded-md py-1 px-1 text-slate-100 font-medium focus:border-amber-500 focus:outline-none disabled:opacity-60" />
+                class="w-12 text-center bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-1 text-slate-800 dark:text-slate-100 font-medium focus:border-amber-500 focus:outline-none disabled:opacity-60" />
             </td>
             <td class="py-2 px-2 text-center">
               <input type="number" value="${item.lager ?? 0}" min="0" ${isReadonly ? 'disabled' : ''}
                 onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'lager', parseInt(this.value) || 0)"
-                class="w-12 text-center bg-slate-950/80 border border-slate-700/70 rounded-md py-1 px-1 text-emerald-400 font-bold focus:border-amber-500 focus:outline-none disabled:opacity-60" />
+                class="w-12 text-center bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-1 text-emerald-600 dark:text-emerald-400 font-bold focus:border-amber-500 focus:outline-none disabled:opacity-60" />
             </td>
             <td class="py-2 px-2">
               <select ${isReadonly ? 'disabled' : ''}
                 onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'status', this.value)"
-                class="w-full bg-slate-950/80 border border-slate-700/70 rounded-md py-1 px-2 text-slate-200 font-medium focus:border-amber-500 focus:outline-none disabled:opacity-60">
-                <option value="Offen" ${item.status === 'Offen' ? 'selected' : ''}>Offen</option>
-                <option value="Vorbereitet" ${item.status === 'Vorbereitet' ? 'selected' : ''}>Vorbereitet</option>
-                <option value="Verteilt" ${item.status === 'Verteilt' ? 'selected' : ''}>Verteilt</option>
-                <option value="Erledigt" ${item.status === 'Erledigt' ? 'selected' : ''}>Erledigt</option>
+                class="w-full bg-slate-50 dark:bg-slate-950 border rounded-md py-1 px-2 text-xs font-bold focus:border-amber-500 focus:outline-none disabled:opacity-60 ${statusStyle}">
+                <option value="Offen" class="bg-white dark:bg-slate-900 text-rose-600 dark:text-rose-400" ${item.status === 'Offen' ? 'selected' : ''}>Offen</option>
+                <option value="Vorbereitet" class="bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400" ${item.status === 'Vorbereitet' ? 'selected' : ''}>Vorbereitet</option>
+                <option value="Verteilt" class="bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400" ${item.status === 'Verteilt' ? 'selected' : ''}>Verteilt</option>
+                <option value="Erledigt" class="bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400" ${item.status === 'Erledigt' ? 'selected' : ''}>Erledigt</option>
               </select>
             </td>
             <td class="py-2 px-2">
               <input type="text" value="${escapeHtml(item.wer || '')}" placeholder="Name..." ${isReadonly ? 'disabled' : ''}
                 onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'wer', this.value)"
-                class="w-full bg-slate-950/80 border border-slate-700/70 rounded-md py-1 px-2 text-slate-200 placeholder-slate-500 focus:border-amber-500 focus:outline-none disabled:opacity-60" />
+                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-2 text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:border-amber-500 focus:outline-none disabled:opacity-60" />
             </td>
             <td class="py-2 px-2 text-center">
               <input type="checkbox" ${item.pack ? 'checked' : ''} ${isReadonly ? 'disabled' : ''}
                 onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'pack', this.checked)"
-                class="w-4 h-4 rounded bg-slate-950 border-slate-700 text-amber-500 focus:ring-amber-500 focus:ring-offset-slate-900 accent-amber-500 disabled:opacity-60 cursor-pointer" />
+                class="w-4 h-4 rounded bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-amber-500 focus:ring-amber-500 accent-amber-500 disabled:opacity-60 cursor-pointer" />
             </td>
             <td class="py-2 px-2">
               <input type="text" value="${escapeHtml(item.box || '')}" placeholder="" ${isReadonly ? 'disabled' : ''}
                 onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'box', this.value)"
-                class="w-full bg-slate-950/80 border border-slate-700/70 rounded-md py-1 px-1.5 text-center text-slate-200 uppercase focus:border-amber-500 focus:outline-none disabled:opacity-60" />
+                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-1.5 text-center text-slate-800 dark:text-slate-200 uppercase focus:border-amber-500 focus:outline-none disabled:opacity-60" />
             </td>
           </tr>
         `;
@@ -339,7 +352,7 @@ window.renderInventar = function() {
     }
   });
 
-  container.innerHTML = html || '<div class="p-8 text-center text-slate-400 text-sm">Keine passenden Einträge für diesen Filter gefunden.</div>';
+  container.innerHTML = html || '<div class="p-8 text-center text-slate-500 dark:text-slate-400 text-xs">Keine passenden Einträge für diesen Filter gefunden.</div>';
 
   // Live Fortschrittsanzeige berechnen
   const percent = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
