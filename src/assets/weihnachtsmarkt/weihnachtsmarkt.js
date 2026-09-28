@@ -25,7 +25,7 @@ window.applyDarkMode = function(isDark) {
     if (document.body) document.body.classList.remove('dark');
   }
   const icon = document.getElementById('themeToggleIcon');
-  if (icon) icon.innerText = isDark ? 'âï¸' : 'ð';
+  if (icon) icon.innerText = isDark ? '☀️' : '🌙';
 };
 
 window.toggleTheme = function() {
@@ -36,26 +36,26 @@ window.toggleTheme = function() {
 };
 
 // ---------------------------------------------------------------------
-// 2. NAVIGATION & ROLLEN (SCHRITT 1: OHNE HARTE LOCK-BLOCKADE)
+// 2. NAVIGATION & ROLLEN
 // ---------------------------------------------------------------------
 window.switchView = function(viewName) {
   // 1. Alle Ansichten ausblenden
   const views = document.querySelectorAll('main > div[id^="view"]');
   views.forEach(v => v.classList.add('hidden'));
 
-  // 2. GewÃ¼nschte Ansicht einblenden
+  // 2. Gewünschte Ansicht einblenden
   const targetId = 'view' + viewName.charAt(0).toUpperCase() + viewName.slice(1);
   const targetView = document.getElementById(targetId);
   if (targetView) {
     targetView.classList.remove('hidden');
   }
 
-  // 3. Bei Inventar-Aufruf Daten holen
+  // 3. Bei Inventar-Aufruf Daten aus Google Sheets holen
   if (viewName === 'inventar') {
     window.loadInventarFromGoogleSheets();
   }
 
-  // 4. BurgermenÃ¼-Modal schlieÃen, falls offen
+  // 4. Burgermenü-Modal schließen, falls offen
   const navModal = document.getElementById('navigationModal');
   if (navModal) navModal.classList.add('hidden');
 };
@@ -97,7 +97,7 @@ window.applyRolePermissions = function(role) {
   const adminEditBtn = document.getElementById('adminInventarEditBtn');
 
   if (roleLabel) {
-    roleLabel.innerText = role === 'admin' ? 'ð¢ ADMIN' : (role === 'orga' ? 'ðµ ORGA' : (role === 'helfer' ? 'ð¡ HELFER' : 'GAST'));
+    roleLabel.innerText = role === 'admin' ? '🟢 ADMIN' : (role === 'orga' ? '🔵 ORGA' : (role === 'helfer' ? '🟡 HELFER' : 'GAST'));
   }
 
   if (adminEditBtn) {
@@ -111,23 +111,23 @@ window.applyRolePermissions = function(role) {
   if (role === 'gast') {
     if (burgerBtn) burgerBtn.classList.add('hidden');
     if (guestNotice) guestNotice.classList.remove('hidden');
-    if (roleIcon) roleIcon.innerText = 'ðï¸';
+    if (roleIcon) roleIcon.innerText = '👁️';
     window.switchView('aushang');
   } else {
     if (burgerBtn) burgerBtn.classList.remove('hidden');
     if (guestNotice) guestNotice.classList.add('hidden');
-    if (roleIcon) roleIcon.innerText = 'ð';
+    if (roleIcon) roleIcon.innerText = '🔓';
     window.switchView('aushang');
   }
 };
 
 // ---------------------------------------------------------------------
-// 3. INVENTAR (SCHRITT 2: ISOLIERTES DATEN-HANDLING)
+// 3. INVENTAR & GOOGLE SHEETS SYNC
 // ---------------------------------------------------------------------
 window.loadInventarFromGoogleSheets = async function() {
   const container = document.getElementById('inventarTablesContainer');
   if (container) {
-    container.innerHTML = '<p class="text-xs text-amber-500 font-bold p-4">â³ Lade Inventar...</p>';
+    container.innerHTML = '<p class="text-xs text-amber-500 font-bold p-4">⏳ Lade Inventar...</p>';
   }
 
   try {
@@ -144,7 +144,7 @@ window.loadInventarFromGoogleSheets = async function() {
 };
 
 // ---------------------------------------------------------------------
-// INVENTAR RENDERN (MIT FORMULARFELDERN & ADMIN-OPTIONEN)
+// 4. RENDERING DER TABELLEN
 // ---------------------------------------------------------------------
 window.renderInventar = function() {
   const container = document.getElementById('inventarTablesContainer');
@@ -155,11 +155,9 @@ window.renderInventar = function() {
     return;
   }
 
-  // Progress-Text oben leeren
   const progressText = document.getElementById('inventarProgressText');
   if (progressText) progressText.innerText = '';
 
-  // Daten nach Kategorie gruppieren
   const categories = {};
   window.inventarData.forEach((item, index) => {
     const cat = item.kategorie || item.Kategorie || 'SONSTIGES';
@@ -173,21 +171,19 @@ window.renderInventar = function() {
   for (const [catName, items] of Object.entries(categories)) {
     html += `
       <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm mb-6">
-        <!-- Kategorie Header -->
         <div class="bg-slate-50 dark:bg-slate-800/60 px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <h3 class="font-bold text-sm text-amber-600 dark:text-amber-400 flex items-center gap-2">
-            ð¦ ${catName}
+            📦 ${catName}
           </h3>
           ${isAdminOrGen(isAdminOrOrga, catName)}
         </div>
 
-        <!-- Tabelle -->
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs border-collapse">
             <thead>
               <tr class="border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 bg-slate-50/30 dark:bg-slate-900/30">
                 <th class="py-3 px-4">GEGENSTAND</th>
-                <th class="py-3 px-2 text-center w-20">BENÃTIGT</th>
+                <th class="py-3 px-2 text-center w-20">BENÖTIGT</th>
                 <th class="py-3 px-2 text-center w-20">AUF LAGER</th>
                 <th class="py-3 px-2 text-center w-32">STATUS</th>
                 <th class="py-3 px-2 w-36">VERANTWORTLICH</th>
@@ -208,22 +204,20 @@ window.renderInventar = function() {
   container.innerHTML = html;
 };
 
-// Hilfsfunktion: Admin-Aktionen im Kategorie-Header (Umbenennen / LÃ¶schen)
 function isAdminOrGen(isAdmin, catName) {
   if (!isAdmin) return '';
   return `
     <div class="flex items-center gap-3 text-xs">
       <button onclick="renameCategory('${catName}')" class="text-slate-400 hover:text-amber-500 flex items-center gap-1 transition-colors">
-        âï¸ Umbenennen
+        ✏️ Umbenennen
       </button>
       <button onclick="deleteCategory('${catName}')" class="text-red-400 hover:text-red-600 flex items-center gap-1 transition-colors">
-        ðï¸ LÃ¶schen
+        🗑️ Löschen
       </button>
     </div>
   `;
 }
 
-// Hilfsfunktion: Einzelne Zeile mit den Input-Feldern zusammenbauen
 function renderRowHtml(item, isAdmin) {
   const idx = item.originalIndex;
   const statusOptions = ['Offen', 'Vorbereitet', 'Verteilt', 'Erledigt'];
@@ -277,8 +271,8 @@ function renderRowHtml(item, isAdmin) {
       ${isAdmin ? `
         <td class="py-2.5 px-2 text-center">
           <div class="flex items-center justify-center gap-1">
-            <button onclick="editItem(${idx})" class="text-amber-500 hover:text-amber-600 p-1">âï¸</button>
-            <button onclick="deleteItem(${idx})" class="text-slate-400 hover:text-red-500 p-1">ðï¸</button>
+            <button onclick="editItem(${idx})" class="text-amber-500 hover:text-amber-600 p-1">✏️</button>
+            <button onclick="deleteItem(${idx})" class="text-slate-400 hover:text-red-500 p-1">🗑️</button>
           </div>
         </td>
       ` : ''}
@@ -286,7 +280,6 @@ function renderRowHtml(item, isAdmin) {
   `;
 }
 
-// WertÃ¤nderungen im lokalen Array speichern
 window.updateInventarItem = function(index, field, value) {
   if (window.inventarData && window.inventarData[index]) {
     window.inventarData[index][field] = value;
@@ -297,14 +290,13 @@ window.openLightbox = function(imgSrc, title) {
   window.open(imgSrc, '_blank');
 };
 
-// Klick auf GAST/Rolle bringt den User immer zum Login-Screen
 document.addEventListener('click', (e) => {
   if (e.target.closest('#roleLabel') || e.target.closest('#guestLockNotice')) {
     window.switchView('login');
   }
 });
 
-// Autostart
+// Autostart beim Laden der Seite
 document.addEventListener('DOMContentLoaded', () => {
   window.initTheme();
   window.applyRolePermissions(window.currentUserRole);
