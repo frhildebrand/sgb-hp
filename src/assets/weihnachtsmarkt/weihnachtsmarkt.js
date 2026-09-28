@@ -7,9 +7,7 @@ window.inventarData = [];
 window.isEditMode = false;
 window.currentFilterStatus = 'alle';
 
-// ---------------------------------------------------------------------
 // 1. THEME ENGINE
-// ---------------------------------------------------------------------
 window.initTheme = function() {
   const savedTheme = localStorage.getItem('theme');
   const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -35,27 +33,25 @@ window.toggleTheme = function() {
   window.applyDarkMode(newDarkState);
 };
 
-// ---------------------------------------------------------------------
 // 2. NAVIGATION & ROLLEN
-// ---------------------------------------------------------------------
 window.switchView = function(viewName) {
-  // 1. Alle Ansichten ausblenden
+  // Erlaubt das Aufrufen von Aushang UND Login, auch als Gast
+  if (window.currentUserRole === 'gast' && viewName !== 'aushang' && viewName !== 'login') {
+    return;
+  }
+
   const views = document.querySelectorAll('main > div[id^="view"]');
   views.forEach(v => v.classList.add('hidden'));
 
-  // 2. Gewünschte Ansicht einblenden
   const targetId = 'view' + viewName.charAt(0).toUpperCase() + viewName.slice(1);
   const targetView = document.getElementById(targetId);
   if (targetView) {
     targetView.classList.remove('hidden');
+    if (viewName === 'inventar') {
+      window.loadInventarFromGoogleSheets();
+    }
   }
 
-  // 3. Bei Inventar-Aufruf Daten holen
-  if (viewName === 'inventar') {
-    window.loadInventarFromGoogleSheets();
-  }
-
-  // 4. Burgermenü-Modal schließen, falls offen
   const navModal = document.getElementById('navigationModal');
   if (navModal) navModal.classList.add('hidden');
 };
@@ -121,42 +117,42 @@ window.applyRolePermissions = function(role) {
   }
 };
 
-// ---------------------------------------------------------------------
-// 3. INVENTAR & GOOGLE SHEETS SYNC
-// ---------------------------------------------------------------------
+// 3. INVENTAR & GOOGLE SHEETS
 window.loadInventarFromGoogleSheets = async function() {
-  const container = document.getElementById('inventarTablesContainer');
-  if (container) {
-    container.innerHTML = '<p class="text-xs text-amber-500 font-bold p-4">⏳ Lade Inventar...</p>';
-  }
+  const progressText = document.getElementById('inventarProgressText');
+  if (progressText) progressText.innerText = 'Lade Daten...';
 
   try {
     const res = await fetch(GOOGLE_SCRIPT_URL);
     const data = await res.json();
-    window.inventarData = Array.isArray(data) ? data : [];
-    window.renderInventar();
-  } catch (e) {
-    console.error('Fehler beim Laden:', e);
-    if (container) {
-      container.innerHTML = '<p class="text-xs text-red-500 p-4">Fehler beim Laden der Daten aus Google Sheets.</p>';
+    if (Array.isArray(data) && data.length > 0) {
+      window.inventarData = data;
     }
+  } catch (e) {
+    console.error('Fehler beim Laden aus Google Sheets', e);
   }
+  
+  window.renderInventar();
 };
 
-// ---------------------------------------------------------------------
-// 4. RENDERING DER TABELLEN
-// ---------------------------------------------------------------------
+function getStatusColorClass(status) {
+  switch (status) {
+    case 'Offen': return 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30';
+    case 'Vorbereitet': return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30';
+    case 'Verteilt': return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30';
+    case 'Erledigt': return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30';
+    default: return 'bg-slate-100 text-slate-600 border-slate-200';
+  }
+}
+
 window.renderInventar = function() {
   const container = document.getElementById('inventarTablesContainer');
   if (!container) return;
 
   if (!window.inventarData || window.inventarData.length === 0) {
-    container.innerHTML = '<p class="text-xs text-slate-400 p-4">Keine Daten vorhanden.</p>';
+    container.innerHTML = '<p class="text-xs text-slate-400 p-4">Keine Daten geladen.</p>';
     return;
   }
-
-  const progressText = document.getElementById('inventarProgressText');
-  if (progressText) progressText.innerText = '';
 
   const categories = {};
   window.inventarData.forEach((item, index) => {
@@ -165,35 +161,42 @@ window.renderInventar = function() {
     categories[cat].push({ ...item, originalIndex: index });
   });
 
-  const isAdminOrOrga = (window.currentUserRole === 'admin' || window.currentUserRole === 'orga');
-
   let html = '';
   for (const [catName, items] of Object.entries(categories)) {
     html += `
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm mb-6">
-        <div class="bg-slate-50 dark:bg-slate-800/60 px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-          <h3 class="font-bold text-sm text-amber-600 dark:text-amber-400 flex items-center gap-2">
-            📦 ${catName}
-          </h3>
-          ${isAdminOrGen(isAdminOrOrga, catName)}
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm mb-4">
+        <div class="bg-slate-100 dark:bg-slate-800/80 px-4 py-3 border-b border-slate-200 dark:border-slate-800">
+          <h3 class="font-extrabold text-xs text-amber-600 dark:text-amber-400 uppercase tracking-wider">${catName}</h3>
         </div>
-
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs border-collapse">
             <thead>
-              <tr class="border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 bg-slate-50/30 dark:bg-slate-900/30">
-                <th class="py-3 px-4">GEGENSTAND</th>
-                <th class="py-3 px-2 text-center w-20">BENÖTIGT</th>
-                <th class="py-3 px-2 text-center w-20">AUF LAGER</th>
-                <th class="py-3 px-2 text-center w-32">STATUS</th>
-                <th class="py-3 px-2 w-36">VERANTWORTLICH</th>
-                <th class="py-3 px-2 text-center w-14">GEPACKT?</th>
-                <th class="py-3 px-2 text-center w-20">BOX</th>
-                ${isAdminOrOrga ? '<th class="py-3 px-2 text-center w-16">ADMIN</th>' : ''}
+              <tr class="border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 bg-slate-50/50 dark:bg-slate-900/50">
+                <th class="py-2.5 px-4">GEGENSTAND</th>
+                <th class="py-2.5 px-2 text-center w-20">BEDARF</th>
+                <th class="py-2.5 px-2 text-center w-20">LAGER</th>
+                <th class="py-2.5 px-2 text-center w-28">STATUS</th>
+                <th class="py-2.5 px-2 w-32">WER</th>
+                <th class="py-2.5 px-2 text-center w-12">PACK</th>
+                <th class="py-2.5 px-2 text-center w-20">BOX</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
-              ${items.map(item => renderRowHtml(item, isAdminOrOrga)).join('')}
+              ${items.map(item => `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                  <td class="py-2.5 px-4 font-bold text-slate-800 dark:text-slate-200">
+                    <div>${item.gegenstand \vert{}\vert{} item.Gegenstand \vert{}\vert{} ''}</div>${(item.beschreibung || item.Beschreibung) ? `<div class="text-[10px] font-normal text-slate-400 dark:text-slate-500">${item.beschreibung || item.Beschreibung}</div>` : ''}
+                  </td>
+                  <td class="py-2.5 px-2 text-center font-bold">${item.bedarf || item.Bedarf || 0}</td>
+                  <td class="py-2.5 px-2 text-center font-bold">${item.lager || item.Lager || 0}</td>
+                  <td class="py-2.5 px-2 text-center">
+                    <span class="px-2 py-1 rounded-lg text-[10px] font-bold border ${getStatusColorClass(item.status \vert{}\vert{} item.Status)}">${item.status || item.Status || 'Offen'}</span>
+                  </td>
+                  <td class="py-2.5 px-2">${item.wer || item.Wer || '-'}</td>
+                  <td class="py-2.5 px-2 text-center">${(item.pack || item.Pack) ? '✅' : '⬜'}</td>
+                  <td class="py-2.5 px-2 text-center">${item.box || item.Box || '-'}</td>
+                </tr>
+              `).join('')}
             </tbody>
           </table>
         </div>
@@ -204,99 +207,18 @@ window.renderInventar = function() {
   container.innerHTML = html;
 };
 
-function isAdminOrGen(isAdmin, catName) {
-  if (!isAdmin) return '';
-  return `
-    <div class="flex items-center gap-3 text-xs">
-      <button onclick="renameCategory('${catName}')" class="text-slate-400 hover:text-amber-500 flex items-center gap-1 transition-colors">
-        ✏️ Umbenennen
-      </button>
-      <button onclick="deleteCategory('${catName}')" class="text-red-400 hover:text-red-600 flex items-center gap-1 transition-colors">
-        🗑️ Löschen
-      </button>
-    </div>
-  `;
-}
-
-function renderRowHtml(item, isAdmin) {
-  const idx = item.originalIndex;
-  const statusOptions = ['Offen', 'Vorbereitet', 'Verteilt', 'Erledigt'];
-  
-  return `
-    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors">
-      <td class="py-2.5 px-4 font-bold text-slate-800 dark:text-slate-200">
-        <div>${item.gegenstand || item.Gegenstand || ''}</div>
-        ${(item.beschreibung || item.Beschreibung) ? `<div class="text-[10px] font-normal text-slate-400">${item.beschreibung || item.Beschreibung}</div>` : ''}
-      </td>
-
-      <td class="py-2.5 px-2 text-center">
-        <input type="number" value="${item.bedarf || item.Bedarf || ''}" placeholder="-"
-          onchange="updateInventarItem(${idx}, 'bedarf', this.value)"
-          class="w-16 text-center py-1 px-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold focus:ring-2 focus:ring-amber-500 outline-none" />
-      </td>
-
-      <td class="py-2.5 px-2 text-center">
-        <input type="number" value="${item.lager || item.Lager || 0}"
-          onchange="updateInventarItem(${idx}, 'lager', this.value)"
-          class="w-16 text-center py-1 px-1.5 rounded-lg border border-amber-200 dark:border-amber-900/40 bg-amber-50/30 dark:bg-amber-950/20 font-bold text-amber-700 dark:text-amber-400 focus:ring-2 focus:ring-amber-500 outline-none" />
-      </td>
-
-      <td class="py-2.5 px-2 text-center">
-        <select onchange="updateInventarItem(${idx}, 'status', this.value)"
-          class="w-full text-center py-1 px-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50/40 dark:bg-red-950/20 font-bold text-red-600 dark:text-red-400 text-[11px] focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer">
-          ${statusOptions.map(opt => `
-            <option value="${opt}" ${(item.status \vert{}\vert{} item.Status) === opt ? 'selected' : ''}>${opt}</option>
-          `).join('')}
-        </select>
-      </td>
-
-      <td class="py-2.5 px-2">
-        <input type="text" value="${item.wer || item.Wer || ''}" placeholder="Name..."
-          onchange="updateInventarItem(${idx}, 'wer', this.value)"
-          class="w-full py-1 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-amber-500 outline-none" />
-      </td>
-
-      <td class="py-2.5 px-2 text-center">
-        <input type="checkbox" ${item.pack || item.Pack ? 'checked' : ''}
-          onchange="updateInventarItem(${idx}, 'pack', this.checked)"
-          class="w-4 h-4 rounded border-slate-300 text-amber-500 focus:ring-amber-500 cursor-pointer" />
-      </td>
-
-      <td class="py-2.5 px-2 text-center">
-        <input type="text" value="${item.box || item.Box || ''}" placeholder="-"
-          onchange="updateInventarItem(${idx}, 'box', this.value)"
-          class="w-16 text-center py-1 px-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-amber-500 outline-none" />
-      </td>
-
-      ${isAdmin ? `
-        <td class="py-2.5 px-2 text-center">
-          <div class="flex items-center justify-center gap-1">
-            <button onclick="editItem(${idx})" class="text-amber-500 hover:text-amber-600 p-1">✏️</button>
-            <button onclick="deleteItem(${idx})" class="text-slate-400 hover:text-red-500 p-1">🗑️</button>
-          </div>
-        </td>
-      ` : ''}
-    </tr>
-  `;
-}
-
-window.updateInventarItem = function(index, field, value) {
-  if (window.inventarData && window.inventarData[index]) {
-    window.inventarData[index][field] = value;
-  }
-};
-
 window.openLightbox = function(imgSrc, title) {
   window.open(imgSrc, '_blank');
 };
 
+// Ermöglicht es dem Gast, durch Klick auf das Rollen-Label oben rechts die Login-Seite zu öffnen
 document.addEventListener('click', (e) => {
   if (e.target.closest('#roleLabel') || e.target.closest('#guestLockNotice')) {
     window.switchView('login');
   }
 });
 
-// Autostart beim Laden der Seite
+// Autostart
 document.addEventListener('DOMContentLoaded', () => {
   window.initTheme();
   window.applyRolePermissions(window.currentUserRole);
