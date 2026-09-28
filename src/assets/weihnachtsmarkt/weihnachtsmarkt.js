@@ -155,5 +155,3 @@ document.addEventListener('DOMContentLoaded', () => {
   window.initTheme();
   window.applyRolePermissions(window.currentUserRole);
 });
- 
-Das ist eder letzte code, bei dem alle menüs funktionierten also zumindest burgermenü un dso
