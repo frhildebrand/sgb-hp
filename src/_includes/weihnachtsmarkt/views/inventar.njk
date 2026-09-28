@@ -1,67 +1,58 @@
-<div id="viewInventar" class="space-y-6 hidden">
-
-  <!-- Header -->
-  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-    <div class="space-y-1">
-      <h2 class="font-black text-xl text-slate-800 dark:text-slate-100 flex items-center gap-2">
-        <span>📋</span> Inventar & Checkliste
-      </h2>
-      <p class="text-xs text-slate-500 dark:text-slate-400">
-        Übersicht aller Gegenstände und Status
-      </p>
-    </div>
-    
-    <div class="flex items-center gap-2">
-      <button id="adminInventarEditBtn" onclick="window.toggleInventarEditMode()" class="px-3 py-2 bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 text-xs font-bold rounded-xl transition-colors hidden cursor-pointer">
-        ✏️ Gegenstände verwalten
-      </button>
-      
-      <button onclick="window.switchView('aushang')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition-colors flex items-center gap-2 cursor-pointer">
-        <span>⬅️</span> Zurück
-      </button>
-    </div>
-  </div>
-
-  <!-- Suche & Filter -->
-  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-4">
-    <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
-      <div class="relative w-full sm:w-80">
-        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 text-xs">🔍</span>
-        <input type="text" id="inventarSearchInput" onkeyup="window.filterInventarTable()" placeholder="Suche nach Name, Ort, Kiste..." class="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500">
-      </div>
-      <div id="inventarProgressText" class="text-xs font-bold text-amber-500 dark:text-amber-400">
-        Bereit
-      </div>
-    </div>
-
-    <!-- Filter Pills -->
-    <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80 text-xs">
-      <button onclick="window.filterInventarStatus('alle')" class="px-3 py-1.5 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs cursor-pointer">Alle</button>
-      <button onclick="window.filterInventarStatus('Offen')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium rounded-xl text-xs hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer">🔴 Offen</button>
-      <button onclick="window.filterInventarStatus('Vorbereitet')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium rounded-xl text-xs hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer">🟡 Vorbereitet</button>
-      <button onclick="window.filterInventarStatus('Verteilt')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium rounded-xl text-xs hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer">🟣 Verteilt</button>
-      <button onclick="window.filterInventarStatus('Erledigt')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium rounded-xl text-xs hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer">🟢 Erledigt</button>
-    </div>
-  </div>
-
-  <!-- Neuer Gegenstand Hinzufügen -->
-  <div id="addItemPanel" class="hidden bg-purple-500/10 border border-purple-500/30 rounded-2xl p-4 space-y-3">
-    <h3 class="font-bold text-xs text-purple-600 dark:text-purple-400 flex items-center gap-2">
-      <span>➕</span> Neuen Gegenstand hinzufügen
-    </h3>
-    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
-      <input type="text" id="newItemName" placeholder="Gegenstandsname..." class="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
-      <select id="newItemCategory" class="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
-      </select>
-      <input type="number" id="newItemBedarf" placeholder="Bedarf" value="1" class="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
-      <button onclick="window.createNewItem()" class="py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer">
-        Hinzufügen
-      </button>
-    </div>
-  </div>
-
-  <!-- Tabellen Container -->
-  <div id="inventarTablesContainer" class="space-y-6">
-  </div>
-
+<div id="viewInventar" class="hidden space-y-6">
+<!-- Header / Navigations-Button -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-900/90 p-5 rounded-2xl border border-slate-800/80 shadow-md gap-4">
+<div>
+<h2 class="font-black text-xl text-amber-400 flex items-center gap-2">
+📋 Inventar & Checkliste
+</h2>
+<p class="text-xs text-slate-400 mt-0.5">Übersicht aller Gegenstände, Status und Packfortschritt</p>
+</div>
+<button onclick="switchView('aushang')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition border border-slate-700 flex items-center gap-2">
+⬅️ Zurück zu Aushänge
+</button>
+</div>
+<!-- Suchleiste, Filter-Pills & Fortschritts-Anzeige -->
+<div class="bg-slate-900/90 p-4 rounded-2xl border border-slate-800/80 shadow-md space-y-4">
+<div class="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
+<!-- Suchfeld -->
+<div class="relative flex-1">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400 text-sm">🔍</span>
+<input 
+type="text" 
+placeholder="Suche nach Name, Ort, Kiste..." 
+oninput="window.handleInventarSearch(this.value)"
+class="w-full pl-10 pr-4 py-2 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500/80 transition"
+/>
+</div>
+<!-- Live-Fortschritt Text (z.B. 0% erledigt (0/74)) -->
+<div class="text-right text-xs font-bold text-amber-400 whitespace-nowrap self-end md:self-center" id="inventarProgressText">
+0% erledigt (0/0)
+</div>
+</div>
+<!-- Filter Buttons -->
+<div class="flex flex-wrap gap-2 pt-1 border-t border-slate-800/60">
+<button data-filter-btn="alle" onclick="window.setInventarFilter('alle')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-amber-500 text-slate-950 shadow-md">
+Alle
+</button>
+<button data-filter-btn="offen" onclick="window.setInventarFilter('Offen')" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700">
+Offen
+</button>
+<button data-filter-btn="vorbereitet" onclick="window.setInventarFilter('Vorbereitet')" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700">
+Vorbereitet
+</button>
+<button data-filter-btn="verteilt" onclick="window.setInventarFilter('Verteilt')" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700">
+Verteilt
+</button>
+<button data-filter-btn="erledigt" onclick="window.setInventarFilter('Erledigt')" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700">
+Erledigt
+</button>
+<button data-filter-btn="packed" onclick="window.togglePackedFilter()" class="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700">
+📦 Nur Gepackt
+</button>
+</div>
+</div>
+<!-- Container für die dynamischen Tabellen -->
+<div id="inventarTablesContainer" class="space-y-6">
+<div class="p-8 text-center text-slate-400 text-xs">Lade Inventardaten...</div>
+</div>
 </div>
