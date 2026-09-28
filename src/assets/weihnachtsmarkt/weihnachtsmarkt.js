@@ -2,19 +2,116 @@
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyQg2LmxT_UbLXjFVKrNf9gXnqgk_ku4V_P1SZeSGqphn-WRTYI3a9l5szzkDfqEE881Q/exec';
 
 // Globale Variablen
-window.currentUserRole = localStorage.getItem('userRole') || 'helfer'; // Standard auf Helfer, damit Burger-Menü immer aktiv ist
+window.currentUserRole = localStorage.getItem('userRole') || 'helfer';
 window.inventarData = [];
 window.isEditMode = false;
 window.currentFilterStatus = 'alle';
 
-// 1. THEME ENGINE
-window.initTheme = function() {
-  const savedTheme = localStorage.getItem('theme');
-  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  window.applyDarkMode(savedTheme === 'dark' || (!savedTheme && systemPrefersDark));
-};
+// ---------------------------------------------------------------------
+// 1. NAVIGATION, ROLLEN & LOGIN (DIREKT GLOBAL DEFONIERT FÜR NJK/HTML)
+// ---------------------------------------------------------------------
 
-window.applyDarkMode = function(isDark) {
+function tryLogin(role, inputId) {
+  try {
+    const passwords = { helfer: '1', orga: '2', admin: '3' };
+    const input = document.getElementById(inputId);
+    const password = input ? input.value.trim() : '';
+    const errorBox = document.getElementById('loginErrorMessage');
+
+    if (password === passwords[role]) {
+      if (errorBox) errorBox.classList.add('hidden');
+      if (input) input.value = '';
+      setRole(role);
+    } else if (errorBox) {
+      errorBox.classList.remove('hidden');
+      const errText = document.getElementById('loginErrorText');
+      if (errText) errText.innerText = 'Falsches Passwort für die gewählte Rolle.';
+    }
+  } catch (e) {
+    console.error('Fehler bei tryLogin:', e);
+  }
+}
+
+function setRole(role) {
+  window.currentUserRole = role;
+  localStorage.setItem('userRole', role);
+  applyRolePermissions(role);
+}
+
+function applyRolePermissions(role) {
+  try {
+    window.currentUserRole = role || 'helfer';
+    const burgerBtn = document.getElementById('burgerMenuBtn');
+    const guestNotice = document.getElementById('guestLockNotice');
+    const roleLabel = document.getElementById('roleLabel');
+    const roleIcon = document.getElementById('roleIcon');
+    const adminEditBtn = document.getElementById('adminInventarEditBtn');
+
+    if (roleLabel) {
+      roleLabel.innerText = role === 'admin' ? '🟢 ADMIN' : (role === 'orga' ? '🔵 ORGA' : (role === 'helfer' ? '🟡 HELFER' : 'GAST'));
+    }
+
+    if (adminEditBtn) {
+      if (role === 'admin' || role === 'orga') {
+        adminEditBtn.classList.remove('hidden');
+      } else {
+        adminEditBtn.classList.add('hidden');
+        window.isEditMode = false;
+      }
+    }
+
+    if (burgerBtn) burgerBtn.classList.remove('hidden');
+    if (guestNotice) guestNotice.classList.add('hidden');
+    if (roleIcon) roleIcon.innerText = '🔓';
+
+    // Wechselt nach erfolgreichem Login direkt zur Aushang-Ansicht
+    switchView('aushang');
+  } catch (e) {
+    console.error('Fehler bei applyRolePermissions:', e);
+  }
+}
+
+function switchView(viewName) {
+  try {
+    const views = document.querySelectorAll('main > div[id^="view"]');
+    views.forEach(v => v.classList.add('hidden'));
+
+    const targetId = 'view' + viewName.charAt(0).toUpperCase() + viewName.slice(1);
+    const targetView = document.getElementById(targetId);
+    if (targetView) {
+      targetView.classList.remove('hidden');
+      if (viewName === 'inventar') {
+        loadInventarFromGoogleSheets();
+      }
+    }
+
+    const navModal = document.getElementById('navigationModal');
+    if (navModal) navModal.classList.add('hidden');
+  } catch (e) {
+    console.error('Fehler bei switchView:', e);
+  }
+}
+
+function toggleBurgerMenu() {
+  const navModal = document.getElementById('navigationModal');
+  if (navModal) navModal.classList.toggle('hidden');
+}
+
+// ---------------------------------------------------------------------
+// 2. THEME ENGINE (DARKMODE)
+// ---------------------------------------------------------------------
+
+function initTheme() {
+  try {
+    const savedTheme = localStorage.getItem('theme');
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    applyDarkMode(savedTheme === 'dark' || (!savedTheme && systemPrefersDark));
+  } catch (e) {
+    console.error('Theme Init Fehler:', e);
+  }
+}
+
+function applyDarkMode(isDark) {
   if (isDark) {
     document.documentElement.classList.add('dark');
     if (document.body) document.body.classList.add('dark');
@@ -24,95 +121,25 @@ window.applyDarkMode = function(isDark) {
   }
   const icon = document.getElementById('themeToggleIcon');
   if (icon) icon.innerText = isDark ? '☀️' : '🌙';
-};
+}
 
-window.toggleTheme = function() {
+function toggleTheme() {
   const isDarkCurrently = document.documentElement.classList.contains('dark');
   const newDarkState = !isDarkCurrently;
   localStorage.setItem('theme', newDarkState ? 'dark' : 'light');
-  window.applyDarkMode(newDarkState);
-};
+  applyDarkMode(newDarkState);
+}
 
-// 2. NAVIGATION & ROLLEN
-window.switchView = function(viewName) {
-  const views = document.querySelectorAll('main > div[id^="view"]');
-  views.forEach(v => v.classList.add('hidden'));
+// ---------------------------------------------------------------------
+// 3. INVENTAR & GOOGLE SHEETS SYNCHRONISATION
+// ---------------------------------------------------------------------
 
-  const targetId = 'view' + viewName.charAt(0).toUpperCase() + viewName.slice(1);
-  const targetView = document.getElementById(targetId);
-  if (targetView) {
-    targetView.classList.remove('hidden');
-    if (viewName === 'inventar') {
-      window.loadInventarFromGoogleSheets();
-    }
-  }
-
-  const navModal = document.getElementById('navigationModal');
-  if (navModal) navModal.classList.add('hidden');
-};
-
-window.toggleBurgerMenu = function() {
-  const navModal = document.getElementById('navigationModal');
-  if (navModal) navModal.classList.toggle('hidden');
-};
-
-window.tryLogin = function(role, inputId) {
-  const passwords = { helfer: '1', orga: '2', admin: '3' };
-  const input = document.getElementById(inputId);
-  const password = input ? input.value.trim() : '';
-  const errorBox = document.getElementById('loginErrorMessage');
-
-  if (password === passwords[role]) {
-    if (errorBox) errorBox.classList.add('hidden');
-    if (input) input.value = '';
-    window.setRole(role);
-  } else if (errorBox) {
-    errorBox.classList.remove('hidden');
-    const errText = document.getElementById('loginErrorText');
-    if (errText) errText.innerText = 'Falsches Passwort.';
-  }
-};
-
-window.setRole = function(role) {
-  window.currentUserRole = role;
-  localStorage.setItem('userRole', role);
-  window.applyRolePermissions(role);
-};
-
-window.applyRolePermissions = function(role) {
-  window.currentUserRole = role;
-  const burgerBtn = document.getElementById('burgerMenuBtn');
-  const guestNotice = document.getElementById('guestLockNotice');
-  const roleLabel = document.getElementById('roleLabel');
-  const roleIcon = document.getElementById('roleIcon');
-  const adminEditBtn = document.getElementById('adminInventarEditBtn');
-
-  if (roleLabel) {
-    roleLabel.innerText = role === 'admin' ? '🟢 ADMIN' : (role === 'orga' ? '🔵 ORGA' : (role === 'helfer' ? '🟡 HELFER' : 'GAST'));
-  }
-
-  if (adminEditBtn) {
-    if (role === 'admin' || role === 'orga') adminEditBtn.classList.remove('hidden');
-    else {
-      adminEditBtn.classList.add('hidden');
-      window.isEditMode = false;
-    }
-  }
-
-  // Burger-Button IMMER sichtbar halten, damit das Menü nie wieder verschwindet
-  if (burgerBtn) burgerBtn.classList.remove('hidden');
-  if (guestNotice) guestNotice.classList.add('hidden');
-  if (roleIcon) roleIcon.innerText = '🔓';
-};
-
-// 3. INVENTAR & GOOGLE SHEETS
-window.loadInventarFromGoogleSheets = async function() {
+async function loadInventarFromGoogleSheets() {
   const progressText = document.getElementById('inventarProgressText');
   if (progressText) progressText.innerText = 'Lade Daten...';
 
-  // Lokalen Fallback laden
   if (window.inventarCategories) {
-    window.inventarData = window.convertLocalCategoriesToFlat(window.inventarCategories);
+    window.inventarData = convertLocalCategoriesToFlat(window.inventarCategories);
   }
 
   try {
@@ -122,13 +149,13 @@ window.loadInventarFromGoogleSheets = async function() {
       window.inventarData = data;
     }
   } catch (e) {
-    console.warn('Google Sheets Offline, nutze lokale Daten', e);
+    console.warn('Google Sheets nicht erreichbar, nutze lokale Daten:', e);
   }
   
-  window.renderInventar();
-};
+  renderInventar();
+}
 
-window.convertLocalCategoriesToFlat = function(categories) {
+function convertLocalCategoriesToFlat(categories) {
   let flat = [];
   if (!Array.isArray(categories)) return flat;
   categories.forEach(cat => {
@@ -149,10 +176,9 @@ window.convertLocalCategoriesToFlat = function(categories) {
     }
   });
   return flat;
-};
+}
 
-// SPEICHERN IN GOOGLE SHEETS
-window.saveInventarToGoogleSheets = async function() {
+async function saveInventarToGoogleSheets() {
   const progressText = document.getElementById('inventarProgressText');
   if (progressText) progressText.innerText = 'Speichere in Google Sheets...';
 
@@ -168,9 +194,9 @@ window.saveInventarToGoogleSheets = async function() {
     console.error('Fehler beim Speichern:', e);
     if (progressText) progressText.innerText = 'Fehler beim Speichern';
   }
-};
+}
 
-window.renderInventar = function() {
+function renderInventar() {
   const container = document.getElementById('inventarTablesContainer');
   if (!container) return;
 
@@ -215,7 +241,7 @@ window.renderInventar = function() {
                   <td class="py-2.5 px-2 text-center font-bold">${item.bedarf || 0}</td>
                   <td class="py-2.5 px-2 text-center font-bold">${item.lager || 0}</td>
                   <td class="py-2.5 px-2 text-center">
-                    <span class="px-2 py-1 rounded-lg text-[10px] font-bold border ${window.getStatusColorClass(item.status)}">${item.status || 'Offen'}</span>
+                    <span class="px-2 py-1 rounded-lg text-[10px] font-bold border ${getStatusColorClass(item.status)}">${item.status || 'Offen'}</span>
                   </td>
                   <td class="py-2.5 px-2">${item.wer || '-'}</td>
                   <td class="py-2.5 px-2 text-center">${item.pack ? '✅' : '⬜'}</td>
@@ -230,9 +256,9 @@ window.renderInventar = function() {
   }
 
   container.innerHTML = html;
-};
+}
 
-window.getStatusColorClass = function(status) {
+function getStatusColorClass(status) {
   switch (status) {
     case 'Offen': return 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30';
     case 'Vorbereitet': return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30';
@@ -240,14 +266,29 @@ window.getStatusColorClass = function(status) {
     case 'Erledigt': return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30';
     default: return 'bg-slate-100 text-slate-600 border-slate-200';
   }
-};
+}
 
-window.openLightbox = function(imgSrc, title) {
+function openLightbox(imgSrc, title) {
   window.open(imgSrc, '_blank');
-};
+}
+
+// ---------------------------------------------------------------------
+// 4. GLOBAL BINDINGS (DAMIT SOWOHL ONCLICK ALLES FINDET)
+// ---------------------------------------------------------------------
+window.tryLogin = tryLogin;
+window.setRole = setRole;
+window.applyRolePermissions = applyRolePermissions;
+window.switchView = switchView;
+window.toggleBurgerMenu = toggleBurgerMenu;
+window.initTheme = initTheme;
+window.applyDarkMode = applyDarkMode;
+window.toggleTheme = toggleTheme;
+window.loadInventarFromGoogleSheets = loadInventarFromGoogleSheets;
+window.saveInventarToGoogleSheets = saveInventarToGoogleSheets;
+window.renderInventar = renderInventar;
 
 // Autostart
 document.addEventListener('DOMContentLoaded', () => {
-  window.initTheme();
-  window.applyRolePermissions(window.currentUserRole);
+  initTheme();
+  applyRolePermissions(window.currentUserRole);
 });
