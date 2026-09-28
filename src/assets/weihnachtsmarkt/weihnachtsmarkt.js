@@ -43,17 +43,14 @@ window.toggleTheme = function() {
 // 2. NAVIGATION & ROLLENMANAGEMENT
 // ------------------------------------------
 window.switchView = function(viewName) {
-  // Gäste dürfen nur Aushang und Login sehen
   if (window.currentUserRole === 'gast' && viewName !== 'aushang' && viewName !== 'login') {
     alert('Bitte melde dich an, um auf diesen Bereich zuzugreifen.');
     return;
   }
 
-  // Alle Ansichten ausblenden
   const views = document.querySelectorAll('main > div[id^="view"]');
   views.forEach(v => v.classList.add('hidden'));
 
-  // Ziel-Ansicht einblenden
   const targetId = 'view' + viewName.charAt(0).toUpperCase() + viewName.slice(1);
   const targetView = document.getElementById(targetId);
   if (targetView) {
@@ -63,16 +60,13 @@ window.switchView = function(viewName) {
     }
   }
 
-  // Burger-Menü nach Klick schließen
   const navModal = document.getElementById('navigationModal');
   if (navModal) navModal.classList.add('hidden');
 };
 
 window.toggleBurgerMenu = function() {
   const navModal = document.getElementById('navigationModal');
-  if (navModal) {
-    navModal.classList.toggle('hidden');
-  }
+  if (navModal) navModal.classList.toggle('hidden');
 };
 
 window.tryLogin = function(role, inputId) {
@@ -130,7 +124,6 @@ window.applyRolePermissions = function(role) {
     window.switchView('aushang');
   }
 
-  // Erneutes Rendern des Inventars
   if (window.inventarData && window.inventarData.length > 0) {
     window.renderInventar();
   }
@@ -143,8 +136,8 @@ window.loadInventarFromGoogleSheets = async function() {
   const progressText = document.getElementById('inventarProgressText');
   if (progressText) progressText.innerText = 'Lade Daten...';
 
-  // Sofortiger Fallback auf die lokalen Kategorien aus `weihnachtsmarkt-data.js`
-  if (window.inventarCategories && (!window.inventarData || window.inventarData.length === 0)) {
+  // 1. Lokale Daten als sofortigen Platzhalter/Fallback setzen
+  if ((!window.inventarData || window.inventarData.length === 0) && window.inventarCategories) {
     window.inventarData = JSON.parse(JSON.stringify(window.inventarCategories));
     window.renderInventar();
   }
@@ -152,15 +145,29 @@ window.loadInventarFromGoogleSheets = async function() {
   try {
     const res = await fetch(GOOGLE_SCRIPT_URL);
     if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
+      let data = await res.json();
+
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch (e) {}
+      }
+
+      // Validierung: Nur überschreiben, wenn valide Kategorien mit Items enthalten sind
+      const isValid = Array.isArray(data) && data.length > 0 && Array.isArray(data[0].items) && data[0].items.length > 0;
+
+      if (isValid) {
         window.inventarData = data;
         window.renderInventar();
+      } else {
+        console.warn('Google Sheets hat noch keine oder leere Daten geliefert. Lokale Daten bleiben bestehen.');
+        if (!window.inventarData || window.inventarData.length === 0) {
+          window.inventarData = JSON.parse(JSON.stringify(window.inventarCategories));
+          window.renderInventar();
+        }
       }
     }
   } catch (e) {
-    console.warn('Google Sheets Offline/Fehler - benutze lokale Daten:', e);
-    if (window.inventarCategories && (!window.inventarData || window.inventarData.length === 0)) {
+    console.warn('Google Sheets Fehler / Offline - erstelle mit lokalen Daten:', e);
+    if (!window.inventarData || window.inventarData.length === 0) {
       window.inventarData = JSON.parse(JSON.stringify(window.inventarCategories));
       window.renderInventar();
     }
@@ -186,7 +193,7 @@ window.updateFilterButtonsUI = function() {
 
     if (isActive) {
       if (status === 'alle') {
-        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-slate-900 text-white dark:bg-amber-500 dark:text-slate-950 shadow-md";
+        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-amber-500 text-slate-950 shadow-md";
       } else if (status === 'Offen') {
         btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-rose-500 text-white shadow-md";
       } else if (status === 'Vorbereitet') {
@@ -198,15 +205,15 @@ window.updateFilterButtonsUI = function() {
       }
     } else {
       if (status === 'Offen') {
-        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 hover:bg-rose-100 dark:hover:bg-rose-900/40";
+        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30 hover:bg-rose-500/20";
       } else if (status === 'Vorbereitet') {
-        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 hover:bg-amber-100 dark:hover:bg-amber-900/40";
+        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/20";
       } else if (status === 'Verteilt') {
-        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-900/50 hover:bg-sky-100 dark:hover:bg-sky-900/40";
+        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/30 hover:bg-sky-500/20";
       } else if (status === 'Erledigt') {
-        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/40";
+        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20";
       } else {
-        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700";
+        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700";
       }
     }
   });
@@ -232,14 +239,16 @@ window.renderInventar = function() {
   const isReadonly = window.currentUserRole === 'gast';
 
   window.inventarData.forEach((cat, catIdx) => {
-    // Filterung der Items nach Suche und Status
-    const matchingItems = (cat.items || []).filter(item => {
+    // Zählung aller Elemente
+    (cat.items || []).forEach(item => {
       totalItems++;
       if (item.status === 'Erledigt' || item.pack) {
         completedItems++;
       }
+    });
 
-      // Textsuche
+    // Filterung für die Anzeige
+    const matchingItems = (cat.items || []).filter(item => {
       if (window.currentSearchTerm) {
         const matchName = (item.name || '').toLowerCase().includes(window.currentSearchTerm);
         const matchSub = (item.sub || '').toLowerCase().includes(window.currentSearchTerm);
@@ -248,7 +257,6 @@ window.renderInventar = function() {
         if (!matchName && !matchSub && !matchWer && !matchBox) return false;
       }
 
-      // Status-Filter
       if (window.currentFilterStatus !== 'alle') {
         const itemStatus = (item.status || 'Offen').toLowerCase();
         if (itemStatus !== window.currentFilterStatus.toLowerCase()) return false;
@@ -259,26 +267,26 @@ window.renderInventar = function() {
 
     if (matchingItems.length > 0) {
       html += `
-        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-sm dark:shadow-lg overflow-hidden">
-          <div class="px-5 py-3.5 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800/80 flex items-center justify-between">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm dark:shadow-md overflow-hidden">
+          <div class="px-5 py-3.5 bg-slate-50 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <h3 class="text-xs sm:text-sm font-black tracking-wide text-amber-600 dark:text-amber-400 uppercase flex items-center gap-2">
               ${escapeHtml(cat.title)}
             </h3>
-            <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
+            <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
               ${matchingItems.length} Einträge
             </span>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse text-xs">
               <thead>
-                <tr class="border-b border-slate-200 dark:border-slate-800 text-[10px] font-extrabold uppercase text-slate-500 dark:text-slate-400 tracking-wider bg-slate-100/70 dark:bg-slate-950/40">
-                  <th class="py-2.5 px-4">Gegenstand</th>
-                  <th class="py-2.5 px-2 text-center w-16">Bedarf</th>
-                  <th class="py-2.5 px-2 text-center w-16">Lager</th>
-                  <th class="py-2.5 px-2 w-36">Status</th>
-                  <th class="py-2.5 px-2 w-44">Wer</th>
-                  <th class="py-2.5 px-2 text-center w-14">Pack</th>
-                  <th class="py-2.5 px-2 w-20">Box</th>
+                <tr class="border-b border-slate-200 dark:border-slate-800 text-[10px] font-extrabold uppercase text-slate-500 dark:text-slate-400 tracking-wider bg-slate-100/80 dark:bg-slate-950/60">
+                  <th class="py-2.5 px-4">GEGENSTAND</th>
+                  <th class="py-2.5 px-2 text-center w-16">BEDARF</th>
+                  <th class="py-2.5 px-2 text-center w-16">LAGER</th>
+                  <th class="py-2.5 px-2 w-36">STATUS</th>
+                  <th class="py-2.5 px-2 w-44">WER</th>
+                  <th class="py-2.5 px-2 text-center w-14">PACK</th>
+                  <th class="py-2.5 px-2 w-20">BOX</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-200 dark:divide-slate-800/60">
@@ -288,7 +296,6 @@ window.renderInventar = function() {
         const itemIdx = cat.items.indexOf(item);
         if (!matchingItems.includes(item)) return;
 
-        // Dynamic status styling for select input
         let statusStyle = "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-300 dark:border-rose-800";
         if (item.status === 'Vorbereitet') {
           statusStyle = "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-800";
@@ -354,7 +361,6 @@ window.renderInventar = function() {
 
   container.innerHTML = html || '<div class="p-8 text-center text-slate-500 dark:text-slate-400 text-xs">Keine passenden Einträge für diesen Filter gefunden.</div>';
 
-  // Live Fortschrittsanzeige berechnen
   const percent = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
   const progressText = document.getElementById('inventarProgressText');
   if (progressText) {
@@ -366,11 +372,7 @@ window.updateInventarItem = function(catIdx, itemIdx, field, val) {
   if (!window.inventarData[catIdx] || !window.inventarData[catIdx].items[itemIdx]) return;
 
   window.inventarData[catIdx].items[itemIdx][field] = val;
-
-  // Hintergrund-Sync an Google Sheets
   window.syncWithGoogleSheets();
-
-  // Fortschritts- & UI-Update
   window.renderInventar();
 };
 
@@ -397,9 +399,6 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
-// ------------------------------------------
-// 4. AUTOSTART BEI SEITENAUFRUF
-// ------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
   window.initTheme();
   window.applyRolePermissions(window.currentUserRole);
