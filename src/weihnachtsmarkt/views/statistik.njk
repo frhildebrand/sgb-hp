@@ -1,0 +1,80 @@
+<div id="viewStatistik" class="hidden space-y-6">
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+    <div>
+      <h2 class="font-extrabold text-lg text-indigo-600 dark:text-indigo-400 flex items-center gap-2">📈 Statistik & Reingewinn-Rechner</h2>
+      <p class="text-xs text-slate-500 dark:text-slate-400">Tages-Auswertungen, Spendenente und Gesamtabrechnung</p>
+    </div>
+    <button onclick="switchView('aushang')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition">⬅️ Zurück zu Aushänge</button>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+      <h3 class="font-extrabold text-sm text-amber-600 dark:text-amber-400 border-b pb-2 dark:border-slate-800">📅 Samstag Abrechnung</h3>
+      <div class="space-y-3 text-xs font-bold">
+        <div>
+          <label class="block text-slate-500 mb-1">Verkaufte Waffeln (Stk.):</label>
+          <input type="number" id="statsSamstagWaffeln" min="0" onchange="updateStatistikCalc()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5" placeholder="0" />
+        </div>
+        <div>
+          <label class="block text-slate-500 mb-1">Verkaufter Punsch (200ml) (Stk.):</label>
+          <input type="number" id="statsSamstagPunsch" min="0" onchange="updateStatistikCalc()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5" placeholder="0" />
+        </div>
+        <div>
+          <label class="block text-slate-500 mb-1">Spendenente Samstag (€):</label>
+          <input type="number" step="0.01" id="statsSamstagSpenden" min="0" onchange="updateStatistikCalc()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5" placeholder="0.00" />
+        </div>
+        <div class="pt-2 text-right text-emerald-500 font-black text-sm">
+          Samstag Umsatz: <span id="labelSamstagUmsatz">0,00 €</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+      <h3 class="font-extrabold text-sm text-sky-600 dark:text-sky-400 border-b pb-2 dark:border-slate-800">📅 Sonntag Abrechnung</h3>
+      <div class="space-y-3 text-xs font-bold">
+        <div>
+          <label class="block text-slate-500 mb-1">Verkaufte Waffeln (Stk.):</label>
+          <input type="number" id="statsSonntagWaffeln" min="0" onchange="updateStatistikCalc()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5" placeholder="0" />
+        </div>
+        <div>
+          <label class="block text-slate-500 mb-1">Verkaufter Punsch (200ml) (Stk.):</label>
+          <input type="number" id="statsSonntagPunsch" min="0" onchange="updateStatistikCalc()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5" placeholder="0" />
+        </div>
+        <div>
+          <label class="block text-slate-500 mb-1">Spendenente Sonntag (€):</label>
+          <input type="number" step="0.01" id="statsSonntagSpenden" min="0" onchange="updateStatistikCalc()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5" placeholder="0.00" />
+        </div>
+        <div class="pt-2 text-right text-emerald-500 font-black text-sm">
+          Sonntag Umsatz: <span id="labelSonntagUmsatz">0,00 €</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+    <h3 class="font-extrabold text-sm text-slate-900 dark:text-slate-100 border-b pb-2 dark:border-slate-800">💵 Gesamtabrechnung & Reingewinn</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-bold">
+      <div class="space-y-3">
+        <div>
+          <label class="block text-slate-500 mb-1">Einkäufe / Ausgaben Gesamt (€):</label>
+          <input type="number" step="0.01" id="statsAusgaben" min="0" onchange="updateStatistikCalc()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5" placeholder="0.00" />
+        </div>
+        <div>
+          <label class="block text-slate-500 mb-1">Standgebühr Gemeinde (€):</label>
+          <input type="number" step="0.01" id="statsStandgebuehr" min="0" onchange="updateStatistikCalc()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5" placeholder="0.00" />
+        </div>
+      </div>
+
+      <div class="bg-slate-50 dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3 flex flex-col justify-center">
+        <div class="flex justify-between items-center border-b pb-1 dark:border-slate-800">
+          <span class="text-slate-500">Gesamtumsatz (inkl. Spenden):</span>
+          <span id="labelGesamtUmsatz" class="font-black text-slate-900 dark:text-slate-100">0,00 €</span>
+        </div>
+        <div class="flex justify-between items-center text-sm pt-2">
+          <span class="font-extrabold text-slate-700 dark:text-slate-300">Reingewinn:</span>
+          <span id="labelReingewinn" class="text-xl font-black text-emerald-500">0,00 €</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
