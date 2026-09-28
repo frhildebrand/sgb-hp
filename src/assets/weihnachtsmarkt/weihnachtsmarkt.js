@@ -6,14 +6,28 @@ let appState = {
   sales: { waffel: 0, punsch: 0 }, 
   prices: { waffel: 2.00, punsch: 2.00 },
   roshopImg: {},
-  statsData: { samstagW: 0, samstagP: 0, samstagS: 0, sonntagW: 0, sonntagP: 0, sonntagS: 0, ausgaben: 0, standgebuehr: 0 }
+  statsData: { samstagW: 0, samstagP: 0, samstagS: 0, sonntagW: 0, sonntagP: 0, sonntagS: 0, ausgaben: 0, standgebuehr: 0 },
+  boxes: [
+    { id: 1, name: "Box 1", desc: "Standard Kiste" },
+    { id: 2, name: "Box 2", desc: "Standard Kiste" },
+    { id: 3, name: "Box 3", desc: "Standard Kiste" },
+    { id: 4, name: "Box 4", desc: "Standard Kiste" },
+    { id: 5, name: "Box 5", desc: "Standard Kiste" },
+    { id: 6, name: "Box 6", desc: "Standard Kiste" },
+    { id: 7, name: "Box 7", desc: "Standard Kiste" },
+    { id: 8, name: "Box 8", desc: "Standard Kiste" },
+    { id: 9, name: "Box 9", desc: "Standard Kiste" },
+    { id: 10, name: "Box 10", desc: "Standard Kiste" },
+    { id: 11, name: "Box 11", desc: "Standard Kiste" },
+    { id: 12, name: "Box 12", desc: "Standard Kiste" }
+  ]
 };
 let currentRole = 'betrachter';
 let activeFilterTag = 'ALL';
 
-// AKTUELLES LÄDEN-DROPDOWN INKLUSIVE "GRUBER"
+// AKTUELLES LÄDEN-DROPDOWN ALPHABETISCH SORTIERT INKLUSIVE "KRUBER"
 const STORE_OPTIONS = [
-  "E-Center", "REWE", "Lidl", "Aldi", "Penny", "Netto", "Kaufland", "Metro", "Gruber", "Online", "Sonstiges"
+  "Aldi", "E-Center", "Kaufland", "Kruber", "Lidl", "Metro", "Netto", "Online", "Penny", "REWE", "Sonstiges"
 ];
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -101,6 +115,9 @@ function loadFromLocal() {
   if (!appState.prices) appState.prices = { waffel: 2.00, punsch: 2.00 };
   if (!appState.roshopImg) appState.roshopImg = {};
   if (!appState.statsData) appState.statsData = {};
+  if (!appState.boxes) {
+    appState.boxes = Array.from({ length: 12 }, (_, i) => ({ id: i + 1, name: `Box ${i + 1}`, desc: "Standard Kiste" }));
+  }
   if (appState.roleConfig) roleConfig = appState.roleConfig;
 
   renderRoshopImages();
@@ -116,6 +133,9 @@ async function loadStateFromSheet() {
       if (!appState.prices) appState.prices = { waffel: 2.00, punsch: 2.00 };
       if (!appState.roshopImg) appState.roshopImg = {};
       if (!appState.statsData) appState.statsData = {};
+      if (!appState.boxes) {
+        appState.boxes = Array.from({ length: 12 }, (_, i) => ({ id: i + 1, name: `Box ${i + 1}`, desc: "Standard Kiste" }));
+      }
       localStorage.setItem('sg_wm_state_v26', JSON.stringify(appState));
       itemsData.forEach(item => initItemState(item));
       renderChecklist();
@@ -253,7 +273,7 @@ function renderChecklist() {
               <input type="checkbox" ${!canEdit('canPacked') ? 'disabled' : ''} ${st.packed ? 'checked' : ''} onchange="updateItem(${item.id}, 'packed', this.checked)" class="w-4 h-4 accent-emerald-500 cursor-pointer" />
             </td>
             <td class="py-2.5 px-1 text-center">
-              <input type="number" ${!canEdit('canBox') ? 'disabled' : ''} min="1" max="12" value="${st.boxNum || ''}" onchange="updateItem(${item.id}, 'boxNum', this.value)" class="border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-lg text-center w-10 text-xs py-1 font-bold focus:outline-none" />
+              <input type="number" ${!canEdit('canBox') ? 'disabled' : ''} min="1" max="99" value="${st.boxNum || ''}" onchange="updateItem(${item.id}, 'boxNum', this.value)" class="border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-lg text-center w-10 text-xs py-1 font-bold focus:outline-none" />
             </td>
           </tr>
         `;
@@ -266,10 +286,10 @@ function renderChecklist() {
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
-              <tr class="text-[10px] uppercase bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-extrabold border-b border-slate-300 dark:border-slate-700">
+              <tr class="text-[10px] uppercase bg-amber-100/80 dark:bg-amber-950/60 text-slate-900 dark:text-amber-100 font-extrabold border-b border-amber-200 dark:border-amber-800/80">
                 <th class="p-2">Gegenstand</th>
                 <th class="p-1 text-center">Bedarf</th>
-                <th class="p-1 text-center">Lager</th>
+                <th class="p-1 text-center">Vorhanden</th>
                 <th class="p-1">Status</th>
                 <th class="p-1">Wer</th>
                 <th class="p-1 text-center">Pack</th>
@@ -418,22 +438,89 @@ function renderBoxOverview() {
   if (!container) return;
   container.innerHTML = '';
 
-  for (let b = 1; b <= 12; b++) {
-    const boxItems = itemsData.filter(i => appState[i.id]?.boxNum == b);
+  const isAdmin = currentRole === 'admin';
+  const addBtn = document.getElementById('addBoxBtn');
+  if (addBtn) addBtn.classList.toggle('hidden', !isAdmin);
+
+  if (!appState.boxes || appState.boxes.length === 0) {
+    appState.boxes = Array.from({ length: 12 }, (_, i) => ({ id: i + 1, name: `Box ${i + 1}`, desc: "Standard Kiste" }));
+  }
+
+  appState.boxes.forEach((box) => {
+    const boxItems = itemsData.filter(i => appState[i.id]?.boxNum == box.id);
     const packedCount = boxItems.filter(i => appState[i.id]?.packed).length;
 
     const boxCard = document.createElement('div');
-    boxCard.className = 'bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl space-y-2';
+    boxCard.className = 'bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-4 rounded-xl space-y-3 relative group shadow-sm';
+    
+    let adminControls = '';
+    if (isAdmin) {
+      adminControls = `
+        <div class="flex items-center gap-1.5 pt-1">
+          <button onclick="editBoxPrompt(${box.id})" class="px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold text-[10px] rounded-lg transition border border-amber-500/30">✏️ Bearbeiten</button>
+          <button onclick="deleteBoxConfirm(${box.id})" class="px-2 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold text-[10px] rounded-lg transition border border-rose-500/30">🗑️ Löschen</button>
+        </div>
+      `;
+    }
+
     boxCard.innerHTML = `
-      <div class="flex justify-between items-center font-bold text-xs border-b border-slate-200 dark:border-slate-800 pb-1.5">
-        <span>📦 Box ${b}</span>
-        <span class="text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded text-[10px] font-bold">${packedCount}/${boxItems.length} gepackt</span>
+      <div class="flex justify-between items-start border-b border-slate-200 dark:border-slate-800 pb-2">
+        <div>
+          <h3 class="font-black text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">📦 ${box.name}</h3>
+          ${box.desc ? `<p class="text-[10px] text-slate-500 font-medium">${box.desc}</p>` : ''}
+        </div>
+        <span class="text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md text-[10px] font-bold">${packedCount}/${boxItems.length} gepackt</span>
       </div>
-      <ul class="text-xs space-y-1 list-disc pl-4 font-medium">
-        ${boxItems.length > 0 ? boxItems.map(i => `<li class="${appState[i.id]?.packed ? 'line-through text-slate-400' : ''}">${i.title}</li>`).join('') : '<li class="italic text-slate-400 list-none">Keine Artikel zugewiesen</li>'}
+      <ul class="text-xs space-y-1 list-disc pl-4 font-medium text-slate-700 dark:text-slate-300">
+        ${boxItems.length > 0 ? boxItems.map(i => `<li class="${appState[i.id]?.packed ? 'line-through text-slate-400' : ''}">${i.title}</li>`).join('') : '<li class="italic text-slate-400 list-none font-normal">Keine Artikel zugewiesen</li>'}
       </ul>
+      ${adminControls}
     `;
     container.appendChild(boxCard);
+  });
+}
+
+function addNewBox() {
+  if (currentRole !== 'admin') return;
+  const nextId = appState.boxes.length > 0 ? Math.max(...appState.boxes.map(b => b.id)) + 1 : 1;
+  const name = prompt("Name der neuen Box:", `Box ${nextId}`);
+  if (name) {
+    const desc = prompt("Beschreibung/Notiz zur Box (optional):", "Zusatzkiste");
+    appState.boxes.push({ id: nextId, name: name, desc: desc || "" });
+    saveState();
+    renderBoxOverview();
+  }
+}
+
+function editBoxPrompt(id) {
+  if (currentRole !== 'admin') return;
+  const box = appState.boxes.find(b => b.id === id);
+  if (!box) return;
+
+  const newName = prompt("Neuer Name für die Box:", box.name);
+  if (newName !== null && newName.trim() !== "") {
+    const newDesc = prompt("Neue Beschreibung/Notiz:", box.desc || "");
+    box.name = newName.trim();
+    box.desc = newDesc !== null ? newDesc.trim() : box.desc;
+    saveState();
+    renderBoxOverview();
+  }
+}
+
+function deleteBoxConfirm(id) {
+  if (currentRole !== 'admin') return;
+  const box = appState.boxes.find(b => b.id === id);
+  if (!box) return;
+
+  if (confirm(`Möchtest du "${box.name}" wirklich löschen? Enthaltene Artikel verlieren ihre Box-Nummer.`)) {
+    appState.boxes = appState.boxes.filter(b => b.id !== id);
+    itemsData.forEach(item => {
+      if (appState[item.id]?.boxNum == id) {
+        appState[item.id].boxNum = '';
+      }
+    });
+    saveState();
+    renderBoxOverview();
   }
 }
 
@@ -442,20 +529,32 @@ function renderStockTable() {
   if (!tbody) return;
   tbody.innerHTML = '';
 
-  itemsData.forEach(item => {
+  // NUR ARTIKEL ANZEIGEN, DIE TATSÄCHLICH VORHANDEN SIND (Bestand > 0)
+  const availableItems = itemsData.filter(item => {
     const st = appState[item.id];
-    if (st) {
-      const tr = document.createElement('tr');
-      tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-950';
-      tr.innerHTML = `
-        <td class="p-2 font-bold text-slate-500">${item.cat}</td>
-        <td class="p-2 font-bold">${item.title}</td>
-        <td class="p-2 text-center font-bold text-amber-500">${st.reqQty || '1'}</td>
-        <td class="p-2 text-center font-extrabold text-emerald-500">${st.stockQty || '0'}</td>
-        <td class="p-2 text-center font-bold">${st.status}</td>
-      `;
-      tbody.appendChild(tr);
-    }
+    const qty = parseInt(st?.stockQty || '0', 10);
+    return qty > 0;
+  });
+
+  if (availableItems.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400 italic">Derzeit sind keine Artikel im Bestand / vorhanden.</td></tr>`;
+    return;
+  }
+
+  availableItems.forEach(item => {
+    const st = appState[item.id];
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-950 transition border-b border-slate-100 dark:border-slate-800';
+    tr.innerHTML = `
+      <td class="p-2.5 font-bold text-slate-500">${item.cat}</td>
+      <td class="p-2.5 font-bold">${item.title}</td>
+      <td class="p-2.5 text-center font-bold text-amber-600 dark:text-amber-400">${st.reqQty || '1'}</td>
+      <td class="p-2.5 text-center font-extrabold text-emerald-500">${st.stockQty || '0'}</td>
+      <td class="p-2.5 text-center font-bold">
+        <span class="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px]">Vorhanden</span>
+      </td>
+    `;
+    tbody.appendChild(tr);
   });
 }
 
@@ -619,4 +718,5 @@ function applyRolePermissions() {
   const badge = document.getElementById('roleBadge');
   if (badge) badge.innerText = `${currentRole.toUpperCase()}`;
   renderChecklist();
+  renderBoxOverview();
 }
