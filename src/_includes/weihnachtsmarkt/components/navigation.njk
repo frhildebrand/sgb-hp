@@ -1,28 +1,59 @@
-<div id="burgerDrawer" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm hidden flex justify-end transition-opacity">
-  <div class="w-80 bg-white dark:bg-slate-900 h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto border-l border-slate-200 dark:border-slate-800">
+<!-- NAVIGATION MODAL / DRAWER -->
+<div id="navigationModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex justify-end hidden">
+  
+  <div class="bg-white dark:bg-slate-900 w-full max-w-xs h-full p-6 shadow-2xl space-y-6 flex flex-col justify-between overflow-y-auto border-l border-slate-200 dark:border-slate-800">
+    
     <div class="space-y-6">
-      <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-4">
-        <h2 class="font-extrabold text-lg text-slate-900 dark:text-slate-100 flex items-center gap-2">🧭 Hauptnavigation</h2>
-        <button onclick="toggleBurgerMenu()" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-bold text-2xl">✕</button>
+      <!-- Header im Menü -->
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🎄</span>
+          <span class="font-black text-sm text-slate-800 dark:text-slate-100">Menü</span>
+        </div>
+        <button onclick="toggleBurgerMenu()" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold text-lg cursor-pointer">✕</button>
       </div>
 
-      <nav class="space-y-2 font-bold text-sm">
-        <button onclick="switchView('aushang')" class="w-full text-left px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:scale-[1.02] transition flex items-center gap-3">📌 Hauptseite & Aushänge</button>
-        <button onclick="switchView('inventar')" class="w-full text-left px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 hover:scale-[1.02] transition flex items-center gap-3">📋 Inventar</button>
-        <button onclick="switchView('verkauf')" class="w-full text-left px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300 hover:scale-[1.02] transition flex items-center gap-3">💰 Verkauf</button>
-        <button onclick="switchView('statistik')" class="w-full text-left px-4 py-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-300 hover:scale-[1.02] transition flex items-center gap-3">📈 Statistik & Reingewinn</button>
-        <button onclick="switchView('einkaufsliste')" class="w-full text-left px-4 py-3 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-orange-900 dark:text-orange-300 hover:scale-[1.02] transition flex items-center gap-3">🛒 Einkaufsliste</button>
-        <button onclick="switchView('verkabelung')" class="w-full text-left px-4 py-3 rounded-xl bg-sky-50 dark:bg-sky-950/40 text-sky-900 dark:text-sky-300 hover:scale-[1.02] transition flex items-center gap-3">⚡ Verkabelung</button>
-        <button onclick="switchView('lagerbestand')" class="w-full text-left px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:scale-[1.02] transition flex items-center gap-3">📊 Lagerbestand</button>
-        <button onclick="switchView('boxenuebersicht')" class="w-full text-left px-4 py-3 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-900 dark:text-purple-300 hover:scale-[1.02] transition flex items-center gap-3">📦 Boxenübersicht</button>
-        <button onclick="switchView('rezepte')" class="w-full text-left px-4 py-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-900 dark:text-rose-300 hover:scale-[1.02] transition flex items-center gap-3">☕ Rezepte</button>
-        <button onclick="window.print()" class="w-full text-left px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:scale-[1.02] transition flex items-center gap-3">🖨️ Drucken</button>
-        <button onclick="switchView('adminpanel')" class="w-full text-left px-4 py-3 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:scale-[1.02] transition flex items-center gap-3 border border-amber-500/50 shadow-md">👑 Admin-Panel</button>
+      <!-- Navigations-Links -->
+      <nav class="space-y-1.5">
+        <button onclick="switchView('aushang')" class="w-full text-left px-4 py-2.5 rounded-xl font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-3">
+          <span>📌</span> Aushang
+        </button>
+        <button onclick="switchView('inventar')" class="w-full text-left px-4 py-2.5 rounded-xl font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-3">
+          <span>📦</span> Inventar
+        </button>
+        <button onclick="switchView('verkauf')" class="w-full text-left px-4 py-2.5 rounded-xl font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-3">
+          <span>💶</span> Kasse & Verkauf
+        </button>
+        <button onclick="switchView('statistik')" class="w-full text-left px-4 py-2.5 rounded-xl font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-3">
+          <span>📊</span> Statistik
+        </button>
+        <button onclick="switchView('einkaufsliste')" class="w-full text-left px-4 py-2.5 rounded-xl font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-3">
+          <span>🛒</span> Einkaufsliste
+        </button>
+        <button onclick="switchView('verkabelung')" class="w-full text-left px-4 py-2.5 rounded-xl font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-3">
+          <span>⚡</span> Verkabelung / Strom
+        </button>
+        <button onclick="switchView('lagerbestand')" class="w-full text-left px-4 py-2.5 rounded-xl font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-3">
+          <span>🏬</span> Lagerbestand
+        </button>
+        <button onclick="switchView('boxen')" class="w-full text-left px-4 py-2.5 rounded-xl font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-3">
+          <span>📥</span> Kisten & Boxen
+        </button>
+        <button onclick="switchView('rezepte')" class="w-full text-left px-4 py-2.5 rounded-xl font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-3">
+          <span>🧇</span> Rezept-Rechner
+        </button>
+        <button onclick="switchView('admin')" class="w-full text-left px-4 py-2.5 rounded-xl font-bold text-xs bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 transition-colors flex items-center gap-3">
+          <span>🛡️</span> Admin-Panel
+        </button>
       </nav>
     </div>
 
-    <div id="syncStatus" class="text-xs text-slate-400 font-mono text-center pt-4 border-t border-slate-200 dark:border-slate-800">
-      ⏳ Verbinde mit Cloud Sheet...
+    <!-- Footer im Menü -->
+    <div class="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+      <button onclick="switchView('login')" class="w-full py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold rounded-xl transition-colors">
+        ⚙️ Rolle wechseln / Abmelden
+      </button>
     </div>
+
   </div>
 </div>
