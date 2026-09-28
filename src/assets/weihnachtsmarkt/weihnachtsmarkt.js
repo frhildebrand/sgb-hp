@@ -50,7 +50,7 @@ window.switchView = function(viewName) {
     targetView.classList.remove('hidden');
   }
 
-  // 3. Bei Inventar-Aufruf Daten holen
+  // 3. Bei Inventar-Aufruf SOFORT lokale Daten rendern & im Hintergrund aktualisieren
   if (viewName === 'inventar') {
     window.loadInventarFromGoogleSheets();
   }
@@ -125,27 +125,27 @@ window.applyRolePermissions = function(role) {
 // 3. INVENTAR (SCHRITT 2: ISOLIERTES DATEN-HANDLING)
 // ---------------------------------------------------------------------
 window.loadInventarFromGoogleSheets = async function() {
-  // 1. SOFORT LOKALE DATEN RENDERN (falls vorhanden)
+  // SOFORT LOKALE DATEN RENDERN (damit keine Ladezeit entsteht)
   if (typeof window.WEIHNACHTSMARKT_DATA !== 'undefined' && Array.isArray(window.WEIHNACHTSMARKT_DATA)) {
     window.inventarData = window.WEIHNACHTSMARKT_DATA;
-    window.renderInventar(); // Kategorien & Tabellen sind SOFORT sichtbar!
-  } else if (typeof inventarData !== 'undefined' && Array.isArray(inventarData)) {
-    window.inventarData = inventarData;
+    window.renderInventar();
+  } else if (window.inventarData && window.inventarData.length > 0) {
     window.renderInventar();
   }
 
-  // 2. IM HINTERGRUND AKTUELLSTE DATEN AUS GOOGLE SHEETS HOLEN
+  // FRISCHE DATEN AUS GOOGLE SHEETS IM HINTERGRUND HOLEN
   try {
     const res = await fetch(GOOGLE_SCRIPT_URL);
-    const liveData = await res.json();
-    if (Array.isArray(liveData) && liveData.length > 0) {
-      window.inventarData = liveData;
-      window.renderInventar(); // Aktualisiert die Werte geräuschlos
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) {
+      window.inventarData = data;
+      window.renderInventar(); // Aktualisiert die Tabelle geräuschlos
     }
   } catch (e) {
-    console.warn('Google Sheets Offline - Nutze lokale Daten aus weihnachtsmarkt-data.js', e);
+    console.warn('Google Sheets nicht erreichbar, verwende lokale Daten:', e);
   }
 };
+
 
 // ---------------------------------------------------------------------
 // INVENTAR RENDERN (MIT FORMULARFELDERN & ADMIN-OPTIONEN)
