@@ -11,8 +11,9 @@ let appState = {
 let currentRole = 'betrachter';
 let activeFilterTag = 'ALL';
 
+// AKTUELLES LÄDEN-DROPDOWN OHNE EDEKA, DAFÜR MIT E-CENTER, REWE & ONLINE
 const STORE_OPTIONS = [
-  "Edeka", "Rewe", "Lidl", "Aldi", "Penny", "Netto", "Kaufland", "Metro", "Sonstiges"
+  "E-Center", "REWE", "Lidl", "Aldi", "Penny", "Netto", "Kaufland", "Metro", "Online", "Sonstiges"
 ];
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -265,7 +266,7 @@ function renderChecklist() {
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
-              <tr class="text-[10px] uppercase bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-extrabold border-b border-slate-300 dark:border-slate-700">
+              <tr class="text-[10px] uppercase bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-extrabold border-b border-slate-300 dark:border-slate-700">
                 <th class="p-2">Gegenstand</th>
                 <th class="p-1 text-center">Bedarf</th>
                 <th class="p-1 text-center">Lager</th>
@@ -472,7 +473,6 @@ function renderPowerPlanner() {
   });
 }
 
-// ERWEITERTE EINKAUFSLISTE (Bedarf synchronisiert, Packungsgröße editierbar & Läden Dropdown)
 function renderShoppingTable() {
   const tbody = document.getElementById('shoppingTableBody');
   if (!tbody) return;
@@ -505,12 +505,12 @@ function renderShoppingTable() {
       </td>
       <td class="p-2.5 font-bold ${st.bought ? 'line-through text-slate-400' : ''}">${item.title}</td>
       <td class="p-2.5 text-center font-bold text-amber-600 dark:text-amber-400">${reqQtyDisplay}</td>
-      <td class="p-2.5">
-        <input type="text" ${!canEdit('canShopStore') ? 'disabled' : ''} value="${pkgSizeValue}" placeholder="z.B. 10er Pack / 1kg" onchange="updateItem(${item.id}, 'packageSize', this.value)" class="border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded px-2 py-1 text-xs w-full focus:outline-none" />
+      <td class="p-2.5 w-28 sm:w-32">
+        <input type="text" ${!canEdit('canShopStore') ? 'disabled' : ''} value="${pkgSizeValue}" placeholder="1kg / 10er" onchange="updateItem(${item.id}, 'packageSize', this.value)" class="border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 rounded px-2 py-1 text-xs w-full focus:outline-none font-medium" />
       </td>
       <td class="p-2.5">${storeSelectHtml}</td>
       <td class="p-2.5 text-right font-bold">
-        <input type="number" step="0.01" ${!canEdit('canShopPrice') ? 'disabled' : ''} value="${st.price || ''}" placeholder="0.00" onchange="updateItem(${item.id}, 'price', this.value); renderShoppingTable();" class="border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded px-2 py-1 text-xs w-20 text-right font-bold focus:outline-none" /> €
+        <input type="number" step="0.01" ${!canEdit('canShopPrice') ? 'disabled' : ''} value="${st.price || ''}" placeholder="0.00" onchange="updateItem(${item.id}, 'price', this.value); renderShoppingTable();" class="border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 rounded px-2 py-1 text-xs w-20 text-right font-bold focus:outline-none" /> €
       </td>
     `;
     tbody.appendChild(tr);
