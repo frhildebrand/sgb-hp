@@ -1,14 +1,13 @@
-// Globaler Status (Standard: gast)
+// Status direkt beim Start auf Gast setzen, falls nichts gespeichert ist
 let currentUserRole = localStorage.getItem('userRole') || 'gast';
 
-// Einfache Passwörter
 const ROLE_PASSWORDS = {
   helfer: '1',
   orga: '2',
   admin: '3'
 };
 
-// --- VOLLFLÄCHIGER DARKMODE (HTML + BODY) ---
+// --- DARKMODE ENGINE ---
 function initTheme() {
   const savedTheme = localStorage.getItem('theme');
   const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -46,14 +45,7 @@ function updateThemeIcon(isDark) {
   }
 }
 
-// System-Theme-Änderung live abfangen
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-  if (!localStorage.getItem('theme')) {
-    applyDarkMode(e.matches);
-  }
-});
-
-// --- IN-PAGE LOGIN LOGIK ---
+// --- LOGIN LOGIK ---
 function tryLogin(role, inputId) {
   const input = document.getElementById(inputId);
   const password = input ? input.value.trim() : '';
@@ -78,7 +70,7 @@ function setRole(role) {
   applyRolePermissions(role);
 }
 
-// --- GAST-SPERRE & ROLLEN-PERMISSIONS ---
+// --- PERMISSIONS & GAST-MODUS ---
 function applyRolePermissions(role) {
   currentUserRole = role;
   const burgerBtn = document.getElementById('burgerMenuBtn');
@@ -91,13 +83,11 @@ function applyRolePermissions(role) {
   }
 
   if (role === 'gast') {
-    // Gast-Modus: Burger-Button komplett verstecken, Hinweis einblenden, Aushang anzeigen
     if (burgerBtn) burgerBtn.classList.add('hidden');
     if (guestNotice) guestNotice.classList.remove('hidden');
     if (roleIcon) roleIcon.innerText = '👁️';
     switchView('aushang');
   } else {
-    // Eingeloggt: Burger-Button freischalten, Hinweis ausblenden, direkt zum Aushang wechseln
     if (burgerBtn) burgerBtn.classList.remove('hidden');
     if (guestNotice) guestNotice.classList.add('hidden');
     if (roleIcon) roleIcon.innerText = '🔓';
@@ -105,17 +95,8 @@ function applyRolePermissions(role) {
   }
 }
 
-// Burger Menü öffnen / schließen
-function toggleBurgerMenu() {
-  const navModal = document.getElementById('navigationModal');
-  if (navModal) {
-    navModal.classList.toggle('hidden');
-  }
-}
-
-// --- ANSICHTEN WECHSELN ---
+// --- VIEWS & BURGER MENU ---
 function switchView(viewName) {
-  // Zugriffssperre für Gäste (dürfen NUR 'aushang' und 'login' sehen)
   if (currentUserRole === 'gast' && viewName !== 'aushang' && viewName !== 'login') {
     return;
   }
@@ -135,14 +116,16 @@ function switchView(viewName) {
 
 function toggleBurgerMenu() {
   const navModal = document.getElementById('navigationModal');
-  if (navModal) navModal.classList.toggle('hidden');
+  if (navModal) {
+    navModal.classList.toggle('hidden');
+  }
 }
 
 function openLightbox(imgSrc, title) {
   window.open(imgSrc, '_blank');
 }
 
-// Initialisierung
+// Initialisierung sofort beim Aufruf
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   applyRolePermissions(currentUserRole);
