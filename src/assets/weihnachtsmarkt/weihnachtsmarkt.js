@@ -4,6 +4,7 @@ let roleConfig = window.DEFAULT_ROLE_CONFIG || {};
 let itemsData = window.DEFAULT_ITEMS || [];
 let appState = { 
   sales: { waffel: 0, punsch: 0 }, 
+  prices: { waffel: 2.00, punsch: 2.00 },
   roshopImg: {},
   statsData: { samstagW: 0, samstagP: 0, samstagS: 0, sonntagW: 0, sonntagP: 0, sonntagS: 0, ausgaben: 0, standgebuehr: 0 }
 };
@@ -21,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('searchInput')?.addEventListener('input', renderChecklist);
 
-  // AUTOMATISCHES 15-MINUTEN BACKUP FÜR DIE KASSE
+  // AUTOMATISCHES 15-MINUTEN BACKUP (Speichert zeitgestempelte Snapshots)
   setInterval(() => {
     save15MinBackup();
   }, 15 * 60 * 1000);
@@ -36,13 +37,11 @@ function toggleBurgerMenu() {
   if (drawer) drawer.classList.toggle('hidden');
 }
 
-// ZENTRALES FULLPAGE SEITEN-UMSCHALTEN
 function switchView(viewKey) {
   if (document.getElementById('burgerDrawer') && !document.getElementById('burgerDrawer').classList.contains('hidden')) {
     toggleBurgerMenu();
   }
 
-  // Schutz für Admin Panel & Statistik
   if (viewKey === 'adminpanel' && currentRole !== 'admin') {
     alert("Nur Admins haben Zugriff auf das Control Center!");
     return;
@@ -52,13 +51,11 @@ function switchView(viewKey) {
     return;
   }
 
-  // Alle Views verbergen
   const allViews = ['Aushang', 'Inventar', 'Verkauf', 'Statistik', 'Einkaufsliste', 'Verkabelung', 'Lagerbestand', 'Boxenuebersicht', 'Rezepte', 'Adminpanel'];
   allViews.forEach(v => {
     document.getElementById('view' + v)?.classList.add('hidden');
   });
 
-  // Gewählte View anzeigen
   const targetKey = viewKey.charAt(0).toUpperCase() + viewKey.slice(1);
   const targetView = document.getElementById('view' + targetKey);
   if (targetView) {
@@ -66,7 +63,6 @@ function switchView(viewKey) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // Spezifische Renderer aufrufen
   if (viewKey === 'inventar') renderChecklist();
   if (viewKey === 'verkauf') updateSalesUI();
   if (viewKey === 'statistik') loadStatistikFields();
@@ -97,6 +93,7 @@ function loadFromLocal() {
   const local = JSON.parse(localStorage.getItem('sg_wm_state_v26')) || {};
   appState = local;
   if (!appState.sales) appState.sales = { waffel: 0, punsch: 0 };
+  if (!appState.prices) appState.prices = { waffel: 2.00, punsch: 2.00 };
   if (!appState.roshopImg) appState.roshopImg = {};
   if (!appState.statsData) appState.statsData = {};
   if (appState.roleConfig) roleConfig = appState.roleConfig;
@@ -111,6 +108,7 @@ async function loadStateFromSheet() {
     if (cloudData && Object.keys(cloudData).length > 0) {
       appState = cloudData;
       if (!appState.sales) appState.sales = { waffel: 0, punsch: 0 };
+      if (!appState.prices) appState.prices = { waffel: 2.00, punsch: 2.00 };
       if (!appState.roshopImg) appState.roshopImg = {};
       if (!appState.statsData) appState.statsData = {};
       localStorage.setItem('sg_wm_state_v26', JSON.stringify(appState));
@@ -150,19 +148,48 @@ async function saveState() {
   }
 }
 
+// NEUES BACKUP SYSTEM MIT HISTORIE (MAX 10 BACKUPS)
 function save15MinBackup() {
-  const backupKey = 'sg_wm_backup_' + new Date().getTime();
+  let history = JSON.parse(localStorage.getItem('sg_wm_backups_list')) || [];
+  const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const backupKey = 'sg_wm_backup_' + Date.now();
+  
   localStorage.setItem(backupKey, JSON.stringify(appState));
-  localStorage.setItem('sg_wm_last_backup', JSON.stringify(appState));
+  history.unshift({ key: backupKey, time: timestamp, sales: { ...appState.sales } });
+  if (history.length > 10) history.pop(); // Max 10 behalten
+  
+  localStorage.setItem('sg_wm_backups_list', JSON.stringify(history));
 }
 
-function restoreLastBackup() {
-  const last = localStorage.getItem('sg_wm_last_backup');
-  if (last && confirm("Möchtest du den Kassenstand auf das letzte automatische Backup zurücksetzen?")) {
-    appState = JSON.parse(last);
+function renderBackupList() {
+  const container = document.getElementById('backupListContainer');
+  if (!container) return;
+  const history = JSON.parse(localStorage.getItem('sg_wm_backups_list')) || [];
+
+  if (history.length === 0) {
+    container.innerHTML = '<p class="text-slate-400 italic">Noch keine automatischen Backups vorhanden.</p>';
+    return;
+  }
+
+  container.innerHTML = history.map((b) => `
+    <div class="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl">
+      <div>
+        <span class="font-bold text-slate-800 dark:text-slate-200">🕒 ${b.time} Uhr</span>
+        <div class="text-[10px] text-slate-400">Waffeln: ${b.sales?.waffel || 0} | Punsch: ${b.sales?.punsch || 0}</div>
+      </div>
+      <button onclick="restoreSpecificBackup('${b.key}')" class="px-3 py-1 bg-amber-500 text-slate-950 font-bold text-[10px] rounded-lg">Wiederherstellen</button>
+    </div>
+  `).join('');
+}
+
+function restoreSpecificBackup(key) {
+  const data = localStorage.getItem(key);
+  if (data && confirm("Möchtest du diesen Stand wirklich wiederherstellen?")) {
+    appState = JSON.parse(data);
     saveState();
     updateSalesUI();
-    alert("Kassenstand wiederhergestellt!");
+    closeModal('backupModal');
+    alert("Kassenstand erfolgreich wiederhergestellt!");
   }
 }
 
@@ -304,8 +331,8 @@ function updateSalesUI() {
   const waffeln = appState.sales?.waffel || 0;
   const punsch = appState.sales?.punsch || 0;
 
-  const priceWaffel = 2.50;
-  const pricePunsch = 2.00;
+  const priceWaffel = appState.prices?.waffel || 2.00;
+  const pricePunsch = appState.prices?.punsch || 2.00;
 
   const waffelnEuro = waffeln * priceWaffel;
   const punschEuro = punsch * pricePunsch;
@@ -322,7 +349,16 @@ function updateSalesUI() {
   if (document.getElementById('statTotalRevenue')) document.getElementById('statTotalRevenue').innerText = totalRev.toFixed(2).replace('.', ',') + " €";
 }
 
-// STATISTIK SEITE LOGIK & CALC
+function updatePricesFromAdmin() {
+  const pW = parseFloat(document.getElementById('adminPriceWaffel')?.value || 2.00);
+  const pP = parseFloat(document.getElementById('adminPricePunsch')?.value || 2.00);
+  if (!appState.prices) appState.prices = {};
+  appState.prices.waffel = pW;
+  appState.prices.punsch = pP;
+  saveState();
+  updateSalesUI();
+}
+
 function loadStatistikFields() {
   const st = appState.statsData || {};
   if (document.getElementById('statsSamstagWaffeln')) document.getElementById('statsSamstagWaffeln').value = st.samstagW || 0;
@@ -351,8 +387,11 @@ function updateStatistikCalc() {
   const ausgaben = parseFloat(document.getElementById('statsAusgaben')?.value || 0);
   const standgebuehr = parseFloat(document.getElementById('statsStandgebuehr')?.value || 0);
 
-  const samstagUmsatz = (samstagW * 2.50) + (samstagP * 2.00) + samstagS;
-  const sonntagUmsatz = (sonntagW * 2.50) + (sonntagP * 2.00) + sonntagS;
+  const priceW = appState.prices?.waffel || 2.00;
+  const priceP = appState.prices?.punsch || 2.00;
+
+  const samstagUmsatz = (samstagW * priceW) + (samstagP * priceP) + samstagS;
+  const sonntagUmsatz = (sonntagW * priceW) + (sonntagP * priceP) + sonntagS;
   const gesamtUmsatz = samstagUmsatz + sonntagUmsatz;
   const reingewinn = gesamtUmsatz - ausgaben - standgebuehr;
 
@@ -482,11 +521,13 @@ function renderAdminPermissions() {
   if (!container) return;
   container.innerHTML = '';
 
+  if (document.getElementById('adminPriceWaffel')) document.getElementById('adminPriceWaffel').value = appState.prices?.waffel || 2.00;
+  if (document.getElementById('adminPricePunsch')) document.getElementById('adminPricePunsch').value = appState.prices?.punsch || 2.00;
+
   ['helfer', 'orga'].forEach(role => {
     const roleBlock = document.createElement('div');
     roleBlock.className = 'bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3';
     
-    // Inklusive canViewStats
     const permKeys = ['canCash', 'canViewStats', 'canStatus', 'canName', 'canPacked', 'canBox', 'canQty', 'canStock', 'canShopBought', 'canShopPrice', 'canShopStore', 'canUpload'];
 
     let checkboxes = permKeys.map(perm => `
@@ -535,7 +576,7 @@ function downloadBackup() {
 
 function resetSeasonPrompt() {
   if (confirm("Möchtest du wirklich alle Haken und Einträge für die neue Saison zurücksetzen?")) {
-    appState = { sales: { waffel: 0, punsch: 0 }, roshopImg: {}, statsData: {} };
+    appState = { sales: { waffel: 0, punsch: 0 }, prices: { waffel: 2.00, punsch: 2.00 }, roshopImg: {}, statsData: {} };
     saveState();
     location.reload();
   }
