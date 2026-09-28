@@ -50,7 +50,7 @@ window.switchView = function(viewName) {
     targetView.classList.remove('hidden');
   }
 
-  // 3. Bei Inventar-Aufruf SOFORT lokale Daten rendern & im Hintergrund aktualisieren
+  // 3. Bei Inventar-Aufruf Daten holen
   if (viewName === 'inventar') {
     window.loadInventarFromGoogleSheets();
   }
@@ -125,24 +125,21 @@ window.applyRolePermissions = function(role) {
 // 3. INVENTAR & GOOGLE SHEETS SYNC
 // ---------------------------------------------------------------------
 window.loadInventarFromGoogleSheets = async function() {
-  // SOFORT LOKALE DATEN RENDERN (damit keine Ladezeit entsteht)
-  if (typeof window.WEIHNACHTSMARKT_DATA !== 'undefined' && Array.isArray(window.WEIHNACHTSMARKT_DATA)) {
-    window.inventarData = window.WEIHNACHTSMARKT_DATA;
-    window.renderInventar();
-  } else if (window.inventarData && window.inventarData.length > 0) {
-    window.renderInventar();
+  const container = document.getElementById('inventarTablesContainer');
+  if (container) {
+    container.innerHTML = '<p class="text-xs text-amber-500 font-bold p-4">⏳ Lade Inventar...</p>';
   }
 
-  // FRISCHE DATEN AUS GOOGLE SHEETS IM HINTERGRUND HOLEN
   try {
     const res = await fetch(GOOGLE_SCRIPT_URL);
     const data = await res.json();
-    if (Array.isArray(data) && data.length > 0) {
-      window.inventarData = data;
-      window.renderInventar(); // Aktualisiert die Tabelle geräuschlos
-    }
+    window.inventarData = Array.isArray(data) ? data : [];
+    window.renderInventar();
   } catch (e) {
-    console.warn('Google Sheets nicht erreichbar, verwende lokale Daten:', e);
+    console.error('Fehler beim Laden:', e);
+    if (container) {
+      container.innerHTML = '<p class="text-xs text-red-500 p-4">Fehler beim Laden der Daten aus Google Sheets.</p>';
+    }
   }
 };
 
