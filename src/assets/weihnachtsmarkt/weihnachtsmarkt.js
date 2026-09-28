@@ -11,9 +11,9 @@ let appState = {
 let currentRole = 'betrachter';
 let activeFilterTag = 'ALL';
 
-// AKTUELLES LÄDEN-DROPDOWN OHNE EDEKA, DAFÜR MIT E-CENTER, REWE & ONLINE
+// AKTUELLES LÄDEN-DROPDOWN INKLUSIVE "GRUBER"
 const STORE_OPTIONS = [
-  "E-Center", "REWE", "Lidl", "Aldi", "Penny", "Netto", "Kaufland", "Metro", "Online", "Sonstiges"
+  "E-Center", "REWE", "Lidl", "Aldi", "Penny", "Netto", "Kaufland", "Metro", "Gruber", "Online", "Sonstiges"
 ];
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -266,7 +266,7 @@ function renderChecklist() {
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
-              <tr class="text-[10px] uppercase bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-extrabold border-b border-slate-300 dark:border-slate-700">
+              <tr class="text-[10px] uppercase bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-extrabold border-b border-slate-300 dark:border-slate-700">
                 <th class="p-2">Gegenstand</th>
                 <th class="p-1 text-center">Bedarf</th>
                 <th class="p-1 text-center">Lager</th>
