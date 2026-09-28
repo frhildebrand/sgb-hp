@@ -125,27 +125,23 @@ window.applyRolePermissions = function(role) {
 // 3. INVENTAR (SCHRITT 2: ISOLIERTES DATEN-HANDLING)
 // ---------------------------------------------------------------------
 window.loadInventarFromGoogleSheets = async function() {
-  // SOFORT LOKALE DATEN RENDERN (damit keine Ladezeit entsteht)
-  if (typeof window.WEIHNACHTSMARKT_DATA !== 'undefined' && Array.isArray(window.WEIHNACHTSMARKT_DATA)) {
-    window.inventarData = window.WEIHNACHTSMARKT_DATA;
-    window.renderInventar();
-  } else if (window.inventarData && window.inventarData.length > 0) {
+  // 1. Falls bereits Daten im Speicher sind, SOFORT anzeigen (0 Sekunden Wartezeit)
+  if (window.inventarData && window.inventarData.length > 0) {
     window.renderInventar();
   }
 
-  // FRISCHE DATEN AUS GOOGLE SHEETS IM HINTERGRUND HOLEN
+  // 2. Google Sheets im Hintergrund abrufen
   try {
     const res = await fetch(GOOGLE_SCRIPT_URL);
     const data = await res.json();
     if (Array.isArray(data) && data.length > 0) {
       window.inventarData = data;
-      window.renderInventar(); // Aktualisiert die Tabelle geräuschlos
+      window.renderInventar(); // Befüllt die Tabellen sauber
     }
   } catch (e) {
-    console.warn('Google Sheets nicht erreichbar, verwende lokale Daten:', e);
+    console.error('Fehler beim Abrufen der Google-Daten:', e);
   }
 };
-
 
 // ---------------------------------------------------------------------
 // INVENTAR RENDERN (MIT FORMULARFELDERN & ADMIN-OPTIONEN)
