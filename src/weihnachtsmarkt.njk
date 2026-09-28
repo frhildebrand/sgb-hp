@@ -309,7 +309,7 @@ title: SG Barnstorf Weihnachtsmarkt
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs">
             <thead>
-              <tr class="bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-extrabold border-b border-slate-300 dark:border-slate-700">
+              <tr class="bg-amber-100/80 dark:bg-amber-950/60 text-slate-900 dark:text-amber-100 font-extrabold border-b border-amber-200 dark:border-amber-800/80">
                 <th class="p-3 text-center">Gekauft</th>
                 <th class="p-3">Artikel</th>
                 <th class="p-3 text-center">Bedarf (Inv.)</th>
@@ -342,17 +342,20 @@ title: SG Barnstorf Weihnachtsmarkt
     <!-- VIEW 7: FULLPAGE LAGERBESTAND -->
     <div id="viewLagerbestand" class="hidden space-y-6">
       <div class="flex justify-between items-center bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-        <h2 class="font-extrabold text-lg text-indigo-600 dark:text-indigo-400 flex items-center gap-2">📊 Lagerbestand Übersicht</h2>
+        <div>
+          <h2 class="font-extrabold text-lg text-indigo-600 dark:text-indigo-400 flex items-center gap-2">📊 Vorhandener Lagerbestand</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Zeigt ausschließlich Artikel an, die derzeit auf Lager/vorhanden sind</p>
+        </div>
         <button onclick="switchView('aushang')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition">⬅️ Zurück</button>
       </div>
       <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-x-auto">
         <table class="w-full text-left text-xs">
           <thead>
-            <tr class="bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-extrabold border-b border-slate-300 dark:border-slate-700">
+            <tr class="bg-amber-100/80 dark:bg-amber-950/60 text-slate-900 dark:text-amber-100 font-extrabold border-b border-amber-200 dark:border-amber-800/80">
               <th class="p-2.5">Kategorie</th>
               <th class="p-2.5">Gegenstand</th>
               <th class="p-2.5 text-center">Bedarf</th>
-              <th class="p-2.5 text-center">Auf Lager</th>
+              <th class="p-2.5 text-center">Vorhanden</th>
               <th class="p-2.5 text-center">Status</th>
             </tr>
           </thead>
@@ -363,9 +366,17 @@ title: SG Barnstorf Weihnachtsmarkt
 
     <!-- VIEW 8: FULLPAGE BOXENÜBERSICHT -->
     <div id="viewBoxenuebersicht" class="hidden space-y-6">
-      <div class="flex justify-between items-center bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-        <h2 class="font-extrabold text-lg text-purple-600 dark:text-purple-400 flex items-center gap-2">📦 Boxenübersicht (1–12)</h2>
-        <button onclick="switchView('aushang')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition">⬅️ Zurück</button>
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div>
+          <h2 class="font-extrabold text-lg text-purple-600 dark:text-purple-400 flex items-center gap-2">📦 Boxenübersicht</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Inhalt aller Kisten und Transportsysteme</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="addBoxBtn" onclick="addNewBox()" class="hidden px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow">
+            ➕ Neue Box hinzufügen
+          </button>
+          <button onclick="switchView('aushang')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition">⬅️ Zurück</button>
+        </div>
       </div>
       <div id="boxOverviewGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
     </div>
