@@ -1,60 +1,52 @@
+// Google Apps Script Web-App URL (Live-Synchronisation)
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyQg2LmxT_UbLXjFVKrNf9gXnqgk_ku4V_P1SZeSGqphn-WRTYI3a9l5szzkDfqEE881Q/exec';
+
 // Globale Variablen
 window.currentUserRole = localStorage.getItem('userRole') || 'gast';
 window.inventarData = [];
 window.isEditMode = false;
 window.currentFilterStatus = 'alle';
 
-// 1. THEME ENGINE
-window.initTheme = function() {
-  const savedTheme = localStorage.getItem('theme');
-  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  window.applyDarkMode(savedTheme === 'dark' || (!savedTheme && systemPrefersDark));
-};
-
-window.applyDarkMode = function(isDark) {
-  if (isDark) {
-    document.documentElement.classList.add('dark');
-    if (document.body) document.body.classList.add('dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-    if (document.body) document.body.classList.remove('dark');
-  }
-  const icon = document.getElementById('themeToggleIcon');
-  if (icon) icon.innerText = isDark ? '☀️' : '🌙';
-};
-
-window.toggleTheme = function() {
-  const isDarkCurrently = document.documentElement.classList.contains('dark');
-  const newDarkState = !isDarkCurrently;
-  localStorage.setItem('theme', newDarkState ? 'dark' : 'light');
-  window.applyDarkMode(newDarkState);
-};
-
-// 2. NAVIGATION & ROLLEN
-window.switchView = function(viewName) {
-  if (window.currentUserRole === 'gast' && viewName !== 'aushang' && viewName !== 'login') {
-    return;
-  }
-
-  const views = document.querySelectorAll('main > div[id^="view"]');
-  views.forEach(v => v.classList.add('hidden'));
-
-  const targetId = 'view' + viewName.charAt(0).toUpperCase() + viewName.slice(1);
-  const targetView = document.getElementById(targetId);
-  if (targetView) {
-    targetView.classList.remove('hidden');
-    if (viewName === 'inventar') {
-      window.initInventarData();
-    }
-  }
-
-  const navModal = document.getElementById('navigationModal');
-  if (navModal) navModal.classList.add('hidden');
-};
+// ---------------------------------------------------------------------
+// 1. NAVIGATION & MENÜ (VOLLSTÄNDIG ENTROPPELT UND ABGESICHERT)
+// ---------------------------------------------------------------------
 
 window.toggleBurgerMenu = function() {
   const navModal = document.getElementById('navigationModal');
-  if (navModal) navModal.classList.toggle('hidden');
+  if (navModal) {
+    navModal.classList.toggle('hidden');
+  }
+};
+
+window.switchView = function(viewName) {
+  try {
+    if (window.currentUserRole === 'gast' && viewName !== 'aushang' && viewName !== 'login') {
+      return;
+    }
+
+    const views = document.querySelectorAll('main > div[id^="view"]');
+    views.forEach(v => v.classList.add('hidden'));
+
+    const targetId = 'view' + viewName.charAt(0).toUpperCase() + viewName.slice(1);
+    const targetView = document.getElementById(targetId);
+    if (targetView) {
+      targetView.classList.remove('hidden');
+    }
+
+    const navModal = document.getElementById('navigationModal');
+    if (navModal) {
+      navModal.classList.add('hidden');
+    }
+
+    // Inventar erst danach sicher initialisieren
+    if (viewName === 'inventar') {
+      setTimeout(() => {
+        window.initInventarData();
+      }, 50);
+    }
+  } catch (err) {
+    console.error('Fehler beim Umschalten der Ansicht:', err);
+  }
 };
 
 window.tryLogin = function(role, inputId) {
@@ -113,22 +105,75 @@ window.applyRolePermissions = function(role) {
   }
 };
 
-// 3. INVENTAR LOKAL DIREKT AUS DATA RENDERN
-window.initInventarData = function() {
-  // Wenn schon veränderte Daten im Browser gespeichert sind, nimm diese, sonst die aus der Data-Datei
+// ---------------------------------------------------------------------
+// 2. THEME ENGINE (DARKMODE)
+// ---------------------------------------------------------------------
+
+window.initTheme = function() {
+  const savedTheme = localStorage.getItem('theme');
+  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  window.applyDarkMode(savedTheme === 'dark' || (!savedTheme && systemPrefersDark));
+};
+
+window.applyDarkMode = function(isDark) {
+  if (isDark) {
+    document.documentElement.classList.add('dark');
+    if (document.body) document.body.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+    if (document.body) document.body.classList.remove('dark');
+  }
+  const icon = document.getElementById('themeToggleIcon');
+  if (icon) icon.innerText = isDark ? '☀️' : '🌙';
+};
+
+window.toggleTheme = function() {
+  const isDarkCurrently = document.documentElement.classList.contains('dark');
+  const newDarkState = !isDarkCurrently;
+  localStorage.setItem('theme', newDarkState ? 'dark' : 'light');
+  window.applyDarkMode(newDarkState);
+};
+
+// ---------------------------------------------------------------------
+// 3. INVENTAR & GOOGLE SHEETS SYNCHRONISATION
+// ---------------------------------------------------------------------
+
+window.initInventarData = async function() {
+  // Lade erst aus lokalen Backup-Daten, damit SOFORT Gegenstände sichtbar sind
+  window.loadFallbackData();
+  window.updateCategoryDropdown();
+  window.renderInventar();
+
+  const progressText = document.getElementById('inventarProgressText');
+  if (progressText) progressText.innerText = 'Prüfe Live-Daten...';
+
+  // Dann im Hintergrund abfragen
+  try {
+    const res = await fetch(GOOGLE_SCRIPT_URL);
+    const liveData = await res.json();
+    if (Array.isArray(liveData) && liveData.length > 0) {
+      window.inventarData = liveData;
+      if (progressText) progressText.innerText = 'Live-Daten geladen!';
+      window.updateCategoryDropdown();
+      window.renderInventar();
+    }
+  } catch (e) {
+    console.warn('Google Sheets nicht erreichbar - benutze lokale Daten:', e);
+    if (progressText) progressText.innerText = 'Lokal geladen';
+  }
+};
+
+window.loadFallbackData = function() {
   const savedData = localStorage.getItem('sg_inventar_data');
   if (savedData) {
     try {
       window.inventarData = JSON.parse(savedData);
-    } catch(e) {
-      window.inventarData = window.convertLocalCategoriesToFlat(window.inventarCategories);
-    }
-  } else if (window.inventarCategories) {
+      return;
+    } catch(e) {}
+  }
+  if (window.inventarCategories) {
     window.inventarData = window.convertLocalCategoriesToFlat(window.inventarCategories);
   }
-
-  window.updateCategoryDropdown();
-  window.renderInventar();
 };
 
 window.convertLocalCategoriesToFlat = function(categories) {
@@ -154,9 +199,25 @@ window.convertLocalCategoriesToFlat = function(categories) {
   return flat;
 };
 
-window.saveInventarLocally = function() {
+window.saveInventarData = async function() {
   localStorage.setItem('sg_inventar_data', JSON.stringify(window.inventarData));
   window.calculateProgress();
+
+  const progressText = document.getElementById('inventarProgressText');
+  if (progressText) progressText.innerText = 'Speichere in Google Sheets...';
+
+  try {
+    await fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'updateAll', items: window.inventarData })
+    });
+    if (progressText) progressText.innerText = 'Gespeichert!';
+  } catch (e) {
+    console.error('Fehler beim Speichern:', e);
+    if (progressText) progressText.innerText = 'Lokal gesichert';
+  }
 };
 
 window.renderInventar = function() {
@@ -166,11 +227,10 @@ window.renderInventar = function() {
   window.calculateProgress();
 
   if (!window.inventarData || window.inventarData.length === 0) {
-    container.innerHTML = '<p class="text-xs text-slate-400 p-4">Keine Gegenstände gefunden.</p>';
+    container.innerHTML = '<p class="text-xs text-slate-400 p-4">Keine Gegenstände vorhanden.</p>';
     return;
   }
 
-  // Gruppierung nach Kategorie
   const categories = {};
   window.inventarData.forEach((item, index) => {
     const cat = item.kategorie || 'SONSTIGES';
@@ -193,7 +253,7 @@ window.renderInventar = function() {
     if (filteredItems.length === 0) continue;
 
     html += `
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm mb-4">
         <div class="bg-slate-100 dark:bg-slate-800/80 px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <h3 class="font-extrabold text-xs text-amber-600 dark:text-amber-400 uppercase tracking-wider">${catName}</h3>
         </div>
@@ -276,7 +336,7 @@ window.updateItemField = function(index, field, value) {
   if (window.inventarData && window.inventarData[index]) {
     window.inventarData[index][field] = value;
     window.renderInventar();
-    window.saveInventarLocally();
+    window.saveInventarData();
   }
 };
 
@@ -333,14 +393,14 @@ window.createNewItem = function() {
   window.inventarData.push(newItem);
   nameInput.value = '';
   window.renderInventar();
-  window.saveInventarLocally();
+  window.saveInventarData();
 };
 
 window.deleteItem = function(index) {
   if (confirm('Möchtest du diesen Gegenstand wirklich löschen?')) {
     window.inventarData.splice(index, 1);
     window.renderInventar();
-    window.saveInventarLocally();
+    window.saveInventarData();
   }
 };
 
