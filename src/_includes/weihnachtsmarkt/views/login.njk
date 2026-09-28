@@ -1,38 +1,41 @@
-<div id="viewLogin" class="max-w-2xl mx-auto space-y-6 hidden">
+<div id="viewLogin" class="max-w-6xl mx-auto space-y-6 hidden">
 
-  <!-- Status & Abmelden Header Kachel -->
-  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-    <div class="space-y-1">
-      <div class="flex items-center gap-2">
-        <span class="text-2xl">🔐</span>
-        <h2 class="font-black text-lg text-slate-800 dark:text-slate-100">Rollenverwaltung</h2>
-      </div>
-      <p class="text-xs text-slate-500 dark:text-slate-400">
-        Aktueller Status: <span id="loginCurrentRoleBadge" class="font-bold text-amber-500 dark:text-amber-400 uppercase">GAST</span>
-      </p>
-    </div>
-
-    <!-- Abmelden Button -->
-    <button onclick="setRole('gast')" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-red-500/10 hover:text-red-500 dark:hover:bg-red-500/20 text-slate-600 dark:text-slate-300 text-xs font-bold rounded-xl transition-all border border-slate-200 dark:border-slate-700 flex items-center gap-2 cursor-pointer">
-      <span>🚪</span> Abmelden / Als Gast fortfahren
-    </button>
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-2">
+    <h2 class="font-black text-xl text-slate-800 dark:text-slate-100 flex items-center gap-2">
+      <span>🔐</span> Anmelden & Rolle wählen
+    </h2>
+    <p class="text-xs text-slate-500 dark:text-slate-400">
+      Wähle deine Rolle aus, um die entsprechenden Funktionen freizuschalten.
+    </p>
   </div>
 
-  <!-- In-Page Fehlermeldung -->
+  <!-- Fehlermeldung -->
   <div id="loginErrorMessage" class="hidden bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 p-4 rounded-2xl text-xs font-bold flex items-center gap-3">
     <span>⚠️</span>
     <span id="loginErrorText">Falsches Passwort für die gewählte Rolle.</span>
   </div>
 
-  <!-- 3 Passwort-Rollen Kacheln (Helfer, Orga, Admin) -->
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+  <!-- 4 Rollen-Kacheln nebeneinander -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
-    <!-- HELFER (Passwort: 1) -->
+    <!-- 1. GAST -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3 flex flex-col justify-between">
+      <div class="space-y-1">
+        <div class="text-3xl mb-1">👁️</div>
+        <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Gast</h3>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400">Öffentliche Aushänge & Listen.</p>
+      </div>
+      <button onclick="setRole('gast')" class="w-full py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition-colors cursor-pointer">
+        Als Gast fortfahren
+      </button>
+    </div>
+
+    <!-- 2. HELFER (Passwort: 1) -->
     <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3 flex flex-col justify-between">
       <div class="space-y-1">
         <div class="text-3xl mb-1">🧑‍🍳</div>
         <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Helfer</h3>
-        <p class="text-[11px] text-slate-500 dark:text-slate-400">Verkauf, Rezepte und Lager einsehen.</p>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400">Verkauf, Rezepte & Lager.</p>
       </div>
       <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
         <input type="password" id="passHelfer" placeholder="Passwort (1)" class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
@@ -42,12 +45,12 @@
       </div>
     </div>
 
-    <!-- ORGA-TEAM (Passwort: 2) -->
+    <!-- 3. ORGA-TEAM (Passwort: 2) -->
     <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3 flex flex-col justify-between">
       <div class="space-y-1">
         <div class="text-3xl mb-1">📋</div>
         <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Orga-Team</h3>
-        <p class="text-[11px] text-slate-500 dark:text-slate-400">Inventar, Einkaufsliste & Technik.</p>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400">Inventar, Einkäufe & Strom.</p>
       </div>
       <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
         <input type="password" id="passOrga" placeholder="Passwort (2)" class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
@@ -57,12 +60,12 @@
       </div>
     </div>
 
-    <!-- ADMINISTRATOR (Passwort: 3) -->
+    <!-- 4. ADMINISTRATOR (Passwort: 3) -->
     <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3 flex flex-col justify-between">
       <div class="space-y-1">
         <div class="text-3xl mb-1">🛡️</div>
         <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Administrator</h3>
-        <p class="text-[11px] text-slate-500 dark:text-slate-400">Vollzugriff, Kasse & Admin-Panel.</p>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400">Vollzugriff & Statistiken.</p>
       </div>
       <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
         <input type="password" id="passAdmin" placeholder="Passwort (3)" class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
