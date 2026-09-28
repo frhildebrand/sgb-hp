@@ -1,0 +1,48 @@
+<!-- BOX EDIT MODAL -->
+<div id="boxEditModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+  <div class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-2xl p-6 w-full max-w-md space-y-4 shadow-2xl border border-slate-200 dark:border-slate-800">
+    <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+      <h3 id="boxModalTitle" class="font-extrabold text-base flex items-center gap-2">📦 Box bearbeiten</h3>
+      <button onclick="closeModal('boxEditModal')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold text-xl">✕</button>
+    </div>
+    <input type="hidden" id="boxModalId" value="" />
+    <div class="space-y-3 text-xs font-semibold">
+      <div>
+        <label class="block text-slate-500 mb-1">Name der Box / Kiste:</label>
+        <input type="text" id="boxModalName" placeholder="z.B. Box 1 (Elektrik)" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-amber-500" />
+      </div>
+      <div>
+        <label class="block text-slate-500 mb-1">Beschreibung / Notiz (optional):</label>
+        <input type="text" id="boxModalDesc" placeholder="z.B. Lichterketten, Kabel, Verlängerungen" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500" />
+      </div>
+    </div>
+    <div class="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+      <button onclick="closeModal('boxEditModal')" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition">Abbrechen</button>
+      <button onclick="saveBoxFromModal()" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs rounded-xl shadow transition">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- BACKUP MODAL -->
+<div id="backupModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+  <div class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-2xl p-6 w-full max-w-md space-y-4 shadow-2xl border border-slate-200 dark:border-slate-800">
+    <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-2">
+      <h3 class="font-extrabold text-sm">🔄 Kassen-Backups (letzte 15 Min.)</h3>
+      <button onclick="closeModal('backupModal')" class="text-slate-400 font-bold text-lg">✕</button>
+    </div>
+    <div id="backupListContainer" class="space-y-2 max-h-60 overflow-y-auto text-xs"></div>
+    <button onclick="closeModal('backupModal')" class="w-full py-2 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs font-bold">Schließen</button>
+  </div>
+</div>
+
+<!-- ROLE MODAL -->
+<div id="roleModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+  <div class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-2xl p-6 w-full max-w-xs text-center space-y-3 shadow-2xl border border-slate-200 dark:border-slate-800">
+    <h3 class="font-extrabold text-sm border-b border-slate-200 dark:border-slate-800 pb-2">Benutzerrolle wählen</h3>
+    <button onclick="selectRoleWithPassword('betrachter')" class="w-full py-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition">👁️ Betrachter</button>
+    <button onclick="selectRoleWithPassword('helfer')" class="w-full py-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold hover:bg-emerald-500/20 transition">🤝 Helfer</button>
+    <button onclick="selectRoleWithPassword('orga')" class="w-full py-2.5 bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/30 rounded-xl text-xs font-bold hover:bg-sky-500/20 transition">📋 Orga-Team</button>
+    <button onclick="selectRoleWithPassword('admin')" class="w-full py-2.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-xl text-xs font-bold hover:bg-amber-500/20 transition">👑 Admin</button>
+    <button onclick="closeModal('roleModal')" class="text-xs text-slate-400 block mx-auto pt-2 hover:text-slate-600">Abbrechen</button>
+  </div>
+</div>
