@@ -1,0 +1,80 @@
+<div id="viewLogin" class="max-w-2xl mx-auto space-y-6 hidden">
+
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-2">
+    <h2 class="font-black text-xl text-slate-800 dark:text-slate-100 flex items-center gap-2">
+      <span>🔐</span> Anmelden & Rolle wählen
+    </h2>
+    <p class="text-xs text-slate-500 dark:text-slate-400">
+      Wähle deine zugewiesene Rolle aus, um die entsprechenden Funktionen freizuschalten.
+    </p>
+  </div>
+
+  <!-- In-Page Fehlermeldung (standardmäßig ausgeblendet) -->
+  <div id="loginErrorMessage" class="hidden bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 p-4 rounded-2xl text-xs font-bold flex items-center gap-3">
+    <span>⚠️</span>
+    <span id="loginErrorText">Falsches Passwort für die gewählte Rolle.</span>
+  </div>
+
+  <!-- 4 Rollen-Karten Grid -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+    <!-- 1. GAST -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3 flex flex-col justify-between">
+      <div class="space-y-1">
+        <div class="text-2xl">👁️</div>
+        <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Gast</h3>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400">Nur öffentliche Aushänge und Helferlisten einsehen.</p>
+      </div>
+      <button onclick="setRole('gast')" class="w-full py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition-colors">
+        Als Gast fortfahren
+      </button>
+    </div>
+
+    <!-- 2. HELFER -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3">
+      <div class="space-y-1">
+        <div class="text-2xl">🧑‍🍳</div>
+        <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Helfer</h3>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400">Zugriff auf Verkauf, Rezepte und Kiste/Lager.</p>
+      </div>
+      <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+        <input type="password" id="passHelfer" placeholder="Helfer-Passwort..." class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+        <button onclick="tryLogin('helfer', 'passHelfer')" class="w-full py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-xl transition-colors">
+          Anmelden
+        </button>
+      </div>
+    </div>
+
+    <!-- 3. ORGA-TEAM -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3">
+      <div class="space-y-1">
+        <div class="text-2xl">📋</div>
+        <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Orga-Team</h3>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400">Zugriff auf Inventar, Einkaufsliste und Verkabelung.</p>
+      </div>
+      <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+        <input type="password" id="passOrga" placeholder="Orga-Passwort..." class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+        <button onclick="tryLogin('orga', 'passOrga')" class="w-full py-2 bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold rounded-xl transition-colors">
+          Anmelden
+        </button>
+      </div>
+    </div>
+
+    <!-- 4. ADMINISTRATOR -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3">
+      <div class="space-y-1">
+        <div class="text-2xl">🛡️</div>
+        <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Administrator</h3>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400">Vollzugriff inkl. Statistiken und Admin-Panel.</p>
+      </div>
+      <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+        <input type="password" id="passAdmin" placeholder="Admin-Passwort..." class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+        <button onclick="tryLogin('admin', 'passAdmin')" class="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl transition-colors">
+          Anmelden
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+</div>
