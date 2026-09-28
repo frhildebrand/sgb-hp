@@ -1,13 +1,13 @@
 <div id="viewAushang" class="space-y-6">
 
-  <!-- Hinweis für uneingeloggte Nutzer (Gast / Betrachter) -->
+  <!-- Hinweis für Gast-Nutzer -->
   <div id="guestLockNotice" class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6 backdrop-blur-md shadow-sm flex items-start gap-4">
     <div class="text-3xl">🔒</div>
     <div class="space-y-1">
-      <h3 class="font-bold text-base text-amber-700 dark:text-amber-400">Eingeschränkte Ansicht (Nicht angemeldet)</h3>
+      <h3 class="font-bold text-base text-amber-700 dark:text-amber-400">Eingeschränkte Ansicht (Gast)</h3>
       <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-        Du bist aktuell nicht eingeloggt. Dir stehen nur die öffentlichen Aushänge und Listen zur Verfügung. 
-        Bitte melde dich oben rechts an, um Zugriff auf Kasse, Inventar und Verwaltung zu erhalten.
+        Du bist aktuell als <strong>Gast</strong> angemeldet. Dir stehen nur die öffentlichen Aushänge und Listen zur Verfügung. 
+        Klicke oben rechts auf deinen Status, um dich anzumelden.
       </p>
     </div>
   </div>
@@ -19,7 +19,7 @@
       <h2 class="font-extrabold text-lg text-slate-800 dark:text-slate-100">Aktuelle Aushänge & Notizen</h2>
     </div>
     <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">
-      Willkommen im Weihnachtsmarkt-Portal der SG Barnstorf. Hier findest du die Dienstpläne und Listen für das Wochenende.
+      Willkommen im Weihnachtsmarkt-Portal der SG Barnstorf. Hier findest du die Scans und Dienstpläne für das Wochenende. Tippe auf ein Bild für die Vollbildansicht.
     </p>
   </div>
 
@@ -38,15 +38,9 @@
       <!-- Samstag: Teigspenden -->
       <div class="space-y-3">
         <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">🧇 Teigspenden</h4>
-        <div id="listSamstagTeig" class="space-y-2 text-xs">
-          <div class="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-            <span class="font-medium text-slate-700 dark:text-slate-200">Waffelteig (Klassisch)</span>
-            <span class="text-slate-500">Familie Müller (2x Eimer)</span>
-          </div>
-          <div class="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-            <span class="font-medium text-slate-700 dark:text-slate-200">Crêpesteig</span>
-            <span class="text-slate-500">Max Mustermann (5L)</span>
-          </div>
+        <div class="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-center cursor-pointer hover:opacity-90 transition-opacity" onclick="openLightbox('/images/logo.png', 'Samstag - Teigspenden')">
+          <img src="/images/logo.png" alt="Samstag Teigspenden Scan" class="max-h-48 mx-auto object-contain rounded-lg mb-2">
+          <p class="text-xs font-medium text-slate-500 dark:text-slate-400">🔍 Tippen zum Vergrößern (Scan folgt)</p>
         </div>
       </div>
 
@@ -55,21 +49,9 @@
       <!-- Samstag: Helferliste -->
       <div class="space-y-3">
         <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">🤝 Schichtübersicht & Helfer</h4>
-        <div id="listSamstagHelfer" class="space-y-2 text-xs">
-          <div class="p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl space-y-1">
-            <div class="flex justify-between font-bold text-slate-800 dark:text-slate-200">
-              <span>14:00 - 16:30 Uhr (Aufbau & Schicht 1)</span>
-              <span class="text-amber-600 dark:text-amber-400">Verkauf</span>
-            </div>
-            <p class="text-slate-500">Helfer: Anna S., Tom B., Laura M.</p>
-          </div>
-          <div class="p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl space-y-1">
-            <div class="flex justify-between font-bold text-slate-800 dark:text-slate-200">
-              <span>16:30 - 19:00 Uhr (Schicht 2)</span>
-              <span class="text-amber-600 dark:text-amber-400">Kasse & Stand</span>
-            </div>
-            <p class="text-slate-500">Helfer: Christian K., Jonas W.</p>
-          </div>
+        <div class="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-center cursor-pointer hover:opacity-90 transition-opacity" onclick="openLightbox('/images/logo.png', 'Samstag - Helferliste')">
+          <img src="/images/logo.png" alt="Samstag Helferliste Scan" class="max-h-48 mx-auto object-contain rounded-lg mb-2">
+          <p class="text-xs font-medium text-slate-500 dark:text-slate-400">🔍 Tippen zum Vergrößern (Scan folgt)</p>
         </div>
       </div>
     </div>
@@ -86,15 +68,9 @@
       <!-- Sonntag: Teigspenden -->
       <div class="space-y-3">
         <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">🧇 Teigspenden</h4>
-        <div id="listSonntagTeig" class="space-y-2 text-xs">
-          <div class="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-            <span class="font-medium text-slate-700 dark:text-slate-200">Waffelteig (Zimt)</span>
-            <span class="text-slate-500">Sarah T. (3x Eimer)</span>
-          </div>
-          <div class="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-            <span class="font-medium text-slate-700 dark:text-slate-200">Glutenfreier Teig</span>
-            <span class="text-slate-500">Lisa K. (2L)</span>
-          </div>
+        <div class="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-center cursor-pointer hover:opacity-90 transition-opacity" onclick="openLightbox('/images/logo.png', 'Sonntag - Teigspenden')">
+          <img src="/images/logo.png" alt="Sonntag Teigspenden Scan" class="max-h-48 mx-auto object-contain rounded-lg mb-2">
+          <p class="text-xs font-medium text-slate-500 dark:text-slate-400">🔍 Tippen zum Vergrößern (Scan folgt)</p>
         </div>
       </div>
 
@@ -103,21 +79,9 @@
       <!-- Sonntag: Helferliste -->
       <div class="space-y-3">
         <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">🤝 Schichtübersicht & Helfer</h4>
-        <div id="listSonntagHelfer" class="space-y-2 text-xs">
-          <div class="p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl space-y-1">
-            <div class="flex justify-between font-bold text-slate-800 dark:text-slate-200">
-              <span>12:00 - 15:00 Uhr (Schicht 1)</span>
-              <span class="text-sky-600 dark:text-sky-400">Verkauf & Waffeln</span>
-            </div>
-            <p class="text-slate-500">Helfer: Michael B., Sabine R.</p>
-          </div>
-          <div class="p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl space-y-1">
-            <div class="flex justify-between font-bold text-slate-800 dark:text-slate-200">
-              <span>15:00 - 18:00 Uhr (Schicht 2 & Abbau)</span>
-              <span class="text-sky-600 dark:text-sky-400">Kasse & Abbau</span>
-            </div>
-            <p class="text-slate-500">Helfer: David L., Jan K., Peter M.</p>
-          </div>
+        <div class="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-center cursor-pointer hover:opacity-90 transition-opacity" onclick="openLightbox('/images/logo.png', 'Sonntag - Helferliste')">
+          <img src="/images/logo.png" alt="Sonntag Helferliste Scan" class="max-h-48 mx-auto object-contain rounded-lg mb-2">
+          <p class="text-xs font-medium text-slate-500 dark:text-slate-400">🔍 Tippen zum Vergrößern (Scan folgt)</p>
         </div>
       </div>
     </div>
