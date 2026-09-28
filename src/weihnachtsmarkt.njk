@@ -154,7 +154,7 @@ title: SG Barnstorf Weihnachtsmarkt
       <div id="checklist" class="space-y-4"></div>
     </div>
 
-    <!-- VIEW 3: FULLPAGE VERKAUF (MIT BACKUP RESTORE MODAL LINK) -->
+    <!-- VIEW 3: FULLPAGE VERKAUF -->
     <div id="viewVerkauf" class="hidden space-y-6">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div>
@@ -184,7 +184,7 @@ title: SG Barnstorf Weihnachtsmarkt
         </div>
 
         <div class="bg-white dark:bg-slate-900 border border-sky-200 dark:border-sky-800/50 p-6 rounded-2xl text-center space-y-4 shadow-sm">
-          <div class="font-extrabold text-sm text-sky-900 dark:text-sky-300">☕ Kinderpunsch</div>
+          <div class="font-extrabold text-sm text-sky-900 dark:text-sky-300">☕ Kinderpunsch (200ml)</div>
           <div id="countPunsch" class="text-5xl font-black text-slate-900 dark:text-slate-100">0</div>
           <div class="text-xs text-slate-400 font-bold" id="totalPunschEuro">0,00 € Einnahmen</div>
           <div class="flex justify-center gap-3 pt-2">
@@ -233,7 +233,7 @@ title: SG Barnstorf Weihnachtsmarkt
               <input type="number" id="statsSamstagWaffeln" min="0" onchange="updateStatistikCalc()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5" placeholder="0" />
             </div>
             <div>
-              <label class="block text-slate-500 mb-1">Verkaufter Punsch (Stk.):</label>
+              <label class="block text-slate-500 mb-1">Verkaufter Punsch (200ml) (Stk.):</label>
               <input type="number" id="statsSamstagPunsch" min="0" onchange="updateStatistikCalc()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5" placeholder="0" />
             </div>
             <div>
@@ -255,7 +255,7 @@ title: SG Barnstorf Weihnachtsmarkt
               <input type="number" id="statsSonntagWaffeln" min="0" onchange="updateStatistikCalc()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5" placeholder="0" />
             </div>
             <div>
-              <label class="block text-slate-500 mb-1">Verkaufter Punsch (Stk.):</label>
+              <label class="block text-slate-500 mb-1">Verkaufter Punsch (200ml) (Stk.):</label>
               <input type="number" id="statsSonntagPunsch" min="0" onchange="updateStatistikCalc()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5" placeholder="0" />
             </div>
             <div>
@@ -299,7 +299,7 @@ title: SG Barnstorf Weihnachtsmarkt
       </div>
     </div>
 
-    <!-- VIEW 5: FULLPAGE EINKAUFSLISTE -->
+    <!-- VIEW 5: FULLPAGE EINKAUFSLISTE (MIT KORRIGIERTEN HEADERN & DROPDOWNS) -->
     <div id="viewEinkaufsliste" class="hidden space-y-6">
       <div class="flex justify-between items-center bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <h2 class="font-extrabold text-lg text-orange-600 dark:text-orange-400 flex items-center gap-2">🛒 Einkaufsliste & Preise</h2>
@@ -309,13 +309,13 @@ title: SG Barnstorf Weihnachtsmarkt
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs">
             <thead>
-              <tr class="bg-slate-100 dark:bg-slate-800 font-extrabold border-b border-slate-200 dark:border-slate-700">
-                <th class="p-2.5 text-center">Gekauft</th>
-                <th class="p-2.5">Artikel</th>
-                <th class="p-2.5">Bedarf</th>
-                <th class="p-2.5">Packung</th>
-                <th class="p-2.5">Laden</th>
-                <th class="p-2.5 text-right">Preis (€)</th>
+              <tr class="bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-extrabold border-b border-slate-300 dark:border-slate-700">
+                <th class="p-3 text-center">Gekauft</th>
+                <th class="p-3">Artikel</th>
+                <th class="p-3 text-center">Bedarf (Inv.)</th>
+                <th class="p-3">Packungsgröße</th>
+                <th class="p-3">Einkaufsladen</th>
+                <th class="p-3 text-right">Preis (€)</th>
               </tr>
             </thead>
             <tbody id="shoppingTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
@@ -348,7 +348,7 @@ title: SG Barnstorf Weihnachtsmarkt
       <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-x-auto">
         <table class="w-full text-left text-xs">
           <thead>
-            <tr class="bg-slate-100 dark:bg-slate-800 font-extrabold border-b border-slate-200 dark:border-slate-700">
+            <tr class="bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-extrabold border-b border-slate-300 dark:border-slate-700">
               <th class="p-2.5">Kategorie</th>
               <th class="p-2.5">Gegenstand</th>
               <th class="p-2.5 text-center">Bedarf</th>
