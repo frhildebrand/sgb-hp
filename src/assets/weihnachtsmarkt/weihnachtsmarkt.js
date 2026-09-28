@@ -50,7 +50,7 @@ window.switchView = function(viewName) {
     targetView.classList.remove('hidden');
   }
 
-  // 3. Bei Inventar-Aufruf SOFORT lokale Daten rendern & im Hintergrund aktualisieren
+  // 3. Bei Inventar-Aufruf Daten holen
   if (viewName === 'inventar') {
     window.loadInventarFromGoogleSheets();
   }
@@ -125,21 +125,25 @@ window.applyRolePermissions = function(role) {
 // 3. INVENTAR (SCHRITT 2: ISOLIERTES DATEN-HANDLING)
 // ---------------------------------------------------------------------
 window.loadInventarFromGoogleSheets = async function() {
-  // 1. Falls bereits Daten im Speicher sind, SOFORT anzeigen (0 Sekunden Wartezeit)
-  if (window.inventarData && window.inventarData.length > 0) {
+  // 1. SOFORT LOKALE DATEN RENDERN (falls vorhanden)
+  if (typeof window.WEIHNACHTSMARKT_DATA !== 'undefined' && Array.isArray(window.WEIHNACHTSMARKT_DATA)) {
+    window.inventarData = window.WEIHNACHTSMARKT_DATA;
+    window.renderInventar(); // Kategorien & Tabellen sind SOFORT sichtbar!
+  } else if (typeof inventarData !== 'undefined' && Array.isArray(inventarData)) {
+    window.inventarData = inventarData;
     window.renderInventar();
   }
 
-  // 2. Google Sheets im Hintergrund abrufen
+  // 2. IM HINTERGRUND AKTUELLSTE DATEN AUS GOOGLE SHEETS HOLEN
   try {
     const res = await fetch(GOOGLE_SCRIPT_URL);
-    const data = await res.json();
-    if (Array.isArray(data) && data.length > 0) {
-      window.inventarData = data;
-      window.renderInventar(); // Befüllt die Tabellen sauber
+    const liveData = await res.json();
+    if (Array.isArray(liveData) && liveData.length > 0) {
+      window.inventarData = liveData;
+      window.renderInventar(); // Aktualisiert die Werte geräuschlos
     }
   } catch (e) {
-    console.error('Fehler beim Abrufen der Google-Daten:', e);
+    console.warn('Google Sheets Offline - Nutze lokale Daten aus weihnachtsmarkt-data.js', e);
   }
 };
 
