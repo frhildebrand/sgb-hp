@@ -154,7 +154,7 @@ title: SG Barnstorf Weihnachtsmarkt
       <div id="checklist" class="space-y-4"></div>
     </div>
 
-    <!-- VIEW 3: FULLPAGE VERKAUF (OHNE BESTSELLER, DAFÜR AUTO-BACKUP) -->
+    <!-- VIEW 3: FULLPAGE VERKAUF (MIT BACKUP RESTORE MODAL LINK) -->
     <div id="viewVerkauf" class="hidden space-y-6">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div>
@@ -162,7 +162,7 @@ title: SG Barnstorf Weihnachtsmarkt
           <p class="text-xs text-slate-500 dark:text-slate-400">Echtzeit-Kasseneingabe für den Standbetrieb (Automatische Sicherung alle 15 Min.)</p>
         </div>
         <div class="flex items-center gap-2">
-          <button onclick="restoreLastBackup()" class="px-3 py-2 bg-amber-500/10 text-amber-600 border border-amber-500/30 text-xs font-bold rounded-xl hover:bg-amber-500/20 transition">
+          <button onclick="openModal('backupModal'); renderBackupList();" class="px-3 py-2 bg-amber-500/10 text-amber-600 border border-amber-500/30 text-xs font-bold rounded-xl hover:bg-amber-500/20 transition">
             🔄 Backup Wiederherstellen
           </button>
           <button onclick="switchView('aushang')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition">
@@ -194,7 +194,7 @@ title: SG Barnstorf Weihnachtsmarkt
         </div>
       </div>
 
-      <!-- KPI UMSATZ-ÜBERSICHT (OHNE BESTSELLER) -->
+      <!-- KPI UMSATZ-ÜBERSICHT -->
       <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
         <h3 class="font-extrabold text-sm text-slate-900 dark:text-slate-100">📊 Einnahmen-Zusammenfassung</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
@@ -210,7 +210,7 @@ title: SG Barnstorf Weihnachtsmarkt
       </div>
     </div>
 
-    <!-- VIEW 4: NEUE FULLPAGE STATISTIK & GEWINNBERECHNUNG -->
+    <!-- VIEW 4: FULLPAGE STATISTIK & GEWINNBERECHNUNG -->
     <div id="viewStatistik" class="hidden space-y-6">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div>
@@ -402,6 +402,22 @@ title: SG Barnstorf Weihnachtsmarkt
       </div>
 
       <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+        
+        <!-- PREIS EINSTELLUNGEN DYNAMISCH -->
+        <div class="bg-amber-50/50 dark:bg-amber-950/20 p-4 rounded-xl border border-amber-200 dark:border-amber-800/50 space-y-3">
+          <h4 class="font-extrabold text-xs text-amber-600 dark:text-amber-400 uppercase tracking-wider">🏷️ Verkaufspreise festlegen</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-bold">
+            <div>
+              <label class="block text-slate-600 dark:text-slate-400 mb-1">Waffel Preis (€):</label>
+              <input type="number" step="0.10" id="adminPriceWaffel" onchange="updatePricesFromAdmin()" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2 font-bold" />
+            </div>
+            <div>
+              <label class="block text-slate-600 dark:text-slate-400 mb-1">Punsch Preis (€):</label>
+              <input type="number" step="0.10" id="adminPricePunsch" onchange="updatePricesFromAdmin()" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2 font-bold" />
+            </div>
+          </div>
+        </div>
+
         <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
           <h4 class="font-extrabold text-xs text-amber-600 dark:text-amber-400 uppercase tracking-wider">📤 ROSHOP Listen Hochladen</h4>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
@@ -427,6 +443,18 @@ title: SG Barnstorf Weihnachtsmarkt
     </div>
 
   </main>
+</div>
+
+<!-- BACKUP SELECTION MODAL -->
+<div id="backupModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+  <div class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-2xl p-6 w-full max-w-md space-y-4 shadow-2xl border border-slate-200 dark:border-slate-800">
+    <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-2">
+      <h3 class="font-extrabold text-sm">🔄 Kassen-Backups (letzte 15 Min.)</h3>
+      <button onclick="closeModal('backupModal')" class="text-slate-400 font-bold text-lg">✕</button>
+    </div>
+    <div id="backupListContainer" class="space-y-2 max-h-60 overflow-y-auto text-xs"></div>
+    <button onclick="closeModal('backupModal')" class="w-full py-2 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs font-bold">Schließen</button>
+  </div>
 </div>
 
 <!-- ROLE SWITCHER MODAL -->
