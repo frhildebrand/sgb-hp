@@ -1,11 +1,91 @@
 <div id="viewAushang" class="space-y-6">
-  <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6 backdrop-blur-md shadow-sm">
+
+  <!-- Hinweis für uneingeloggte Nutzer (Gast / Betrachter) -->
+  <div id="guestLockNotice" class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6 backdrop-blur-md shadow-sm flex items-start gap-4">
+    <div class="text-3xl">🔒</div>
+    <div class="space-y-1">
+      <h3 class="font-bold text-base text-amber-700 dark:text-amber-400">Eingeschränkte Ansicht (Nicht angemeldet)</h3>
+      <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+        Du bist aktuell nicht eingeloggt. Dir stehen nur die öffentlichen Aushänge und Listen zur Verfügung. 
+        Bitte melde dich oben rechts an, um Zugriff auf Kasse, Inventar und Verwaltung zu erhalten.
+      </p>
+    </div>
+  </div>
+
+  <!-- Begrüßung / Banner -->
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
     <div class="flex items-center gap-3 mb-2">
       <span class="text-2xl">📌</span>
-      <h2 class="font-black text-lg text-amber-600 dark:text-amber-400">Aktuelle Aushänge & Notizen</h2>
+      <h2 class="font-extrabold text-lg text-slate-800 dark:text-slate-100">Aktuelle Aushänge & Notizen</h2>
     </div>
-    <p class="text-xs text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
-      Willkommen im Weihnachtsmarkt-Portal der SG Barnstorf. Über die Navigation oben rechts kannst du zwischen den Bereichen wechseln.
+    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">
+      Willkommen im Weihnachtsmarkt-Portal der SG Barnstorf. Hier findest du die Dienstpläne und Listen für das Wochenende.
     </p>
   </div>
+
+  <!-- 2-Spalten Grid: Samstag & Sonntag -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+    <!-- Spalte SAMSTAG -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
+      <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+        <h3 class="font-black text-base text-amber-600 dark:text-amber-400 flex items-center gap-2">
+          <span>📅</span> Samstag
+        </h3>
+        <span class="text-xs font-semibold px-2.5 py-1 bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 rounded-lg">Tag 1</span>
+      </div>
+
+      <!-- Samstag: Teigspenden -->
+      <div class="space-y-3">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">🧇 Teigspenden</h4>
+        <div id="listSamstagTeig" class="space-y-2 text-xs">
+          <!-- Wird via JS mit Teigspenden befüllt -->
+          <p class="text-slate-400 italic">Lade Teigspenden...</p>
+        </div>
+      </div>
+
+      <hr class="border-slate-100 dark:border-slate-800">
+
+      <!-- Samstag: Helferliste -->
+      <div class="space-y-3">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">🤝 Helfer & Schichten</h4>
+        <div id="listSamstagHelfer" class="space-y-2 text-xs">
+          <!-- Wird via JS mit Helfern befüllt -->
+          <p class="text-slate-400 italic">Lade Helferliste...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Spalte SONNTAG -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
+      <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+        <h3 class="font-black text-base text-sky-600 dark:text-sky-400 flex items-center gap-2">
+          <span>📅</span> Sonntag
+        </h3>
+        <span class="text-xs font-semibold px-2.5 py-1 bg-sky-100 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 rounded-lg">Tag 2</span>
+      </div>
+
+      <!-- Sonntag: Teigspenden -->
+      <div class="space-y-3">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">🧇 Teigspenden</h4>
+        <div id="listSonntagTeig" class="space-y-2 text-xs">
+          <!-- Wird via JS mit Teigspenden befüllt -->
+          <p class="text-slate-400 italic">Lade Teigspenden...</p>
+        </div>
+      </div>
+
+      <hr class="border-slate-100 dark:border-slate-800">
+
+      <!-- Sonntag: Helferliste -->
+      <div class="space-y-3">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">🤝 Helfer & Schichten</h4>
+        <div id="listSonntagHelfer" class="space-y-2 text-xs">
+          <!-- Wird via JS mit Helfern befüllt -->
+          <p class="text-slate-400 italic">Lade Helferliste...</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
 </div>
