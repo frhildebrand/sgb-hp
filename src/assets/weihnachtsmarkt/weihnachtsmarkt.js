@@ -36,7 +36,7 @@ window.toggleTheme = function() {
 };
 
 // ---------------------------------------------------------------------
-// 2. NAVIGATION & ROLLEN (SCHRITT 1: OHNE HARTE LOCK-BLOCKADE)
+// 2. NAVIGATION & ROLLEN
 // ---------------------------------------------------------------------
 window.switchView = function(viewName) {
   // 1. Alle Ansichten ausblenden
@@ -50,7 +50,7 @@ window.switchView = function(viewName) {
     targetView.classList.remove('hidden');
   }
 
-  // 3. Bei Inventar-Aufruf Daten holen
+  // 3. Bei Inventar-Aufruf SOFORT lokale Daten rendern & im Hintergrund aktualisieren
   if (viewName === 'inventar') {
     window.loadInventarFromGoogleSheets();
   }
@@ -122,33 +122,32 @@ window.applyRolePermissions = function(role) {
 };
 
 // ---------------------------------------------------------------------
-// 3. INVENTAR (SCHRITT 2: ISOLIERTES DATEN-HANDLING)
+// 3. INVENTAR & GOOGLE SHEETS SYNC
 // ---------------------------------------------------------------------
 window.loadInventarFromGoogleSheets = async function() {
-  // 1. SOFORT LOKALE DATEN RENDERN (falls vorhanden)
+  // SOFORT LOKALE DATEN RENDERN (damit keine Ladezeit entsteht)
   if (typeof window.WEIHNACHTSMARKT_DATA !== 'undefined' && Array.isArray(window.WEIHNACHTSMARKT_DATA)) {
     window.inventarData = window.WEIHNACHTSMARKT_DATA;
-    window.renderInventar(); // Kategorien & Tabellen sind SOFORT sichtbar!
-  } else if (typeof inventarData !== 'undefined' && Array.isArray(inventarData)) {
-    window.inventarData = inventarData;
+    window.renderInventar();
+  } else if (window.inventarData && window.inventarData.length > 0) {
     window.renderInventar();
   }
 
-  // 2. IM HINTERGRUND AKTUELLSTE DATEN AUS GOOGLE SHEETS HOLEN
+  // FRISCHE DATEN AUS GOOGLE SHEETS IM HINTERGRUND HOLEN
   try {
     const res = await fetch(GOOGLE_SCRIPT_URL);
-    const liveData = await res.json();
-    if (Array.isArray(liveData) && liveData.length > 0) {
-      window.inventarData = liveData;
-      window.renderInventar(); // Aktualisiert die Werte geräuschlos
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) {
+      window.inventarData = data;
+      window.renderInventar(); // Aktualisiert die Tabelle geräuschlos
     }
   } catch (e) {
-    console.warn('Google Sheets Offline - Nutze lokale Daten aus weihnachtsmarkt-data.js', e);
+    console.warn('Google Sheets nicht erreichbar, verwende lokale Daten:', e);
   }
 };
 
 // ---------------------------------------------------------------------
-// INVENTAR RENDERN (MIT FORMULARFELDERN & ADMIN-OPTIONEN)
+// 4. RENDERING DER TABELLEN
 // ---------------------------------------------------------------------
 window.renderInventar = function() {
   const container = document.getElementById('inventarTablesContainer');
@@ -159,11 +158,9 @@ window.renderInventar = function() {
     return;
   }
 
-  // Progress-Text oben leeren
   const progressText = document.getElementById('inventarProgressText');
   if (progressText) progressText.innerText = '';
 
-  // Daten nach Kategorie gruppieren
   const categories = {};
   window.inventarData.forEach((item, index) => {
     const cat = item.kategorie || item.Kategorie || 'SONSTIGES';
@@ -177,7 +174,6 @@ window.renderInventar = function() {
   for (const [catName, items] of Object.entries(categories)) {
     html += `
       <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm mb-6">
-        <!-- Kategorie Header -->
         <div class="bg-slate-50 dark:bg-slate-800/60 px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <h3 class="font-bold text-sm text-amber-600 dark:text-amber-400 flex items-center gap-2">
             📦 ${catName}
@@ -185,7 +181,6 @@ window.renderInventar = function() {
           ${isAdminOrGen(isAdminOrOrga, catName)}
         </div>
 
-        <!-- Tabelle -->
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs border-collapse">
             <thead>
@@ -212,7 +207,6 @@ window.renderInventar = function() {
   container.innerHTML = html;
 };
 
-// Hilfsfunktion: Admin-Aktionen im Kategorie-Header (Umbenennen / Löschen)
 function isAdminOrGen(isAdmin, catName) {
   if (!isAdmin) return '';
   return `
@@ -227,7 +221,6 @@ function isAdminOrGen(isAdmin, catName) {
   `;
 }
 
-// Hilfsfunktion: Einzelne Zeile mit den Input-Feldern zusammenbauen
 function renderRowHtml(item, isAdmin) {
   const idx = item.originalIndex;
   const statusOptions = ['Offen', 'Vorbereitet', 'Verteilt', 'Erledigt'];
@@ -290,7 +283,6 @@ function renderRowHtml(item, isAdmin) {
   `;
 }
 
-// Wertänderungen im lokalen Array speichern
 window.updateInventarItem = function(index, field, value) {
   if (window.inventarData && window.inventarData[index]) {
     window.inventarData[index][field] = value;
@@ -301,14 +293,13 @@ window.openLightbox = function(imgSrc, title) {
   window.open(imgSrc, '_blank');
 };
 
-// Klick auf GAST/Rolle bringt den User immer zum Login-Screen
 document.addEventListener('click', (e) => {
   if (e.target.closest('#roleLabel') || e.target.closest('#guestLockNotice')) {
     window.switchView('login');
   }
 });
 
-// Autostart
+// Autostart beim Laden der Seite
 document.addEventListener('DOMContentLoaded', () => {
   window.initTheme();
   window.applyRolePermissions(window.currentUserRole);
