@@ -1,25 +1,42 @@
-// Globaler Status & Variablen
-let currentUserRole = localStorage.getItem('userRole') || 'betrachter';
-let currentTab = 'aushang';
+// Globaler Status (Standard: gast)
+let currentUserRole = localStorage.getItem('userRole') || 'gast';
 
-// --- SMART DARKMODE LOGIK ---
+// Passwörter für die Rollen
+const ROLE_PASSWORDS = {
+  helfer: 'helfer123',
+  orga: 'orga123',
+  admin: 'admin123'
+};
+
+// --- SAFARI / IPAD WATERPROOF DARKMODE LOGIK ---
 function initTheme() {
   const savedTheme = localStorage.getItem('theme');
   const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
   if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
-    document.documentElement.classList.add('dark');
-    updateThemeIcon(true);
+    applyDarkMode(true);
   } else {
-    document.documentElement.classList.remove('dark');
-    updateThemeIcon(false);
+    applyDarkMode(false);
   }
 }
 
-function toggleTheme() {
-  const isDark = document.documentElement.classList.toggle('dark');
-  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+function applyDarkMode(isDark) {
+  if (isDark) {
+    document.documentElement.classList.add('dark');
+    document.body.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+    document.body.classList.remove('dark');
+  }
   updateThemeIcon(isDark);
+}
+
+function toggleTheme() {
+  const isDarkCurrently = document.documentElement.classList.contains('dark');
+  const newDarkState = !isDarkCurrently;
+  
+  localStorage.setItem('theme', newDarkState ? 'dark' : 'light');
+  applyDarkMode(newDarkState);
 }
 
 function updateThemeIcon(isDark) {
@@ -29,44 +46,29 @@ function updateThemeIcon(isDark) {
   }
 }
 
-// System-Theme-Änderungen live mitverfolgen (falls kein manuelles Override gewählt wurde)
+// System-Theme-Änderung mitverfolgen
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
   if (!localStorage.getItem('theme')) {
-    if (e.matches) {
-      document.documentElement.classList.add('dark');
-      updateThemeIcon(true);
-    } else {
-      document.documentElement.classList.remove('dark');
-      updateThemeIcon(false);
-    }
+    applyDarkMode(e.matches);
   }
 });
 
-// --- MODAL & LOGIN LOGIK ---
-function openLoginModal() {
-  const modal = document.getElementById('loginModal');
-  if (modal) modal.classList.remove('hidden');
-}
+// --- IN-PAGE LOGIN LOGIK ---
+function tryLogin(role, inputId) {
+  const input = document.getElementById(inputId);
+  const password = input ? input.value.trim() : '';
+  const errorBox = document.getElementById('loginErrorMessage');
 
-function closeLoginModal() {
-  const modal = document.getElementById('loginModal');
-  if (modal) modal.classList.add('hidden');
-  const pwdInput = document.getElementById('loginPasswordInput');
-  if (pwdInput) pwdInput.value = '';
-}
-
-function submitLogin() {
-  const pwdInput = document.getElementById('loginPasswordInput');
-  const pwd = pwdInput ? pwdInput.value.trim() : '';
-
-  if (pwd === 'admin123') {
-    setRole('admin');
-    closeLoginModal();
-  } else if (pwd === 'helfer123') {
-    setRole('helfer');
-    closeLoginModal();
+  if (password === ROLE_PASSWORDS[role]) {
+    if (errorBox) errorBox.classList.add('hidden');
+    if (input) input.value = '';
+    setRole(role);
   } else {
-    alert('Falsches Passwort!');
+    if (errorBox) {
+      errorBox.classList.remove('hidden');
+      const errText = document.getElementById('loginErrorText');
+      if (errText) errText.innerText = 'Falsches Passwort für die Rolle ' + role.toUpperCase() + '.';
+    }
   }
 }
 
@@ -84,9 +86,11 @@ function applyRolePermissions(role) {
   const roleLabel = document.getElementById('roleLabel');
   const roleIcon = document.getElementById('roleIcon');
 
-  if (roleLabel) roleLabel.innerText = role.toUpperCase();
+  if (roleLabel) {
+    roleLabel.innerText = role === 'admin' ? '🟢 ADMIN' : (role === 'orga' ? '🔵 ORGA' : (role === 'helfer' ? '🟡 HELFER' : 'GAST'));
+  }
 
-  if (role === 'guest' || role === 'betrachter') {
+  if (role === 'gast') {
     if (burgerBtn) burgerBtn.classList.add('hidden');
     if (guestNotice) guestNotice.classList.remove('hidden');
     if (roleIcon) roleIcon.innerText = '👁️';
@@ -95,35 +99,29 @@ function applyRolePermissions(role) {
     if (burgerBtn) burgerBtn.classList.remove('hidden');
     if (guestNotice) guestNotice.classList.add('hidden');
     if (roleIcon) roleIcon.innerText = '🔓';
+    // Nach erfolgreichem Login direkt zum Aushang zurückkehren
+    switchView('aushang');
   }
 }
 
-// --- NAVIGATION & VIEWS WECHSELN ---
+// --- ANSICHTEN WECHSELN ---
 function switchView(viewName) {
-  // Zugriffssperre für Gäste
-  if ((currentUserRole === 'betrachter' || currentUserRole === 'guest') && viewName !== 'aushang') {
+  // Zugriffssperre für Gäste (nur aushang und login erlaubt)
+  if (currentUserRole === 'gast' && viewName !== 'aushang' && viewName !== 'login') {
     return;
   }
 
-  currentTab = viewName;
-
-  // Alle Ansichten ausblenden
   const views = document.querySelectorAll('main > div[id^="view"]');
   views.forEach(v => v.classList.add('hidden'));
 
-  // Target-View einblenden
   const targetId = 'view' + viewName.charAt(0).toUpperCase() + viewName.slice(1);
   const targetView = document.getElementById(targetId);
   if (targetView) {
     targetView.classList.remove('hidden');
   }
 
-  // Burger Modal schließen
   const navModal = document.getElementById('navigationModal');
   if (navModal) navModal.classList.add('hidden');
-
-  // Dynamisches Nachladen der View-Daten
-  renderActiveViewData(viewName);
 }
 
 function toggleBurgerMenu() {
@@ -131,75 +129,12 @@ function toggleBurgerMenu() {
   if (navModal) navModal.classList.toggle('hidden');
 }
 
-// --- DYNAMISCHES RENDERN DER ANSICHTEN ---
-function renderActiveViewData(viewName) {
-  switch (viewName) {
-    case 'inventar':
-      renderInventar();
-      break;
-    case 'verkauf':
-      renderVerkauf();
-      break;
-    case 'statistik':
-      renderStatistik();
-      break;
-    case 'einkaufsliste':
-      renderEinkaufsliste();
-      break;
-    case 'lagerbestand':
-      renderLagerbestand();
-      break;
-    case 'boxen':
-      renderBoxen();
-      break;
-    case 'rezepte':
-      renderRezepte();
-      break;
-    default:
-      break;
-  }
+function openLightbox(imgSrc, title) {
+  // Öffnet das Bild in einem neuen Tab zum Zoomen
+  window.open(imgSrc, '_blank');
 }
 
-// --- DUMMY RENDER FUNKTIONEN FÜR VERSPRECHENE ANSICHTEN ---
-function renderInventar() {
-  const container = document.getElementById('inventarList');
-  if (!container) return;
-  // Falls Daten aus weihnachtsmarkt-data.js vorhanden sind
-  if (window.inventarData) {
-    container.innerHTML = window.inventarData.map(item => `
-      <div class="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-        <span class="font-medium text-slate-800 dark:text-slate-200">${item.name}</span>
-        <span class="text-xs px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded-lg">${item.anzahl}x</span>
-      </div>
-    `).join('');
-  }
-}
-
-function renderVerkauf() {
-  // Logik für Kassen-Erfassung & Verkaufs-Grid
-}
-
-function renderStatistik() {
-  // Logik für Tages-Auswertungen & Reingewinn-Rechner
-}
-
-function renderEinkaufsliste() {
-  // Logik für Einkaufsliste & Abhaken
-}
-
-function renderLagerbestand() {
-  // Logik für Live-Bestand
-}
-
-function renderBoxen() {
-  // Logik für Kisten- & Transportboxenübersicht
-}
-
-function renderRezepte() {
-  // Logik für Teig- & Rezeptrechner
-}
-
-// --- INITIALISIERUNG BEIM SEITENAUFRUF ---
+// Initialisierung beim Seitenaufruf
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   applyRolePermissions(currentUserRole);
