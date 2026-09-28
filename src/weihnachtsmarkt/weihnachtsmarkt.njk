@@ -2,8 +2,13 @@
 layout: base.njk
 title: SG Barnstorf Weihnachtsmarkt
 ---
-<!-- Tailwind CSS & globale Styles für diese Seite -->
+<!-- Tailwind Config Fix für iPad Safari Darkmode -->
 <script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class'
+  }
+</script>
 <link rel="stylesheet" href="/assets/css/main.css">
 
 <div id="appBody" class="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-200 pb-16">
@@ -13,6 +18,7 @@ title: SG Barnstorf Weihnachtsmarkt
 
   <main class="max-w-7xl mx-auto px-4 pt-6 space-y-6">
     {% include "weihnachtsmarkt/views/aushang.njk" %}
+    {% include "weihnachtsmarkt/views/login.njk" %}
     {% include "weihnachtsmarkt/views/inventar.njk" %}
     {% include "weihnachtsmarkt/views/verkauf.njk" %}
     {% include "weihnachtsmarkt/views/statistik.njk" %}
