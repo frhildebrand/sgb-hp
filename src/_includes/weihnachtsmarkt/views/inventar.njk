@@ -1,50 +1,70 @@
 <div id="viewInventar" class="space-y-6 hidden">
 
-  <!-- Kopfbereich mit Titel & Button zurück -->
+  <!-- Header & Admin-Aktionen -->
   <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
     <div class="space-y-1">
       <h2 class="font-black text-xl text-slate-800 dark:text-slate-100 flex items-center gap-2">
         <span>📋</span> Inventar & Checkliste
       </h2>
       <p class="text-xs text-slate-500 dark:text-slate-400">
-        Übersicht aller Gegenstände, Status und Packfortschritt
+        Live-Synchronisation mit Google Sheets
       </p>
     </div>
-    <button onclick="switchView('aushang')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition-colors flex items-center gap-2 cursor-pointer">
-      <span>⬅️</span> Zurück zu Aushänge
-    </button>
-  </div>
-
-  <!-- Suchleiste, Fortschrittsanzeige & Filter-Buttons -->
-  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-4">
-    <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
-      <!-- Suchfeld -->
-      <div class="relative w-full sm:w-80">
-        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 text-xs">🔍</span>
-        <input type="text" id="inventarSearchInput" onkeyup="filterInventarTable()" placeholder="Suche nach Name, Ort, Kiste..." class="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500">
-      </div>
-      <!-- Fortschritts-Anzeige -->
-      <div id="inventarProgressText" class="text-xs font-bold text-amber-500 dark:text-amber-400">
-        0% erledigt (0/74)
-      </div>
-    </div>
-
-    <!-- Filter Pills -->
-    <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80 text-xs">
-      <button onclick="filterInventarStatus('alle')" class="px-3 py-1.5 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs cursor-pointer">Alle</button>
-      <button onclick="filterInventarStatus('Offen')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium rounded-xl text-xs hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer">Offen</button>
-      <button onclick="filterInventarStatus('Vorbereitet')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium rounded-xl text-xs hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer">Vorbereitet</button>
-      <button onclick="filterInventarStatus('Verteilt')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium rounded-xl text-xs hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer">Verteilt</button>
-      <button onclick="filterInventarStatus('Erledigt')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium rounded-xl text-xs hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer">Erledigt</button>
-      <button onclick="filterInventarStatus('gepackt')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium rounded-xl text-xs hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer flex items-center gap-1">
-        <span>📦</span> Nur Gepackt
+    
+    <div class="flex items-center gap-2">
+      <!-- Admin Bearbeiten-Schalter (nur sichtbar wenn Admin/Orga) -->
+      <button id="adminInventarEditBtn" onclick="toggleInventarEditMode()" class="px-3 py-2 bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 text-xs font-bold rounded-xl transition-colors hidden cursor-pointer">
+        ✏️ Gegenstände verwalten
+      </button>
+      
+      <button onclick="switchView('aushang')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition-colors flex items-center gap-2 cursor-pointer">
+        <span>⬅️</span> Zurück
       </button>
     </div>
   </div>
 
-  <!-- INVENTAR CONTAINER (Wird über JS mit den Kategorien und Zeilen befüllt) -->
+  <!-- Suche & Filter (Ohne "Nur Gepackt") -->
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-4">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="relative w-full sm:w-80">
+        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 text-xs">🔍</span>
+        <input type="text" id="inventarSearchInput" onkeyup="filterInventarTable()" placeholder="Suche nach Name, Ort, Kiste..." class="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500">
+      </div>
+      <div id="inventarProgressText" class="text-xs font-bold text-amber-500 dark:text-amber-400">
+        Lade Daten...
+      </div>
+    </div>
+
+    <!-- Filter Pills (Ohne Nur Gepackt) -->
+    <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80 text-xs">
+      <button onclick="filterInventarStatus('alle')" class="px-3 py-1.5 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs cursor-pointer">Alle</button>
+      <button onclick="filterInventarStatus('Offen')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium rounded-xl text-xs hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer">🔴 Offen</button>
+      <button onclick="filterInventarStatus('Vorbereitet')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium rounded-xl text-xs hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer">🟡 Vorbereitet</button>
+      <button onclick="filterInventarStatus('Verteilt')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium rounded-xl text-xs hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer">🟣 Verteilt</button>
+      <button onclick="filterInventarStatus('Erledigt')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium rounded-xl text-xs hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer">🟢 Erledigt</button>
+    </div>
+  </div>
+
+  <!-- Neuer Gegenstand Anlegen Panel (Sichtbar im Edit-Modus) -->
+  <div id="addItemPanel" class="hidden bg-purple-500/10 border border-purple-500/30 rounded-2xl p-4 space-y-3">
+    <h3 class="font-bold text-xs text-purple-600 dark:text-purple-400 flex items-center gap-2">
+      <span>➕</span> Neuen Gegenstand hinzufügen
+    </h3>
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+      <input type="text" id="newItemName" placeholder="Gegenstandsname..." class="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+      <select id="newItemCategory" class="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+        <!-- Kategorien werden via JS befüllt -->
+      </select>
+      <input type="number" id="newItemBedarf" placeholder="Bedarf (z.B. 1)" value="1" class="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+      <button onclick="createNewItem()" class="py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer">
+        Hinzufügen
+      </button>
+    </div>
+  </div>
+
+  <!-- INVENTAR TABLES CONTAINER -->
   <div id="inventarTablesContainer" class="space-y-6">
-    <!-- Dynamischer Inhalt aus weihnachtsmarkt.js -->
+    <!-- Wird dynamisch befüllt -->
   </div>
 
 </div>
