@@ -1,11 +1,11 @@
 // Google Apps Script Web-App URL
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyQg2LmxT_UbLXjFVKrNf9gXnqgk_ku4V_P1SZeSGqphn-WRTYI3a9l5szzkDfqEE881Q/exec';
 
-// Status & Daten
-let currentUserRole = localStorage.getItem('userRole') || 'gast';
-let inventarData = [];
-let isEditMode = false;
-let currentFilterStatus = 'alle';
+// Globaler Status & Daten
+window.currentUserRole = localStorage.getItem('userRole') || 'gast';
+window.inventarData = [];
+window.isEditMode = false;
+window.currentFilterStatus = 'alle';
 
 const ROLE_PASSWORDS = {
   helfer: '1',
@@ -13,35 +13,46 @@ const ROLE_PASSWORDS = {
   admin: '3'
 };
 
-// --- DARKMODE ENGINE (ROBUST) ---
+// --- DARKMODE ENGINE (ROBUST & ISOLIERT) ---
 function initTheme() {
-  const savedTheme = localStorage.getItem('theme');
-  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  try {
+    const savedTheme = localStorage.getItem('theme');
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-  if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
-    applyDarkMode(true);
-  } else {
-    applyDarkMode(false);
+    if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+      applyDarkMode(true);
+    } else {
+      applyDarkMode(false);
+    }
+  } catch (e) {
+    console.error('Theme Init Error:', e);
   }
 }
 
 function applyDarkMode(isDark) {
-  if (isDark) {
-    document.documentElement.classList.add('dark');
-    document.body.classList.add('dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-    document.body.classList.remove('dark');
+  try {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      if (document.body) document.body.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      if (document.body) document.body.classList.remove('dark');
+    }
+    updateThemeIcon(isDark);
+  } catch (e) {
+    console.error('Apply Dark Mode Error:', e);
   }
-  updateThemeIcon(isDark);
 }
 
 function toggleTheme() {
-  const isDarkCurrently = document.documentElement.classList.contains('dark') || document.body.classList.contains('dark');
-  const newDarkState = !isDarkCurrently;
-  
-  localStorage.setItem('theme', newDarkState ? 'dark' : 'light');
-  applyDarkMode(newDarkState);
+  try {
+    const isDarkCurrently = document.documentElement.classList.contains('dark');
+    const newDarkState = !isDarkCurrently;
+    localStorage.setItem('theme', newDarkState ? 'dark' : 'light');
+    applyDarkMode(newDarkState);
+  } catch (e) {
+    console.error('Toggle Theme Error:', e);
+  }
 }
 
 function updateThemeIcon(isDark) {
@@ -51,7 +62,7 @@ function updateThemeIcon(isDark) {
   }
 }
 
-// --- LOGIN & RECHTE ---
+// --- LOGIN LOGIK ---
 function tryLogin(role, inputId) {
   const input = document.getElementById(inputId);
   const password = input ? input.value.trim() : '';
@@ -71,13 +82,13 @@ function tryLogin(role, inputId) {
 }
 
 function setRole(role) {
-  currentUserRole = role;
+  window.currentUserRole = role;
   localStorage.setItem('userRole', role);
   applyRolePermissions(role);
 }
 
 function applyRolePermissions(role) {
-  currentUserRole = role;
+  window.currentUserRole = role;
   const burgerBtn = document.getElementById('burgerMenuBtn');
   const guestNotice = document.getElementById('guestLockNotice');
   const roleLabel = document.getElementById('roleLabel');
@@ -93,7 +104,7 @@ function applyRolePermissions(role) {
       adminEditBtn.classList.remove('hidden');
     } else {
       adminEditBtn.classList.add('hidden');
-      isEditMode = false;
+      window.isEditMode = false;
     }
   }
 
@@ -110,10 +121,9 @@ function applyRolePermissions(role) {
   }
 }
 
-// --- VIEWS & BURGER MENU ---
+// --- ANSICHTEN WECHSELN ---
 function switchView(viewName) {
-  // Zugriffssperre für Gäste (nur Aushang und Login erlaubt)
-  if (currentUserRole === 'gast' && viewName !== 'aushang' && viewName !== 'login') {
+  if (window.currentUserRole === 'gast' && viewName !== 'aushang' && viewName !== 'login') {
     return;
   }
 
@@ -138,23 +148,23 @@ function toggleBurgerMenu() {
   if (navModal) navModal.classList.toggle('hidden');
 }
 
-// --- GOOGLE SHEETS LIVE-SYNC & INVENTAR LOGIK ---
+// --- GOOGLE SHEETS & INVENTAR (ABGESICHERT) ---
 async function loadInventarFromGoogleSheets() {
   const progressText = document.getElementById('inventarProgressText');
-  if (progressText) progressText.innerText = 'Lade Daten aus Google Sheets...';
+  if (progressText) progressText.innerText = 'Lade Daten...';
 
   try {
     const res = await fetch(GOOGLE_SCRIPT_URL);
     const data = await res.json();
     if (Array.isArray(data) && data.length > 0) {
-      inventarData = data;
+      window.inventarData = data;
     } else if (window.inventarCategories) {
-      inventarData = convertLocalCategoriesToFlat(window.inventarCategories);
+      window.inventarData = convertLocalCategoriesToFlat(window.inventarCategories);
     }
   } catch (e) {
-    console.error('Fehler beim Laden aus Google Sheets:', e);
-    if (window.inventarCategories && inventarData.length === 0) {
-      inventarData = convertLocalCategoriesToFlat(window.inventarCategories);
+    console.warn('Fallback auf lokale Daten:', e);
+    if (window.inventarCategories && window.inventarData.length === 0) {
+      window.inventarData = convertLocalCategoriesToFlat(window.inventarCategories);
     }
   }
   
@@ -164,40 +174,42 @@ async function loadInventarFromGoogleSheets() {
 
 function convertLocalCategoriesToFlat(categories) {
   let flat = [];
+  if (!Array.isArray(categories)) return flat;
   categories.forEach(cat => {
-    cat.items.forEach(item => {
-      flat.push({
-        kategorie: cat.title.replace(/^[^\w\s]+/, '').trim(),
-        gegenstand: item.name,
-        beschreibung: item.sub || '',
-        bedarf: item.bedarf || 1,
-        lager: item.lager || 0,
-        status: item.status || 'Offen',
-        wer: item.wer || '',
-        pack: item.pack || false,
-        box: item.box || ''
+    if (cat.items && Array.isArray(cat.items)) {
+      cat.items.forEach(item => {
+        flat.push({
+          kategorie: cat.title ? cat.title.replace(/^[^\w\s]+/, '').trim() : 'SONSTIGES',
+          gegenstand: item.name || '',
+          beschreibung: item.sub || '',
+          bedarf: item.bedarf || 1,
+          lager: item.lager || 0,
+          status: item.status || 'Offen',
+          wer: item.wer || '',
+          pack: item.pack || false,
+          box: item.box || ''
+        });
       });
-    });
+    }
   });
   return flat;
 }
 
 async function saveInventarToGoogleSheets() {
   const progressText = document.getElementById('inventarProgressText');
-  if (progressText) progressText.innerText = 'Speichere in Google Sheets...';
+  if (progressText) progressText.innerText = 'Speichere...';
 
   try {
     await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'updateAll', items: inventarData })
+      body: JSON.stringify({ action: 'updateAll', items: window.inventarData })
     });
     if (progressText) progressText.innerText = 'Gespeichert!';
     setTimeout(() => calculateProgress(), 2000);
   } catch (e) {
     console.error('Fehler beim Speichern:', e);
-    if (progressText) progressText.innerText = 'Fehler beim Speichern!';
   }
 }
 
@@ -208,7 +220,7 @@ function renderInventar() {
   calculateProgress();
 
   const categories = {};
-  inventarData.forEach((item, index) => {
+  window.inventarData.forEach((item, index) => {
     const cat = item.kategorie || 'SONSTIGES';
     if (!categories[cat]) categories[cat] = [];
     categories[cat].push({ ...item, originalIndex: index });
@@ -219,8 +231,10 @@ function renderInventar() {
   let html = '';
   for (const [catName, items] of Object.entries(categories)) {
     const filteredItems = items.filter(item => {
-      const matchSearch = item.gegenstand.toLowerCase().includes(searchVal) || (item.wer && item.wer.toLowerCase().includes(searchVal)) || (item.box && item.box.toLowerCase().includes(searchVal));
-      const matchStatus = currentFilterStatus === 'alle' || item.status === currentFilterStatus;
+      const matchSearch = (item.gegenstand || '').toLowerCase().includes(searchVal) || 
+                          (item.wer || '').toLowerCase().includes(searchVal) || 
+                          (item.box || '').toLowerCase().includes(searchVal);
+      const matchStatus = window.currentFilterStatus === 'alle' || item.status === window.currentFilterStatus;
       return matchSearch && matchStatus;
     });
 
@@ -242,14 +256,14 @@ function renderInventar() {
                 <th class="py-2.5 px-2 w-32">WER</th>
                 <th class="py-2.5 px-2 text-center w-12">PACK</th>
                 <th class="py-2.5 px-2 text-center w-20">BOX</th>
-                ${isEditMode ? '<th class="py-2.5 px-2 text-center w-12">AKTION</th>' : ''}
+                ${window.isEditMode ? '<th class="py-2.5 px-2 text-center w-12">AKTION</th>' : ''}
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
               ${filteredItems.map(item => `
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                   <td class="py-2.5 px-4 font-bold text-slate-800 dark:text-slate-200">
-                    ${isEditMode ? `
+                    ${window.isEditMode ? `
                       <input type="text" value="${item.gegenstand}" onchange="updateItemField(${item.originalIndex}, 'gegenstand', this.value)" class="w-full px-2 py-1 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold">
                     ` : `
                       <div>${item.gegenstand}</div>
@@ -271,7 +285,7 @@ function renderInventar() {
                     </select>
                   </td>
                   <td class="py-2.5 px-2">
-                    <input type="text" placeholder="Name..." value="${item.wer \vert{}\vert{} ''}" onchange="updateItemField(${item.originalIndex}, 'wer', this.value)" class="w-full px-2 py-1 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] focus:outline-none focus:ring-1 focus:ring-amber-500">
+                    <input type="text" placeholder="Name..." value="${item.wer \vert{}\vert{} ''}" onchange="updateItemField(${item.originalIndex}, 'wer', this.value)" class="w-full px-2 py-1 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px]">
                   </td>
                   <td class="py-2.5 px-2 text-center">
                     <input type="checkbox" ${item.pack ? 'checked' : ''} onchange="updateItemField(${item.originalIndex}, 'pack', this.checked)" class="w-4 h-4 rounded border-slate-300 text-amber-500 focus:ring-amber-500 cursor-pointer">
@@ -279,7 +293,7 @@ function renderInventar() {
                   <td class="py-2.5 px-2 text-center">
                     <input type="text" placeholder="Box..." value="${item.box \vert{}\vert{} ''}" onchange="updateItemField(${item.originalIndex}, 'box', this.value)" class="w-16 text-center px-1 py-1 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px]">
                   </td>
-                  ${isEditMode ? `
+                  ${window.isEditMode ? `
                     <td class="py-2.5 px-2 text-center">
                       <button onclick="deleteItem(${item.originalIndex})" class="p-1 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg text-xs cursor-pointer" title="Löschen">🗑️</button>
                     </td>
@@ -307,8 +321,8 @@ function getStatusColorClass(status) {
 }
 
 function updateItemField(index, field, value) {
-  if (inventarData[index]) {
-    inventarData[index][field] = value;
+  if (window.inventarData[index]) {
+    window.inventarData[index][field] = value;
     renderInventar();
     saveInventarToGoogleSheets();
   }
@@ -316,10 +330,10 @@ function updateItemField(index, field, value) {
 
 function calculateProgress() {
   const progressText = document.getElementById('inventarProgressText');
-  if (!progressText || inventarData.length === 0) return;
+  if (!progressText || !window.inventarData || window.inventarData.length === 0) return;
 
-  const erledigt = inventarData.filter(i => i.status === 'Erledigt').length;
-  const total = inventarData.length;
+  const erledigt = window.inventarData.filter(i => i.status === 'Erledigt').length;
+  const total = window.inventarData.length;
   const percent = Math.round((erledigt / total) * 100);
 
   progressText.innerText = `${percent}% erledigt (${erledigt}/${total})`;
@@ -330,15 +344,15 @@ function filterInventarTable() {
 }
 
 function filterInventarStatus(status) {
-  currentFilterStatus = status;
+  window.currentFilterStatus = status;
   renderInventar();
 }
 
 function toggleInventarEditMode() {
-  isEditMode = !isEditMode;
+  window.isEditMode = !window.isEditMode;
   const panel = document.getElementById('addItemPanel');
   if (panel) {
-    if (isEditMode) panel.classList.remove('hidden');
+    if (window.isEditMode) panel.classList.remove('hidden');
     else panel.classList.add('hidden');
   }
   renderInventar();
@@ -363,7 +377,7 @@ function createNewItem() {
     box: ''
   };
 
-  inventarData.push(newItem);
+  window.inventarData.push(newItem);
   nameInput.value = '';
   renderInventar();
   saveInventarToGoogleSheets();
@@ -371,7 +385,7 @@ function createNewItem() {
 
 function deleteItem(index) {
   if (confirm('Möchtest du diesen Gegenstand wirklich löschen?')) {
-    inventarData.splice(index, 1);
+    window.inventarData.splice(index, 1);
     renderInventar();
     saveInventarToGoogleSheets();
   }
@@ -379,9 +393,9 @@ function deleteItem(index) {
 
 function updateCategoryDropdown() {
   const catSelect = document.getElementById('newItemCategory');
-  if (!catSelect) return;
+  if (!catSelect || !window.inventarData) return;
 
-  const categories = [...new Set(inventarData.map(i => i.kategorie || 'SONSTIGES'))];
+  const categories = [...new Set(window.inventarData.map(i => i.kategorie || 'SONSTIGES'))];
   catSelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
 }
 
@@ -389,8 +403,8 @@ function openLightbox(imgSrc, title) {
   window.open(imgSrc, '_blank');
 }
 
-// Initialisierung beim Laden
+// Sofortige Initialisierung & Absicherung bei DOM-Load
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
-  applyRolePermissions(currentUserRole);
+  applyRolePermissions(window.currentUserRole);
 });
