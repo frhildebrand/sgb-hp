@@ -1,3 +1,4 @@
+alert("Javascript geladen!");
 // Google Apps Script Web-App URL
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyQg2LmxT_UbLXjFVKrNf9gXnqgk_ku4V_P1SZeSGqphn-WRTYI3a9l5szzkDfqEE881Q/exec';
 
