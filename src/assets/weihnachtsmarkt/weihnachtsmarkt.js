@@ -8,27 +8,23 @@ window.isEditMode = false;
 window.currentFilterStatus = 'alle';
 
 // ---------------------------------------------------------------------
-// 1. NAVIGATION, ROLLEN & LOGIN (DIREKT GLOBAL DEFONIERT FÜR NJK/HTML)
+// 1. NAVIGATION & LOGIN LOGIK
 // ---------------------------------------------------------------------
 
 function tryLogin(role, inputId) {
-  try {
-    const passwords = { helfer: '1', orga: '2', admin: '3' };
-    const input = document.getElementById(inputId);
-    const password = input ? input.value.trim() : '';
-    const errorBox = document.getElementById('loginErrorMessage');
+  const passwords = { helfer: '1', orga: '2', admin: '3' };
+  const input = document.getElementById(inputId);
+  const password = input ? input.value.trim() : '';
+  const errorBox = document.getElementById('loginErrorMessage');
 
-    if (password === passwords[role]) {
-      if (errorBox) errorBox.classList.add('hidden');
-      if (input) input.value = '';
-      setRole(role);
-    } else if (errorBox) {
-      errorBox.classList.remove('hidden');
-      const errText = document.getElementById('loginErrorText');
-      if (errText) errText.innerText = 'Falsches Passwort für die gewählte Rolle.';
-    }
-  } catch (e) {
-    console.error('Fehler bei tryLogin:', e);
+  if (password === passwords[role]) {
+    if (errorBox) errorBox.classList.add('hidden');
+    if (input) input.value = '';
+    setRole(role);
+  } else if (errorBox) {
+    errorBox.classList.remove('hidden');
+    const errText = document.getElementById('loginErrorText');
+    if (errText) errText.innerText = 'Falsches Passwort für die gewählte Rolle.';
   }
 }
 
@@ -39,57 +35,49 @@ function setRole(role) {
 }
 
 function applyRolePermissions(role) {
-  try {
-    window.currentUserRole = role || 'helfer';
-    const burgerBtn = document.getElementById('burgerMenuBtn');
-    const guestNotice = document.getElementById('guestLockNotice');
-    const roleLabel = document.getElementById('roleLabel');
-    const roleIcon = document.getElementById('roleIcon');
-    const adminEditBtn = document.getElementById('adminInventarEditBtn');
+  window.currentUserRole = role || 'helfer';
+  const burgerBtn = document.getElementById('burgerMenuBtn');
+  const guestNotice = document.getElementById('guestLockNotice');
+  const roleLabel = document.getElementById('roleLabel');
+  const roleIcon = document.getElementById('roleIcon');
+  const adminEditBtn = document.getElementById('adminInventarEditBtn');
 
-    if (roleLabel) {
-      roleLabel.innerText = role === 'admin' ? '🟢 ADMIN' : (role === 'orga' ? '🔵 ORGA' : (role === 'helfer' ? '🟡 HELFER' : 'GAST'));
-    }
-
-    if (adminEditBtn) {
-      if (role === 'admin' || role === 'orga') {
-        adminEditBtn.classList.remove('hidden');
-      } else {
-        adminEditBtn.classList.add('hidden');
-        window.isEditMode = false;
-      }
-    }
-
-    if (burgerBtn) burgerBtn.classList.remove('hidden');
-    if (guestNotice) guestNotice.classList.add('hidden');
-    if (roleIcon) roleIcon.innerText = '🔓';
-
-    // Wechselt nach erfolgreichem Login direkt zur Aushang-Ansicht
-    switchView('aushang');
-  } catch (e) {
-    console.error('Fehler bei applyRolePermissions:', e);
+  if (roleLabel) {
+    roleLabel.innerText = role === 'admin' ? '🟢 ADMIN' : (role === 'orga' ? '🔵 ORGA' : (role === 'helfer' ? '🟡 HELFER' : 'GAST'));
   }
+
+  if (adminEditBtn) {
+    if (role === 'admin' || role === 'orga') {
+      adminEditBtn.classList.remove('hidden');
+    } else {
+      adminEditBtn.classList.add('hidden');
+      window.isEditMode = false;
+    }
+  }
+
+  if (burgerBtn) burgerBtn.classList.remove('hidden');
+  if (guestNotice) guestNotice.classList.add('hidden');
+  if (roleIcon) roleIcon.innerText = '🔓';
+
+  // Wechselt nach dem Login direkt zur Ansicht
+  switchView('aushang');
 }
 
 function switchView(viewName) {
-  try {
-    const views = document.querySelectorAll('main > div[id^="view"]');
-    views.forEach(v => v.classList.add('hidden'));
+  const views = document.querySelectorAll('main > div[id^="view"]');
+  views.forEach(v => v.classList.add('hidden'));
 
-    const targetId = 'view' + viewName.charAt(0).toUpperCase() + viewName.slice(1);
-    const targetView = document.getElementById(targetId);
-    if (targetView) {
-      targetView.classList.remove('hidden');
-      if (viewName === 'inventar') {
-        loadInventarFromGoogleSheets();
-      }
+  const targetId = 'view' + viewName.charAt(0).toUpperCase() + viewName.slice(1);
+  const targetView = document.getElementById(targetId);
+  if (targetView) {
+    targetView.classList.remove('hidden');
+    if (viewName === 'inventar') {
+      loadInventarFromGoogleSheets();
     }
-
-    const navModal = document.getElementById('navigationModal');
-    if (navModal) navModal.classList.add('hidden');
-  } catch (e) {
-    console.error('Fehler bei switchView:', e);
   }
+
+  const navModal = document.getElementById('navigationModal');
+  if (navModal) navModal.classList.add('hidden');
 }
 
 function toggleBurgerMenu() {
@@ -102,13 +90,9 @@ function toggleBurgerMenu() {
 // ---------------------------------------------------------------------
 
 function initTheme() {
-  try {
-    const savedTheme = localStorage.getItem('theme');
-    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    applyDarkMode(savedTheme === 'dark' || (!savedTheme && systemPrefersDark));
-  } catch (e) {
-    console.error('Theme Init Fehler:', e);
-  }
+  const savedTheme = localStorage.getItem('theme');
+  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyDarkMode(savedTheme === 'dark' || (!savedTheme && systemPrefersDark));
 }
 
 function applyDarkMode(isDark) {
@@ -131,7 +115,7 @@ function toggleTheme() {
 }
 
 // ---------------------------------------------------------------------
-// 3. INVENTAR & GOOGLE SHEETS SYNCHRONISATION
+// 3. INVENTAR & GOOGLE SHEETS (Genoso wie gestern!)
 // ---------------------------------------------------------------------
 
 async function loadInventarFromGoogleSheets() {
@@ -176,24 +160,6 @@ function convertLocalCategoriesToFlat(categories) {
     }
   });
   return flat;
-}
-
-async function saveInventarToGoogleSheets() {
-  const progressText = document.getElementById('inventarProgressText');
-  if (progressText) progressText.innerText = 'Speichere in Google Sheets...';
-
-  try {
-    await fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'updateAll', items: window.inventarData })
-    });
-    if (progressText) progressText.innerText = 'Gespeichert!';
-  } catch (e) {
-    console.error('Fehler beim Speichern:', e);
-    if (progressText) progressText.innerText = 'Fehler beim Speichern';
-  }
 }
 
 function renderInventar() {
@@ -268,13 +234,10 @@ function getStatusColorClass(status) {
   }
 }
 
-function openLightbox(imgSrc, title) {
-  window.open(imgSrc, '_blank');
-}
+// ---------------------------------------------------------------------
+// 4. BINDINGS & EVENT HANDLING
+// ---------------------------------------------------------------------
 
-// ---------------------------------------------------------------------
-// 4. GLOBAL BINDINGS (DAMIT SOWOHL ONCLICK ALLES FINDET)
-// ---------------------------------------------------------------------
 window.tryLogin = tryLogin;
 window.setRole = setRole;
 window.applyRolePermissions = applyRolePermissions;
@@ -284,10 +247,31 @@ window.initTheme = initTheme;
 window.applyDarkMode = applyDarkMode;
 window.toggleTheme = toggleTheme;
 window.loadInventarFromGoogleSheets = loadInventarFromGoogleSheets;
-window.saveInventarToGoogleSheets = saveInventarToGoogleSheets;
 window.renderInventar = renderInventar;
 
-// Autostart
+// Abfangen von Klicks auf die Buttons in der Nunjucks-Template
+document.addEventListener('click', (e) => {
+  const target = e.target.closest('[onclick]');
+  if (!target) return;
+
+  const onclickAttr = target.getAttribute('onclick') || '';
+  
+  if (onclickAttr.includes("tryLogin('helfer'")) {
+    e.preventDefault();
+    tryLogin('helfer', 'passHelfer');
+  } else if (onclickAttr.includes("tryLogin('orga'")) {
+    e.preventDefault();
+    tryLogin('orga', 'passOrga');
+  } else if (onclickAttr.includes("tryLogin('admin'")) {
+    e.preventDefault();
+    tryLogin('admin', 'passAdmin');
+  } else if (onclickAttr.includes("setRole('gast'")) {
+    e.preventDefault();
+    setRole('gast');
+  }
+});
+
+// Autostart beim Laden
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   applyRolePermissions(window.currentUserRole);
