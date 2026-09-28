@@ -2,7 +2,11 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzm4pz4LD6vwqwkDQXqI
 
 let roleConfig = window.DEFAULT_ROLE_CONFIG || {};
 let itemsData = window.DEFAULT_ITEMS || [];
-let appState = { sales: { waffel: 0, punsch: 0 }, roshopImg: {} };
+let appState = { 
+  sales: { waffel: 0, punsch: 0 }, 
+  roshopImg: {},
+  statsData: { samstagW: 0, samstagP: 0, samstagS: 0, sonntagW: 0, sonntagP: 0, sonntagS: 0, ausgaben: 0, standgebuehr: 0 }
+};
 let currentRole = 'betrachter';
 let activeFilterTag = 'ALL';
 
@@ -16,6 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
   loadStateFromSheet();
 
   document.getElementById('searchInput')?.addEventListener('input', renderChecklist);
+
+  // AUTOMATISCHES 15-MINUTEN BACKUP FÜR DIE KASSE
+  setInterval(() => {
+    save15MinBackup();
+  }, 15 * 60 * 1000);
 });
 
 function toggleDarkMode() {
@@ -27,20 +36,24 @@ function toggleBurgerMenu() {
   if (drawer) drawer.classList.toggle('hidden');
 }
 
-// ZENTRALES FULLPAGE SEITEN-UMSCHALTEN (KEINE MODALS MEHR)
+// ZENTRALES FULLPAGE SEITEN-UMSCHALTEN
 function switchView(viewKey) {
   if (document.getElementById('burgerDrawer') && !document.getElementById('burgerDrawer').classList.contains('hidden')) {
     toggleBurgerMenu();
   }
 
-  // Schutz für Admin Panel
+  // Schutz für Admin Panel & Statistik
   if (viewKey === 'adminpanel' && currentRole !== 'admin') {
     alert("Nur Admins haben Zugriff auf das Control Center!");
     return;
   }
+  if (viewKey === 'statistik' && !canEdit('canViewStats')) {
+    alert("Keine Berechtigung zum Einsehen der Statistik!");
+    return;
+  }
 
   // Alle Views verbergen
-  const allViews = ['Aushang', 'Inventar', 'Verkauf', 'Einkaufsliste', 'Verkabelung', 'Lagerbestand', 'Boxenuebersicht', 'Rezepte', 'Adminpanel'];
+  const allViews = ['Aushang', 'Inventar', 'Verkauf', 'Statistik', 'Einkaufsliste', 'Verkabelung', 'Lagerbestand', 'Boxenuebersicht', 'Rezepte', 'Adminpanel'];
   allViews.forEach(v => {
     document.getElementById('view' + v)?.classList.add('hidden');
   });
@@ -56,6 +69,7 @@ function switchView(viewKey) {
   // Spezifische Renderer aufrufen
   if (viewKey === 'inventar') renderChecklist();
   if (viewKey === 'verkauf') updateSalesUI();
+  if (viewKey === 'statistik') loadStatistikFields();
   if (viewKey === 'boxenuebersicht') renderBoxOverview();
   if (viewKey === 'lagerbestand') renderStockTable();
   if (viewKey === 'verkabelung') renderPowerPlanner();
@@ -74,15 +88,8 @@ function openModal(id) {
 function setFilterTag(tag) {
   activeFilterTag = tag;
   const buttons = document.querySelectorAll('#filterTags button');
-  
-  buttons.forEach(btn => {
-    btn.classList.remove('ring-2', 'ring-amber-500', 'scale-105');
-  });
-
-  if (event && event.target) {
-    event.target.classList.add('ring-2', 'ring-amber-500', 'scale-105');
-  }
-
+  buttons.forEach(btn => btn.classList.remove('ring-2', 'ring-amber-500', 'scale-105'));
+  if (event && event.target) event.target.classList.add('ring-2', 'ring-amber-500', 'scale-105');
   renderChecklist();
 }
 
@@ -91,6 +98,7 @@ function loadFromLocal() {
   appState = local;
   if (!appState.sales) appState.sales = { waffel: 0, punsch: 0 };
   if (!appState.roshopImg) appState.roshopImg = {};
+  if (!appState.statsData) appState.statsData = {};
   if (appState.roleConfig) roleConfig = appState.roleConfig;
 
   renderRoshopImages();
@@ -104,6 +112,7 @@ async function loadStateFromSheet() {
       appState = cloudData;
       if (!appState.sales) appState.sales = { waffel: 0, punsch: 0 };
       if (!appState.roshopImg) appState.roshopImg = {};
+      if (!appState.statsData) appState.statsData = {};
       localStorage.setItem('sg_wm_state_v26', JSON.stringify(appState));
       itemsData.forEach(item => initItemState(item));
       renderChecklist();
@@ -123,12 +132,8 @@ function setSyncStatus(isOk) {
 function initItemState(item) {
   if (!appState[item.id]) {
     appState[item.id] = { 
-      status: 'Offen', 
-      assignedTo: '', 
-      packed: false, 
-      boxNum: '', 
-      reqQty: item.defaultQty || '1', 
-      stockQty: item.defaultStockQty || '0', 
+      status: 'Offen', assignedTo: '', packed: false, boxNum: '', 
+      reqQty: item.defaultQty || '1', stockQty: item.defaultStockQty || '0', 
       bought: false, store: '', price: 0 
     };
   }
@@ -142,6 +147,22 @@ async function saveState() {
       await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(appState) });
       setSyncStatus(true);
     } catch (e) { setSyncStatus(false); }
+  }
+}
+
+function save15MinBackup() {
+  const backupKey = 'sg_wm_backup_' + new Date().getTime();
+  localStorage.setItem(backupKey, JSON.stringify(appState));
+  localStorage.setItem('sg_wm_last_backup', JSON.stringify(appState));
+}
+
+function restoreLastBackup() {
+  const last = localStorage.getItem('sg_wm_last_backup');
+  if (last && confirm("Möchtest du den Kassenstand auf das letzte automatische Backup zurücksetzen?")) {
+    appState = JSON.parse(last);
+    saveState();
+    updateSalesUI();
+    alert("Kassenstand wiederhergestellt!");
   }
 }
 
@@ -164,7 +185,6 @@ function renderChecklist() {
       initItemState(i);
       const st = appState[i.id];
       const matchSearch = i.title.toLowerCase().includes(search) || (st.assignedTo || '').toLowerCase().includes(search);
-      
       let matchTag = true;
       if (activeFilterTag === 'GEPACKT') matchTag = st.packed;
       else if (activeFilterTag !== 'ALL') matchTag = st.status === activeFilterTag;
@@ -300,12 +320,54 @@ function updateSalesUI() {
 
   if (document.getElementById('statTotalItems')) document.getElementById('statTotalItems').innerText = totalCount + " Stk.";
   if (document.getElementById('statTotalRevenue')) document.getElementById('statTotalRevenue').innerText = totalRev.toFixed(2).replace('.', ',') + " €";
+}
 
-  let bestseller = "-";
-  if (waffeln > punsch) bestseller = "Waffeln 🥯";
-  else if (punsch > waffeln) bestseller = "Punsch ☕";
-  else if (waffeln > 0) bestseller = "Gleichstand";
-  if (document.getElementById('statBestseller')) document.getElementById('statBestseller').innerText = bestseller;
+// STATISTIK SEITE LOGIK & CALC
+function loadStatistikFields() {
+  const st = appState.statsData || {};
+  if (document.getElementById('statsSamstagWaffeln')) document.getElementById('statsSamstagWaffeln').value = st.samstagW || 0;
+  if (document.getElementById('statsSamstagPunsch')) document.getElementById('statsSamstagPunsch').value = st.samstagP || 0;
+  if (document.getElementById('statsSamstagSpenden')) document.getElementById('statsSamstagSpenden').value = st.samstagS || 0;
+
+  if (document.getElementById('statsSonntagWaffeln')) document.getElementById('statsSonntagWaffeln').value = st.sonntagW || 0;
+  if (document.getElementById('statsSonntagPunsch')) document.getElementById('statsSonntagPunsch').value = st.sonntagP || 0;
+  if (document.getElementById('statsSonntagSpenden')) document.getElementById('statsSonntagSpenden').value = st.sonntagS || 0;
+
+  if (document.getElementById('statsAusgaben')) document.getElementById('statsAusgaben').value = st.ausgaben || 0;
+  if (document.getElementById('statsStandgebuehr')) document.getElementById('statsStandgebuehr').value = st.standgebuehr || 0;
+
+  updateStatistikCalc();
+}
+
+function updateStatistikCalc() {
+  const samstagW = parseFloat(document.getElementById('statsSamstagWaffeln')?.value || 0);
+  const samstagP = parseFloat(document.getElementById('statsSamstagPunsch')?.value || 0);
+  const samstagS = parseFloat(document.getElementById('statsSamstagSpenden')?.value || 0);
+
+  const sonntagW = parseFloat(document.getElementById('statsSonntagWaffeln')?.value || 0);
+  const sonntagP = parseFloat(document.getElementById('statsSonntagPunsch')?.value || 0);
+  const sonntagS = parseFloat(document.getElementById('statsSonntagSpenden')?.value || 0);
+
+  const ausgaben = parseFloat(document.getElementById('statsAusgaben')?.value || 0);
+  const standgebuehr = parseFloat(document.getElementById('statsStandgebuehr')?.value || 0);
+
+  const samstagUmsatz = (samstagW * 2.50) + (samstagP * 2.00) + samstagS;
+  const sonntagUmsatz = (sonntagW * 2.50) + (sonntagP * 2.00) + sonntagS;
+  const gesamtUmsatz = samstagUmsatz + sonntagUmsatz;
+  const reingewinn = gesamtUmsatz - ausgaben - standgebuehr;
+
+  if (document.getElementById('labelSamstagUmsatz')) document.getElementById('labelSamstagUmsatz').innerText = samstagUmsatz.toFixed(2).replace('.', ',') + " €";
+  if (document.getElementById('labelSonntagUmsatz')) document.getElementById('labelSonntagUmsatz').innerText = sonntagUmsatz.toFixed(2).replace('.', ',') + " €";
+  if (document.getElementById('labelGesamtUmsatz')) document.getElementById('labelGesamtUmsatz').innerText = gesamtUmsatz.toFixed(2).replace('.', ',') + " €";
+  
+  const labelGewinn = document.getElementById('labelReingewinn');
+  if (labelGewinn) {
+    labelGewinn.innerText = reingewinn.toFixed(2).replace('.', ',') + " €";
+    labelGewinn.className = "text-xl font-black " + (reingewinn >= 0 ? "text-emerald-500" : "text-rose-500");
+  }
+
+  appState.statsData = { samstagW, samstagP, samstagS, sonntagW, sonntagP, sonntagS, ausgaben, standgebuehr };
+  saveState();
 }
 
 function renderBoxOverview() {
@@ -424,11 +486,12 @@ function renderAdminPermissions() {
     const roleBlock = document.createElement('div');
     roleBlock.className = 'bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3';
     
-    let checkboxes = Object.keys(roleConfig[role] || {})
-      .filter(k => k.startsWith('can'))
-      .map(perm => `
+    // Inklusive canViewStats
+    const permKeys = ['canCash', 'canViewStats', 'canStatus', 'canName', 'canPacked', 'canBox', 'canQty', 'canStock', 'canShopBought', 'canShopPrice', 'canShopStore', 'canUpload'];
+
+    let checkboxes = permKeys.map(perm => `
         <label class="flex items-center gap-2 text-xs font-semibold cursor-pointer">
-          <input type="checkbox" ${roleConfig[role][perm] ? 'checked' : ''} onchange="toggleRolePerm('${role}', '${perm}', this.checked)" class="accent-amber-500 rounded" />
+          <input type="checkbox" ${roleConfig[role] && roleConfig[role][perm] ? 'checked' : ''} onchange="toggleRolePerm('${role}', '${perm}', this.checked)" class="accent-amber-500 rounded" />
           <span>${perm}</span>
         </label>
       `).join('');
@@ -472,7 +535,7 @@ function downloadBackup() {
 
 function resetSeasonPrompt() {
   if (confirm("Möchtest du wirklich alle Haken und Einträge für die neue Saison zurücksetzen?")) {
-    appState = { sales: { waffel: 0, punsch: 0 }, roshopImg: {} };
+    appState = { sales: { waffel: 0, punsch: 0 }, roshopImg: {}, statsData: {} };
     saveState();
     location.reload();
   }
