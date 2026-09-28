@@ -1,14 +1,14 @@
 // Globaler Status (Standard: gast)
 let currentUserRole = localStorage.getItem('userRole') || 'gast';
 
-// Passwörter für die Rollen
+// Einfache Passwörter
 const ROLE_PASSWORDS = {
-  helfer: 'helfer123',
-  orga: 'orga123',
-  admin: 'admin123'
+  helfer: '1',
+  orga: '2',
+  admin: '3'
 };
 
-// --- SAFARI / IPAD WATERPROOF DARKMODE LOGIK ---
+// --- VOLLFLÄCHIGER DARKMODE (HTML + BODY) ---
 function initTheme() {
   const savedTheme = localStorage.getItem('theme');
   const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -46,7 +46,7 @@ function updateThemeIcon(isDark) {
   }
 }
 
-// System-Theme-Änderung mitverfolgen
+// System-Theme-Änderung live abfangen
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
   if (!localStorage.getItem('theme')) {
     applyDarkMode(e.matches);
@@ -91,22 +91,23 @@ function applyRolePermissions(role) {
   }
 
   if (role === 'gast') {
+    // Gast-Modus: Burger-Button komplett verstecken, Hinweis einblenden, Aushang anzeigen
     if (burgerBtn) burgerBtn.classList.add('hidden');
     if (guestNotice) guestNotice.classList.remove('hidden');
     if (roleIcon) roleIcon.innerText = '👁️';
     switchView('aushang');
   } else {
+    // Eingeloggt: Burger-Button freischalten, Hinweis ausblenden, direkt zum Aushang wechseln
     if (burgerBtn) burgerBtn.classList.remove('hidden');
     if (guestNotice) guestNotice.classList.add('hidden');
     if (roleIcon) roleIcon.innerText = '🔓';
-    // Nach erfolgreichem Login direkt zum Aushang zurückkehren
     switchView('aushang');
   }
 }
 
 // --- ANSICHTEN WECHSELN ---
 function switchView(viewName) {
-  // Zugriffssperre für Gäste (nur aushang und login erlaubt)
+  // Zugriffssperre für Gäste (dürfen NUR 'aushang' und 'login' sehen)
   if (currentUserRole === 'gast' && viewName !== 'aushang' && viewName !== 'login') {
     return;
   }
@@ -130,11 +131,10 @@ function toggleBurgerMenu() {
 }
 
 function openLightbox(imgSrc, title) {
-  // Öffnet das Bild in einem neuen Tab zum Zoomen
   window.open(imgSrc, '_blank');
 }
 
-// Initialisierung beim Seitenaufruf
+// Initialisierung
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   applyRolePermissions(currentUserRole);
