@@ -1,7 +1,7 @@
 // Google Apps Script Web-App URL
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyQg2LmxT_UbLXjFVKrNf9gXnqgk_ku4V_P1SZeSGqphn-WRTYI3a9l5szzkDfqEE881Q/exec';
 
-// Globaler Status & Daten
+// Globale Variablen
 window.currentUserRole = localStorage.getItem('userRole') || 'gast';
 window.inventarData = [];
 window.isEditMode = false;
@@ -13,57 +13,70 @@ const ROLE_PASSWORDS = {
   admin: '3'
 };
 
-// --- DARKMODE ENGINE (ROBUST & ISOLIERT) ---
-function initTheme() {
-  try {
-    const savedTheme = localStorage.getItem('theme');
-    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-    if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
-      applyDarkMode(true);
-    } else {
-      applyDarkMode(false);
-    }
-  } catch (e) {
-    console.error('Theme Init Error:', e);
+// --- GLOBALE THEME-STEUERUNG ---
+window.initTheme = function() {
+  const savedTheme = localStorage.getItem('theme');
+  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+    window.applyDarkMode(true);
+  } else {
+    window.applyDarkMode(false);
   }
-}
+};
 
-function applyDarkMode(isDark) {
-  try {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-      if (document.body) document.body.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      if (document.body) document.body.classList.remove('dark');
-    }
-    updateThemeIcon(isDark);
-  } catch (e) {
-    console.error('Apply Dark Mode Error:', e);
+window.applyDarkMode = function(isDark) {
+  if (isDark) {
+    document.documentElement.classList.add('dark');
+    if (document.body) document.body.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+    if (document.body) document.body.classList.remove('dark');
   }
-}
+  window.updateThemeIcon(isDark);
+};
 
-function toggleTheme() {
-  try {
-    const isDarkCurrently = document.documentElement.classList.contains('dark');
-    const newDarkState = !isDarkCurrently;
-    localStorage.setItem('theme', newDarkState ? 'dark' : 'light');
-    applyDarkMode(newDarkState);
-  } catch (e) {
-    console.error('Toggle Theme Error:', e);
-  }
-}
+window.toggleTheme = function() {
+  const isDarkCurrently = document.documentElement.classList.contains('dark');
+  const newDarkState = !isDarkCurrently;
+  localStorage.setItem('theme', newDarkState ? 'dark' : 'light');
+  window.applyDarkMode(newDarkState);
+};
 
-function updateThemeIcon(isDark) {
+window.updateThemeIcon = function(isDark) {
   const icon = document.getElementById('themeToggleIcon');
   if (icon) {
     icon.innerText = isDark ? '☀️' : '🌙';
   }
-}
+};
 
-// --- LOGIN LOGIK ---
-function tryLogin(role, inputId) {
+// --- GLOBALE NAVIGATION & ROLLEN ---
+window.switchView = function(viewName) {
+  if (window.currentUserRole === 'gast' && viewName !== 'aushang' && viewName !== 'login') {
+    return;
+  }
+
+  const views = document.querySelectorAll('main > div[id^="view"]');
+  views.forEach(v => v.classList.add('hidden'));
+
+  const targetId = 'view' + viewName.charAt(0).toUpperCase() + viewName.slice(1);
+  const targetView = document.getElementById(targetId);
+  if (targetView) {
+    targetView.classList.remove('hidden');
+    if (viewName === 'inventar') {
+      window.loadInventarFromGoogleSheets();
+    }
+  }
+
+  const navModal = document.getElementById('navigationModal');
+  if (navModal) navModal.classList.add('hidden');
+};
+
+window.toggleBurgerMenu = function() {
+  const navModal = document.getElementById('navigationModal');
+  if (navModal) navModal.classList.toggle('hidden');
+};
+
+window.tryLogin = function(role, inputId) {
   const input = document.getElementById(inputId);
   const password = input ? input.value.trim() : '';
   const errorBox = document.getElementById('loginErrorMessage');
@@ -71,7 +84,7 @@ function tryLogin(role, inputId) {
   if (password === ROLE_PASSWORDS[role]) {
     if (errorBox) errorBox.classList.add('hidden');
     if (input) input.value = '';
-    setRole(role);
+    window.setRole(role);
   } else {
     if (errorBox) {
       errorBox.classList.remove('hidden');
@@ -79,15 +92,15 @@ function tryLogin(role, inputId) {
       if (errText) errText.innerText = 'Falsches Passwort für ' + role.toUpperCase() + '.';
     }
   }
-}
+};
 
-function setRole(role) {
+window.setRole = function(role) {
   window.currentUserRole = role;
   localStorage.setItem('userRole', role);
-  applyRolePermissions(role);
-}
+  window.applyRolePermissions(role);
+};
 
-function applyRolePermissions(role) {
+window.applyRolePermissions = function(role) {
   window.currentUserRole = role;
   const burgerBtn = document.getElementById('burgerMenuBtn');
   const guestNotice = document.getElementById('guestLockNotice');
@@ -112,44 +125,17 @@ function applyRolePermissions(role) {
     if (burgerBtn) burgerBtn.classList.add('hidden');
     if (guestNotice) guestNotice.classList.remove('hidden');
     if (roleIcon) roleIcon.innerText = '👁️';
-    switchView('aushang');
+    window.switchView('aushang');
   } else {
     if (burgerBtn) burgerBtn.classList.remove('hidden');
     if (guestNotice) guestNotice.classList.add('hidden');
     if (roleIcon) roleIcon.innerText = '🔓';
-    switchView('aushang');
+    window.switchView('aushang');
   }
-}
+};
 
-// --- ANSICHTEN WECHSELN ---
-function switchView(viewName) {
-  if (window.currentUserRole === 'gast' && viewName !== 'aushang' && viewName !== 'login') {
-    return;
-  }
-
-  const views = document.querySelectorAll('main > div[id^="view"]');
-  views.forEach(v => v.classList.add('hidden'));
-
-  const targetId = 'view' + viewName.charAt(0).toUpperCase() + viewName.slice(1);
-  const targetView = document.getElementById(targetId);
-  if (targetView) {
-    targetView.classList.remove('hidden');
-    if (viewName === 'inventar') {
-      loadInventarFromGoogleSheets();
-    }
-  }
-
-  const navModal = document.getElementById('navigationModal');
-  if (navModal) navModal.classList.add('hidden');
-}
-
-function toggleBurgerMenu() {
-  const navModal = document.getElementById('navigationModal');
-  if (navModal) navModal.classList.toggle('hidden');
-}
-
-// --- GOOGLE SHEETS & INVENTAR (ABGESICHERT) ---
-async function loadInventarFromGoogleSheets() {
+// --- GOOGLE SHEETS & INVENTAR LOGIK ---
+window.loadInventarFromGoogleSheets = async function() {
   const progressText = document.getElementById('inventarProgressText');
   if (progressText) progressText.innerText = 'Lade Daten...';
 
@@ -159,20 +145,19 @@ async function loadInventarFromGoogleSheets() {
     if (Array.isArray(data) && data.length > 0) {
       window.inventarData = data;
     } else if (window.inventarCategories) {
-      window.inventarData = convertLocalCategoriesToFlat(window.inventarCategories);
+      window.inventarData = window.convertLocalCategoriesToFlat(window.inventarCategories);
     }
   } catch (e) {
-    console.warn('Fallback auf lokale Daten:', e);
     if (window.inventarCategories && window.inventarData.length === 0) {
-      window.inventarData = convertLocalCategoriesToFlat(window.inventarCategories);
+      window.inventarData = window.convertLocalCategoriesToFlat(window.inventarCategories);
     }
   }
   
-  updateCategoryDropdown();
-  renderInventar();
-}
+  window.updateCategoryDropdown();
+  window.renderInventar();
+};
 
-function convertLocalCategoriesToFlat(categories) {
+window.convertLocalCategoriesToFlat = function(categories) {
   let flat = [];
   if (!Array.isArray(categories)) return flat;
   categories.forEach(cat => {
@@ -193,9 +178,9 @@ function convertLocalCategoriesToFlat(categories) {
     }
   });
   return flat;
-}
+};
 
-async function saveInventarToGoogleSheets() {
+window.saveInventarToGoogleSheets = async function() {
   const progressText = document.getElementById('inventarProgressText');
   if (progressText) progressText.innerText = 'Speichere...';
 
@@ -207,17 +192,17 @@ async function saveInventarToGoogleSheets() {
       body: JSON.stringify({ action: 'updateAll', items: window.inventarData })
     });
     if (progressText) progressText.innerText = 'Gespeichert!';
-    setTimeout(() => calculateProgress(), 2000);
+    setTimeout(() => window.calculateProgress(), 2000);
   } catch (e) {
-    console.error('Fehler beim Speichern:', e);
+    console.error(e);
   }
-}
+};
 
-function renderInventar() {
+window.renderInventar = function() {
   const container = document.getElementById('inventarTablesContainer');
   if (!container) return;
 
-  calculateProgress();
+  window.calculateProgress();
 
   const categories = {};
   window.inventarData.forEach((item, index) => {
@@ -264,20 +249,20 @@ function renderInventar() {
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                   <td class="py-2.5 px-4 font-bold text-slate-800 dark:text-slate-200">
                     ${window.isEditMode ? `
-                      <input type="text" value="${item.gegenstand}" onchange="updateItemField(${item.originalIndex}, 'gegenstand', this.value)" class="w-full px-2 py-1 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold">
+                      <input type="text" value="${item.gegenstand}" onchange="window.updateItemField(${item.originalIndex}, 'gegenstand', this.value)" class="w-full px-2 py-1 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold">
                     ` : `
                       <div>${item.gegenstand}</div>
                       ${item.beschreibung ? `<div class="text-[10px] font-normal text-slate-400 dark:text-slate-500">${item.beschreibung}</div>` : ''}
                     `}
                   </td>
                   <td class="py-2.5 px-2 text-center">
-                    <input type="number" min="0" value="${item.bedarf}" onchange="updateItemField(${item.originalIndex}, 'bedarf', parseInt(this.value) || 0)" class="w-14 text-center px-1 py-1 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-xs">
+                    <input type="number" min="0" value="${item.bedarf}" onchange="window.updateItemField(${item.originalIndex}, 'bedarf', parseInt(this.value) || 0)" class="w-14 text-center px-1 py-1 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-xs">
                   </td>
                   <td class="py-2.5 px-2 text-center">
-                    <input type="number" min="0" value="${item.lager}" onchange="updateItemField(${item.originalIndex}, 'lager', parseInt(this.value) || 0)" class="w-14 text-center px-1 py-1 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-xs">
+                    <input type="number" min="0" value="${item.lager}" onchange="window.updateItemField(${item.originalIndex}, 'lager', parseInt(this.value) || 0)" class="w-14 text-center px-1 py-1 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-xs">
                   </td>
                   <td class="py-2.5 px-2 text-center">
-                    <select onchange="updateItemField(${item.originalIndex}, 'status', this.value)" class="px-2 py-1 rounded-lg text-[10px] font-bold border focus:outline-none ${getStatusColorClass(item.status)}">
+                    <select onchange="window.updateItemField(${item.originalIndex}, 'status', this.value)" class="px-2 py-1 rounded-lg text-[10px] font-bold border focus:outline-none ${window.getStatusColorClass(item.status)}">
                       <option value="Offen" ${item.status === 'Offen' ? 'selected' : ''}>🔴 Offen</option>
                       <option value="Vorbereitet" ${item.status === 'Vorbereitet' ? 'selected' : ''}>🟡 Vorbereitet</option>
                       <option value="Verteilt" ${item.status === 'Verteilt' ? 'selected' : ''}>🟣 Verteilt</option>
@@ -285,17 +270,17 @@ function renderInventar() {
                     </select>
                   </td>
                   <td class="py-2.5 px-2">
-                    <input type="text" placeholder="Name..." value="${item.wer \vert{}\vert{} ''}" onchange="updateItemField(${item.originalIndex}, 'wer', this.value)" class="w-full px-2 py-1 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px]">
+                    <input type="text" placeholder="Name..." value="${item.wer \vert{}\vert{} ''}" onchange="window.updateItemField(${item.originalIndex}, 'wer', this.value)" class="w-full px-2 py-1 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px]">
                   </td>
                   <td class="py-2.5 px-2 text-center">
-                    <input type="checkbox" ${item.pack ? 'checked' : ''} onchange="updateItemField(${item.originalIndex}, 'pack', this.checked)" class="w-4 h-4 rounded border-slate-300 text-amber-500 focus:ring-amber-500 cursor-pointer">
+                    <input type="checkbox" ${item.pack ? 'checked' : ''} onchange="window.updateItemField(${item.originalIndex}, 'pack', this.checked)" class="w-4 h-4 rounded border-slate-300 text-amber-500 cursor-pointer">
                   </td>
                   <td class="py-2.5 px-2 text-center">
-                    <input type="text" placeholder="Box..." value="${item.box \vert{}\vert{} ''}" onchange="updateItemField(${item.originalIndex}, 'box', this.value)" class="w-16 text-center px-1 py-1 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px]">
+                    <input type="text" placeholder="Box..." value="${item.box \vert{}\vert{} ''}" onchange="window.updateItemField(${item.originalIndex}, 'box', this.value)" class="w-16 text-center px-1 py-1 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px]">
                   </td>
                   ${window.isEditMode ? `
                     <td class="py-2.5 px-2 text-center">
-                      <button onclick="deleteItem(${item.originalIndex})" class="p-1 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg text-xs cursor-pointer" title="Löschen">🗑️</button>
+                      <button onclick="window.deleteItem(${item.originalIndex})" class="p-1 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg text-xs cursor-pointer" title="Löschen">🗑️</button>
                     </td>
                   ` : ''}
                 </tr>
@@ -308,9 +293,9 @@ function renderInventar() {
   }
 
   container.innerHTML = html;
-}
+};
 
-function getStatusColorClass(status) {
+window.getStatusColorClass = function(status) {
   switch (status) {
     case 'Offen': return 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30';
     case 'Vorbereitet': return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30';
@@ -318,17 +303,17 @@ function getStatusColorClass(status) {
     case 'Erledigt': return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30';
     default: return 'bg-slate-100 text-slate-600 border-slate-200';
   }
-}
+};
 
-function updateItemField(index, field, value) {
+window.updateItemField = function(index, field, value) {
   if (window.inventarData[index]) {
     window.inventarData[index][field] = value;
-    renderInventar();
-    saveInventarToGoogleSheets();
+    window.renderInventar();
+    window.saveInventarToGoogleSheets();
   }
-}
+};
 
-function calculateProgress() {
+window.calculateProgress = function() {
   const progressText = document.getElementById('inventarProgressText');
   if (!progressText || !window.inventarData || window.inventarData.length === 0) return;
 
@@ -337,28 +322,28 @@ function calculateProgress() {
   const percent = Math.round((erledigt / total) * 100);
 
   progressText.innerText = `${percent}% erledigt (${erledigt}/${total})`;
-}
+};
 
-function filterInventarTable() {
-  renderInventar();
-}
+window.filterInventarTable = function() {
+  window.renderInventar();
+};
 
-function filterInventarStatus(status) {
+window.filterInventarStatus = function(status) {
   window.currentFilterStatus = status;
-  renderInventar();
-}
+  window.renderInventar();
+};
 
-function toggleInventarEditMode() {
+window.toggleInventarEditMode = function() {
   window.isEditMode = !window.isEditMode;
   const panel = document.getElementById('addItemPanel');
   if (panel) {
     if (window.isEditMode) panel.classList.remove('hidden');
     else panel.classList.add('hidden');
   }
-  renderInventar();
-}
+  window.renderInventar();
+};
 
-function createNewItem() {
+window.createNewItem = function() {
   const nameInput = document.getElementById('newItemName');
   const catInput = document.getElementById('newItemCategory');
   const bedarfInput = document.getElementById('newItemBedarf');
@@ -379,32 +364,32 @@ function createNewItem() {
 
   window.inventarData.push(newItem);
   nameInput.value = '';
-  renderInventar();
-  saveInventarToGoogleSheets();
-}
+  window.renderInventar();
+  window.saveInventarToGoogleSheets();
+};
 
-function deleteItem(index) {
+window.deleteItem = function(index) {
   if (confirm('Möchtest du diesen Gegenstand wirklich löschen?')) {
     window.inventarData.splice(index, 1);
-    renderInventar();
-    saveInventarToGoogleSheets();
+    window.renderInventar();
+    window.saveInventarToGoogleSheets();
   }
-}
+};
 
-function updateCategoryDropdown() {
+window.updateCategoryDropdown = function() {
   const catSelect = document.getElementById('newItemCategory');
   if (!catSelect || !window.inventarData) return;
 
   const categories = [...new Set(window.inventarData.map(i => i.kategorie || 'SONSTIGES'))];
   catSelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
-}
+};
 
-function openLightbox(imgSrc, title) {
+window.openLightbox = function(imgSrc, title) {
   window.open(imgSrc, '_blank');
-}
+};
 
-// Sofortige Initialisierung & Absicherung bei DOM-Load
+// Automatischer Start beim Laden
 document.addEventListener('DOMContentLoaded', () => {
-  initTheme();
-  applyRolePermissions(window.currentUserRole);
+  window.initTheme();
+  window.applyRolePermissions(window.currentUserRole);
 });
