@@ -39,23 +39,19 @@ window.toggleTheme = function() {
 // 2. NAVIGATION & ROLLEN
 // ---------------------------------------------------------------------
 window.switchView = function(viewName) {
-  // 1. Alle Ansichten ausblenden
   const views = document.querySelectorAll('main > div[id^="view"]');
   views.forEach(v => v.classList.add('hidden'));
 
-  // 2. Gewünschte Ansicht einblenden
   const targetId = 'view' + viewName.charAt(0).toUpperCase() + viewName.slice(1);
   const targetView = document.getElementById(targetId);
   if (targetView) {
     targetView.classList.remove('hidden');
   }
 
-  // 3. Bei Inventar-Aufruf Daten aus Google Sheets holen
   if (viewName === 'inventar') {
     window.loadInventarFromGoogleSheets();
   }
 
-  // 4. Burgermenü-Modal schließen, falls offen
   const navModal = document.getElementById('navigationModal');
   if (navModal) navModal.classList.add('hidden');
 };
@@ -126,7 +122,7 @@ window.applyRolePermissions = function(role) {
 // ---------------------------------------------------------------------
 window.loadInventarFromGoogleSheets = async function() {
   const container = document.getElementById('inventarTablesContainer');
-  if (container) {
+  if (container && (!window.inventarData || window.inventarData.length === 0)) {
     container.innerHTML = '<p class="text-xs text-amber-500 font-bold p-4">⏳ Lade Inventar...</p>';
   }
 
@@ -134,17 +130,77 @@ window.loadInventarFromGoogleSheets = async function() {
     const res = await fetch(GOOGLE_SCRIPT_URL);
     const data = await res.json();
     window.inventarData = Array.isArray(data) ? data : [];
+    window.populateCategoryDropdown();
     window.renderInventar();
   } catch (e) {
     console.error('Fehler beim Laden:', e);
-    if (container) {
+    if (container && (!window.inventarData || window.inventarData.length === 0)) {
       container.innerHTML = '<p class="text-xs text-red-500 p-4">Fehler beim Laden der Daten aus Google Sheets.</p>';
     }
   }
 };
 
 // ---------------------------------------------------------------------
-// 4. RENDERING DER TABELLEN
+// 4. INVENTAR SCHNITTSTELLEN (AUS INVENTAR.NJK AUFGERUFEN)
+// ---------------------------------------------------------------------
+window.filterInventarTable = function() {
+  window.renderInventar();
+};
+
+window.filterInventarStatus = function(status) {
+  window.currentFilterStatus = status;
+  window.renderInventar();
+};
+
+window.toggleInventarEditMode = function() {
+  window.isEditMode = !window.isEditMode;
+  const panel = document.getElementById('addItemPanel');
+  if (panel) {
+    panel.classList.toggle('hidden', !window.isEditMode);
+  }
+  window.renderInventar();
+};
+
+window.createNewItem = function() {
+  const nameInput = document.getElementById('newItemName');
+  const catInput = document.getElementById('newItemCategory');
+  const bedarfInput = document.getElementById('newItemBedarf');
+
+  if (!nameInput || !nameInput.value.trim()) return;
+
+  const newItem = {
+    gegenstand: nameInput.value.trim(),
+    kategorie: catInput ? catInput.value : 'SONSTIGES',
+    bedarf: bedarfInput ? parseInt(bedarfInput.value) || 1 : 1,
+    lager: 0,
+    status: 'Offen',
+    wer: '',
+    pack: false,
+    box: ''
+  };
+
+  window.inventarData.push(newItem);
+  nameInput.value = '';
+  window.renderInventar();
+};
+
+window.populateCategoryDropdown = function() {
+  const select = document.getElementById('newItemCategory');
+  if (!select) return;
+
+  const categories = new Set();
+  window.inventarData.forEach(item => {
+    const cat = item.kategorie || item.Kategorie || 'SONSTIGES';
+    categories.add(cat);
+  });
+
+  if (categories.size === 0) categories.add('SONSTIGES');
+
+  select.innerHTML = Array.from(categories).map(cat => `<option value="${cat}">${cat}</option>`).join('');
+};
+
+// ---------------------------------------------------------------------
+// 5. RENDERING DER TABELLEN
 // ---------------------------------------------------------------------
 window.renderInventar = function() {
   const container = document.getElementById('inventarTablesContainer');
@@ -155,11 +211,25 @@ window.renderInventar = function() {
     return;
   }
 
-  const progressText = document.getElementById('inventarProgressText');
-  if (progressText) progressText.innerText = '';
+  const searchInput = document.getElementById('inventarSearchInput');
+  const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+  // Filtern nach Suchbegriff und Status
+  const filteredData = window.inventarData.filter(item => {
+    const g = (item.gegenstand || item.Gegenstand || '').toLowerCase();
+    const b = (item.beschreibung || item.Beschreibung || '').toLowerCase();
+    const w = (item.wer || item.Wer || '').toLowerCase();
+    const box = (item.box || item.Box || '').toLowerCase();
+    const st = item.status || item.Status || 'Offen';
+
+    const matchesSearch = !searchTerm || g.includes(searchTerm) || b.includes(searchTerm) || w.includes(searchTerm) || box.includes(searchTerm);
+    const matchesStatus = window.currentFilterStatus === 'alle' || st === window.currentFilterStatus;
+
+    return matchesSearch && matchesStatus;
+  });
 
   const categories = {};
-  window.inventarData.forEach((item, index) => {
+  filteredData.forEach((item, index) => {
     const cat = item.kategorie || item.Kategorie || 'SONSTIGES';
     if (!categories[cat]) categories[cat] = [];
     categories[cat].push({ ...item, originalIndex: index });
@@ -175,7 +245,6 @@ window.renderInventar = function() {
           <h3 class="font-bold text-sm text-amber-600 dark:text-amber-400 flex items-center gap-2">
             📦 ${catName}
           </h3>
-          ${isAdminOrGen(isAdminOrOrga, catName)}
         </div>
 
         <div class="overflow-x-auto">
@@ -189,7 +258,7 @@ window.renderInventar = function() {
                 <th class="py-3 px-2 w-36">VERANTWORTLICH</th>
                 <th class="py-3 px-2 text-center w-14">GEPACKT?</th>
                 <th class="py-3 px-2 text-center w-20">BOX</th>
-                ${isAdminOrOrga ? '<th class="py-3 px-2 text-center w-16">ADMIN</th>' : ''}
+                ${isAdminOrOrga && window.isEditMode ? '<th class="py-3 px-2 text-center w-16">AKTION</th>' : ''}
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -201,22 +270,8 @@ window.renderInventar = function() {
     `;
   }
 
-  container.innerHTML = html;
+  container.innerHTML = html || '<p class="text-xs text-slate-400 p-4">Keine passenden Einträge gefunden.</p>';
 };
-
-function isAdminOrGen(isAdmin, catName) {
-  if (!isAdmin) return '';
-  return `
-    <div class="flex items-center gap-3 text-xs">
-      <button onclick="renameCategory('${catName}')" class="text-slate-400 hover:text-amber-500 flex items-center gap-1 transition-colors">
-        ✏️ Umbenennen
-      </button>
-      <button onclick="deleteCategory('${catName}')" class="text-red-400 hover:text-red-600 flex items-center gap-1 transition-colors">
-        🗑️ Löschen
-      </button>
-    </div>
-  `;
-}
 
 function renderRowHtml(item, isAdmin) {
   const idx = item.originalIndex;
@@ -243,7 +298,7 @@ function renderRowHtml(item, isAdmin) {
 
       <td class="py-2.5 px-2 text-center">
         <select onchange="updateInventarItem(${idx}, 'status', this.value)"
-          class="w-full text-center py-1 px-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50/40 dark:bg-red-950/20 font-bold text-red-600 dark:text-red-400 text-[11px] focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer">
+          class="w-full text-center py-1 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold text-[11px] focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer">
           ${statusOptions.map(opt => `
             <option value="${opt}" ${(item.status \vert{}\vert{} item.Status) === opt ? 'selected' : ''}>${opt}</option>
           `).join('')}
@@ -268,12 +323,9 @@ function renderRowHtml(item, isAdmin) {
           class="w-16 text-center py-1 px-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-amber-500 outline-none" />
       </td>
 
-      ${isAdmin ? `
+      ${isAdmin && window.isEditMode ? `
         <td class="py-2.5 px-2 text-center">
-          <div class="flex items-center justify-center gap-1">
-            <button onclick="editItem(${idx})" class="text-amber-500 hover:text-amber-600 p-1">✏️</button>
-            <button onclick="deleteItem(${idx})" class="text-slate-400 hover:text-red-500 p-1">🗑️</button>
-          </div>
+          <button onclick="deleteItem(${idx})" class="text-slate-400 hover:text-red-500 p-1">🗑️</button>
         </td>
       ` : ''}
     </tr>
@@ -286,8 +338,11 @@ window.updateInventarItem = function(index, field, value) {
   }
 };
 
-window.openLightbox = function(imgSrc, title) {
-  window.open(imgSrc, '_blank');
+window.deleteItem = function(index) {
+  if (window.inventarData && window.inventarData[index]) {
+    window.inventarData.splice(index, 1);
+    window.renderInventar();
+  }
 };
 
 document.addEventListener('click', (e) => {
@@ -296,7 +351,6 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Autostart beim Laden der Seite
 document.addEventListener('DOMContentLoaded', () => {
   window.initTheme();
   window.applyRolePermissions(window.currentUserRole);
