@@ -1,6 +1,3 @@
-// Google Apps Script Web-App URL
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyQg2LmxT_UbLXjFVKrNf9gXnqgk_ku4V_P1SZeSGqphn-WRTYI3a9l5szzkDfqEE881Q/exec';
-
 // Globale Variablen
 window.currentUserRole = localStorage.getItem('userRole') || 'gast';
 window.inventarData = [];
@@ -47,7 +44,7 @@ window.switchView = function(viewName) {
   if (targetView) {
     targetView.classList.remove('hidden');
     if (viewName === 'inventar') {
-      window.loadInventarFromGoogleSheets();
+      window.initInventarData();
     }
   }
 
@@ -116,26 +113,20 @@ window.applyRolePermissions = function(role) {
   }
 };
 
-// 3. INVENTAR & GOOGLE SHEETS LIVE-SYNC
-window.loadInventarFromGoogleSheets = async function() {
-  const progressText = document.getElementById('inventarProgressText');
-  if (progressText) progressText.innerText = 'Lade Daten...';
-
-  try {
-    const res = await fetch(GOOGLE_SCRIPT_URL);
-    const data = await res.json();
-    if (Array.isArray(data) && data.length > 0) {
-      window.inventarData = data;
-    } else if (window.inventarCategories) {
+// 3. INVENTAR LOKAL DIREKT AUS DATA RENDERN
+window.initInventarData = function() {
+  // Wenn schon veränderte Daten im Browser gespeichert sind, nimm diese, sonst die aus der Data-Datei
+  const savedData = localStorage.getItem('sg_inventar_data');
+  if (savedData) {
+    try {
+      window.inventarData = JSON.parse(savedData);
+    } catch(e) {
       window.inventarData = window.convertLocalCategoriesToFlat(window.inventarCategories);
     }
-  } catch (e) {
-    console.warn('Fallback auf lokale Daten:', e);
-    if (window.inventarCategories && window.inventarData.length === 0) {
-      window.inventarData = window.convertLocalCategoriesToFlat(window.inventarCategories);
-    }
+  } else if (window.inventarCategories) {
+    window.inventarData = window.convertLocalCategoriesToFlat(window.inventarCategories);
   }
-  
+
   window.updateCategoryDropdown();
   window.renderInventar();
 };
@@ -147,7 +138,7 @@ window.convertLocalCategoriesToFlat = function(categories) {
     if (cat.items && Array.isArray(cat.items)) {
       cat.items.forEach(item => {
         flat.push({
-          kategorie: cat.title ? cat.title.replace(/^[^\w\s]+/, '').trim() : 'SONSTIGES',
+          kategorie: cat.title ? String(cat.title).replace(/^[^\w\s]+/, '').trim() : 'SONSTIGES',
           gegenstand: item.name || '',
           beschreibung: item.sub || '',
           bedarf: item.bedarf || 1,
@@ -163,22 +154,9 @@ window.convertLocalCategoriesToFlat = function(categories) {
   return flat;
 };
 
-window.saveInventarToGoogleSheets = async function() {
-  const progressText = document.getElementById('inventarProgressText');
-  if (progressText) progressText.innerText = 'Speichere...';
-
-  try {
-    await fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'updateAll', items: window.inventarData })
-    });
-    if (progressText) progressText.innerText = 'Gespeichert!';
-    setTimeout(() => window.calculateProgress(), 2000);
-  } catch (e) {
-    console.error('Fehler beim Speichern:', e);
-  }
+window.saveInventarLocally = function() {
+  localStorage.setItem('sg_inventar_data', JSON.stringify(window.inventarData));
+  window.calculateProgress();
 };
 
 window.renderInventar = function() {
@@ -192,7 +170,7 @@ window.renderInventar = function() {
     return;
   }
 
-  // Kategorien gruppieren
+  // Gruppierung nach Kategorie
   const categories = {};
   window.inventarData.forEach((item, index) => {
     const cat = item.kategorie || 'SONSTIGES';
@@ -205,9 +183,9 @@ window.renderInventar = function() {
   let html = '';
   for (const [catName, items] of Object.entries(categories)) {
     const filteredItems = items.filter(item => {
-      const matchSearch = (item.gegenstand || '').toLowerCase().includes(searchVal) || 
-                          (item.wer || '').toLowerCase().includes(searchVal) || 
-                          (item.box || '').toLowerCase().includes(searchVal);
+      const matchSearch = String(item.gegenstand || '').toLowerCase().includes(searchVal) || 
+                          String(item.wer || '').toLowerCase().includes(searchVal) || 
+                          String(item.box || '').toLowerCase().includes(searchVal);
       const matchStatus = window.currentFilterStatus === 'alle' || item.status === window.currentFilterStatus;
       return matchSearch && matchStatus;
     });
@@ -238,17 +216,17 @@ window.renderInventar = function() {
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                   <td class="py-2.5 px-4 font-bold text-slate-800 dark:text-slate-200">
                     ${window.isEditMode ? `
-                      <input type="text" value="${item.gegenstand}" onchange="window.updateItemField(${item.originalIndex}, 'gegenstand', this.value)" class="w-full px-2 py-1 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold">
+                      <input type="text" value="${item.gegenstand || ''}" onchange="window.updateItemField(${item.originalIndex}, 'gegenstand', this.value)" class="w-full px-2 py-1 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold">
                     ` : `
-                      <div>${item.gegenstand}</div>
+                      <div>${item.gegenstand || ''}</div>
                       ${item.beschreibung ? `<div class="text-[10px] font-normal text-slate-400 dark:text-slate-500">${item.beschreibung}</div>` : ''}
                     `}
                   </td>
                   <td class="py-2.5 px-2 text-center">
-                    <input type="number" min="0" value="${item.bedarf}" onchange="window.updateItemField(${item.originalIndex}, 'bedarf', parseInt(this.value) || 0)" class="w-14 text-center px-1 py-1 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-xs">
+                    <input type="number" min="0" value="${item.bedarf \vert{}\vert{} 0}" onchange="window.updateItemField(${item.originalIndex}, 'bedarf', parseInt(this.value) || 0)" class="w-14 text-center px-1 py-1 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-xs">
                   </td>
                   <td class="py-2.5 px-2 text-center">
-                    <input type="number" min="0" value="${item.lager}" onchange="window.updateItemField(${item.originalIndex}, 'lager', parseInt(this.value) || 0)" class="w-14 text-center px-1 py-1 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-xs">
+                    <input type="number" min="0" value="${item.lager \vert{}\vert{} 0}" onchange="window.updateItemField(${item.originalIndex}, 'lager', parseInt(this.value) || 0)" class="w-14 text-center px-1 py-1 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-xs">
                   </td>
                   <td class="py-2.5 px-2 text-center">
                     <select onchange="window.updateItemField(${item.originalIndex}, 'status', this.value)" class="px-2 py-1 rounded-lg text-[10px] font-bold border focus:outline-none ${window.getStatusColorClass(item.status)}">
@@ -295,10 +273,10 @@ window.getStatusColorClass = function(status) {
 };
 
 window.updateItemField = function(index, field, value) {
-  if (window.inventarData[index]) {
+  if (window.inventarData && window.inventarData[index]) {
     window.inventarData[index][field] = value;
     window.renderInventar();
-    window.saveInventarToGoogleSheets();
+    window.saveInventarLocally();
   }
 };
 
@@ -306,7 +284,7 @@ window.calculateProgress = function() {
   const progressText = document.getElementById('inventarProgressText');
   if (!progressText || !window.inventarData || window.inventarData.length === 0) return;
 
-  const erledigt = window.inventarData.filter(i => i.status === 'Erledigt').length;
+  const erledigt = window.inventarData.filter(i => i && i.status === 'Erledigt').length;
   const total = window.inventarData.length;
   const percent = Math.round((erledigt / total) * 100);
 
@@ -351,17 +329,18 @@ window.createNewItem = function() {
     box: ''
   };
 
+  if (!window.inventarData) window.inventarData = [];
   window.inventarData.push(newItem);
   nameInput.value = '';
   window.renderInventar();
-  window.saveInventarToGoogleSheets();
+  window.saveInventarLocally();
 };
 
 window.deleteItem = function(index) {
   if (confirm('Möchtest du diesen Gegenstand wirklich löschen?')) {
     window.inventarData.splice(index, 1);
     window.renderInventar();
-    window.saveInventarToGoogleSheets();
+    window.saveInventarLocally();
   }
 };
 
@@ -369,12 +348,8 @@ window.updateCategoryDropdown = function() {
   const catSelect = document.getElementById('newItemCategory');
   if (!catSelect || !window.inventarData) return;
 
-  const categories = [...new Set(window.inventarData.map(i => i.kategorie || 'SONSTIGES'))];
+  const categories = [...new Set(window.inventarData.map(i => (i && i.kategorie) ? String(i.kategorie).trim() : 'SONSTIGES'))];
   catSelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
-};
-
-window.openLightbox = function(imgSrc, title) {
-  window.open(imgSrc, '_blank');
 };
 
 // Autostart
