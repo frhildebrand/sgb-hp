@@ -105,6 +105,14 @@ function applyRolePermissions(role) {
   }
 }
 
+// Burger Menü öffnen / schließen
+function toggleBurgerMenu() {
+  const navModal = document.getElementById('navigationModal');
+  if (navModal) {
+    navModal.classList.toggle('hidden');
+  }
+}
+
 // --- ANSICHTEN WECHSELN ---
 function switchView(viewName) {
   // Zugriffssperre für Gäste (dürfen NUR 'aushang' und 'login' sehen)
