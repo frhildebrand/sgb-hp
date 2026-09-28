@@ -13,7 +13,7 @@ const ROLE_PASSWORDS = {
   admin: '3'
 };
 
-// --- DARKMODE ENGINE ---
+// --- DARKMODE ENGINE (ROBUST) ---
 function initTheme() {
   const savedTheme = localStorage.getItem('theme');
   const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -37,7 +37,7 @@ function applyDarkMode(isDark) {
 }
 
 function toggleTheme() {
-  const isDarkCurrently = document.documentElement.classList.contains('dark');
+  const isDarkCurrently = document.documentElement.classList.contains('dark') || document.body.classList.contains('dark');
   const newDarkState = !isDarkCurrently;
   
   localStorage.setItem('theme', newDarkState ? 'dark' : 'light');
@@ -88,7 +88,6 @@ function applyRolePermissions(role) {
     roleLabel.innerText = role === 'admin' ? '🟢 ADMIN' : (role === 'orga' ? '🔵 ORGA' : (role === 'helfer' ? '🟡 HELFER' : 'GAST'));
   }
 
-  // Admin / Orga Button zum Verwalten von Gegenständen einblenden
   if (adminEditBtn) {
     if (role === 'admin' || role === 'orga') {
       adminEditBtn.classList.remove('hidden');
@@ -113,6 +112,7 @@ function applyRolePermissions(role) {
 
 // --- VIEWS & BURGER MENU ---
 function switchView(viewName) {
+  // Zugriffssperre für Gäste (nur Aushang und Login erlaubt)
   if (currentUserRole === 'gast' && viewName !== 'aushang' && viewName !== 'login') {
     return;
   }
@@ -207,7 +207,6 @@ function renderInventar() {
 
   calculateProgress();
 
-  // Gruppieren nach Kategorien
   const categories = {};
   inventarData.forEach((item, index) => {
     const cat = item.kategorie || 'SONSTIGES';
@@ -390,7 +389,7 @@ function openLightbox(imgSrc, title) {
   window.open(imgSrc, '_blank');
 }
 
-// Initialisierung
+// Initialisierung beim Laden
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   applyRolePermissions(currentUserRole);
