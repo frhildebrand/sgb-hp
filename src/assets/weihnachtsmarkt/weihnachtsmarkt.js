@@ -11,6 +11,10 @@ let appState = {
 let currentRole = 'betrachter';
 let activeFilterTag = 'ALL';
 
+const STORE_OPTIONS = [
+  "Edeka", "Rewe", "Lidl", "Aldi", "Penny", "Netto", "Kaufland", "Metro", "Sonstiges"
+];
+
 document.addEventListener('DOMContentLoaded', () => {
   loadFromLocal();
   itemsData.forEach(item => initItemState(item));
@@ -22,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('searchInput')?.addEventListener('input', renderChecklist);
 
-  // AUTOMATISCHES 15-MINUTEN BACKUP (Speichert zeitgestempelte Snapshots)
+  // AUTOMATISCHES 15-MINUTEN BACKUP
   setInterval(() => {
     save15MinBackup();
   }, 15 * 60 * 1000);
@@ -132,7 +136,7 @@ function initItemState(item) {
     appState[item.id] = { 
       status: 'Offen', assignedTo: '', packed: false, boxNum: '', 
       reqQty: item.defaultQty || '1', stockQty: item.defaultStockQty || '0', 
-      bought: false, store: '', price: 0 
+      bought: false, store: '', packageSize: item.packageSize || '', price: 0 
     };
   }
 }
@@ -148,7 +152,6 @@ async function saveState() {
   }
 }
 
-// NEUES BACKUP SYSTEM MIT HISTORIE (MAX 10 BACKUPS)
 function save15MinBackup() {
   let history = JSON.parse(localStorage.getItem('sg_wm_backups_list')) || [];
   const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -156,7 +159,7 @@ function save15MinBackup() {
   
   localStorage.setItem(backupKey, JSON.stringify(appState));
   history.unshift({ key: backupKey, time: timestamp, sales: { ...appState.sales } });
-  if (history.length > 10) history.pop(); // Max 10 behalten
+  if (history.length > 10) history.pop();
   
   localStorage.setItem('sg_wm_backups_list', JSON.stringify(history));
 }
@@ -262,7 +265,7 @@ function renderChecklist() {
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
-              <tr class="text-[10px] uppercase bg-slate-50 dark:bg-slate-950 text-slate-500 font-extrabold border-b border-slate-200 dark:border-slate-800">
+              <tr class="text-[10px] uppercase bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-extrabold border-b border-slate-300 dark:border-slate-700">
                 <th class="p-2">Gegenstand</th>
                 <th class="p-1 text-center">Bedarf</th>
                 <th class="p-1 text-center">Lager</th>
@@ -469,28 +472,46 @@ function renderPowerPlanner() {
   });
 }
 
+// ERWEITERTE EINKAUFSLISTE (Bedarf synchronisiert, Packungsgröße editierbar & Läden Dropdown)
 function renderShoppingTable() {
   const tbody = document.getElementById('shoppingTableBody');
   if (!tbody) return;
   tbody.innerHTML = '';
 
   let totalCost = 0;
-  const shopItems = itemsData.filter(i => i.isShop || i.cat.includes('Zutaten') || i.cat.includes('Einkäufe'));
+  const shopItems = itemsData.filter(i => i.isShop || i.cat.includes('Zutaten') || i.cat.includes('Einkäufe') || i.cat.includes('Verbrauchsmaterial'));
 
   shopItems.forEach(item => {
+    initItemState(item);
     const st = appState[item.id];
     const price = parseFloat(st.price || 0);
     totalCost += price;
 
+    const reqQtyDisplay = st.reqQty || item.defaultQty || '1';
+    const pkgSizeValue = st.packageSize !== undefined ? st.packageSize : (item.packageSize || '');
+
+    const storeSelectHtml = `
+      <select ${!canEdit('canShopStore') ? 'disabled' : ''} onchange="updateItem(${item.id}, 'store', this.value)" class="border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 rounded px-2 py-1 text-xs w-full focus:outline-none font-semibold">
+        <option value="" ${!st.store ? 'selected' : ''}>-- Wählen --</option>
+        ${STORE_OPTIONS.map(storeName => `<option value="${storeName}" ${st.store === storeName ? 'selected' : ''}>${storeName}</option>`).join('')}
+      </select>
+    `;
+
     const tr = document.createElement('tr');
-    tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-950';
+    tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-950 transition';
     tr.innerHTML = `
-      <td class="p-2 text-center"><input type="checkbox" ${!canEdit('canShopBought') ? 'disabled' : ''} ${st.bought ? 'checked' : ''} onchange="updateItem(${item.id}, 'bought', this.checked)" class="w-4 h-4 accent-amber-500 rounded" /></td>
-      <td class="p-2 font-bold">${item.title}</td>
-      <td class="p-2 text-slate-500">${st.reqQty || '-'}</td>
-      <td class="p-2 text-slate-500">${item.packageSize || '-'}</td>
-      <td class="p-2"><input type="text" ${!canEdit('canShopStore') ? 'disabled' : ''} value="${st.store || ''}" placeholder="Laden..." onchange="updateItem(${item.id}, 'store', this.value)" class="border border-slate-200 dark:border-slate-800 bg-transparent rounded px-2 py-1 text-xs w-full" /></td>
-      <td class="p-2 text-right"><input type="number" step="0.01" ${!canEdit('canShopPrice') ? 'disabled' : ''} value="${st.price || ''}" placeholder="0.00" onchange="updateItem(${item.id}, 'price', this.value); renderShoppingTable();" class="border border-slate-200 dark:border-slate-800 bg-transparent rounded px-2 py-1 text-xs w-20 text-right font-bold" /> €</td>
+      <td class="p-2.5 text-center">
+        <input type="checkbox" ${!canEdit('canShopBought') ? 'disabled' : ''} ${st.bought ? 'checked' : ''} onchange="updateItem(${item.id}, 'bought', this.checked)" class="w-4 h-4 accent-amber-500 rounded cursor-pointer" />
+      </td>
+      <td class="p-2.5 font-bold ${st.bought ? 'line-through text-slate-400' : ''}">${item.title}</td>
+      <td class="p-2.5 text-center font-bold text-amber-600 dark:text-amber-400">${reqQtyDisplay}</td>
+      <td class="p-2.5">
+        <input type="text" ${!canEdit('canShopStore') ? 'disabled' : ''} value="${pkgSizeValue}" placeholder="z.B. 10er Pack / 1kg" onchange="updateItem(${item.id}, 'packageSize', this.value)" class="border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded px-2 py-1 text-xs w-full focus:outline-none" />
+      </td>
+      <td class="p-2.5">${storeSelectHtml}</td>
+      <td class="p-2.5 text-right font-bold">
+        <input type="number" step="0.01" ${!canEdit('canShopPrice') ? 'disabled' : ''} value="${st.price || ''}" placeholder="0.00" onchange="updateItem(${item.id}, 'price', this.value); renderShoppingTable();" class="border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded px-2 py-1 text-xs w-20 text-right font-bold focus:outline-none" /> €
+      </td>
     `;
     tbody.appendChild(tr);
   });
@@ -557,7 +578,7 @@ function addNewItemPrompt() {
   if (title) {
     const cat = prompt("Kategorie:", "📋 Sonstiges");
     const newId = Date.now();
-    itemsData.push({ id: newId, cat: cat || "📋 Sonstiges", title: title });
+    itemsData.push({ id: newId, cat: cat || "📋 Sonstiges", title: title, isShop: true });
     initItemState({ id: newId });
     saveState();
     renderChecklist();
