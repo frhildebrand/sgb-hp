@@ -13,20 +13,7 @@ window.currentSearchTerm = '';
 window.isSyncing = false;
 window.autoSyncTimer = null;
 
-// Helper zum sicheren Laden der Initialdaten
-function getInitialInventarData() {
-  if (typeof window.inventarCategories !== 'undefined' && Array.isArray(window.inventarCategories) && window.inventarCategories.length > 0) {
-    try {
-      return JSON.parse(JSON.stringify(window.inventarCategories));
-    } catch (e) {
-      console.error('Fehler beim Klonen von inventarCategories:', e);
-    }
-  }
-  return [];
-}
-window.getInitialInventarData = getInitialInventarData;
-
-// Kassen- und Verkauf-Zustand (mit Preisen)
+// Standard Kassen- & Verkauf-Zustand
 const DEFAULT_KASSE_DATA = {
   kinderpunschPaid: 0,
   kinderpunschFree: 0,
@@ -43,6 +30,19 @@ try {
 } catch (e) {
   window.kasseData = { ...DEFAULT_KASSE_DATA };
 }
+
+// Sicheres Laden von Initial-Inventardaten
+function getInitialInventarData() {
+  if (typeof window.inventarCategories !== 'undefined' && Array.isArray(window.inventarCategories) && window.inventarCategories.length > 0) {
+    try {
+      return JSON.parse(JSON.stringify(window.inventarCategories));
+    } catch (e) {
+      console.error('Fehler beim Klonen von inventarCategories:', e);
+    }
+  }
+  return [];
+}
+window.getInitialInventarData = getInitialInventarData;
 
 // ------------------------------------------
 // 1. THEME ENGINE (DARK / LIGHT MODE)
@@ -166,7 +166,6 @@ function applyRolePermissions(role) {
     }
   }
 
-  // Admin / Orga Kontrollen steuern
   const adminControls = document.querySelectorAll('.admin-only-control');
   adminControls.forEach(el => {
     if (role === 'admin' || role === 'orga') {
@@ -199,9 +198,8 @@ function applyRolePermissions(role) {
 window.applyRolePermissions = applyRolePermissions;
 
 // ------------------------------------------
-// 3. VERKAUF / KASSE & STATISTIK LOGIK WITH GOOGLE SHEETS SYNC
+// 3. VERKAUF / KASSE & STATISTIK
 // ------------------------------------------
-
 function updateKasseSyncBadge(status) {
   const badge = document.getElementById('kasseSyncBadge');
   if (!badge) return;
@@ -362,7 +360,207 @@ async function loadKasseFromGoogleSheets() {
 window.loadKasseFromGoogleSheets = loadKasseFromGoogleSheets;
 
 // ------------------------------------------
-// 4. INVENTAR & GOOGLE SHEETS SYSTEM
+// 4. INVENTAR, SUCHE, FILTER & EDIT LOGIK
+// ------------------------------------------
+function toggleEditMode() {
+  if (window.currentUserRole !== 'admin' && window.currentUserRole !== 'orga') {
+    alert('Nur Admins und die Orga können den Bearbeitungsmodus aktivieren.');
+    return;
+  }
+  window.isEditMode = !window.isEditMode;
+  const btn = document.getElementById('adminInventarEditBtn');
+  if (btn) {
+    btn.innerText = window.isEditMode ? '💾 Bearbeiten Beenden' : '✏️ Bearbeiten';
+    btn.className = window.isEditMode 
+      ? 'px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-bold rounded-xl transition shadow' 
+      : 'px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-xl transition shadow';
+  }
+  renderInventar();
+}
+window.toggleEditMode = toggleEditMode;
+
+function handleInventarSearch(term) {
+  window.currentSearchTerm = (term || '').toLowerCase();
+  renderInventar();
+}
+window.handleInventarSearch = handleInventarSearch;
+
+function setFilterStatus(status) {
+  window.currentFilterStatus = status;
+  renderInventar();
+}
+window.setFilterStatus = setFilterStatus;
+
+function renderFilterButtons() {
+  const container = document.getElementById('filterButtonsContainer');
+  if (!container) return;
+
+  const statuses = [
+    { id: 'alle', label: 'Alle' },
+    { id: 'offen', label: 'Offen ❌' },
+    { id: 'eingekauft', label: 'Besorgt 🛒' },
+    { id: 'vorhanden', label: 'Vorhanden ✅' }
+  ];
+
+  container.innerHTML = statuses.map(s => {
+    const isActive = window.currentFilterStatus === s.id;
+    const activeClass = isActive 
+      ? 'bg-amber-500 text-slate-950 font-bold border-amber-500' 
+      : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800';
+    return `<button onclick="window.setFilterStatus('${s.id}')" class="px-3 py-1.5 text-xs rounded-xl border transition ${activeClass}">${s.label}</button>`;
+  }).join('');
+}
+
+function renderInventar() {
+  renderFilterButtons();
+  const container = document.getElementById('inventarTablesContainer');
+  if (!container) return;
+
+  if (!window.inventarData || !Array.isArray(window.inventarData) || window.inventarData.length === 0) {
+    container.innerHTML = `<div class="p-8 text-center text-slate-500 text-xs font-semibold">Keine Inventardaten vorhanden.</div>`;
+    return;
+  }
+
+  let totalItemsCount = 0;
+  let matchesCount = 0;
+
+  let html = window.inventarData.map((cat, catIdx) => {
+    const items = cat.items || [];
+    totalItemsCount += items.length;
+
+    const filteredItems = items.filter(item => {
+      const name = (item.name || '').toLowerCase();
+      const resp = (item.verantwortlicher || '').toLowerCase();
+      const box = (item.kiste || '').toLowerCase();
+      const matchesSearch = !window.currentSearchTerm || name.includes(window.currentSearchTerm) || resp.includes(window.currentSearchTerm) || box.includes(window.currentSearchTerm);
+
+      const status = (item.status || 'offen').toLowerCase();
+      let matchesFilter = true;
+      if (window.currentFilterStatus !== 'alle') {
+        matchesFilter = status === window.currentFilterStatus;
+      }
+
+      return matchesSearch && matchesFilter;
+    });
+
+    matchesCount += filteredItems.length;
+
+    if (filteredItems.length === 0 && !window.isEditMode) return '';
+
+    const rowsHtml = filteredItems.map((item, itemIdx) => {
+      const realItemIndex = items.indexOf(item);
+      const isEditable = window.isEditMode && (window.currentUserRole === 'admin' || window.currentUserRole === 'orga');
+
+      if (isEditable) {
+        return `
+          <tr class="border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/40">
+            <td class="p-3"><input type="text" value="${item.name || ''}" onchange="window.updateInventarField(${catIdx}, ${realItemIndex}, 'name', this.value)" class="w-full px-2 py-1 text-xs bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded" /></td>
+            <td class="p-3"><input type="text" value="${item.menge || ''}" onchange="window.updateInventarField(${catIdx}, ${realItemIndex}, 'menge', this.value)" class="w-20 px-2 py-1 text-xs bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded" /></td>
+            <td class="p-3"><input type="text" value="${item.kiste || ''}" onchange="window.updateInventarField(${catIdx}, ${realItemIndex}, 'kiste', this.value)" class="w-full px-2 py-1 text-xs bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded" /></td>
+            <td class="p-3"><input type="text" value="${item.verantwortlicher || ''}" onchange="window.updateInventarField(${catIdx}, ${realItemIndex}, 'verantwortlicher', this.value)" class="w-full px-2 py-1 text-xs bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded" /></td>
+            <td class="p-3">
+              <select onchange="window.updateInventarField(${catIdx}, ${realItemIndex}, 'status', this.value)" class="px-2 py-1 text-xs bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded">
+                <option value="offen" ${item.status === 'offen' ? 'selected' : ''}>Offen ❌</option>
+                <option value="eingekauft" ${item.status === 'eingekauft' ? 'selected' : ''}>Besorgt 🛒</option>
+                <option value="vorhanden" ${item.status === 'vorhanden' ? 'selected' : ''}>Vorhanden ✅</option>
+              </select>
+            </td>
+            <td class="p-3 text-center">
+              <button onclick="window.deleteInventarItem(${catIdx}, ${realItemIndex})" class="p-1 text-rose-500 hover:text-rose-700 font-bold">🗑️</button>
+            </td>
+          </tr>
+        `;
+      }
+
+      let statusBadge = '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-500 border border-rose-500/20">Offen ❌</span>';
+      if (item.status === 'eingekauft') {
+        statusBadge = '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">Besorgt 🛒</span>';
+      } else if (item.status === 'vorhanden') {
+        statusBadge = '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">Vorhanden ✅</span>';
+      }
+
+      return `
+        <tr class="border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+          <td class="p-3 text-xs font-bold text-slate-800 dark:text-slate-100">${item.name || ''}</td>
+          <td class="p-3 text-xs font-semibold text-amber-600 dark:text-amber-400">${item.menge || '-'}</td>
+          <td class="p-3 text-xs text-slate-500 dark:text-slate-400">${item.kiste || '-'}</td>
+          <td class="p-3 text-xs text-slate-600 dark:text-slate-300 font-medium">${item.verantwortlicher || '-'}</td>
+          <td class="p-3 text-xs">${statusBadge}</td>
+        </tr>
+      `;
+    }).join('');
+
+    return `
+      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden space-y-2">
+        <div class="bg-slate-50 dark:bg-slate-950 p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+          <h3 class="font-black text-sm sm:text-base text-amber-600 dark:text-amber-400 flex items-center gap-2">
+            <span>${cat.category || 'Kategorie'}</span>
+          </h3>
+          ${window.isEditMode ? `<button onclick="window.addInventarItem(${catIdx})" class="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-lg transition">+ Gegenstand</button>` : ''}
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800/80">
+                <th class="p-3">Gegenstand</th>
+                <th class="p-3">Menge</th>
+                <th class="p-3">Kiste / Ort</th>
+                <th class="p-3">Verantwortlich</th>
+                <th class="p-3">Status</th>
+                ${window.isEditMode ? '<th class="p-3 text-center">Aktion</th>' : ''}
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = html || `<div class="p-8 text-center text-slate-500 text-xs font-semibold">Keine Gegenstände für die Filterung gefunden.</div>`;
+
+  const progressText = document.getElementById('inventarProgressText');
+  if (progressText) {
+    progressText.innerText = `Zeige ${matchesCount} von ${totalItemsCount} Gegenständen`;
+  }
+}
+window.renderInventar = renderInventar;
+
+function updateInventarField(catIdx, itemIdx, field, value) {
+  if (!window.inventarData[catIdx] || !window.inventarData[catIdx].items[itemIdx]) return;
+  window.inventarData[catIdx].items[itemIdx][field] = value;
+  syncAllWithGoogleSheets();
+}
+window.updateInventarField = updateInventarField;
+
+function addInventarItem(catIdx) {
+  if (!window.inventarData[catIdx]) return;
+  window.inventarData[catIdx].items.push({
+    name: 'Neuer Gegenstand',
+    menge: '1 Stk',
+    kiste: 'Box',
+    verantwortlicher: 'Verein',
+    status: 'offen'
+  });
+  renderInventar();
+  syncAllWithGoogleSheets();
+}
+window.addInventarItem = addInventarItem;
+
+function deleteInventarItem(catIdx, itemIdx) {
+  if (!window.inventarData[catIdx] || !window.inventarData[catIdx].items[itemIdx]) return;
+  if (confirm('Diesen Gegenstand wirklich löschen?')) {
+    window.inventarData[catIdx].items.splice(itemIdx, 1);
+    renderInventar();
+    syncAllWithGoogleSheets();
+  }
+}
+window.deleteInventarItem = deleteInventarItem;
+
+// ------------------------------------------
+// 5. GOOGLE SHEETS SYNC SYSTEM
 // ------------------------------------------
 async function loadInventarFromGoogleSheets() {
   const progressText = document.getElementById('inventarProgressText');
@@ -406,7 +604,7 @@ async function loadInventarFromGoogleSheets() {
       }
     }
   } catch (e) {
-    console.warn('Google Sheets Fehler / Offline - erstelle mit lokalen Daten:', e);
+    console.warn('Google Sheets Fehler / Offline - nutze lokale Daten:', e);
     if (!window.inventarData || window.inventarData.length === 0) {
       window.inventarData = getInitialInventarData();
       renderInventar();
@@ -415,7 +613,6 @@ async function loadInventarFromGoogleSheets() {
 }
 window.loadInventarFromGoogleSheets = loadInventarFromGoogleSheets;
 
-// Standard Synchronisation für Inventar und Kasse
 async function syncAllWithGoogleSheets() {
   updateKasseSyncBadge('syncing');
   const payload = {
@@ -438,7 +635,6 @@ async function syncAllWithGoogleSheets() {
 }
 window.syncAllWithGoogleSheets = syncAllWithGoogleSheets;
 
-// Auto-Polling für synchrone Live-Daten auf allen Geräten
 function startAutoSync() {
   if (window.autoSyncTimer) clearInterval(window.autoSyncTimer);
   window.autoSyncTimer = setInterval(() => {
