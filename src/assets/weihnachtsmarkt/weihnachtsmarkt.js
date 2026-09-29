@@ -239,6 +239,8 @@ window.renderInventar = function() {
   const isReadonly = window.currentUserRole === 'gast';
 
   window.inventarData.forEach((cat, catIdx) => {
+    const isOrga = (cat.title || '').toLowerCase().includes('orga');
+
     // Zählung aller Elemente
     (cat.items || []).forEach(item => {
       totalItems++;
@@ -252,9 +254,10 @@ window.renderInventar = function() {
       if (window.currentSearchTerm) {
         const matchName = (item.name || '').toLowerCase().includes(window.currentSearchTerm);
         const matchSub = (item.sub || '').toLowerCase().includes(window.currentSearchTerm);
-        const matchWer = (item.wer || '').toLowerCase().includes(window.currentSearchTerm);
+        const matchWer = (item.wer || item.verantwortlich || '').toLowerCase().includes(window.currentSearchTerm);
+        const matchEmpf = (item.empfaenger || '').toLowerCase().includes(window.currentSearchTerm);
         const matchBox = (item.box || '').toLowerCase().includes(window.currentSearchTerm);
-        if (!matchName && !matchSub && !matchWer && !matchBox) return false;
+        if (!matchName && !matchSub && !matchWer && !matchEmpf && !matchBox) return false;
       }
 
       if (window.currentFilterStatus !== 'alle') {
@@ -280,13 +283,14 @@ window.renderInventar = function() {
             <table class="w-full text-left border-collapse text-xs">
               <thead>
                 <tr class="border-b border-slate-200 dark:border-slate-800 text-[10px] font-extrabold uppercase text-slate-500 dark:text-slate-400 tracking-wider bg-slate-100/80 dark:bg-slate-950/60">
-                  <th class="py-2.5 px-4">GEGENSTAND</th>
+                  <th class="py-2.5 px-4">${isOrga ? 'DETAIL' : 'GEGENSTAND'}</th>
                   <th class="py-2.5 px-2 text-center w-16">BEDARF</th>
-                  <th class="py-2.5 px-2 text-center w-16">LAGER</th>
-                  <th class="py-2.5 px-2 w-36">STATUS</th>
-                  <th class="py-2.5 px-2 w-44">WER</th>
-                  <th class="py-2.5 px-2 text-center w-14">PACK</th>
-                  <th class="py-2.5 px-2 w-20">BOX</th>
+                  ${isOrga ? '' : '<th class="py-2.5 px-2 text-center w-16">LAGER</th>'}
+                  <th class="py-2.5 px-2 text-center w-36">STATUS</th>
+                  ${isOrga ? '<th class="py-2.5 px-2 text-center w-36">EMPFÄNGER</th>' : ''}
+                  <th class="py-2.5 px-2 text-center w-40">VERANTWORTLICH</th>
+                  <th class="py-2.5 px-2 text-center w-24">EINGEPACKT</th>
+                  <th class="py-2.5 px-2 text-center w-20">BOX</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-200 dark:divide-slate-800/60">
@@ -305,6 +309,8 @@ window.renderInventar = function() {
           statusStyle = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800";
         }
 
+        const verantwortlicherVal = item.verantwortlich || item.wer || '';
+
         html += `
           <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
             <td class="py-2 px-4 font-semibold text-slate-800 dark:text-slate-100">
@@ -316,12 +322,14 @@ window.renderInventar = function() {
                 onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'bedarf', parseInt(this.value) || 0)"
                 class="w-12 text-center bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-1 text-slate-800 dark:text-slate-100 font-medium focus:border-amber-500 focus:outline-none disabled:opacity-60" />
             </td>
+            ${isOrga ? '' : `
             <td class="py-2 px-2 text-center">
               <input type="number" value="${item.lager ?? 0}" min="0" ${isReadonly ? 'disabled' : ''}
                 onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'lager', parseInt(this.value) || 0)"
                 class="w-12 text-center bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-1 text-emerald-600 dark:text-emerald-400 font-bold focus:border-amber-500 focus:outline-none disabled:opacity-60" />
             </td>
-            <td class="py-2 px-2">
+            `}
+            <td class="py-2 px-2 text-center">
               <select ${isReadonly ? 'disabled' : ''}
                 onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'status', this.value)"
                 class="w-full bg-slate-50 dark:bg-slate-950 border rounded-md py-1 px-2 text-xs font-bold focus:border-amber-500 focus:outline-none disabled:opacity-60 ${statusStyle}">
@@ -331,17 +339,24 @@ window.renderInventar = function() {
                 <option value="Erledigt" class="bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400" ${item.status === 'Erledigt' ? 'selected' : ''}>Erledigt</option>
               </select>
             </td>
-            <td class="py-2 px-2">
-              <input type="text" value="${escapeHtml(item.wer || '')}" placeholder="Name..." ${isReadonly ? 'disabled' : ''}
-                onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'wer', this.value)"
-                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-2 text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:border-amber-500 focus:outline-none disabled:opacity-60" />
+            ${isOrga ? `
+            <td class="py-2 px-2 text-center">
+              <input type="text" value="${escapeHtml(item.empfaenger || '')}" placeholder="Gemeinde/Amt..." ${isReadonly ? 'disabled' : ''}
+                onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'empfaenger', this.value)"
+                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-2 text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:border-amber-500 focus:outline-none disabled:opacity-60 text-center" />
+            </td>
+            ` : ''}
+            <td class="py-2 px-2 text-center">
+              <input type="text" value="${escapeHtml(verantwortlicherVal)}" placeholder="Name..." ${isReadonly ? 'disabled' : ''}
+                onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'verantwortlich', this.value)"
+                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-2 text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:border-amber-500 focus:outline-none disabled:opacity-60 text-center" />
             </td>
             <td class="py-2 px-2 text-center">
               <input type="checkbox" ${item.pack ? 'checked' : ''} ${isReadonly ? 'disabled' : ''}
                 onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'pack', this.checked)"
-                class="w-4 h-4 rounded bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-amber-500 focus:ring-amber-500 accent-amber-500 disabled:opacity-60 cursor-pointer" />
+                class="w-4 h-4 mx-auto rounded bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-amber-500 focus:ring-amber-500 accent-amber-500 disabled:opacity-60 cursor-pointer block" />
             </td>
-            <td class="py-2 px-2">
+            <td class="py-2 px-2 text-center">
               <input type="text" value="${escapeHtml(item.box || '')}" placeholder="" ${isReadonly ? 'disabled' : ''}
                 onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'box', this.value)"
                 class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-1.5 text-center text-slate-800 dark:text-slate-200 uppercase focus:border-amber-500 focus:outline-none disabled:opacity-60" />
