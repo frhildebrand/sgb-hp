@@ -11,6 +11,10 @@ window.isEditMode = false;
 window.currentFilterStatus = 'alle';
 window.currentSearchTerm = '';
 
+// Default Status-Listen
+const DEFAULT_STATUSES_STANDARD = ['Offen', 'Vorbereitet', 'Verteilt', 'Erledigt'];
+const DEFAULT_STATUSES_EINKAUF = ['Offen', 'Eingekauft', 'Vorbereitet', 'Verteilt', 'Erledigt'];
+
 // ------------------------------------------
 // 1. THEME ENGINE (DARK / LIGHT MODE)
 // ------------------------------------------
@@ -105,8 +109,9 @@ window.applyRolePermissions = function(role) {
   }
 
   if (adminEditBtn) {
-    if (role === 'admin' || role === 'orga') adminEditBtn.classList.remove('hidden');
-    else {
+    if (role === 'admin' || role === 'orga') {
+      adminEditBtn.classList.remove('hidden');
+    } else {
       adminEditBtn.classList.add('hidden');
       window.isEditMode = false;
     }
@@ -136,7 +141,7 @@ window.loadInventarFromGoogleSheets = async function() {
   const progressText = document.getElementById('inventarProgressText');
   if (progressText) progressText.innerText = 'Lade Daten...';
 
-  // 1. Lokale Daten als sofortigen Platzhalter/Fallback setzen
+  // Lokale Daten als sofortigen Platzhalter/Fallback setzen
   if ((!window.inventarData || window.inventarData.length === 0) && window.inventarCategories) {
     window.inventarData = JSON.parse(JSON.stringify(window.inventarCategories));
     window.renderInventar();
@@ -151,14 +156,13 @@ window.loadInventarFromGoogleSheets = async function() {
         try { data = JSON.parse(data); } catch (e) {}
       }
 
-      // Validierung: Nur überschreiben, wenn valide Kategorien mit Items enthalten sind
-      const isValid = Array.isArray(data) && data.length > 0 && Array.isArray(data[0].items) && data[0].items.length > 0;
+      const isValid = Array.isArray(data) && data.length > 0 && Array.isArray(data[0].items);
 
       if (isValid) {
         window.inventarData = data;
         window.renderInventar();
       } else {
-        console.warn('Google Sheets hat noch keine oder leere Daten geliefert. Lokale Daten bleiben bestehen.');
+        console.warn('Google Sheets hat leere/ungültige Daten geliefert. Lokale Daten bleiben bestehen.');
         if (!window.inventarData || window.inventarData.length === 0) {
           window.inventarData = JSON.parse(JSON.stringify(window.inventarCategories));
           window.renderInventar();
@@ -185,6 +189,27 @@ window.handleInventarSearch = function(val) {
   window.renderInventar();
 };
 
+window.toggleEditMode = function() {
+  if (window.currentUserRole !== 'admin' && window.currentUserRole !== 'orga') {
+    alert('Nur Admins und Orga können den Bearbeitungsmodus aktivieren.');
+    return;
+  }
+  window.isEditMode = !window.isEditMode;
+  
+  const editBtn = document.getElementById('adminInventarEditBtn');
+  if (editBtn) {
+    if (window.isEditMode) {
+      editBtn.innerText = '❌ Bearbeiten Beenden';
+      editBtn.className = 'px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition shadow';
+    } else {
+      editBtn.innerText = '✏️ Bearbeiten';
+      editBtn.className = 'px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-xl transition shadow';
+    }
+  }
+
+  window.renderInventar();
+};
+
 window.updateFilterButtonsUI = function() {
   const buttons = document.querySelectorAll('[data-filter-btn]');
   buttons.forEach(btn => {
@@ -193,11 +218,13 @@ window.updateFilterButtonsUI = function() {
 
     if (isActive) {
       if (status === 'alle') {
-        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-amber-500 text-slate-950 shadow-md";
+        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-950 shadow-md";
       } else if (status === 'Offen') {
         btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-rose-500 text-white shadow-md";
+      } else if (status === 'Eingekauft') {
+        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-purple-600 text-white shadow-md";
       } else if (status === 'Vorbereitet') {
-        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-amber-500 text-slate-950 shadow-md";
+        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-orange-500 text-white shadow-md";
       } else if (status === 'Verteilt') {
         btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-sky-500 text-white shadow-md";
       } else if (status === 'Erledigt') {
@@ -206,8 +233,10 @@ window.updateFilterButtonsUI = function() {
     } else {
       if (status === 'Offen') {
         btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30 hover:bg-rose-500/20";
+      } else if (status === 'Eingekauft') {
+        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30 hover:bg-purple-500/20";
       } else if (status === 'Vorbereitet') {
-        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/20";
+        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/30 hover:bg-orange-500/20";
       } else if (status === 'Verteilt') {
         btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/30 hover:bg-sky-500/20";
       } else if (status === 'Erledigt') {
@@ -219,6 +248,172 @@ window.updateFilterButtonsUI = function() {
   });
 };
 
+// ------------------------------------------
+// BEARBEITUNGS- & STRUCTURE-AKTIONEN
+// ------------------------------------------
+window.getCategoryStatuses = function(cat) {
+  if (cat.statuses && Array.isArray(cat.statuses) && cat.statuses.length > 0) {
+    return cat.statuses;
+  }
+  const title = (cat.title || '').toLowerCase();
+  if (title.includes('zutat') || title.includes('einkauf') || title.includes('lebensmittel') || title.includes('verpflegung')) {
+    return DEFAULT_STATUSES_EINKAUF;
+  }
+  return DEFAULT_STATUSES_STANDARD;
+};
+
+window.editCategoryStatuses = function(catIdx) {
+  const cat = window.inventarData[catIdx];
+  if (!cat) return;
+
+  const currentList = window.getCategoryStatuses(cat).join(', ');
+  const input = prompt(
+    `Verfügbare Status-Optionen für "${cat.title}" festlegen (kommagetrennt):\n\nBeispiel: Offen, Eingekauft, Vorbereitet, Verteilt, Erledigt`,
+    currentList
+  );
+
+  if (input !== null) {
+    const list = input.split(',').map(s => s.trim()).filter(Boolean);
+    if (list.length > 0) {
+      cat.statuses = list;
+    } else {
+      delete cat.statuses;
+    }
+    window.syncWithGoogleSheets();
+    window.renderInventar();
+  }
+};
+
+window.addCategory = function() {
+  const name = prompt('Name der neuen Kategorie (z.B. 🍿 SNACKS):');
+  if (!name || !name.trim()) return;
+
+  window.inventarData.push({
+    title: name.trim(),
+    items: []
+  });
+
+  window.syncWithGoogleSheets();
+  window.renderInventar();
+};
+
+window.renameCategory = function(catIdx) {
+  const cat = window.inventarData[catIdx];
+  if (!cat) return;
+  const newName = prompt('Kategoriename ändern:', cat.title);
+  if (newName !== null && newName.trim()) {
+    cat.title = newName.trim();
+    window.syncWithGoogleSheets();
+    window.renderInventar();
+  }
+};
+
+window.deleteCategory = function(catIdx) {
+  const cat = window.inventarData[catIdx];
+  if (!cat) return;
+  if (confirm(`Möchtest du die Kategorie "${cat.title}" inklusive aller ${cat.items.length} Einträge wirklich löschen?`)) {
+    window.inventarData.splice(catIdx, 1);
+    window.syncWithGoogleSheets();
+    window.renderInventar();
+  }
+};
+
+window.moveCategory = function(catIdx, direction) {
+  const targetIdx = catIdx + direction;
+  if (targetIdx < 0 || targetIdx >= window.inventarData.length) return;
+
+  const temp = window.inventarData[catIdx];
+  window.inventarData[catIdx] = window.inventarData[targetIdx];
+  window.inventarData[targetIdx] = temp;
+
+  window.syncWithGoogleSheets();
+  window.renderInventar();
+};
+
+window.addItem = function(catIdx) {
+  const cat = window.inventarData[catIdx];
+  if (!cat) return;
+
+  const name = prompt('Name des neuen Gegenstands:');
+  if (!name || !name.trim()) return;
+
+  cat.items.push({
+    name: name.trim(),
+    sub: '',
+    bedarf: 1,
+    lager: 0,
+    status: 'Offen',
+    wer: '',
+    verantwortlich: '',
+    empfaenger: '',
+    pack: false,
+    box: ''
+  });
+
+  window.syncWithGoogleSheets();
+  window.renderInventar();
+};
+
+window.deleteItem = function(catIdx, itemIdx) {
+  const cat = window.inventarData[catIdx];
+  if (!cat || !cat.items[itemIdx]) return;
+
+  if (confirm(`Eintrag "${cat.items[itemIdx].name}" wirklich löschen?`)) {
+    cat.items.splice(itemIdx, 1);
+    window.syncWithGoogleSheets();
+    window.renderInventar();
+  }
+};
+
+window.moveItem = function(catIdx, itemIdx, direction) {
+  const cat = window.inventarData[catIdx];
+  if (!cat) return;
+
+  const targetIdx = itemIdx + direction;
+  if (targetIdx < 0 || targetIdx >= cat.items.length) return;
+
+  const temp = cat.items[itemIdx];
+  cat.items[itemIdx] = cat.items[targetIdx];
+  cat.items[targetIdx] = temp;
+
+  window.syncWithGoogleSheets();
+  window.renderInventar();
+};
+
+// ------------------------------------------
+// HELPER FOR STATUS STYLES & OPTIONS
+// ------------------------------------------
+function getStatusStyleClass(status) {
+  switch (status) {
+    case 'Offen':
+      return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-300 dark:border-rose-800/80 font-bold';
+    case 'Eingekauft':
+      return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-300 dark:border-purple-800/80 font-bold';
+    case 'Vorbereitet':
+      return 'bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-400 dark:border-orange-500/80 font-bold';
+    case 'Verteilt':
+      return 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-300 dark:border-sky-800/80 font-bold';
+    case 'Erledigt':
+      return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800/80 font-bold';
+    default:
+      return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 font-bold';
+  }
+}
+
+function getStatusOptionTextColor(status) {
+  switch (status) {
+    case 'Offen': return 'text-rose-600 dark:text-rose-400';
+    case 'Eingekauft': return 'text-purple-600 dark:text-purple-400';
+    case 'Vorbereitet': return 'text-orange-600 dark:text-orange-400';
+    case 'Verteilt': return 'text-sky-600 dark:text-sky-400';
+    case 'Erledigt': return 'text-emerald-600 dark:text-emerald-400';
+    default: return 'text-slate-800 dark:text-slate-200';
+  }
+}
+
+// ------------------------------------------
+// RENDER ENGINE
+// ------------------------------------------
 window.renderInventar = function() {
   const container = document.getElementById('inventarTablesContainer');
   if (!container) return;
@@ -237,11 +432,12 @@ window.renderInventar = function() {
   let html = '';
 
   const isReadonly = window.currentUserRole === 'gast';
+  const showEditControls = window.isEditMode && (window.currentUserRole === 'admin' || window.currentUserRole === 'orga');
 
   window.inventarData.forEach((cat, catIdx) => {
     const isOrga = (cat.title || '').toLowerCase().includes('orga');
+    const availableStatuses = window.getCategoryStatuses(cat);
 
-    // Zählung aller Elemente
     (cat.items || []).forEach(item => {
       totalItems++;
       if (item.status === 'Erledigt' || item.pack) {
@@ -249,7 +445,6 @@ window.renderInventar = function() {
       }
     });
 
-    // Filterung für die Anzeige
     const matchingItems = (cat.items || []).filter(item => {
       if (window.currentSearchTerm) {
         const matchName = (item.name || '').toLowerCase().includes(window.currentSearchTerm);
@@ -268,16 +463,28 @@ window.renderInventar = function() {
       return true;
     });
 
-    if (matchingItems.length > 0) {
+    if (matchingItems.length > 0 || showEditControls) {
       html += `
-        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm dark:shadow-md overflow-hidden">
-          <div class="px-5 py-3.5 bg-slate-50 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-            <h3 class="text-xs sm:text-sm font-black tracking-wide text-amber-600 dark:text-amber-400 uppercase flex items-center gap-2">
-              ${escapeHtml(cat.title)}
-            </h3>
-            <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
-              ${matchingItems.length} Einträge
-            </span>
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border ${showEditControls ? 'border-amber-500/50' : 'border-slate-200 dark:border-slate-800'} shadow-sm dark:shadow-md overflow-hidden">
+          <div class="px-5 py-3.5 bg-slate-50 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <h3 class="text-xs sm:text-sm font-black tracking-wide text-amber-600 dark:text-amber-400 uppercase">
+                ${escapeHtml(cat.title)}
+              </h3>
+              <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
+                ${matchingItems.length} Einträge
+              </span>
+            </div>
+
+            ${showEditControls ? `
+              <div class="flex items-center gap-1">
+                <button onclick="window.editCategoryStatuses(${catIdx})" title="Status-Optionen bearbeiten" class="px-2 py-1 text-[11px] bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/30 rounded hover:bg-purple-500/30 font-bold">⚙️ Status</button>
+                <button onclick="window.moveCategory(${catIdx}, -1)" ${catIdx === 0 ? 'disabled' : ''} title="Nach oben" class="p-1 px-2 text-xs bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 rounded disabled:opacity-30">⬆️</button>
+                <button onclick="window.moveCategory(${catIdx}, 1)" ${catIdx === window.inventarData.length - 1 ? 'disabled' : ''} title="Nach unten" class="p-1 px-2 text-xs bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 rounded disabled:opacity-30">⬇️</button>
+                <button onclick="window.renameCategory(${catIdx})" title="Umbenennen" class="p-1 px-2 text-xs bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded hover:bg-amber-500/30 font-bold">✏️</button>
+                <button onclick="window.deleteCategory(${catIdx})" title="Löschen" class="p-1 px-2 text-xs bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 rounded hover:bg-rose-500/30 font-bold">🗑️</button>
+              </div>
+            ` : ''}
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse text-xs">
@@ -291,6 +498,7 @@ window.renderInventar = function() {
                   <th class="py-2.5 px-2 text-center w-40">VERANTWORTLICH</th>
                   ${isOrga ? '' : '<th class="py-2.5 px-2 text-center w-24">EINGEPACKT</th>'}
                   <th class="py-2.5 px-2 text-center w-20">BOX</th>
+                  ${showEditControls ? '<th class="py-2.5 px-2 text-center w-24">AKTIONEN</th>' : ''}
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-200 dark:divide-slate-800/60">
@@ -298,24 +506,32 @@ window.renderInventar = function() {
 
       cat.items.forEach((item) => {
         const itemIdx = cat.items.indexOf(item);
-        if (!matchingItems.includes(item)) return;
+        if (!matchingItems.includes(item) && !showEditControls) return;
 
-        let statusStyle = "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-300 dark:border-rose-800";
-        if (item.status === 'Vorbereitet') {
-          statusStyle = "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-800";
-        } else if (item.status === 'Verteilt') {
-          statusStyle = "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-300 dark:border-sky-800";
-        } else if (item.status === 'Erledigt') {
-          statusStyle = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800";
-        }
-
+        const statusStyle = getStatusStyleClass(item.status || 'Offen');
         const verantwortlicherVal = item.verantwortlich || item.wer || '';
+
+        // Falls der aktuelle Status nicht in der Liste enthalten ist, ergänzen wir ihn temporär für die Dropdown-Option
+        const currentItemStatus = item.status || 'Offen';
+        let optionsList = [...availableStatuses];
+        if (!optionsList.includes(currentItemStatus)) {
+          optionsList.push(currentItemStatus);
+        }
 
         html += `
           <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
             <td class="py-2 px-4 font-semibold text-slate-800 dark:text-slate-100">
-              <div class="leading-tight">${escapeHtml(item.name)}</div>
-              ${item.sub ? `<div class="text-[10px] font-normal text-slate-500 dark:text-slate-400 mt-0.5">${escapeHtml(item.sub)}</div>` : ''}
+              ${showEditControls ? `
+                <input type="text" value="${escapeHtml(item.name)}" placeholder="Name..." 
+                  onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'name', this.value)"
+                  class="w-full font-bold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded py-0.5 px-1.5 text-xs text-slate-800 dark:text-slate-100 focus:border-amber-500 focus:outline-none mb-1" />
+                <input type="text" value="${escapeHtml(item.sub || '')}" placeholder="Beschreibung/Subtext..." 
+                  onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'sub', this.value)"
+                  class="w-full text-[10px] bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded py-0.5 px-1.5 text-slate-500 dark:text-slate-400 focus:border-amber-500 focus:outline-none" />
+              ` : `
+                <div class="leading-tight">${escapeHtml(item.name)}</div>
+                ${item.sub ? `<div class="text-[10px] font-normal text-slate-500 dark:text-slate-400 mt-0.5">${escapeHtml(item.sub)}</div>` : ''}
+              `}
             </td>
             ${isOrga ? '' : `
             <td class="py-2 px-2 text-center">
@@ -333,10 +549,11 @@ window.renderInventar = function() {
               <select ${isReadonly ? 'disabled' : ''}
                 onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'status', this.value)"
                 class="w-full bg-slate-50 dark:bg-slate-950 border rounded-md py-1 px-2 text-xs font-bold focus:border-amber-500 focus:outline-none disabled:opacity-60 ${statusStyle}">
-                <option value="Offen" class="bg-white dark:bg-slate-900 text-rose-600 dark:text-rose-400" ${item.status === 'Offen' ? 'selected' : ''}>Offen</option>
-                <option value="Vorbereitet" class="bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400" ${item.status === 'Vorbereitet' ? 'selected' : ''}>Vorbereitet</option>
-                <option value="Verteilt" class="bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400" ${item.status === 'Verteilt' ? 'selected' : ''}>Verteilt</option>
-                <option value="Erledigt" class="bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400" ${item.status === 'Erledigt' ? 'selected' : ''}>Erledigt</option>
+                ${optionsList.map(st => `
+                  <option value="${escapeHtml(st)}" class="bg-white dark:bg-slate-900 ${getStatusOptionTextColor(st)}" ${currentItemStatus === st ? 'selected' : ''}>
+                    ${escapeHtml(st)}
+                  </option>
+                `).join('')}
               </select>
             </td>
             ${isOrga ? `
@@ -363,6 +580,15 @@ window.renderInventar = function() {
                 onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'box', this.value)"
                 class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-1.5 text-center text-slate-800 dark:text-slate-200 uppercase focus:border-amber-500 focus:outline-none disabled:opacity-60" />
             </td>
+            ${showEditControls ? `
+              <td class="py-2 px-2 text-center">
+                <div class="flex items-center justify-center gap-1">
+                  <button onclick="window.moveItem(${catIdx}, ${itemIdx}, -1)" ${itemIdx === 0 ? 'disabled' : ''} title="Nach oben" class="p-1 text-[10px] bg-slate-200 dark:bg-slate-800 rounded disabled:opacity-30">⬆️</button>
+                  <button onclick="window.moveItem(${catIdx}, ${itemIdx}, 1)" ${itemIdx === cat.items.length - 1 ? 'disabled' : ''} title="Nach unten" class="p-1 text-[10px] bg-slate-200 dark:bg-slate-800 rounded disabled:opacity-30">⬇️</button>
+                  <button onclick="window.deleteItem(${catIdx}, ${itemIdx})" title="Löschen" class="p-1 text-[10px] bg-rose-500/20 text-rose-500 border border-rose-500/30 rounded font-bold">🗑️</button>
+                </div>
+              </td>
+            ` : ''}
           </tr>
         `;
       });
@@ -371,10 +597,27 @@ window.renderInventar = function() {
               </tbody>
             </table>
           </div>
+          ${showEditControls ? `
+            <div class="p-3 bg-slate-100/50 dark:bg-slate-950/40 border-t border-slate-200 dark:border-slate-800 text-center">
+              <button onclick="window.addItem(${catIdx})" class="px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold rounded-lg transition inline-flex items-center gap-1">
+                ➕ Neuer Gegenstand in ${escapeHtml(cat.title)}
+              </button>
+            </div>
+          ` : ''}
         </div>
       `;
     }
   });
+
+  if (showEditControls) {
+    html += `
+      <div class="p-6 bg-slate-50 dark:bg-slate-900 border-2 border-dashed border-amber-500/40 rounded-2xl text-center">
+        <button onclick="window.addCategory()" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2 mx-auto">
+          ➕ Neue Kategorie hinzufügen
+        </button>
+      </div>
+    `;
+  }
 
   container.innerHTML = html || '<div class="p-8 text-center text-slate-500 dark:text-slate-400 text-xs">Keine passenden Einträge für diesen Filter gefunden.</div>';
 
