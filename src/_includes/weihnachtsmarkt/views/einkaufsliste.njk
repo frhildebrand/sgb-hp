@@ -1,0 +1,37 @@
+<div id="viewEinkaufsliste" class="hidden space-y-6">
+
+  <!-- Kopf -->
+  <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+    <div>
+      <h2 class="font-black text-xl text-orange-600 dark:text-orange-400 flex items-center gap-2">🛒 Einkaufsliste</h2>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Zutaten, Einkäufe und im Inventar mit 🛒 markierte Artikel. Bedarf und Lager kommen aus dem Inventar.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <button id="einkaufFilterBtn" type="button" onclick="toggleShoppingFilter()" class="px-3.5 py-2 text-xs font-bold rounded-xl border transition bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700">Nur Fehlendes</button>
+      <button type="button" onclick="addShoppingItem()" class="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black rounded-xl shadow transition">➕ Artikel hinzufügen</button>
+      <button type="button" onclick="switchView('aushang')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition border border-slate-300 dark:border-slate-700">⬅️ Zurück</button>
+    </div>
+  </div>
+
+  <!-- Kurzüberblick -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+      <div class="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">Artikel</div>
+      <div id="einkaufCountAll" class="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">0</div>
+    </div>
+    <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+      <div class="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">Es fehlt noch</div>
+      <div id="einkaufCountMissing" class="text-2xl font-black text-orange-600 dark:text-orange-400 mt-1">0</div>
+    </div>
+    <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+      <div class="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">Preise noch offen</div>
+      <div id="einkaufCostOpen" class="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">0,00 €</div>
+    </div>
+    <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+      <div class="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">Schon eingekauft</div>
+      <div id="einkaufCostDone" class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">0,00 €</div>
+    </div>
+  </div>
+
+  <div id="einkaufslisteContainer" class="space-y-5"></div>
+</div>
