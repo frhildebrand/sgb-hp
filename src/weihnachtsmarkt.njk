@@ -1,0 +1,58 @@
+---
+layout: base.njk
+title: SG Barnstorf Weihnachtsmarkt
+---
+<!-- Design vor dem ersten Zeichnen setzen (Auto = Geräteeinstellung), damit nichts aufblitzt -->
+<script>
+  (function () {
+    try {
+      var m = localStorage.getItem('themeMode');
+      var dark = m === 'dark' || (m !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.classList.toggle('dark', dark);
+    } catch (e) {}
+  })();
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class'
+  }
+</script>
+
+<!-- Hintergrund und Fußzeile der ganzen Seite folgen dem gewählten Design -->
+<style>
+  html, body { background-color: #f1f5f9 !important; }
+  html.dark, html.dark body { background-color: #020617 !important; color: #f8fafc; }
+  html.dark .footer { background-color: #0b1120 !important; color: #cbd5e1 !important; }
+  html.dark .footer a, html.dark .footer .menu-label { color: #94a3b8 !important; }
+  html.dark .footer a:hover { color: #e2e8f0 !important; }
+  html.dark .footer .has-text-grey { color: #94a3b8 !important; }
+  html.dark .footer hr.has-background-grey-lighter { background-color: #1e293b !important; }
+</style>
+
+<div id="appBody" class="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-200 pb-16">
+  
+  {% include "weihnachtsmarkt/components/header.njk" %}
+  {% include "weihnachtsmarkt/components/navigation.njk" %}
+
+  <main class="max-w-7xl mx-auto px-4 pt-6 space-y-6">
+    {% include "weihnachtsmarkt/views/aushang.njk" %}
+    {% include "weihnachtsmarkt/views/login.njk" %}
+    {% include "weihnachtsmarkt/views/inventar.njk" %}
+    {% include "weihnachtsmarkt/views/verkauf.njk" %}
+    {% include "weihnachtsmarkt/views/statistik.njk" %}
+    {% include "weihnachtsmarkt/views/einkaufsliste.njk" %}
+    {% include "weihnachtsmarkt/views/verkabelung.njk" %}
+    {% include "weihnachtsmarkt/views/lagerbestand.njk" %}
+    {% include "weihnachtsmarkt/views/boxen.njk" %}
+    {% include "weihnachtsmarkt/views/rezepte.njk" %}
+    {% include "weihnachtsmarkt/views/admin.njk" %}
+  </main>
+
+  {% include "weihnachtsmarkt/components/modals.njk" %}
+
+</div>
+
+<!-- Skripte für Daten und Logik -->
+<script src="/assets/weihnachtsmarkt/weihnachtsmarkt-data.js"></script>
+<script src="/assets/weihnachtsmarkt/weihnachtsmarkt.js"></script>
