@@ -7,31 +7,31 @@ const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyQg2LmxT_UbL
 // Standard-Inventar mit allen Kategorien & allen 5 Status (offen, vorbereitet, verteilt, eingekauft, erledigt)
 const DEFAULT_INVENTAR_CATEGORIES = [
   {
-    category: "🏛️ ORGA & GENEHMIGUNGEN",
+    category: "🏛️ ORGA",
     items: [
-      { name: "Anmeldung Teilnahme", note: "An Gemeinde Barnstorf", bedarf: "1", lager: "0", status: "offen", wer: "Orga", pack: false, box: "Ordner" },
-      { name: "Hütte Gemeinde", note: "Aufbau Tag & Zeit abklären", bedarf: "1", lager: "0", status: "offen", wer: "Bauhof / Orga", pack: false, box: "Stand" },
-      { name: "Listen Roshop Unterstützung", note: "Aufhängen Schwarzes Brett", bedarf: "1", lager: "0", status: "offen", wer: "Orga", pack: false, box: "Aushang" },
-      { name: "Anzeige Gaststättengewerbe", note: "Gemeinde / Amt", bedarf: "1", lager: "0", status: "erledigt", wer: "Vorstand", pack: true, box: "Ordner" }
+      { name: "Anmeldung Teilnahme", note: "An Gemeinde Barnstorf", bedarf: "1", lager: "0", status: "offen", wer: "", pack: false, box: "" },
+      { name: "Hütte Gemeinde", note: "Aufbau Tag & Zeit abklären", bedarf: "1", lager: "0", status: "offen", wer: "", pack: false, box: "" },
+      { name: "Listen Roshop Unterstützung", note: "Aufhängen Schwarzes Brett", bedarf: "1", lager: "0", status: "offen", wer: "", pack: false, box: "" },
+      { name: "Anzeige Gaststättengewerbe", note: "Gemeinde / Amt", bedarf: "1", lager: "0", status: "offen", wer: "", pack: false, box: "" }
     ]
   },
   {
-    category: "🛠️ WERKZEUGE & FIXIERUNG",
+    category: "🛠️ WERKZEUGE",
     items: [
-      { name: "Hammer & Zange", note: "Auf- und Abbau", bedarf: "2", lager: "2", status: "erledigt", wer: "SG Barnstorf", pack: true, box: "Werkzeugkiste" },
+      { name: "Hammer", note: "Auf- und Abbau", bedarf: "1", lager: "0", status: "offen", wer: "", pack: false, box: "" },
+      { name: "Nagelzange", note: "Standzubehör", bedarf: "1", lager: "0", status: "offen", wer: "", pack: false, box: "" },
+      { name: "Schere", note: "Verpackung & Deko", bedarf: "1", lager: "0", status: "offen", wer: "", pack: false, box: "" },
       { name: "Akkuschrauber + Bit-Set", note: "Inkl. Ersatzakku", bedarf: "1", lager: "1", status: "vorbereitet", wer: "Technik-Team", pack: false, box: "Werkzeugkiste" },
       { name: "Kabelbinder Set", note: "Befestigung Deko & Lichter", bedarf: "3", lager: "2", status: "eingekauft", wer: "SG Barnstorf", pack: true, box: "Box 1" },
-      { name: "Panzertape / Gewebeband", note: "Kabelfixierung am Boden", bedarf: "2", lager: "2", status: "erledigt", wer: "Orga", pack: true, box: "Box 1" },
-      { name: "Schere & Cuttermesser", note: "Deko & Verpackungen", bedarf: "2", lager: "2", status: "erledigt", wer: "Orga", pack: true, box: "Box 1" }
+      { name: "Panzertape / Gewebeband", note: "Kabelfixierung", bedarf: "2", lager: "2", status: "erledigt", wer: "Orga", pack: true, box: "Box 1" }
     ]
   },
   {
-    category: "⚡ ELEKTRO, LICHT & KABEL",
+    category: "⚡ ELEKTRO & LICHT",
     items: [
-      { name: "Verlängerungskabel Outdoor", note: "Schuko IP44 (10m-20m)", bedarf: "4", lager: "4", status: "erledigt", wer: "SG Barnstorf", pack: true, box: "Kiste Elektro" },
-      { name: "Mehrfachsteckdosen", note: "IP44 Outdoor geeignet", bedarf: "5", lager: "5", status: "erledigt", wer: "SG Barnstorf", pack: true, box: "Kiste Elektro" },
-      { name: "Lichterkette Warmweiß", note: "Stand- und Dachbeleuchtung", bedarf: "3", lager: "3", status: "erledigt", wer: "SG Barnstorf", pack: true, box: "Kiste Deko" },
-      { name: "Kabelbrücken / Matten", note: "Gästebereich Stolperschutz", bedarf: "2", lager: "2", status: "verteilt", wer: "Bauhof", pack: false, box: "Standzubehör" }
+      { name: "Verlängerungskabel Outdoor", note: "Schuko IP44", bedarf: "4", lager: "4", status: "erledigt", wer: "SG Barnstorf", pack: true, box: "Kiste Elektro" },
+      { name: "Mehrfachsteckdosen", note: "IP44 Outdoor", bedarf: "5", lager: "5", status: "erledigt", wer: "SG Barnstorf", pack: true, box: "Kiste Elektro" },
+      { name: "Lichterkette Warmweiß", note: "Standbeleuchtung", bedarf: "3", lager: "3", status: "verteilt", wer: "SG Barnstorf", pack: true, box: "Kiste Deko" }
     ]
   },
   {
@@ -39,8 +39,7 @@ const DEFAULT_INVENTAR_CATEGORIES = [
     items: [
       { name: "Doppel-Waffeleisen", note: "Gastro-Qualität", bedarf: "2", lager: "2", status: "erledigt", wer: "SG Barnstorf", pack: true, box: "Kiste Küche" },
       { name: "Kinderpunsch Einkocher", note: "27 Liter Thermotop", bedarf: "2", lager: "2", status: "erledigt", wer: "SG Barnstorf", pack: true, box: "Kiste Gastro" },
-      { name: "Teigbehälter & Schöpfkelle", note: "Lebensmittelecht mit Deckel", bedarf: "2", lager: "2", status: "erledigt", wer: "SG Barnstorf", pack: true, box: "Kiste Küche" },
-      { name: "Schuss-Flaschen & Dosierer", note: "Für Sirup & Toppings", bedarf: "3", lager: "3", status: "vorbereitet", wer: "Gastro-Team", pack: true, box: "Kiste Küche" }
+      { name: "Teigbehälter & Schöpfkelle", note: "Lebensmittelecht mit Deckel", bedarf: "2", lager: "2", status: "erledigt", wer: "SG Barnstorf", pack: true, box: "Kiste Küche" }
     ]
   },
   {
@@ -53,18 +52,16 @@ const DEFAULT_INVENTAR_CATEGORIES = [
     ]
   },
   {
-    category: "🪙 KASSE, DEKO & HYGIENE",
+    category: "🪙 KASSE & HYGIENE",
     items: [
       { name: "Wechselgeldkassette", note: "Inkl. Geldscheinfächer & Schlüssel", bedarf: "1", lager: "1", status: "erledigt", wer: "Kassierer", pack: true, box: "Orga" },
-      { name: "Preisschilder & Aushänge", note: "Laminierte Übersichtskarten", bedarf: "1", lager: "1", status: "erledigt", wer: "Orga", pack: true, box: "Deko" },
-      { name: "Desinfektion & Hygiene-Set", note: "Handdesinfektion & Einweg-Handschuhe", bedarf: "2", lager: "2", status: "erledigt", wer: "Hygienebeauftragter", pack: true, box: "Hygiene" },
-      { name: "Müllbeutel Schwerlast", note: "120L Säcke für Standabfall", bedarf: "20", lager: "20", status: "eingekauft", wer: "Orga", pack: true, box: "Hygiene" }
+      { name: "Desinfektion & Hygiene-Set", note: "Handdesinfektion & Einweg-Handschuhe", bedarf: "2", lager: "2", status: "erledigt", wer: "Hygienebeauftragter", pack: true, box: "Hygiene" }
     ]
   }
 ];
 
 // App-Status
-window.currentUserRole = localStorage.getItem('userRole') || 'gast';
+window.currentUserRole = localStorage.getItem('userRole') || 'admin';
 window.currentFilterStatus = 'alle';
 window.currentSearchTerm = '';
 
@@ -101,7 +98,7 @@ function getInitialInventarData() {
 
 window.inventarData = getInitialInventarData();
 
-// Dynamic Toast Alert Notification
+// Dynamic Toast Notification
 function showToast(message, type = 'info') {
   let container = document.getElementById('toastContainer');
   if (!container) {
@@ -158,24 +155,16 @@ window.toggleTheme = toggleTheme;
 
 // Navigation zwischen Ansichten
 function switchView(viewName) {
-  if (window.currentUserRole === 'gast' && viewName !== 'aushang' && viewName !== 'login') {
-    showToast('Bitte melde dich an, um auf diesen Bereich zuzugreifen.', 'error');
-    return;
-  }
-
-  const views = document.querySelectorAll('main > div[id^="view"]');
+  const views = document.querySelectorAll('main > div[id^="view"], div[id^="view"]');
   views.forEach(v => v.classList.add('hidden'));
 
   const lowerName = (viewName || '').toLowerCase();
-  let targetView = null;
-
+  let targetId = 'view' + viewName.charAt(0).toUpperCase() + viewName.slice(1);
   if (lowerName === 'verkauf' || lowerName === 'kasse') {
-    targetView = document.getElementById('viewVerkauf') || document.getElementById('viewKasse');
-  } else {
-    const targetId = 'view' + viewName.charAt(0).toUpperCase() + viewName.slice(1);
-    targetView = document.getElementById(targetId);
+    targetId = 'viewVerkauf';
   }
 
+  const targetView = document.getElementById(targetId);
   if (targetView) {
     targetView.classList.remove('hidden');
     if (lowerName === 'inventar') {
@@ -212,6 +201,7 @@ function tryLogin(role, inputId) {
     if (input) input.value = '';
     setRole(role);
     showToast(`Erfolgreich als ${role.toUpperCase()} angemeldet!`, 'success');
+    switchView('inventar');
   } else if (errorBox) {
     errorBox.classList.remove('hidden');
     const errText = document.getElementById('loginErrorText');
@@ -228,15 +218,15 @@ function setRole(role) {
 window.setRole = setRole;
 
 function applyRolePermissions(role) {
-  window.currentUserRole = role || 'gast';
+  window.currentUserRole = role || 'admin';
   const roleLabel = document.getElementById('roleLabel');
   const roleIcon = document.getElementById('roleIcon');
 
   if (roleLabel) {
-    roleLabel.innerText = role === 'admin' ? '🔒 ADMIN' : (role === 'orga' ? '🔵 ORGA' : (role === 'helfer' ? '🟡 HELFER' : '👁️ GAST'));
+    roleLabel.innerText = role === 'admin' ? 'ADMIN' : (role === 'orga' ? 'ORGA' : (role === 'helfer' ? 'HELFER' : 'GAST'));
   }
   if (roleIcon) {
-    roleIcon.innerText = role === 'admin' ? '🔒' : (role === 'gast' ? '👁️' : '🔑');
+    roleIcon.innerText = role === 'admin' ? '🟢' : (role === 'orga' ? '🔵' : (role === 'helfer' ? '🟡' : '👁️'));
   }
 
   const adminControls = document.querySelectorAll('.admin-only-control');
@@ -266,7 +256,7 @@ function setFilterStatus(status) {
 }
 window.setFilterStatus = setFilterStatus;
 
-// Filter-Buttons inklusive ALLEN 5 Status (Offen, Vorbereitet, Verteilt, Eingekauft, Erledigt)
+// Filter-Buttons inklusive ALLEN 5 Status (Alle, Offen, Vorbereitet, Verteilt, Eingekauft, Erledigt)
 function renderFilterButtons() {
   const container = document.getElementById('filterButtonsContainer');
   if (!container) return;
@@ -312,7 +302,6 @@ function renderInventar() {
   let totalCount = 0;
   let completedCount = 0;
 
-  // Fortschrittsberechnung (Erledigt oder Pack-Checkbox gesetzt)
   window.inventarData.forEach(cat => {
     (cat.items || []).forEach(item => {
       totalCount++;
@@ -361,7 +350,7 @@ function renderInventar() {
 
       return `
         <tr class="border-b border-slate-800/60 hover:bg-slate-800/30 transition text-xs">
-          <!-- GEGENSTAND & NOTIZ -->
+          <!-- GEGENSTAND -->
           <td class="py-3 px-4">
             <div class="font-bold text-slate-100">${item.name || ''}</div>
             ${item.note ? `<div class="text-[10px] text-slate-400 mt-0.5">${item.note}</div>` : ''}
@@ -381,7 +370,7 @@ function renderInventar() {
               class="w-12 text-center py-1 bg-slate-950 border border-slate-800 rounded font-bold text-emerald-400 focus:border-amber-500 focus:outline-none" />
           </td>
 
-          <!-- STATUS (Offen, Vorbereitet, Verteilt, Eingekauft, Erledigt) -->
+          <!-- STATUS -->
           <td class="py-3 px-3">
             <select onchange="window.updateInventarField(${catIdx}, ${realIndex}, 'status', this.value)" 
               class="px-2.5 py-1 text-xs font-bold rounded-lg border focus:outline-none ${statusColor}">
@@ -409,7 +398,7 @@ function renderInventar() {
 
           <!-- BOX -->
           <td class="py-3 px-4">
-            <input type="text" placeholder="Kiste/Ort..." value="${item.box || ''}" 
+            <input type="text" placeholder="Box..." value="${item.box || ''}" 
               onchange="window.updateInventarField(${catIdx}, ${realIndex}, 'box', this.value)"
               class="w-28 px-2.5 py-1 bg-slate-950 border border-slate-800 rounded text-slate-300 focus:border-amber-500 focus:outline-none" />
           </td>
@@ -583,7 +572,6 @@ async function loadKasseFromGoogleSheets() {
 window.loadKasseFromGoogleSheets = loadKasseFromGoogleSheets;
 
 async function syncAllWithGoogleSheets() {
-  // Schutz vor versehentlichem Überschreiben mit leeren Daten
   if (!window.inventarData || !Array.isArray(window.inventarData) || window.inventarData.length === 0) {
     window.inventarData = getInitialInventarData();
   }
