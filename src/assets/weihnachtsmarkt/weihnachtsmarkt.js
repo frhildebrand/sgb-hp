@@ -1,614 +1,690 @@
 // ==========================================
-// SG BARNSTORF WEIHNACHTSMARKT - ENGINE
+// SG BARNSTORF WEIHNACHTSMARKT - MAIN ENGINE
 // ==========================================
-
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyQg2LmxT_UbLXjFVKrNf9gXnqgk_ku4V_P1SZeSGqphn-WRTYI3a9l5szzkDfqEE881Q/exec';
-
-// Standard-Inventar mit allen Kategorien & allen 5 Status (offen, vorbereitet, verteilt, eingekauft, erledigt)
-const DEFAULT_INVENTAR_CATEGORIES = [
-  {
-    category: "🏛️ ORGA",
-    items: [
-      { name: "Anmeldung Teilnahme", note: "An Gemeinde Barnstorf", bedarf: "1", lager: "0", status: "offen", wer: "", pack: false, box: "" },
-      { name: "Hütte Gemeinde", note: "Aufbau Tag & Zeit abklären", bedarf: "1", lager: "0", status: "offen", wer: "", pack: false, box: "" },
-      { name: "Listen Roshop Unterstützung", note: "Aufhängen Schwarzes Brett", bedarf: "1", lager: "0", status: "offen", wer: "", pack: false, box: "" },
-      { name: "Anzeige Gaststättengewerbe", note: "Gemeinde / Amt", bedarf: "1", lager: "0", status: "offen", wer: "", pack: false, box: "" }
-    ]
-  },
-  {
-    category: "🛠️ WERKZEUGE",
-    items: [
-      { name: "Hammer", note: "Auf- und Abbau", bedarf: "1", lager: "0", status: "offen", wer: "", pack: false, box: "" },
-      { name: "Nagelzange", note: "Standzubehör", bedarf: "1", lager: "0", status: "offen", wer: "", pack: false, box: "" },
-      { name: "Schere", note: "Verpackung & Deko", bedarf: "1", lager: "0", status: "offen", wer: "", pack: false, box: "" },
-      { name: "Akkuschrauber + Bit-Set", note: "Inkl. Ersatzakku", bedarf: "1", lager: "1", status: "vorbereitet", wer: "Technik-Team", pack: false, box: "Werkzeugkiste" },
-      { name: "Kabelbinder Set", note: "Befestigung Deko & Lichter", bedarf: "3", lager: "2", status: "eingekauft", wer: "SG Barnstorf", pack: true, box: "Box 1" },
-      { name: "Panzertape / Gewebeband", note: "Kabelfixierung", bedarf: "2", lager: "2", status: "erledigt", wer: "Orga", pack: true, box: "Box 1" }
-    ]
-  },
-  {
-    category: "⚡ ELEKTRO & LICHT",
-    items: [
-      { name: "Verlängerungskabel Outdoor", note: "Schuko IP44", bedarf: "4", lager: "4", status: "erledigt", wer: "SG Barnstorf", pack: true, box: "Kiste Elektro" },
-      { name: "Mehrfachsteckdosen", note: "IP44 Outdoor", bedarf: "5", lager: "5", status: "erledigt", wer: "SG Barnstorf", pack: true, box: "Kiste Elektro" },
-      { name: "Lichterkette Warmweiß", note: "Standbeleuchtung", bedarf: "3", lager: "3", status: "verteilt", wer: "SG Barnstorf", pack: true, box: "Kiste Deko" }
-    ]
-  },
-  {
-    category: "🧇 WAFFELN, PUNSCH & GASTRO",
-    items: [
-      { name: "Doppel-Waffeleisen", note: "Gastro-Qualität", bedarf: "2", lager: "2", status: "erledigt", wer: "SG Barnstorf", pack: true, box: "Kiste Küche" },
-      { name: "Kinderpunsch Einkocher", note: "27 Liter Thermotop", bedarf: "2", lager: "2", status: "erledigt", wer: "SG Barnstorf", pack: true, box: "Kiste Gastro" },
-      { name: "Teigbehälter & Schöpfkelle", note: "Lebensmittelecht mit Deckel", bedarf: "2", lager: "2", status: "erledigt", wer: "SG Barnstorf", pack: true, box: "Kiste Küche" }
-    ]
-  },
-  {
-    category: "🛒 EINKAUF & CONSUMABLES",
-    items: [
-      { name: "Thermobecher (0,2l)", note: "Für Kinderpunsch-Ausschank", bedarf: "400", lager: "400", status: "eingekauft", wer: "Einkaufsteam", pack: true, box: "Verbrauch Kiste 1" },
-      { name: "Servietten & Einwegteller", note: "Waffelausgabe", bedarf: "500", lager: "500", status: "eingekauft", wer: "Einkaufsteam", pack: true, box: "Verbrauch Kiste 2" },
-      { name: "Waffelteig Zutaten", note: "Mehl, Eier, Butter, Milch, Zucker", bedarf: "15kg", lager: "15kg", status: "eingekauft", wer: "Küche", pack: false, box: "Kühlung" },
-      { name: "Kinderpunsch Kanister", note: "Fruchtpunsch alkoholfrei", bedarf: "60L", lager: "60L", status: "eingekauft", wer: "Einkaufsteam", pack: false, box: "Gastro Lager" }
-    ]
-  },
-  {
-    category: "🪙 KASSE & HYGIENE",
-    items: [
-      { name: "Wechselgeldkassette", note: "Inkl. Geldscheinfächer & Schlüssel", bedarf: "1", lager: "1", status: "erledigt", wer: "Kassierer", pack: true, box: "Orga" },
-      { name: "Desinfektion & Hygiene-Set", note: "Handdesinfektion & Einweg-Handschuhe", bedarf: "2", lager: "2", status: "erledigt", wer: "Hygienebeauftragter", pack: true, box: "Hygiene" }
-    ]
-  }
-];
-
-// App-Status
-window.currentUserRole = localStorage.getItem('userRole') || 'admin';
+// Globale Zustandsvariablen
+window.currentUserRole = localStorage.getItem('userRole') || 'gast';
+window.inventarData = [];
+window.isEditMode = false;
 window.currentFilterStatus = 'alle';
 window.currentSearchTerm = '';
-
-// Kassen-Zustand Initialisierung
+// Kassen- und Statistik-Zustand (mit Preisen)
 const DEFAULT_KASSE_DATA = {
-  kinderpunschPaid: 0,
-  kinderpunschFree: 0,
-  waffelPaid: 0,
-  waffelFree: 0,
-  kinderpunschPrice: 2.00,
-  waffelPrice: 2.00
+kinderpunschPaid: 0,
+kinderpunschFree: 0,
+waffelPaid: 0,
+waffelFree: 0,
+kinderpunschPrice: 2.00,
+waffelPrice: 2.00
 };
-
 try {
-  const savedKasse = localStorage.getItem('kasseData');
-  window.kasseData = savedKasse ? Object.assign({}, DEFAULT_KASSE_DATA, JSON.parse(savedKasse)) : { ...DEFAULT_KASSE_DATA };
+const savedKasse = localStorage.getItem('kasseData');
+window.kasseData = savedKasse ? JSON.parse(savedKasse) : { ...DEFAULT_KASSE_DATA };
 } catch (e) {
-  window.kasseData = { ...DEFAULT_KASSE_DATA };
+window.kasseData = { ...DEFAULT_KASSE_DATA };
 }
-
-// Initialisierung der Inventardaten aus LocalStorage oder Fallback
-function getInitialInventarData() {
-  try {
-    const savedInv = localStorage.getItem('inventarData');
-    if (savedInv) {
-      const parsed = JSON.parse(savedInv);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch (e) {
-    console.error('Fehler beim Lesen des LocalStorage:', e);
-  }
-  return JSON.parse(JSON.stringify(DEFAULT_INVENTAR_CATEGORIES));
-}
-
-window.inventarData = getInitialInventarData();
-
-// Dynamic Toast Notification
-function showToast(message, type = 'info') {
-  let container = document.getElementById('toastContainer');
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'toastContainer';
-    container.className = 'fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm pointer-events-none';
-    document.body.appendChild(container);
-  }
-
-  const toast = document.createElement('div');
-  let bgClass = 'bg-slate-900/95 border-slate-700 text-slate-100';
-  if (type === 'error') bgClass = 'bg-rose-950/95 border-rose-700 text-rose-100';
-  if (type === 'success') bgClass = 'bg-emerald-950/95 border-emerald-700 text-emerald-100';
-
-  toast.className = `pointer-events-auto px-4 py-3 rounded-xl border shadow-2xl text-xs font-bold backdrop-blur transition-all transform translate-y-2 opacity-0 flex items-center justify-between gap-3 ${bgClass}`;
-  toast.innerHTML = `<span>${message}</span>`;
-
-  container.appendChild(toast);
-  requestAnimationFrame(() => toast.classList.remove('translate-y-2', 'opacity-0'));
-
-  setTimeout(() => {
-    toast.classList.add('opacity-0', 'translate-y-2');
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
-}
-window.showToast = showToast;
-
-// Theme Toggle & Dark Mode
+// Default Status-Listen
+const DEFAULT_STATUSES_STANDARD = ['Offen', 'Vorbereitet', 'Verteilt', 'Erledigt'];
+const DEFAULT_STATUSES_EINKAUF = ['Offen', 'Vorbereitet', 'Verteilt', 'Eingekauft', 'Erledigt'];
+// ------------------------------------------
+// 1. THEME ENGINE (DARK / LIGHT MODE)
+// ------------------------------------------
 function applyDarkMode(isDark) {
-  if (isDark) {
-    document.documentElement.classList.add('dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-  }
-  const icon = document.getElementById('themeToggleIcon');
-  if (icon) icon.innerText = isDark ? '☀️' : '🌙';
+if (isDark) {
+document.documentElement.classList.add('dark');
+if (document.body) document.body.classList.add('dark');
+} else {
+document.documentElement.classList.remove('dark');
+if (document.body) document.body.classList.remove('dark');
+}
+const icon = document.getElementById('themeToggleIcon');
+if (icon) icon.innerText = isDark ? '☀️' : '🌙';
 }
 window.applyDarkMode = applyDarkMode;
-
 function initTheme() {
-  const savedTheme = localStorage.getItem('theme');
-  const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  applyDarkMode(savedTheme === 'dark' || (!savedTheme && systemPrefersDark));
+const savedTheme = localStorage.getItem('theme');
+const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+applyDarkMode(savedTheme === 'dark' || (!savedTheme && systemPrefersDark));
 }
 window.initTheme = initTheme;
-
 function toggleTheme() {
-  const isDarkCurrently = document.documentElement.classList.contains('dark');
-  const newDarkState = !isDarkCurrently;
-  localStorage.setItem('theme', newDarkState ? 'dark' : 'light');
-  applyDarkMode(newDarkState);
+const isDarkCurrently = document.documentElement.classList.contains('dark');
+const newDarkState = !isDarkCurrently;
+localStorage.setItem('theme', newDarkState ? 'dark' : 'light');
+applyDarkMode(newDarkState);
 }
 window.toggleTheme = toggleTheme;
-
-// Navigation zwischen Ansichten
+// ------------------------------------------
+// 2. NAVIGATION & ROLLENMANAGEMENT
+// ------------------------------------------
 function switchView(viewName) {
-  const views = document.querySelectorAll('main > div[id^="view"], div[id^="view"]');
-  views.forEach(v => v.classList.add('hidden'));
-
-  const lowerName = (viewName || '').toLowerCase();
-  let targetId = 'view' + viewName.charAt(0).toUpperCase() + viewName.slice(1);
-  if (lowerName === 'verkauf' || lowerName === 'kasse') {
-    targetId = 'viewVerkauf';
-  }
-
-  const targetView = document.getElementById(targetId);
-  if (targetView) {
-    targetView.classList.remove('hidden');
-    if (lowerName === 'inventar') {
-      loadInventarFromGoogleSheets();
-      renderInventar();
-    } else if (lowerName === 'verkauf' || lowerName === 'kasse') {
-      loadKasseFromGoogleSheets();
-      renderKasse();
-    } else if (lowerName === 'statistik') {
-      renderStatistik();
-    }
-  }
-
-  const navModal = document.getElementById('navigationModal');
-  if (navModal) navModal.classList.add('hidden');
+if (window.currentUserRole === 'gast' && viewName !== 'aushang' && viewName !== 'login') {
+alert('Bitte melde dich an, um auf diesen Bereich zuzugreifen.');
+return;
+}
+const views = document.querySelectorAll('main > div[id^="view"]');
+views.forEach(v => v.classList.add('hidden'));
+let targetId = 'view' + viewName.charAt(0).toUpperCase() + viewName.slice(1);
+let targetView = document.getElementById(targetId);
+// Fallback Aliase (kasse <-> verkauf)
+if (!targetView && viewName.toLowerCase() === 'kasse') {
+targetView = document.getElementById('viewVerkauf');
+} else if (!targetView && viewName.toLowerCase() === 'verkauf') {
+targetView = document.getElementById('viewKasse');
+}
+if (targetView) {
+targetView.classList.remove('hidden');
+const actualView = viewName.toLowerCase();
+if (actualView === 'inventar') {
+loadInventarFromGoogleSheets();
+} else if (actualView === 'kasse' || actualView === 'verkauf') {
+renderKasse();
+} else if (actualView === 'statistik') {
+renderStatistik();
+}
+}
+const navModal = document.getElementById('navigationModal');
+if (navModal) navModal.classList.add('hidden');
 }
 window.switchView = switchView;
-
 function toggleBurgerMenu() {
-  const navModal = document.getElementById('navigationModal');
-  if (navModal) navModal.classList.toggle('hidden');
+const navModal = document.getElementById('navigationModal');
+if (navModal) navModal.classList.toggle('hidden');
 }
 window.toggleBurgerMenu = toggleBurgerMenu;
-
-// Login & Rollensystem
 function tryLogin(role, inputId) {
-  const passwords = { helfer: '1', orga: '2', admin: '3' };
-  const input = document.getElementById(inputId);
-  const password = input ? input.value.trim() : '';
-  const errorBox = document.getElementById('loginErrorMessage');
-
-  if (password === passwords[role]) {
-    if (errorBox) errorBox.classList.add('hidden');
-    if (input) input.value = '';
-    setRole(role);
-    showToast(`Erfolgreich als ${role.toUpperCase()} angemeldet!`, 'success');
-    switchView('inventar');
-  } else if (errorBox) {
-    errorBox.classList.remove('hidden');
-    const errText = document.getElementById('loginErrorText');
-    if (errText) errText.innerText = 'Falsches Passwort.';
-  }
+const passwords = { helfer: '1', orga: '2', admin: '3' };
+const input = document.getElementById(inputId);
+const password = input ? input.value.trim() : '';
+const errorBox = document.getElementById('loginErrorMessage');
+if (password === passwords[role]) {
+if (errorBox) errorBox.classList.add('hidden');
+if (input) input.value = '';
+setRole(role);
+} else if (errorBox) {
+errorBox.classList.remove('hidden');
+const errText = document.getElementById('loginErrorText');
+if (errText) errText.innerText = 'Falsches Passwort.';
+}
 }
 window.tryLogin = tryLogin;
-
 function setRole(role) {
-  window.currentUserRole = role;
-  localStorage.setItem('userRole', role);
-  applyRolePermissions(role);
+window.currentUserRole = role;
+localStorage.setItem('userRole', role);
+applyRolePermissions(role);
 }
 window.setRole = setRole;
-
 function applyRolePermissions(role) {
-  window.currentUserRole = role || 'admin';
-  const roleLabel = document.getElementById('roleLabel');
-  const roleIcon = document.getElementById('roleIcon');
-
-  if (roleLabel) {
-    roleLabel.innerText = role === 'admin' ? 'ADMIN' : (role === 'orga' ? 'ORGA' : (role === 'helfer' ? 'HELFER' : 'GAST'));
-  }
-  if (roleIcon) {
-    roleIcon.innerText = role === 'admin' ? '🟢' : (role === 'orga' ? '🔵' : (role === 'helfer' ? '🟡' : '👁️'));
-  }
-
-  const adminControls = document.querySelectorAll('.admin-only-control');
-  adminControls.forEach(el => {
-    if (role === 'admin' || role === 'orga') {
-      el.classList.remove('hidden');
-    } else {
-      el.classList.add('hidden');
-    }
-  });
-
-  renderInventar();
-  renderKasse();
+window.currentUserRole = role;
+const burgerBtn = document.getElementById('burgerMenuBtn');
+const guestNotice = document.getElementById('guestLockNotice');
+const roleLabel = document.getElementById('roleLabel');
+const roleIcon = document.getElementById('roleIcon');
+const adminEditBtn = document.getElementById('adminInventarEditBtn');
+if (roleLabel) {
+roleLabel.innerText = role === 'admin' ? '🟢 ADMIN' : (role === 'orga' ? '🔵 ORGA' : (role === 'helfer' ? '🟡 HELFER' : 'GAST'));
+}
+if (adminEditBtn) {
+if (role === 'admin' || role === 'orga') {
+adminEditBtn.classList.remove('hidden');
+} else {
+adminEditBtn.classList.add('hidden');
+window.isEditMode = false;
+}
+}
+if (role === 'gast') {
+if (burgerBtn) burgerBtn.classList.add('hidden');
+if (guestNotice) guestNotice.classList.remove('hidden');
+if (roleIcon) roleIcon.innerText = '👁️';
+switchView('aushang');
+} else {
+if (burgerBtn) burgerBtn.classList.remove('hidden');
+if (guestNotice) guestNotice.classList.add('hidden');
+if (roleIcon) roleIcon.innerText = '🔓';
+switchView('aushang');
+}
+if (window.inventarData && window.inventarData.length > 0) {
+renderInventar();
+}
 }
 window.applyRolePermissions = applyRolePermissions;
-
-// Suche & Filter im Inventar
-function handleInventarSearch(term) {
-  window.currentSearchTerm = (term || '').toLowerCase();
-  renderInventar();
-}
-window.handleInventarSearch = handleInventarSearch;
-
-function setFilterStatus(status) {
-  window.currentFilterStatus = status;
-  renderInventar();
-}
-window.setFilterStatus = setFilterStatus;
-
-// Filter-Buttons inklusive ALLEN 5 Status (Alle, Offen, Vorbereitet, Verteilt, Eingekauft, Erledigt)
-function renderFilterButtons() {
-  const container = document.getElementById('filterButtonsContainer');
-  if (!container) return;
-
-  const filters = [
-    { id: 'alle', label: 'Alle' },
-    { id: 'offen', label: 'Offen' },
-    { id: 'vorbereitet', label: 'Vorbereitet' },
-    { id: 'verteilt', label: 'Verteilt' },
-    { id: 'eingekauft', label: 'Eingekauft' },
-    { id: 'erledigt', label: 'Erledigt' }
-  ];
-
-  container.innerHTML = filters.map(f => {
-    const isActive = window.currentFilterStatus === f.id;
-    let colorClass = '';
-
-    if (isActive) {
-      colorClass = 'bg-amber-500 text-slate-950 font-black border-amber-500 shadow-md scale-105';
-    } else {
-      if (f.id === 'offen') colorClass = 'bg-rose-950/40 text-rose-400 border-rose-800/60 hover:bg-rose-900/50';
-      else if (f.id === 'vorbereitet') colorClass = 'bg-amber-950/40 text-amber-400 border-amber-800/60 hover:bg-amber-900/50';
-      else if (f.id === 'verteilt') colorClass = 'bg-sky-950/40 text-sky-400 border-sky-800/60 hover:bg-sky-900/50';
-      else if (f.id === 'eingekauft') colorClass = 'bg-purple-950/40 text-purple-400 border-purple-800/60 hover:bg-purple-900/50';
-      else if (f.id === 'erledigt') colorClass = 'bg-emerald-950/40 text-emerald-400 border-emerald-800/60 hover:bg-emerald-900/50';
-      else colorClass = 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800';
-    }
-
-    return `<button onclick="window.setFilterStatus('${f.id}')" class="px-3.5 py-1.5 text-xs font-bold rounded-xl border transition-all ${colorClass}">${f.label}</button>`;
-  }).join('');
-}
-
-// Rendering der Inventartabellen
-function renderInventar() {
-  renderFilterButtons();
-  const container = document.getElementById('inventarTablesContainer');
-  if (!container) return;
-
-  if (!window.inventarData || !Array.isArray(window.inventarData) || window.inventarData.length === 0) {
-    window.inventarData = getInitialInventarData();
-  }
-
-  let totalCount = 0;
-  let completedCount = 0;
-
-  window.inventarData.forEach(cat => {
-    (cat.items || []).forEach(item => {
-      totalCount++;
-      if (item.status === 'erledigt' || item.pack) completedCount++;
-    });
-  });
-
-  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-  const progressEl = document.getElementById('inventarProgressText');
-  if (progressEl) {
-    progressEl.innerText = `${progressPercent}% erledigt (${completedCount}/${totalCount})`;
-  }
-
-  let html = window.inventarData.map((cat, catIdx) => {
-    const items = cat.items || [];
-
-    const filteredItems = items.filter(item => {
-      const name = (item.name || '').toLowerCase();
-      const note = (item.note || '').toLowerCase();
-      const wer = (item.wer || '').toLowerCase();
-      const box = (item.box || '').toLowerCase();
-
-      const matchesSearch = !window.currentSearchTerm || 
-        name.includes(window.currentSearchTerm) || 
-        note.includes(window.currentSearchTerm) || 
-        wer.includes(window.currentSearchTerm) || 
-        box.includes(window.currentSearchTerm);
-
-      const status = (item.status || 'offen').toLowerCase();
-      const matchesFilter = window.currentFilterStatus === 'alle' || status === window.currentFilterStatus;
-
-      return matchesSearch && matchesFilter;
-    });
-
-    if (filteredItems.length === 0 && window.currentSearchTerm) return '';
-
-    const rowsHtml = filteredItems.map((item) => {
-      const realIndex = items.indexOf(item);
-      const st = (item.status || 'offen').toLowerCase();
-
-      let statusColor = 'text-rose-400 border-rose-500/40 bg-rose-500/10';
-      if (st === 'vorbereitet') statusColor = 'text-amber-400 border-amber-500/40 bg-amber-500/10';
-      if (st === 'verteilt') statusColor = 'text-sky-400 border-sky-500/40 bg-sky-500/10';
-      if (st === 'eingekauft') statusColor = 'text-purple-400 border-purple-500/40 bg-purple-500/10';
-      if (st === 'erledigt') statusColor = 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10';
-
-      return `
-        <tr class="border-b border-slate-800/60 hover:bg-slate-800/30 transition text-xs">
-          <!-- GEGENSTAND -->
-          <td class="py-3 px-4">
-            <div class="font-bold text-slate-100">${item.name || ''}</div>
-            ${item.note ? `<div class="text-[10px] text-slate-400 mt-0.5">${item.note}</div>` : ''}
-          </td>
-
-          <!-- BEDARF -->
-          <td class="py-3 px-3 text-center">
-            <input type="text" value="${item.bedarf || '1'}" 
-              onchange="window.updateInventarField(${catIdx}, ${realIndex}, 'bedarf', this.value)"
-              class="w-12 text-center py-1 bg-slate-950 border border-slate-800 rounded font-bold text-slate-200 focus:border-amber-500 focus:outline-none" />
-          </td>
-
-          <!-- LAGER -->
-          <td class="py-3 px-3 text-center">
-            <input type="text" value="${item.lager || '0'}" 
-              onchange="window.updateInventarField(${catIdx}, ${realIndex}, 'lager', this.value)"
-              class="w-12 text-center py-1 bg-slate-950 border border-slate-800 rounded font-bold text-emerald-400 focus:border-amber-500 focus:outline-none" />
-          </td>
-
-          <!-- STATUS -->
-          <td class="py-3 px-3">
-            <select onchange="window.updateInventarField(${catIdx}, ${realIndex}, 'status', this.value)" 
-              class="px-2.5 py-1 text-xs font-bold rounded-lg border focus:outline-none ${statusColor}">
-              <option value="offen" class="bg-slate-900 text-rose-400" ${st === 'offen' ? 'selected' : ''}>Offen</option>
-              <option value="vorbereitet" class="bg-slate-900 text-amber-400" ${st === 'vorbereitet' ? 'selected' : ''}>Vorbereitet</option>
-              <option value="verteilt" class="bg-slate-900 text-sky-400" ${st === 'verteilt' ? 'selected' : ''}>Verteilt</option>
-              <option value="eingekauft" class="bg-slate-900 text-purple-400" ${st === 'eingekauft' ? 'selected' : ''}>Eingekauft</option>
-              <option value="erledigt" class="bg-slate-900 text-emerald-400" ${st === 'erledigt' ? 'selected' : ''}>Erledigt</option>
-            </select>
-          </td>
-
-          <!-- WER -->
-          <td class="py-3 px-3">
-            <input type="text" placeholder="Name..." value="${item.wer || ''}" 
-              onchange="window.updateInventarField(${catIdx}, ${realIndex}, 'wer', this.value)"
-              class="w-28 px-2.5 py-1 bg-slate-950 border border-slate-800 rounded text-slate-300 placeholder-slate-600 focus:border-amber-500 focus:outline-none" />
-          </td>
-
-          <!-- PACK -->
-          <td class="py-3 px-3 text-center">
-            <input type="checkbox" ${item.pack ? 'checked' : ''} 
-              onchange="window.updateInventarField(${catIdx}, ${realIndex}, 'pack', this.checked)"
-              class="w-4 h-4 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-amber-500" />
-          </td>
-
-          <!-- BOX -->
-          <td class="py-3 px-4">
-            <input type="text" placeholder="Box..." value="${item.box || ''}" 
-              onchange="window.updateInventarField(${catIdx}, ${realIndex}, 'box', this.value)"
-              class="w-28 px-2.5 py-1 bg-slate-950 border border-slate-800 rounded text-slate-300 focus:border-amber-500 focus:outline-none" />
-          </td>
-        </tr>
-      `;
-    }).join('');
-
-    return `
-      <div class="bg-slate-900/90 rounded-2xl border border-slate-800 shadow-xl overflow-hidden space-y-1">
-        <div class="bg-slate-950/80 px-5 py-3.5 border-b border-slate-800/80 flex justify-between items-center">
-          <h3 class="font-black text-sm text-amber-400 flex items-center gap-2">
-            <span>${cat.category || 'Kategorie'}</span>
-          </h3>
-          <span class="text-[11px] font-bold text-slate-400 bg-slate-800 px-2.5 py-1 rounded-full">${filteredItems.length} Einträge</span>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-800/80 bg-slate-950/30">
-                <th class="py-2.5 px-4">GEGENSTAND</th>
-                <th class="py-2.5 px-3 text-center">BEDARF</th>
-                <th class="py-2.5 px-3 text-center">LAGER</th>
-                <th class="py-2.5 px-3">STATUS</th>
-                <th class="py-2.5 px-3">WER</th>
-                <th class="py-2.5 px-3 text-center">PACK</th>
-                <th class="py-2.5 px-4">BOX</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rowsHtml}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  container.innerHTML = html || `<div class="p-8 text-center text-slate-500 text-xs font-semibold">Keine Gegenstände für diese Suche gefunden.</div>`;
-}
-window.renderInventar = renderInventar;
-
-function updateInventarField(catIdx, itemIdx, field, value) {
-  if (!window.inventarData[catIdx] || !window.inventarData[catIdx].items[itemIdx]) return;
-  window.inventarData[catIdx].items[itemIdx][field] = value;
-  localStorage.setItem('inventarData', JSON.stringify(window.inventarData));
-  renderInventar();
-  syncAllWithGoogleSheets();
-}
-window.updateInventarField = updateInventarField;
-
-// Kasse & Schnellverkauf Logik
-function updateKassePrice(item, priceVal) {
-  const price = Math.max(0, parseFloat(priceVal) || 0);
-  window.kasseData[item + 'Price'] = price;
-  localStorage.setItem('kasseData', JSON.stringify(window.kasseData));
-  renderKasse();
-  renderStatistik();
-  syncAllWithGoogleSheets();
-}
-window.updateKassePrice = updateKassePrice;
-
+// ------------------------------------------
+// 3. KASSE & STATISTIK LOGIK
+// ------------------------------------------
 function changeKasseCount(item, type, delta) {
-  const key = item + (type === 'paid' ? 'Paid' : 'Free');
-  window.kasseData[key] = Math.max(0, (window.kasseData[key] || 0) + delta);
-  localStorage.setItem('kasseData', JSON.stringify(window.kasseData));
-  renderKasse();
-  renderStatistik();
-  syncAllWithGoogleSheets();
+const key = item + (type === 'paid' ? 'Paid' : 'Free');
+if (typeof window.kasseData[key] === 'number') {
+window.kasseData[key] = Math.max(0, window.kasseData[key] + delta);
+localStorage.setItem('kasseData', JSON.stringify(window.kasseData));
+renderKasse();
+}
 }
 window.changeKasseCount = changeKasseCount;
-
 function renderKasse() {
-  const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
-
-  setEl('countKinderpunschPaid', window.kasseData.kinderpunschPaid || 0);
-  setEl('countKinderpunschFree', window.kasseData.kinderpunschFree || 0);
-  setEl('countWaffelPaid', window.kasseData.waffelPaid || 0);
-  setEl('countWaffelFree', window.kasseData.waffelFree || 0);
-
-  const punschPrice = window.kasseData.kinderpunschPrice || 2.00;
-  const waffelPrice = window.kasseData.waffelPrice || 2.00;
-
-  setEl('displayKinderpunschPrice', `${punschPrice.toFixed(2).replace('.', ',')} € / Becher`);
-  setEl('displayWaffelPrice', `${waffelPrice.toFixed(2).replace('.', ',')} € / Stück`);
-
-  const totalRev = ((window.kasseData.kinderpunschPaid || 0) * punschPrice) + ((window.kasseData.waffelPaid || 0) * waffelPrice);
-  setEl('kasseLiveTotalEuros', totalRev.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €');
+const punschPaidEl = document.getElementById('countKinderpunschPaid');
+const punschFreeEl = document.getElementById('countKinderpunschFree');
+const waffelPaidEl = document.getElementById('countWaffelPaid');
+const waffelFreeEl = document.getElementById('countWaffelFree');
+const totalEurosEl = document.getElementById('kasseLiveTotalEuros');
+if (punschPaidEl) punschPaidEl.innerText = window.kasseData.kinderpunschPaid || 0;
+if (punschFreeEl) punschFreeEl.innerText = window.kasseData.kinderpunschFree || 0;
+if (waffelPaidEl) waffelPaidEl.innerText = window.kasseData.waffelPaid || 0;
+if (waffelFreeEl) waffelFreeEl.innerText = window.kasseData.waffelFree || 0;
+const totalRev = ((window.kasseData.kinderpunschPaid || 0) * (window.kasseData.kinderpunschPrice || 2)) +
+((window.kasseData.waffelPaid || 0) * (window.kasseData.waffelPrice || 2));
+if (totalEurosEl) {
+totalEurosEl.innerText = totalRev.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+}
 }
 window.renderKasse = renderKasse;
-
 function renderStatistik() {
-  const pPaid = window.kasseData.kinderpunschPaid || 0;
-  const pFree = window.kasseData.kinderpunschFree || 0;
-  const wPaid = window.kasseData.waffelPaid || 0;
-  const wFree = window.kasseData.waffelFree || 0;
-
-  const pPrice = window.kasseData.kinderpunschPrice || 2.00;
-  const wPrice = window.kasseData.waffelPrice || 2.00;
-
-  const totalRev = (pPaid * pPrice) + (wPaid * wPrice);
-
-  const setEl = (id, txt) => { const el = document.getElementById(id); if (el) el.innerText = txt; };
-
-  setEl('statTotalRevenue', totalRev.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €');
-  setEl('statTotalPaidItems', (pPaid + wPaid) + ' Stk.');
-  setEl('statTotalFreeItems', (pFree + wFree) + ' Stk.');
-  setEl('statTotalAllItems', (pPaid + wPaid + pFree + wFree) + ' Stk.');
-
-  setEl('statKinderpunschPaid', `${pPaid} Stk. (${(pPaid * pPrice).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €)`);
-  setEl('statKinderpunschFree', `${pFree} Stk.`);
-  setEl('statKinderpunschTotal', `${pPaid + pFree} Stk.`);
-
-  setEl('statWaffelPaid', `${wPaid} Stk. (${(wPaid * wPrice).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €)`);
-  setEl('statWaffelFree', `${wFree} Stk.`);
-  setEl('statWaffelTotal', `${wPaid + wFree} Stk.`);
+const punschPaid = window.kasseData.kinderpunschPaid || 0;
+const punschFree = window.kasseData.kinderpunschFree || 0;
+const waffelPaid = window.kasseData.waffelPaid || 0;
+const waffelFree = window.kasseData.waffelFree || 0;
+const punschPrice = window.kasseData.kinderpunschPrice || 2;
+const waffelPrice = window.kasseData.waffelPrice || 2;
+const punschRev = punschPaid * punschPrice;
+const waffelRev = waffelPaid * waffelPrice;
+const totalRev = punschRev + waffelRev;
+const totalPaidItems = punschPaid + waffelPaid;
+const totalFreeItems = punschFree + waffelFree;
+const totalAllItems = totalPaidItems + totalFreeItems;
+const setEl = (id, txt) => {
+const el = document.getElementById(id);
+if (el) el.innerText = txt;
+};
+setEl('statTotalRevenue', totalRev.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €');
+setEl('statTotalPaidItems', totalPaidItems + ' Stk.');
+setEl('statTotalFreeItems', totalFreeItems + ' Stk.');
+setEl('statTotalAllItems', totalAllItems + ' Stk.');
+setEl('statKinderpunschPaid', ⁠${punschPaid} Stk. (${punschRev.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €)⁠);
+setEl('statKinderpunschFree', ⁠${punschFree} Stk.⁠);
+setEl('statKinderpunschTotal', ⁠${punschPaid + punschFree} Stk.⁠);
+setEl('statWaffelPaid', ⁠${waffelPaid} Stk. (${waffelRev.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €)⁠);
+setEl('statWaffelFree', ⁠${waffelFree} Stk.⁠);
+setEl('statWaffelTotal', ⁠${waffelPaid + waffelFree} Stk.⁠);
 }
 window.renderStatistik = renderStatistik;
-
 function resetKasseData() {
-  window.kasseData.kinderpunschPaid = 0;
-  window.kasseData.kinderpunschFree = 0;
-  window.kasseData.waffelPaid = 0;
-  window.kasseData.waffelFree = 0;
-  localStorage.setItem('kasseData', JSON.stringify(window.kasseData));
-  renderKasse();
-  renderStatistik();
-  syncAllWithGoogleSheets();
-  showToast('Zählerstände wurden auf 0 zurückgesetzt.', 'info');
+if (confirm('Möchtest du die Zählerstände der Kasse wirklich für die neue Schicht auf 0 zurücksetzen?')) {
+window.kasseData = { ...DEFAULT_KASSE_DATA };
+localStorage.setItem('kasseData', JSON.stringify(window.kasseData));
+renderKasse();
+renderStatistik();
+}
 }
 window.resetKasseData = resetKasseData;
-
-// Synchronisation mit Google Sheets
+// ------------------------------------------
+// 4. INVENTAR & GOOGLE SHEETS SYSTEM
+// ------------------------------------------
 async function loadInventarFromGoogleSheets() {
-  try {
-    const res = await fetch(GOOGLE_SCRIPT_URL);
-    if (res.ok) {
-      let data = await res.json();
-      if (typeof data === 'string') { try { data = JSON.parse(data); } catch (e) {} }
-
-      let invArr = Array.isArray(data) ? data : (data && Array.isArray(data.inventarData) ? data.inventarData : null);
-      if (invArr && invArr.length > 0) {
-        window.inventarData = invArr;
-        localStorage.setItem('inventarData', JSON.stringify(window.inventarData));
-        renderInventar();
-      }
-    }
-  } catch (e) {
-    console.warn('Google Sheets nicht erreichbar, nutze lokalen Speicher:', e);
-  }
+const progressText = document.getElementById('inventarProgressText');
+if (progressText) progressText.innerText = 'Lade Daten...';
+if ((!window.inventarData || window.inventarData.length === 0) && window.inventarCategories) {
+window.inventarData = JSON.parse(JSON.stringify(window.inventarCategories));
+renderInventar();
+}
+try {
+const res = await fetch(GOOGLE_SCRIPT_URL);
+if (res.ok) {
+let data = await res.json();
+if (typeof data === 'string') {
+try { data = JSON.parse(data); } catch (e) {}
+}
+const isValid = Array.isArray(data) && data.length > 0 && Array.isArray(data[0].items);
+if (isValid) {
+window.inventarData = data;
+renderInventar();
+} else {
+console.warn('Google Sheets hat leere/ungültige Daten geliefert. Lokale Daten bleiben bestehen.');
+if (!window.inventarData || window.inventarData.length === 0) {
+window.inventarData = JSON.parse(JSON.stringify(window.inventarCategories));
+renderInventar();
+}
+}
+}
+} catch (e) {
+console.warn('Google Sheets Fehler / Offline - erstelle mit lokalen Daten:', e);
+if (!window.inventarData || window.inventarData.length === 0) {
+window.inventarData = JSON.parse(JSON.stringify(window.inventarCategories));
+renderInventar();
+}
+}
 }
 window.loadInventarFromGoogleSheets = loadInventarFromGoogleSheets;
-
-async function loadKasseFromGoogleSheets() {
-  try {
-    const res = await fetch(GOOGLE_SCRIPT_URL);
-    if (res.ok) {
-      let data = await res.json();
-      if (typeof data === 'string') { try { data = JSON.parse(data); } catch (e) {} }
-
-      if (data && data.kasseData) {
-        window.kasseData = Object.assign({}, DEFAULT_KASSE_DATA, data.kasseData);
-        localStorage.setItem('kasseData', JSON.stringify(window.kasseData));
-        renderKasse();
-        renderStatistik();
-      }
-    }
-  } catch (e) {
-    console.warn('Kassen-Sync Fehler:', e);
-  }
+function setInventarFilter(filterStatus) {
+window.currentFilterStatus = filterStatus;
+updateFilterButtonsUI();
+renderInventar();
 }
-window.loadKasseFromGoogleSheets = loadKasseFromGoogleSheets;
-
-async function syncAllWithGoogleSheets() {
-  if (!window.inventarData || !Array.isArray(window.inventarData) || window.inventarData.length === 0) {
-    window.inventarData = getInitialInventarData();
-  }
-
-  const payload = {
-    inventarData: window.inventarData,
-    kasseData: window.kasseData || DEFAULT_KASSE_DATA
-  };
-
-  try {
-    await fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-  } catch (e) {
-    console.warn('Fehler beim Speichern:', e);
-  }
+window.setInventarFilter = setInventarFilter;
+function handleInventarSearch(val) {
+window.currentSearchTerm = (val || '').toLowerCase().trim();
+renderInventar();
 }
-window.syncAllWithGoogleSheets = syncAllWithGoogleSheets;
-
-// Initialisierung bei App-Start
-function initApp() {
-  try {
-    initTheme();
-    applyRolePermissions(window.currentUserRole);
-    renderInventar();
-    renderKasse();
-    renderStatistik();
-  } catch (e) {
-    console.error('Fehler bei der Initialisierung:', e);
-  }
+window.handleInventarSearch = handleInventarSearch;
+function toggleEditMode() {
+if (window.currentUserRole !== 'admin' && window.currentUserRole !== 'orga') {
+alert('Nur Admins und Orga können den Bearbeitungsmodus aktivieren.');
+return;
 }
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initApp);
+window.isEditMode = !window.isEditMode;
+const editBtn = document.getElementById('adminInventarEditBtn');
+if (editBtn) {
+if (window.isEditMode) {
+editBtn.innerText = '❌ Bearbeiten Beenden';
+editBtn.className = 'px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition shadow';
 } else {
-  initApp();
+editBtn.innerText = '✏️ Bearbeiten';
+editBtn.className = 'px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-xl transition shadow';
 }
+}
+renderInventar();
+}
+window.toggleEditMode = toggleEditMode;
+function updateFilterButtonsUI() {
+const container = document.getElementById('filterButtonsContainer');
+if (!container) return;
+const baseOrder = ['Offen', 'Vorbereitet', 'Verteilt', 'Eingekauft', 'Erledigt'];
+const allStatusesSet = new Set(baseOrder);
+if (window.inventarData && Array.isArray(window.inventarData)) {
+window.inventarData.forEach(cat => {
+const catStatuses = getCategoryStatuses(cat);
+catStatuses.forEach(st => allStatusesSet.add(st));
+(cat.items || []).forEach(item => {
+if (item.status) allStatusesSet.add(item.status);
+});
+});
+}
+const orderedStatuses = ['alle', ...baseOrder];
+allStatusesSet.forEach(st => {
+if (!orderedStatuses.includes(st)) {
+orderedStatuses.push(st);
+}
+});
+let buttonsHtml = '';
+orderedStatuses.forEach(status => {
+const isActive = (window.currentFilterStatus.toLowerCase() === status.toLowerCase());
+const label = status === 'alle' ? 'Alle' : status;
+let activeClass = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition shadow-md ";
+let inactiveClass = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition border ";
+if (status === 'alle') {
+activeClass += "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-950";
+inactiveClass += "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 border-slate-300 dark:border-slate-700";
+} else if (status === 'Offen') {
+activeClass += "bg-rose-500 text-white";
+inactiveClass += "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/20";
+} else if (status === 'Vorbereitet') {
+activeClass += "bg-amber-500 text-slate-950 font-black";
+inactiveClass += "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20";
+} else if (status === 'Verteilt') {
+activeClass += "bg-sky-500 text-white";
+inactiveClass += "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30 hover:bg-sky-500/20";
+} else if (status === 'Eingekauft') {
+activeClass += "bg-purple-600 text-white";
+inactiveClass += "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30 hover:bg-purple-500/20";
+} else if (status === 'Erledigt') {
+activeClass += "bg-emerald-500 text-white";
+inactiveClass += "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20";
+} else {
+activeClass += "bg-indigo-600 text-white";
+inactiveClass += "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/20";
+}
+buttonsHtml += ⁠<button data-filter-btn="${escapeHtml(status)}" onclick="setInventarFilter('${escapeHtml(status)}')"  class="${isActive ? activeClass : inactiveClass}"> ${escapeHtml(label)} </button>⁠;
+});
+container.innerHTML = buttonsHtml;
+}
+window.updateFilterButtonsUI = updateFilterButtonsUI;
+function getCategoryStatuses(cat) {
+if (cat.statuses && Array.isArray(cat.statuses) && cat.statuses.length > 0) {
+return cat.statuses;
+}
+const title = (cat.title || '').toLowerCase();
+if (title.includes('zutat') || title.includes('einkauf') || title.includes('lebensmittel') || title.includes('verpflegung')) {
+return DEFAULT_STATUSES_EINKAUF;
+}
+return DEFAULT_STATUSES_STANDARD;
+}
+window.getCategoryStatuses = getCategoryStatuses;
+function editCategoryStatuses(catIdx) {
+const cat = window.inventarData[catIdx];
+if (!cat) return;
+const currentList = getCategoryStatuses(cat).join(', ');
+const input = prompt(
+⁠Verfügbare Status-Optionen für "${cat.title}" festlegen (kommagetrennt):\n\nBeispiel: Offen, Vorbereitet, Verteilt, Eingekauft, Erledigt⁠,
+currentList
+);
+if (input !== null) {
+const list = input.split(',').map(s => s.trim()).filter(Boolean);
+if (list.length > 0) {
+cat.statuses = list;
+} else {
+delete cat.statuses;
+}
+syncWithGoogleSheets();
+renderInventar();
+}
+}
+window.editCategoryStatuses = editCategoryStatuses;
+function addCategory() {
+const name = prompt('Name der neuen Kategorie (z.B. 🍿 SNACKS):');
+if (!name || !name.trim()) return;
+window.inventarData.push({
+title: name.trim(),
+items: []
+});
+syncWithGoogleSheets();
+renderInventar();
+}
+window.addCategory = addCategory;
+function renameCategory(catIdx) {
+const cat = window.inventarData[catIdx];
+if (!cat) return;
+const newName = prompt('Kategoriename ändern:', cat.title);
+if (newName !== null && newName.trim()) {
+cat.title = newName.trim();
+syncWithGoogleSheets();
+renderInventar();
+}
+}
+window.renameCategory = renameCategory;
+function deleteCategory(catIdx) {
+const cat = window.inventarData[catIdx];
+if (!cat) return;
+if (confirm(⁠Möchtest du die Kategorie "${cat.title}" inklusive aller ${cat.items.length} Einträge wirklich löschen?⁠)) {
+window.inventarData.splice(catIdx, 1);
+syncWithGoogleSheets();
+renderInventar();
+}
+}
+window.deleteCategory = deleteCategory;
+function moveCategory(catIdx, direction) {
+const targetIdx = catIdx + direction;
+if (targetIdx < 0 || targetIdx >= window.inventarData.length) return;
+const temp = window.inventarData[catIdx];
+window.inventarData[catIdx] = window.inventarData[targetIdx];
+window.inventarData[targetIdx] = temp;
+syncWithGoogleSheets();
+renderInventar();
+}
+window.moveCategory = moveCategory;
+function addItem(catIdx) {
+const cat = window.inventarData[catIdx];
+if (!cat) return;
+const name = prompt('Name des neuen Gegenstands:');
+if (!name || !name.trim()) return;
+cat.items.push({
+name: name.trim(),
+sub: '',
+bedarf: 1,
+lager: 0,
+status: 'Offen',
+wer: '',
+verantwortlich: '',
+empfaenger: '',
+pack: false,
+box: ''
+});
+syncWithGoogleSheets();
+renderInventar();
+}
+window.addItem = addItem;
+function deleteItem(catIdx, itemIdx) {
+const cat = window.inventarData[catIdx];
+if (!cat || !cat.items[itemIdx]) return;
+if (confirm(⁠Eintrag "${cat.items[itemIdx].name}" wirklich löschen?⁠)) {
+cat.items.splice(itemIdx, 1);
+syncWithGoogleSheets();
+renderInventar();
+}
+}
+window.deleteItem = deleteItem;
+function moveItem(catIdx, itemIdx, direction) {
+const cat = window.inventarData[catIdx];
+if (!cat) return;
+const targetIdx = itemIdx + direction;
+if (targetIdx < 0 || targetIdx >= cat.items.length) return;
+const temp = cat.items[itemIdx];
+cat.items[itemIdx] = cat.items[targetIdx];
+cat.items[targetIdx] = temp;
+syncWithGoogleSheets();
+renderInventar();
+}
+window.moveItem = moveItem;
+function getStatusStyleClass(status) {
+switch (status) {
+case 'Offen':
+return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-300 dark:border-rose-800/80 font-bold';
+case 'Eingekauft':
+return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-300 dark:border-purple-800/80 font-bold';
+case 'Vorbereitet':
+return 'bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-400 dark:border-amber-500/80 font-extrabold';
+case 'Verteilt':
+return 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-300 dark:border-sky-800/80 font-bold';
+case 'Erledigt':
+return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800/80 font-bold';
+default:
+return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 font-bold';
+}
+}
+function getStatusOptionTextColor(status) {
+switch (status) {
+case 'Offen': return 'text-rose-600 dark:text-rose-400';
+case 'Eingekauft': return 'text-purple-600 dark:text-purple-400';
+case 'Vorbereitet': return 'text-amber-600 dark:text-amber-400';
+case 'Verteilt': return 'text-sky-600 dark:text-sky-400';
+case 'Erledigt': return 'text-emerald-600 dark:text-emerald-400';
+default: return 'text-slate-800 dark:text-slate-200';
+}
+}
+function renderInventar() {
+const container = document.getElementById('inventarTablesContainer');
+if (!container) return;
+if (!window.inventarData || window.inventarData.length === 0) {
+if (window.inventarCategories) {
+window.inventarData = JSON.parse(JSON.stringify(window.inventarCategories));
+} else {
+container.innerHTML = '<div class="p-8 text-center text-slate-500 dark:text-slate-400 text-xs">Keine Inventardaten vorhanden.</div>';
+return;
+}
+}
+updateFilterButtonsUI();
+let totalItems = 0;
+let completedItems = 0;
+let html = '';
+const isReadonly = window.currentUserRole === 'gast';
+const showEditControls = window.isEditMode && (window.currentUserRole === 'admin' || window.currentUserRole === 'orga');
+window.inventarData.forEach((cat, catIdx) => {
+const isOrga = (cat.title || '').toLowerCase().includes('orga');
+const availableStatuses = getCategoryStatuses(cat);
+(cat.items || []).forEach(item => {
+totalItems++;
+if (item.status === 'Erledigt' || item.status === 'Eingekauft' || item.pack) {
+completedItems++;
+}
+});
+const matchingItems = (cat.items || []).filter(item => {
+if (window.currentSearchTerm) {
+const matchName = (item.name || '').toLowerCase().includes(window.currentSearchTerm);
+const matchSub = (item.sub || '').toLowerCase().includes(window.currentSearchTerm);
+const matchWer = (item.wer || item.verantwortlich || '').toLowerCase().includes(window.currentSearchTerm);
+const matchEmpf = (item.empfaenger || '').toLowerCase().includes(window.currentSearchTerm);
+const matchBox = (item.box || '').toLowerCase().includes(window.currentSearchTerm);
+if (!matchName && !matchSub && !matchWer && !matchEmpf && !matchBox) return false;
+}
+if (window.currentFilterStatus !== 'alle') {
+const itemStatus = (item.status || 'Offen').toLowerCase();
+if (itemStatus !== window.currentFilterStatus.toLowerCase()) return false;
+}
+return true;
+});
+if (matchingItems.length > 0 || showEditControls) {
+html += `
+<div class="bg-white dark:bg-slate-900 rounded-2xl border ${showEditControls ? 'border-amber-500/50' : 'border-slate-200 dark:border-slate-800'} shadow-sm dark:shadow-md overflow-hidden">
+<div class="px-5 py-3.5 bg-slate-50 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+<div class="flex items-center gap-2">
+<h3 class="text-xs sm:text-sm font-black tracking-wide text-amber-600 dark:text-amber-400 uppercase">
+${escapeHtml(cat.title)}
+</h3>
+<span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
+${matchingItems.length} Einträge
+</span>
+</div>
+{showEditControls ? `
+￼
+￼
+￼
+￼
+￼
+￼
+￼
+` : ''}
+￼
+￼
+￼
+￼
+￼
+￼{isOrga ? 'DETAIL' : 'GEGENSTAND'}</th>
+${isOrga ? '' : '<th class="py-3 px-2 text-center w-16 text-slate-900 dark:text-slate-100">BEDARF</th>'}
+${isOrga ? '' : '<th class="py-3 px-2 text-center w-16 text-slate-900 dark:text-slate-100">LAGER</th>'}
+<th class="py-3 px-2 text-center w-36 text-slate-900 dark:text-slate-100">STATUS</th>
+${isOrga ? '<th class="py-3 px-2 text-center w-36 text-slate-900 dark:text-slate-100">EMPFÄNGER</th>' : ''}
+<th class="py-3 px-2 text-center w-40 text-slate-900 dark:text-slate-100">VERANTWORTLICH</th>
+${isOrga ? '' : '<th class="py-3 px-2 text-center w-24 text-slate-900 dark:text-slate-100">EINGEPACKT</th>'}
+<th class="py-3 px-2 text-center w-20 text-slate-900 dark:text-slate-100">BOX</th>
+${showEditControls ? '<th class="py-3 px-2 text-center w-24 text-slate-900 dark:text-slate-100">AKTIONEN</th>' : ''}
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-200 dark:divide-slate-800/60">
+`;
+cat.items.forEach((item) => {
+const itemIdx = cat.items.indexOf(item);
+if (!matchingItems.includes(item) && !showEditControls) return;
+const statusStyle = getStatusStyleClass(item.status || 'Offen');
+const verantwortlicherVal = item.verantwortlich || item.wer || '';
+const currentItemStatus = item.status || 'Offen';
+let optionsList = [...availableStatuses];
+if (!optionsList.includes(currentItemStatus)) {
+optionsList.push(currentItemStatus);
+}
+html += ⁠<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition"> <td class="py-2.5 px-4 font-semibold text-slate-900 dark:text-slate-100"> ${showEditControls ?⁠
+<input type="text" value="${escapeHtml(item.name)}" placeholder="Name..." 
+onchange="updateInventarItem(${catIdx},${itemIdx}, 'name', this.value)"
+class="w-full font-bold bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded py-0.5 px-1.5 text-xs text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:outline-none mb-1" />
+<input type="text" value="${escapeHtml(item.sub || '')}" placeholder="Beschreibung/Subtext..." 
+onchange="updateInventarItem(${catIdx},${itemIdx}, 'sub', this.value)"
+class="w-full text-[10px] bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded py-0.5 px-1.5 text-slate-600 dark:text-slate-400 focus:border-amber-500 focus:outline-none" />
+⁠:⁠
+<div class="leading-tight text-slate-900 dark:text-slate-100 font-bold">￼{item.sub ? ⁠<div class="text-[10px] font-normal text-slate-500 dark:text-slate-400 mt-0.5">${escapeHtml(item.sub)}</div>⁠ : ''}
+⁠} </td> ${isOrga ? '' : ⁠
+<td class="py-2.5 px-2 text-center">
+<input type="number" value="￼
+￼{itemIdx}, 'bedarf', parseInt(this.value) || 0)"
+class="w-12 text-center bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-1 text-slate-900 dark:text-slate-100 font-bold focus:border-amber-500 focus:outline-none disabled:opacity-60" />
+</td>
+<td class="py-2.5 px-2 text-center">
+<input type="number" value="￼
+￼{itemIdx}, 'lager', parseInt(this.value) || 0)"
+class="w-12 text-center bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-1 text-emerald-600 dark:text-emerald-400 font-black focus:border-amber-500 focus:outline-none disabled:opacity-60" />
+</td>
+⁠} <td class="py-2.5 px-2 text-center"> <select ${isReadonly ? 'disabled' : ''} onchange="updateInventarItem(${catIdx}, ${itemIdx}, 'status', this.value)" class="w-full bg-white dark:bg-slate-950 border rounded-md py-1 px-2 text-xs font-bold focus:border-amber-500 focus:outline-none disabled:opacity-60 ${statusStyle}"> ${optionsList.map(st => ⁠
+<option value="${escapeHtml(st)}" class="bg-white dark:bg-slate-900 ￼
+￼
+￼
+`).join('')}
+￼
+￼
+${isOrga ? `
+￼
+￼
+￼
+￼
+￼
+` : ''}
+￼
+￼
+￼
+￼
+￼
+${isOrga ? '' : `
+￼
+￼
+￼
+￼
+￼
+`}
+￼
+￼
+￼
+￼
+￼
+${showEditControls ? `
+￼
+￼
+￼{catIdx}, ${itemIdx}, -1)" ￼
+￼{catIdx}, ${itemIdx}, 1)" ${itemIdx === cat.items.length - 1 ? 'disabled' : ''} title="Nach unten" class="p-1 text-[10px] bg-slate-200 dark:bg-slate-800 rounded disabled:opacity-30">⬇️</button>
+<button onclick="deleteItem(${catIdx},${itemIdx})" title="Löschen" class="p-1 text-[10px] bg-rose-500/20 text-rose-500 border border-rose-500/30 rounded font-bold">🗑️</button>
+</div>
+</td>
+⁠: ''} </tr>⁠;
+});
+html += ⁠</tbody> </table> </div> ${showEditControls ?⁠
+<div class="p-3 bg-slate-100/50 dark:bg-slate-950/40 border-t border-slate-200 dark:border-slate-800 text-center">
+<button onclick="addItem(${catIdx})" class="px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold rounded-lg transition inline-flex items-center gap-1">
+➕ Neuer Gegenstand in ${escapeHtml(cat.title)}
+</button>
+</div>
+⁠: ''} </div>⁠;
+}
+});
+if (showEditControls) {
+html += ⁠<div class="p-6 bg-slate-50 dark:bg-slate-900 border-2 border-dashed border-amber-500/40 rounded-2xl text-center"> <button onclick="addCategory()" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2 mx-auto"> ➕ Neue Kategorie hinzufügen </button> </div>⁠;
+}
+container.innerHTML = html || '<div class="p-8 text-center text-slate-500 dark:text-slate-400 text-xs">Keine passenden Einträge für diesen Filter gefunden.</div>';
+const percent = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+const progressText = document.getElementById('inventarProgressText');
+if (progressText) {
+progressText.innerText = ⁠${percent}% erledigt (${completedItems}/${totalItems})⁠;
+}
+}
+window.renderInventar = renderInventar;
+function updateInventarItem(catIdx, itemIdx, field, val) {
+if (!window.inventarData[catIdx] || !window.inventarData[catIdx].items[itemIdx]) return;
+window.inventarData[catIdx].items[itemIdx][field] = val;
+syncWithGoogleSheets();
+renderInventar();
+}
+window.updateInventarItem = updateInventarItem;
+async function syncWithGoogleSheets() {
+try {
+await fetch(GOOGLE_SCRIPT_URL, {
+method: 'POST',
+mode: 'no-cors',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify(window.inventarData)
+});
+} catch (e) {
+console.warn('Fehler beim Speichern in Google Sheets:', e);
+}
+}
+window.syncWithGoogleSheets = syncWithGoogleSheets;
+function escapeHtml(str) {
+if (!str) return '';
+return String(str)
+.replace(/&/g, "&")
+.replace(/</g, "<")
+.replace(/>/g, ">")
+.replace(/"/g, """)
+.replace(/'/g, "'");
+}
+document.addEventListener('DOMContentLoaded', () => {
+try {
+initTheme();
+applyRolePermissions(window.currentUserRole);
+renderKasse();
+renderStatistik();
+} catch (e) {
+console.error('Fehler bei der Initialisierung:', e);
+}
+});
