@@ -8,6 +8,18 @@ window.inventarData = [];
 window.isEditMode = false;
 window.currentFilterStatus = 'alle';
 window.currentSearchTerm = '';
+// Helper zum sicheren Laden der Initialdaten
+function getInitialInventarData() {
+if (typeof window.inventarCategories !== 'undefined' && Array.isArray(window.inventarCategories) && window.inventarCategories.length > 0) {
+try {
+return JSON.parse(JSON.stringify(window.inventarCategories));
+} catch (e) {
+console.error('Fehler beim Klonen von inventarCategories:', e);
+}
+}
+return [];
+}
+window.getInitialInventarData = getInitialInventarData;
 // Kassen- und Verkauf-Zustand (mit Preisen)
 const DEFAULT_KASSE_DATA = {
 kinderpunschPaid: 0,
@@ -114,14 +126,14 @@ applyRolePermissions(role);
 }
 window.setRole = setRole;
 function applyRolePermissions(role) {
-window.currentUserRole = role;
+window.currentUserRole = role || 'gast';
 const burgerBtn = document.getElementById('burgerMenuBtn');
 const guestNotice = document.getElementById('guestLockNotice');
 const roleLabel = document.getElementById('roleLabel');
 const roleIcon = document.getElementById('roleIcon');
 const adminEditBtn = document.getElementById('adminInventarEditBtn');
 if (roleLabel) {
-roleLabel.innerText = role === 'admin' ? '🟢 ADMIN' : (role === 'orga' ? '🔵 ORGA' : (role === 'helfer' ? '🟡 HELFER' : 'GAST'));
+roleLabel.innerText = role === 'admin' ? '🟢 ADMIN' : (role === 'orga' ? '🔵 ORGA' : (role === 'helfer' ? '🟡 HELFER' : '👁️ GAST'));
 }
 if (adminEditBtn) {
 if (role === 'admin' || role === 'orga') {
@@ -135,12 +147,14 @@ if (role === 'gast') {
 if (burgerBtn) burgerBtn.classList.add('hidden');
 if (guestNotice) guestNotice.classList.remove('hidden');
 if (roleIcon) roleIcon.innerText = '👁️';
+const activeView = document.querySelector('main > div[id^="view"]:not(.hidden)');
+if (!activeView || (activeView.id !== 'viewAushang' && activeView.id !== 'viewLogin')) {
 switchView('aushang');
+}
 } else {
 if (burgerBtn) burgerBtn.classList.remove('hidden');
 if (guestNotice) guestNotice.classList.add('hidden');
 if (roleIcon) roleIcon.innerText = '🔓';
-switchView('aushang');
 }
 if (window.inventarData && window.inventarData.length > 0) {
 renderInventar();
@@ -220,9 +234,12 @@ window.resetKasseData = resetKasseData;
 async function loadInventarFromGoogleSheets() {
 const progressText = document.getElementById('inventarProgressText');
 if (progressText) progressText.innerText = 'Lade Daten...';
-if ((!window.inventarData || window.inventarData.length === 0) && window.inventarCategories) {
-window.inventarData = JSON.parse(JSON.stringify(window.inventarCategories));
+if (!window.inventarData || window.inventarData.length === 0) {
+const fallback = getInitialInventarData();
+if (fallback.length > 0) {
+window.inventarData = fallback;
 renderInventar();
+}
 }
 try {
 const res = await fetch(GOOGLE_SCRIPT_URL);
@@ -238,7 +255,7 @@ renderInventar();
 } else {
 console.warn('Google Sheets hat leere/ungültige Daten geliefert. Lokale Daten bleiben bestehen.');
 if (!window.inventarData || window.inventarData.length === 0) {
-window.inventarData = JSON.parse(JSON.stringify(window.inventarCategories));
+window.inventarData = getInitialInventarData();
 renderInventar();
 }
 }
@@ -246,7 +263,7 @@ renderInventar();
 } catch (e) {
 console.warn('Google Sheets Fehler / Offline - erstelle mit lokalen Daten:', e);
 if (!window.inventarData || window.inventarData.length === 0) {
-window.inventarData = JSON.parse(JSON.stringify(window.inventarCategories));
+window.inventarData = getInitialInventarData();
 renderInventar();
 }
 }
@@ -481,8 +498,9 @@ function renderInventar() {
 const container = document.getElementById('inventarTablesContainer');
 if (!container) return;
 if (!window.inventarData || window.inventarData.length === 0) {
-if (window.inventarCategories) {
-window.inventarData = JSON.parse(JSON.stringify(window.inventarCategories));
+const fallback = getInitialInventarData();
+if (fallback.length > 0) {
+window.inventarData = fallback;
 } else {
 container.innerHTML = '<div class="p-8 text-center text-slate-500 dark:text-slate-400 text-xs">Keine Inventardaten vorhanden.</div>';
 return;
@@ -677,7 +695,9 @@ return String(str)
 .replace(/"/g, """)
 .replace(/'/g, "'");
 }
-document.addEventListener('DOMContentLoaded', () => {
+window.escapeHtml = escapeHtml;
+// Sichere Initialisierung
+function initApp() {
 try {
 initTheme();
 applyRolePermissions(window.currentUserRole);
@@ -686,4 +706,9 @@ renderStatistik();
 } catch (e) {
 console.error('Fehler bei der Initialisierung:', e);
 }
-});
+}
+if (document.readyState === 'loading') {
+document.addEventListener('DOMContentLoaded', initApp);
+} else {
+initApp();
+}
