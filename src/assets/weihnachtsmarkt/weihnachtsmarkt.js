@@ -10,6 +10,8 @@ window.inventarData = [];
 window.isEditMode = false;
 window.currentFilterStatus = 'alle';
 window.currentSearchTerm = '';
+window.isSyncing = false;
+window.autoSyncTimer = null;
 
 // Helper zum sicheren Laden der Initialdaten
 function getInitialInventarData() {
@@ -104,6 +106,7 @@ function switchView(viewName) {
     if (lowerName === 'inventar') {
       loadInventarFromGoogleSheets();
     } else if (lowerName === 'verkauf' || lowerName === 'kasse') {
+      loadKasseFromGoogleSheets();
       renderKasse();
     } else if (lowerName === 'statistik') {
       renderStatistik();
@@ -167,6 +170,16 @@ function applyRolePermissions(role) {
     }
   }
 
+  // Admin / Orga Kontrollen steuern
+  const adminControls = document.querySelectorAll('.admin-only-control');
+  adminControls.forEach(el => {
+    if (role === 'admin' || role === 'orga') {
+      el.classList.remove('hidden');
+    } else {
+      el.classList.add('hidden');
+    }
+  });
+
   if (role === 'gast') {
     if (burgerBtn) burgerBtn.classList.add('hidden');
     if (guestNotice) guestNotice.classList.remove('hidden');
@@ -185,12 +198,46 @@ function applyRolePermissions(role) {
   if (window.inventarData && window.inventarData.length > 0) {
     renderInventar();
   }
+  renderKasse();
 }
 window.applyRolePermissions = applyRolePermissions;
 
 // ------------------------------------------
-// 3. VERKAUF / KASSE & STATISTIK LOGIK
+// 3. VERKAUF / KASSE & STATISTIK LOGIK WITH GOOGLE SHEETS SYNC
 // ------------------------------------------
+
+function updateKasseSyncBadge(status) {
+  const badge = document.getElementById('kasseSyncBadge');
+  if (!badge) return;
+
+  if (status === 'syncing') {
+    badge.className = "text-xs px-2.5 py-1 rounded-full font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1";
+    badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span> Speichere...';
+  } else if (status === 'success') {
+    badge.className = "text-xs px-2.5 py-1 rounded-full font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1";
+    badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Synchronisiert';
+  } else if (status === 'error') {
+    badge.className = "text-xs px-2.5 py-1 rounded-full font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30 flex items-center gap-1";
+    badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-500"></span> Offline (Lokal)';
+  }
+}
+window.updateKasseSyncBadge = updateKasseSyncBadge;
+
+function updateKassePrice(item, priceVal) {
+  if (window.currentUserRole !== 'admin' && window.currentUserRole !== 'orga') {
+    alert('Nur Admins und die Orga dürfen Preise anpassen.');
+    return;
+  }
+  const price = Math.max(0, parseFloat(priceVal) || 0);
+  const key = item + 'Price';
+  window.kasseData[key] = price;
+  localStorage.setItem('kasseData', JSON.stringify(window.kasseData));
+  renderKasse();
+  renderStatistik();
+  syncAllWithGoogleSheets();
+}
+window.updateKassePrice = updateKassePrice;
+
 function changeKasseCount(item, type, delta) {
   const key = item + (type === 'paid' ? 'Paid' : 'Free');
   const currentVal = typeof window.kasseData[key] === 'number' ? window.kasseData[key] : 0;
@@ -198,6 +245,7 @@ function changeKasseCount(item, type, delta) {
   localStorage.setItem('kasseData', JSON.stringify(window.kasseData));
   renderKasse();
   renderStatistik();
+  syncAllWithGoogleSheets();
 }
 window.changeKasseCount = changeKasseCount;
 
@@ -208,13 +256,27 @@ function renderKasse() {
   const waffelFreeEl = document.getElementById('countWaffelFree');
   const totalEurosEl = document.getElementById('kasseLiveTotalEuros');
 
+  const punschPriceDisp = document.getElementById('displayKinderpunschPrice');
+  const punschPriceInp = document.getElementById('inputKinderpunschPrice');
+  const waffelPriceDisp = document.getElementById('displayWaffelPrice');
+  const waffelPriceInp = document.getElementById('inputWaffelPrice');
+
+  const punschPrice = typeof window.kasseData.kinderpunschPrice === 'number' ? window.kasseData.kinderpunschPrice : 2.00;
+  const waffelPrice = typeof window.kasseData.waffelPrice === 'number' ? window.kasseData.waffelPrice : 2.00;
+
   if (punschPaidEl) punschPaidEl.innerText = window.kasseData.kinderpunschPaid || 0;
   if (punschFreeEl) punschFreeEl.innerText = window.kasseData.kinderpunschFree || 0;
   if (waffelPaidEl) waffelPaidEl.innerText = window.kasseData.waffelPaid || 0;
   if (waffelFreeEl) waffelFreeEl.innerText = window.kasseData.waffelFree || 0;
 
-  const totalRev = ((window.kasseData.kinderpunschPaid || 0) * (window.kasseData.kinderpunschPrice || 2)) +
-                   ((window.kasseData.waffelPaid || 0) * (window.kasseData.waffelPrice || 2));
+  if (punschPriceDisp) punschPriceDisp.innerText = `${punschPrice.toFixed(2).replace('.', ',')} € / Tasse`;
+  if (punschPriceInp && document.activeElement !== punschPriceInp) punschPriceInp.value = punschPrice.toFixed(2);
+
+  if (waffelPriceDisp) waffelPriceDisp.innerText = `${waffelPrice.toFixed(2).replace('.', ',')} € / Stück`;
+  if (waffelPriceInp && document.activeElement !== waffelPriceInp) waffelPriceInp.value = waffelPrice.toFixed(2);
+
+  const totalRev = ((window.kasseData.kinderpunschPaid || 0) * punschPrice) +
+                   ((window.kasseData.waffelPaid || 0) * waffelPrice);
 
   if (totalEurosEl) {
     totalEurosEl.innerText = totalRev.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
@@ -228,8 +290,8 @@ function renderStatistik() {
   const waffelPaid = window.kasseData.waffelPaid || 0;
   const waffelFree = window.kasseData.waffelFree || 0;
 
-  const punschPrice = window.kasseData.kinderpunschPrice || 2;
-  const waffelPrice = window.kasseData.waffelPrice || 2;
+  const punschPrice = typeof window.kasseData.kinderpunschPrice === 'number' ? window.kasseData.kinderpunschPrice : 2.00;
+  const waffelPrice = typeof window.kasseData.waffelPrice === 'number' ? window.kasseData.waffelPrice : 2.00;
 
   const punschRev = punschPaid * punschPrice;
   const waffelRev = waffelPaid * waffelPrice;
@@ -261,13 +323,47 @@ window.renderStatistik = renderStatistik;
 
 function resetKasseData() {
   if (confirm('Möchtest du die Zählerstände der Kasse wirklich für die neue Schicht auf 0 zurücksetzen?')) {
-    window.kasseData = { ...DEFAULT_KASSE_DATA };
+    window.kasseData.kinderpunschPaid = 0;
+    window.kasseData.kinderpunschFree = 0;
+    window.kasseData.waffelPaid = 0;
+    window.kasseData.waffelFree = 0;
     localStorage.setItem('kasseData', JSON.stringify(window.kasseData));
     renderKasse();
     renderStatistik();
+    syncAllWithGoogleSheets();
   }
 }
 window.resetKasseData = resetKasseData;
+
+async function loadKasseFromGoogleSheets() {
+  updateKasseSyncBadge('syncing');
+  try {
+    const res = await fetch(GOOGLE_SCRIPT_URL);
+    if (res.ok) {
+      let data = await res.json();
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch (e) {}
+      }
+      
+      if (data && data.kasseData) {
+        window.kasseData = Object.assign({}, DEFAULT_KASSE_DATA, data.kasseData);
+        localStorage.setItem('kasseData', JSON.stringify(window.kasseData));
+        renderKasse();
+        renderStatistik();
+      } else if (data && data.kinderpunschPaid !== undefined) {
+        window.kasseData = Object.assign({}, DEFAULT_KASSE_DATA, data);
+        localStorage.setItem('kasseData', JSON.stringify(window.kasseData));
+        renderKasse();
+        renderStatistik();
+      }
+      updateKasseSyncBadge('success');
+    }
+  } catch (e) {
+    console.warn('Offline oder Fehler beim Laden der Kasse aus Google Sheets:', e);
+    updateKasseSyncBadge('error');
+  }
+}
+window.loadKasseFromGoogleSheets = loadKasseFromGoogleSheets;
 
 // ------------------------------------------
 // 4. INVENTAR & GOOGLE SHEETS SYSTEM
@@ -291,16 +387,26 @@ async function loadInventarFromGoogleSheets() {
       if (typeof data === 'string') {
         try { data = JSON.parse(data); } catch (e) {}
       }
-      const isValid = Array.isArray(data) && data.length > 0 && Array.isArray(data[0].items);
-      if (isValid) {
-        window.inventarData = data;
-        renderInventar();
-      } else {
-        console.warn('Google Sheets hat leere/ungültige Daten geliefert. Lokale Daten bleiben bestehen.');
-        if (!window.inventarData || window.inventarData.length === 0) {
-          window.inventarData = getInitialInventarData();
-          renderInventar();
+      
+      let invArr = null;
+      if (Array.isArray(data)) {
+        invArr = data;
+      } else if (data && Array.isArray(data.inventarData)) {
+        invArr = data.inventarData;
+        if (data.kasseData) {
+          window.kasseData = Object.assign({}, DEFAULT_KASSE_DATA, data.kasseData);
+          localStorage.setItem('kasseData', JSON.stringify(window.kasseData));
+          renderKasse();
+          renderStatistik();
         }
+      }
+
+      if (invArr && invArr.length > 0) {
+        window.inventarData = invArr;
+        renderInventar();
+      } else if (!window.inventarData || window.inventarData.length === 0) {
+        window.inventarData = getInitialInventarData();
+        renderInventar();
       }
     }
   } catch (e) {
@@ -434,7 +540,7 @@ function editCategoryStatuses(catIdx) {
     } else {
       delete cat.statuses;
     }
-    syncWithGoogleSheets();
+    syncAllWithGoogleSheets();
     renderInventar();
   }
 }
@@ -447,7 +553,7 @@ function addCategory() {
     title: name.trim(),
     items: []
   });
-  syncWithGoogleSheets();
+  syncAllWithGoogleSheets();
   renderInventar();
 }
 window.addCategory = addCategory;
@@ -458,7 +564,7 @@ function renameCategory(catIdx) {
   const newName = prompt('Kategoriename ändern:', cat.title);
   if (newName !== null && newName.trim()) {
     cat.title = newName.trim();
-    syncWithGoogleSheets();
+    syncAllWithGoogleSheets();
     renderInventar();
   }
 }
@@ -469,7 +575,7 @@ function deleteCategory(catIdx) {
   if (!cat) return;
   if (confirm(`Möchtest du die Kategorie "${cat.title}" inklusive aller ${cat.items.length} Einträge wirklich löschen?`)) {
     window.inventarData.splice(catIdx, 1);
-    syncWithGoogleSheets();
+    syncAllWithGoogleSheets();
     renderInventar();
   }
 }
@@ -481,7 +587,7 @@ function moveCategory(catIdx, direction) {
   const temp = window.inventarData[catIdx];
   window.inventarData[catIdx] = window.inventarData[targetIdx];
   window.inventarData[targetIdx] = temp;
-  syncWithGoogleSheets();
+  syncAllWithGoogleSheets();
   renderInventar();
 }
 window.moveCategory = moveCategory;
@@ -503,7 +609,7 @@ function addItem(catIdx) {
     pack: false,
     box: ''
   });
-  syncWithGoogleSheets();
+  syncAllWithGoogleSheets();
   renderInventar();
 }
 window.addItem = addItem;
@@ -513,7 +619,7 @@ function deleteItem(catIdx, itemIdx) {
   if (!cat || !cat.items[itemIdx]) return;
   if (confirm(`Eintrag "${cat.items[itemIdx].name}" wirklich löschen?`)) {
     cat.items.splice(itemIdx, 1);
-    syncWithGoogleSheets();
+    syncAllWithGoogleSheets();
     renderInventar();
   }
 }
@@ -527,7 +633,7 @@ function moveItem(catIdx, itemIdx, direction) {
   const temp = cat.items[itemIdx];
   cat.items[itemIdx] = cat.items[targetIdx];
   cat.items[targetIdx] = temp;
-  syncWithGoogleSheets();
+  syncAllWithGoogleSheets();
   renderInventar();
 }
 window.moveItem = moveItem;
@@ -546,17 +652,6 @@ function getStatusStyleClass(status) {
       return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800/80 font-bold';
     default:
       return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 font-bold';
-  }
-}
-
-function getStatusOptionTextColor(status) {
-  switch (status) {
-    case 'Offen': return 'text-rose-600 dark:text-rose-400';
-    case 'Eingekauft': return 'text-purple-600 dark:text-purple-400';
-    case 'Vorbereitet': return 'text-amber-600 dark:text-amber-400';
-    case 'Verteilt': return 'text-sky-600 dark:text-sky-400';
-    case 'Erledigt': return 'text-emerald-600 dark:text-emerald-400';
-    default: return 'text-slate-800 dark:text-slate-200';
   }
 }
 
@@ -777,24 +872,34 @@ window.renderInventar = renderInventar;
 function updateInventarItem(catIdx, itemIdx, field, val) {
   if (!window.inventarData[catIdx] || !window.inventarData[catIdx].items[itemIdx]) return;
   window.inventarData[catIdx].items[itemIdx][field] = val;
-  syncWithGoogleSheets();
+  syncAllWithGoogleSheets();
   renderInventar();
 }
 window.updateInventarItem = updateInventarItem;
 
-async function syncWithGoogleSheets() {
+// Einheitliche Synchronisation für Inventar und Kasse
+async function syncAllWithGoogleSheets() {
+  updateKasseSyncBadge('syncing');
+  const payload = {
+    inventarData: window.inventarData || [],
+    kasseData: window.kasseData || DEFAULT_KASSE_DATA
+  };
+
   try {
     await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(window.inventarData)
+      body: JSON.stringify(payload)
     });
+    updateKasseSyncBadge('success');
   } catch (e) {
     console.warn('Fehler beim Speichern in Google Sheets:', e);
+    updateKasseSyncBadge('error');
   }
 }
-window.syncWithGoogleSheets = syncWithGoogleSheets;
+window.syncAllWithGoogleSheets = syncAllWithGoogleSheets;
+window.syncWithGoogleSheets = syncAllWithGoogleSheets; // Alias für Abwärtskompatibilität
 
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
@@ -807,6 +912,17 @@ function escapeHtml(str) {
 }
 window.escapeHtml = escapeHtml;
 
+// Auto-Polling für synchrone Live-Daten auf allen iPads/Smartphones
+function startAutoSync() {
+  if (window.autoSyncTimer) clearInterval(window.autoSyncTimer);
+  // Alle 15 Sekunden Kassenstand im Hintergrund abgleichen
+  window.autoSyncTimer = setInterval(() => {
+    if (document.visibilityState === 'visible') {
+      loadKasseFromGoogleSheets();
+    }
+  }, 15000);
+}
+
 // Sichere Initialisierung
 function initApp() {
   try {
@@ -814,6 +930,7 @@ function initApp() {
     applyRolePermissions(window.currentUserRole);
     renderKasse();
     renderStatistik();
+    startAutoSync();
   } catch (e) {
     console.error('Fehler bei der Initialisierung:', e);
   }
