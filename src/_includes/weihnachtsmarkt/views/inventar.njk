@@ -12,7 +12,7 @@
 <button id="adminInventarEditBtn" onclick="window.toggleEditMode()" class="hidden px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-xl transition shadow-sm flex items-center gap-1.5">
 ✏️ Bearbeiten
 </button>
-<button onclick="switchView('aushang')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition border border-slate-300 dark:border-slate-700 flex items-center gap-2">
+<button onclick="window.switchView('aushang')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition border border-slate-300 dark:border-slate-700 flex items-center gap-2">
 ⬅️ Zurück zu Aushänge
 </button>
 </div>
@@ -35,7 +35,7 @@ class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-
 0% erledigt (0/0)
 </div>
 </div>
-<!-- Dynamischer Container für Status-Filter Buttons (Wird von JS befüllt & aktualisiert) -->
+<!-- Dynamischer Container für Status-Filter Buttons -->
 <div id="filterButtonsContainer" class="flex flex-wrap gap-2 pt-2 border-t border-slate-200 dark:border-slate-800/60">
 <!-- Wird durch window.updateFilterButtonsUI() gerendert -->
 </div>
