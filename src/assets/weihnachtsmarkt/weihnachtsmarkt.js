@@ -8,7 +8,7 @@ window.inventarData = [];
 window.isEditMode = false;
 window.currentFilterStatus = 'alle';
 window.currentSearchTerm = '';
-// Kassen- und Statistik-Zustand (mit Preisen)
+// Kassen- und Verkauf-Zustand (mit Preisen)
 const DEFAULT_KASSE_DATA = {
 kinderpunschPaid: 0,
 kinderpunschFree: 0,
@@ -64,22 +64,21 @@ return;
 }
 const views = document.querySelectorAll('main > div[id^="view"]');
 views.forEach(v => v.classList.add('hidden'));
-let targetId = 'view' + viewName.charAt(0).toUpperCase() + viewName.slice(1);
-let targetView = document.getElementById(targetId);
-// Fallback Aliase (kasse <-> verkauf)
-if (!targetView && viewName.toLowerCase() === 'kasse') {
+const lowerName = (viewName || '').toLowerCase();
+let targetView = null;
+if (lowerName === 'verkauf' || lowerName === 'kasse') {
 targetView = document.getElementById('viewVerkauf');
-} else if (!targetView && viewName.toLowerCase() === 'verkauf') {
-targetView = document.getElementById('viewKasse');
+} else {
+const targetId = 'view' + viewName.charAt(0).toUpperCase() + viewName.slice(1);
+targetView = document.getElementById(targetId);
 }
 if (targetView) {
 targetView.classList.remove('hidden');
-const actualView = viewName.toLowerCase();
-if (actualView === 'inventar') {
+if (lowerName === 'inventar') {
 loadInventarFromGoogleSheets();
-} else if (actualView === 'kasse' || actualView === 'verkauf') {
+} else if (lowerName === 'verkauf' || lowerName === 'kasse') {
 renderKasse();
-} else if (actualView === 'statistik') {
+} else if (lowerName === 'statistik') {
 renderStatistik();
 }
 }
@@ -149,7 +148,7 @@ renderInventar();
 }
 window.applyRolePermissions = applyRolePermissions;
 // ------------------------------------------
-// 3. KASSE & STATISTIK LOGIK
+// 3. VERKAUF / KASSE & STATISTIK LOGIK
 // ------------------------------------------
 function changeKasseCount(item, type, delta) {
 const key = item + (type === 'paid' ? 'Paid' : 'Free');
@@ -331,7 +330,7 @@ inactiveClass += "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 borde
 activeClass += "bg-indigo-600 text-white";
 inactiveClass += "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/20";
 }
-buttonsHtml += ⁠<button data-filter-btn="${escapeHtml(status)}" onclick="setInventarFilter('${escapeHtml(status)}')"  class="${isActive ? activeClass : inactiveClass}"> ${escapeHtml(label)} </button>⁠;
+buttonsHtml += ⁠<button data-filter-btn="${escapeHtml(status)}" onclick="window.setInventarFilter('${escapeHtml(status)}')"  class="${isActive ? activeClass : inactiveClass}"> ${escapeHtml(label)} </button>⁠;
 });
 container.innerHTML = buttonsHtml;
 }
@@ -570,10 +569,10 @@ optionsList.push(currentItemStatus);
 }
 html += ⁠<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition"> <td class="py-2.5 px-4 font-semibold text-slate-900 dark:text-slate-100"> ${showEditControls ?⁠
 <input type="text" value="${escapeHtml(item.name)}" placeholder="Name..." 
-onchange="updateInventarItem(${catIdx},${itemIdx}, 'name', this.value)"
+onchange="window.updateInventarItem(${catIdx},${itemIdx}, 'name', this.value)"
 class="w-full font-bold bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded py-0.5 px-1.5 text-xs text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:outline-none mb-1" />
 <input type="text" value="${escapeHtml(item.sub || '')}" placeholder="Beschreibung/Subtext..." 
-onchange="updateInventarItem(${catIdx},${itemIdx}, 'sub', this.value)"
+onchange="window.updateInventarItem(${catIdx},${itemIdx}, 'sub', this.value)"
 class="w-full text-[10px] bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded py-0.5 px-1.5 text-slate-600 dark:text-slate-400 focus:border-amber-500 focus:outline-none" />
 ⁠:⁠
 <div class="leading-tight text-slate-900 dark:text-slate-100 font-bold">￼{item.sub ? ⁠<div class="text-[10px] font-normal text-slate-500 dark:text-slate-400 mt-0.5">${escapeHtml(item.sub)}</div>⁠ : ''}
@@ -588,7 +587,7 @@ class="w-12 text-center bg-white dark:bg-slate-950 border border-slate-300 dark:
 ￼{itemIdx}, 'lager', parseInt(this.value) || 0)"
 class="w-12 text-center bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-1 text-emerald-600 dark:text-emerald-400 font-black focus:border-amber-500 focus:outline-none disabled:opacity-60" />
 </td>
-⁠} <td class="py-2.5 px-2 text-center"> <select ${isReadonly ? 'disabled' : ''} onchange="updateInventarItem(${catIdx}, ${itemIdx}, 'status', this.value)" class="w-full bg-white dark:bg-slate-950 border rounded-md py-1 px-2 text-xs font-bold focus:border-amber-500 focus:outline-none disabled:opacity-60 ${statusStyle}"> ${optionsList.map(st => ⁠
+⁠} <td class="py-2.5 px-2 text-center"> <select ${isReadonly ? 'disabled' : ''} onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'status', this.value)" class="w-full bg-white dark:bg-slate-950 border rounded-md py-1 px-2 text-xs font-bold focus:border-amber-500 focus:outline-none disabled:opacity-60 ${statusStyle}"> ${optionsList.map(st => ⁠
 <option value="${escapeHtml(st)}" class="bg-white dark:bg-slate-900 ￼
 ￼
 ￼
@@ -624,14 +623,14 @@ ${showEditControls ? `
 ￼
 ￼{catIdx}, ${itemIdx}, -1)" ￼
 ￼{catIdx}, ${itemIdx}, 1)" ${itemIdx === cat.items.length - 1 ? 'disabled' : ''} title="Nach unten" class="p-1 text-[10px] bg-slate-200 dark:bg-slate-800 rounded disabled:opacity-30">⬇️</button>
-<button onclick="deleteItem(${catIdx},${itemIdx})" title="Löschen" class="p-1 text-[10px] bg-rose-500/20 text-rose-500 border border-rose-500/30 rounded font-bold">🗑️</button>
+<button onclick="window.deleteItem(${catIdx},${itemIdx})" title="Löschen" class="p-1 text-[10px] bg-rose-500/20 text-rose-500 border border-rose-500/30 rounded font-bold">🗑️</button>
 </div>
 </td>
 ⁠: ''} </tr>⁠;
 });
 html += ⁠</tbody> </table> </div> ${showEditControls ?⁠
 <div class="p-3 bg-slate-100/50 dark:bg-slate-950/40 border-t border-slate-200 dark:border-slate-800 text-center">
-<button onclick="addItem(${catIdx})" class="px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold rounded-lg transition inline-flex items-center gap-1">
+<button onclick="window.addItem(${catIdx})" class="px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold rounded-lg transition inline-flex items-center gap-1">
 ➕ Neuer Gegenstand in ${escapeHtml(cat.title)}
 </button>
 </div>
@@ -639,7 +638,7 @@ html += ⁠</tbody> </table> </div> ${showEditControls ?⁠
 }
 });
 if (showEditControls) {
-html += ⁠<div class="p-6 bg-slate-50 dark:bg-slate-900 border-2 border-dashed border-amber-500/40 rounded-2xl text-center"> <button onclick="addCategory()" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2 mx-auto"> ➕ Neue Kategorie hinzufügen </button> </div>⁠;
+html += ⁠<div class="p-6 bg-slate-50 dark:bg-slate-900 border-2 border-dashed border-amber-500/40 rounded-2xl text-center"> <button onclick="window.addCategory()" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2 mx-auto"> ➕ Neue Kategorie hinzufügen </button> </div>⁠;
 }
 container.innerHTML = html || '<div class="p-8 text-center text-slate-500 dark:text-slate-400 text-xs">Keine passenden Einträge für diesen Filter gefunden.</div>';
 const percent = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
