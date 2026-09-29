@@ -1,1 +1,94 @@
-
+<div id="viewVerkauf" class="hidden space-y-6">
+<!-- Header -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm gap-4">
+<div>
+<h2 class="font-black text-xl text-amber-600 dark:text-amber-400 flex items-center gap-2">
+🪙 Kasse & Schnellverkauf
+</h2>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Erfasse Verkäufe und Gratis-Abgaben für Kinderpunsch und Waffeln</p>
+</div>
+<button onclick="window.switchView('aushang')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition border border-slate-300 dark:border-slate-700 flex items-center gap-2">
+⬅️ Zurück zu Aushänge
+</button>
+</div>
+<!-- Produkte & Zähler -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- KINDERPUNSCH CARD -->
+<div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4">
+<div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+<div class="flex items-center gap-3">
+<span class="text-3xl">☕</span>
+<div>
+<h3 class="font-black text-base text-slate-900 dark:text-slate-100">Kinderpunsch</h3>
+<span class="text-xs font-bold text-amber-600 dark:text-amber-400">2,00 € / Tasse</span>
+</div>
+</div>
+</div>
+<!-- Bezahlt Zähler -->
+<div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800/80 flex items-center justify-between">
+<div>
+<div class="text-xs font-bold text-slate-700 dark:text-slate-300">Verkauft (Bezahlt)</div>
+<div class="text-2xl font-black text-emerald-600 dark:text-emerald-400" id="countKinderpunschPaid">0</div>
+</div>
+<div class="flex items-center gap-2">
+<button onclick="window.changeKasseCount('kinderpunsch', 'paid', -1)" class="w-10 h-10 bg-slate-200 dark:bg-slate-800 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 rounded-xl font-black text-lg transition flex items-center justify-center shadow-sm">-</button>
+<button onclick="window.changeKasseCount('kinderpunsch', 'paid', 1)" class="w-12 h-10 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-black text-xl transition flex items-center justify-center shadow-md">+1</button>
+</div>
+</div>
+<!-- Helfer / Gratis Zähler -->
+<div class="bg-indigo-50/50 dark:bg-indigo-950/30 p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/50 flex items-center justify-between">
+<div>
+<div class="text-xs font-bold text-indigo-700 dark:text-indigo-300">🎁 Helfer (Gratis)</div>
+<div class="text-2xl font-black text-indigo-600 dark:text-indigo-400" id="countKinderpunschFree">0</div>
+</div>
+<div class="flex items-center gap-2">
+<button onclick="window.changeKasseCount('kinderpunsch', 'free', -1)" class="w-10 h-10 bg-slate-200 dark:bg-slate-800 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 rounded-xl font-black text-lg transition flex items-center justify-center shadow-sm">-</button>
+<button onclick="window.changeKasseCount('kinderpunsch', 'free', 1)" class="w-12 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-xl transition flex items-center justify-center shadow-md">+1</button>
+</div>
+</div>
+</div>
+<!-- WAFFELN CARD -->
+<div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4">
+<div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+<div class="flex items-center gap-3">
+<span class="text-3xl">🧇</span>
+<div>
+<h3 class="font-black text-base text-slate-900 dark:text-slate-100">Frische Waffeln</h3>
+<span class="text-xs font-bold text-amber-600 dark:text-amber-400">2,00 € / Stück</span>
+</div>
+</div>
+</div>
+<!-- Bezahlt Zähler -->
+<div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800/80 flex items-center justify-between">
+<div>
+<div class="text-xs font-bold text-slate-700 dark:text-slate-300">Verkauft (Bezahlt)</div>
+<div class="text-2xl font-black text-emerald-600 dark:text-emerald-400" id="countWaffelPaid">0</div>
+</div>
+<div class="flex items-center gap-2">
+<button onclick="window.changeKasseCount('waffel', 'paid', -1)" class="w-10 h-10 bg-slate-200 dark:bg-slate-800 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 rounded-xl font-black text-lg transition flex items-center justify-center shadow-sm">-</button>
+<button onclick="window.changeKasseCount('waffel', 'paid', 1)" class="w-12 h-10 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-black text-xl transition flex items-center justify-center shadow-md">+1</button>
+</div>
+</div>
+<!-- Helfer / Gratis Zähler -->
+<div class="bg-indigo-50/50 dark:bg-indigo-950/30 p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/50 flex items-center justify-between">
+<div>
+<div class="text-xs font-bold text-indigo-700 dark:text-indigo-300">🎁 Helfer (Gratis)</div>
+<div class="text-2xl font-black text-indigo-600 dark:text-indigo-400" id="countWaffelFree">0</div>
+</div>
+<div class="flex items-center gap-2">
+<button onclick="window.changeKasseCount('waffel', 'free', -1)" class="w-10 h-10 bg-slate-200 dark:bg-slate-800 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 rounded-xl font-black text-lg transition flex items-center justify-center shadow-sm">-</button>
+<button onclick="window.changeKasseCount('waffel', 'free', 1)" class="w-12 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-xl transition flex items-center justify-center shadow-md">+1</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Live Schicht-Umsatz Footer -->
+<div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+<div class="text-xs font-bold text-slate-800 dark:text-slate-200">
+Geschätzter Umsatz (Bezahlt): <span id="kasseLiveTotalEuros" class="text-base font-black text-emerald-600 dark:text-emerald-400 ml-1">0,00 €</span>
+</div>
+<button onclick="window.switchView('statistik')" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl shadow transition">
+📊 Detaillierte Statistik ansehen
+</button>
+</div>
+</div>
