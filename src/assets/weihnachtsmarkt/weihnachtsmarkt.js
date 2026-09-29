@@ -17,19 +17,19 @@ waffelFree: 0,
 kinderpunschPrice: 2.00,
 waffelPrice: 2.00
 };
-window.kasseData = JSON.parse(localStorage.getItem('kasseData')) || { ...DEFAULT_KASSE_DATA };
+try {
+const savedKasse = localStorage.getItem('kasseData');
+window.kasseData = savedKasse ? JSON.parse(savedKasse) : { ...DEFAULT_KASSE_DATA };
+} catch (e) {
+window.kasseData = { ...DEFAULT_KASSE_DATA };
+}
 // Default Status-Listen
 const DEFAULT_STATUSES_STANDARD = ['Offen', 'Vorbereitet', 'Verteilt', 'Erledigt'];
 const DEFAULT_STATUSES_EINKAUF = ['Offen', 'Vorbereitet', 'Verteilt', 'Eingekauft', 'Erledigt'];
 // ------------------------------------------
 // 1. THEME ENGINE (DARK / LIGHT MODE)
 // ------------------------------------------
-window.initTheme = function() {
-const savedTheme = localStorage.getItem('theme');
-const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-window.applyDarkMode(savedTheme === 'dark' || (!savedTheme && systemPrefersDark));
-};
-window.applyDarkMode = function(isDark) {
+function applyDarkMode(isDark) {
 if (isDark) {
 document.documentElement.classList.add('dark');
 if (document.body) document.body.classList.add('dark');
@@ -39,43 +39,60 @@ if (document.body) document.body.classList.remove('dark');
 }
 const icon = document.getElementById('themeToggleIcon');
 if (icon) icon.innerText = isDark ? '☀️' : '🌙';
-};
-window.toggleTheme = function() {
+}
+window.applyDarkMode = applyDarkMode;
+function initTheme() {
+const savedTheme = localStorage.getItem('theme');
+const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+applyDarkMode(savedTheme === 'dark' || (!savedTheme && systemPrefersDark));
+}
+window.initTheme = initTheme;
+function toggleTheme() {
 const isDarkCurrently = document.documentElement.classList.contains('dark');
 const newDarkState = !isDarkCurrently;
 localStorage.setItem('theme', newDarkState ? 'dark' : 'light');
-window.applyDarkMode(newDarkState);
-};
+applyDarkMode(newDarkState);
+}
+window.toggleTheme = toggleTheme;
 // ------------------------------------------
 // 2. NAVIGATION & ROLLENMANAGEMENT
 // ------------------------------------------
-window.switchView = function(viewName) {
+function switchView(viewName) {
 if (window.currentUserRole === 'gast' && viewName !== 'aushang' && viewName !== 'login') {
 alert('Bitte melde dich an, um auf diesen Bereich zuzugreifen.');
 return;
 }
 const views = document.querySelectorAll('main > div[id^="view"]');
 views.forEach(v => v.classList.add('hidden'));
-const targetId = 'view' + viewName.charAt(0).toUpperCase() + viewName.slice(1);
-const targetView = document.getElementById(targetId);
+let targetId = 'view' + viewName.charAt(0).toUpperCase() + viewName.slice(1);
+let targetView = document.getElementById(targetId);
+// Fallback Aliase (kasse <-> verkauf)
+if (!targetView && viewName.toLowerCase() === 'kasse') {
+targetView = document.getElementById('viewVerkauf');
+} else if (!targetView && viewName.toLowerCase() === 'verkauf') {
+targetView = document.getElementById('viewKasse');
+}
 if (targetView) {
 targetView.classList.remove('hidden');
-if (viewName === 'inventar') {
-window.loadInventarFromGoogleSheets();
-} else if (viewName === 'kasse') {
-window.renderKasse();
-} else if (viewName === 'statistik') {
-window.renderStatistik();
+const actualView = viewName.toLowerCase();
+if (actualView === 'inventar') {
+loadInventarFromGoogleSheets();
+} else if (actualView === 'kasse' || actualView === 'verkauf') {
+renderKasse();
+} else if (actualView === 'statistik') {
+renderStatistik();
 }
 }
 const navModal = document.getElementById('navigationModal');
 if (navModal) navModal.classList.add('hidden');
-};
-window.toggleBurgerMenu = function() {
+}
+window.switchView = switchView;
+function toggleBurgerMenu() {
 const navModal = document.getElementById('navigationModal');
 if (navModal) navModal.classList.toggle('hidden');
-};
-window.tryLogin = function(role, inputId) {
+}
+window.toggleBurgerMenu = toggleBurgerMenu;
+function tryLogin(role, inputId) {
 const passwords = { helfer: '1', orga: '2', admin: '3' };
 const input = document.getElementById(inputId);
 const password = input ? input.value.trim() : '';
@@ -83,19 +100,21 @@ const errorBox = document.getElementById('loginErrorMessage');
 if (password === passwords[role]) {
 if (errorBox) errorBox.classList.add('hidden');
 if (input) input.value = '';
-window.setRole(role);
+setRole(role);
 } else if (errorBox) {
 errorBox.classList.remove('hidden');
 const errText = document.getElementById('loginErrorText');
 if (errText) errText.innerText = 'Falsches Passwort.';
 }
-};
-window.setRole = function(role) {
+}
+window.tryLogin = tryLogin;
+function setRole(role) {
 window.currentUserRole = role;
 localStorage.setItem('userRole', role);
-window.applyRolePermissions(role);
-};
-window.applyRolePermissions = function(role) {
+applyRolePermissions(role);
+}
+window.setRole = setRole;
+function applyRolePermissions(role) {
 window.currentUserRole = role;
 const burgerBtn = document.getElementById('burgerMenuBtn');
 const guestNotice = document.getElementById('guestLockNotice');
@@ -117,29 +136,31 @@ if (role === 'gast') {
 if (burgerBtn) burgerBtn.classList.add('hidden');
 if (guestNotice) guestNotice.classList.remove('hidden');
 if (roleIcon) roleIcon.innerText = '👁️';
-window.switchView('aushang');
+switchView('aushang');
 } else {
 if (burgerBtn) burgerBtn.classList.remove('hidden');
 if (guestNotice) guestNotice.classList.add('hidden');
 if (roleIcon) roleIcon.innerText = '🔓';
-window.switchView('aushang');
+switchView('aushang');
 }
 if (window.inventarData && window.inventarData.length > 0) {
-window.renderInventar();
+renderInventar();
 }
-};
+}
+window.applyRolePermissions = applyRolePermissions;
 // ------------------------------------------
 // 3. KASSE & STATISTIK LOGIK
 // ------------------------------------------
-window.changeKasseCount = function(item, type, delta) {
+function changeKasseCount(item, type, delta) {
 const key = item + (type === 'paid' ? 'Paid' : 'Free');
 if (typeof window.kasseData[key] === 'number') {
 window.kasseData[key] = Math.max(0, window.kasseData[key] + delta);
 localStorage.setItem('kasseData', JSON.stringify(window.kasseData));
-window.renderKasse();
+renderKasse();
 }
-};
-window.renderKasse = function() {
+}
+window.changeKasseCount = changeKasseCount;
+function renderKasse() {
 const punschPaidEl = document.getElementById('countKinderpunschPaid');
 const punschFreeEl = document.getElementById('countKinderpunschFree');
 const waffelPaidEl = document.getElementById('countWaffelPaid');
@@ -149,19 +170,22 @@ if (punschPaidEl) punschPaidEl.innerText = window.kasseData.kinderpunschPaid || 
 if (punschFreeEl) punschFreeEl.innerText = window.kasseData.kinderpunschFree || 0;
 if (waffelPaidEl) waffelPaidEl.innerText = window.kasseData.waffelPaid || 0;
 if (waffelFreeEl) waffelFreeEl.innerText = window.kasseData.waffelFree || 0;
-const totalRev = (window.kasseData.kinderpunschPaid * window.kasseData.kinderpunschPrice) +
-(window.kasseData.waffelPaid * window.kasseData.waffelPrice);
+const totalRev = ((window.kasseData.kinderpunschPaid || 0) * (window.kasseData.kinderpunschPrice || 2)) +
+((window.kasseData.waffelPaid || 0) * (window.kasseData.waffelPrice || 2));
 if (totalEurosEl) {
 totalEurosEl.innerText = totalRev.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 }
-};
-window.renderStatistik = function() {
+}
+window.renderKasse = renderKasse;
+function renderStatistik() {
 const punschPaid = window.kasseData.kinderpunschPaid || 0;
 const punschFree = window.kasseData.kinderpunschFree || 0;
 const waffelPaid = window.kasseData.waffelPaid || 0;
 const waffelFree = window.kasseData.waffelFree || 0;
-const punschRev = punschPaid * window.kasseData.kinderpunschPrice;
-const waffelRev = waffelPaid * window.kasseData.waffelPrice;
+const punschPrice = window.kasseData.kinderpunschPrice || 2;
+const waffelPrice = window.kasseData.waffelPrice || 2;
+const punschRev = punschPaid * punschPrice;
+const waffelRev = waffelPaid * waffelPrice;
 const totalRev = punschRev + waffelRev;
 const totalPaidItems = punschPaid + waffelPaid;
 const totalFreeItems = punschFree + waffelFree;
@@ -180,24 +204,26 @@ setEl('statKinderpunschTotal', ⁠${punschPaid + punschFree} Stk.⁠);
 setEl('statWaffelPaid', ⁠${waffelPaid} Stk. (${waffelRev.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €)⁠);
 setEl('statWaffelFree', ⁠${waffelFree} Stk.⁠);
 setEl('statWaffelTotal', ⁠${waffelPaid + waffelFree} Stk.⁠);
-};
-window.resetKasseData = function() {
+}
+window.renderStatistik = renderStatistik;
+function resetKasseData() {
 if (confirm('Möchtest du die Zählerstände der Kasse wirklich für die neue Schicht auf 0 zurücksetzen?')) {
 window.kasseData = { ...DEFAULT_KASSE_DATA };
 localStorage.setItem('kasseData', JSON.stringify(window.kasseData));
-window.renderKasse();
-window.renderStatistik();
+renderKasse();
+renderStatistik();
 }
-};
+}
+window.resetKasseData = resetKasseData;
 // ------------------------------------------
 // 4. INVENTAR & GOOGLE SHEETS SYSTEM
 // ------------------------------------------
-window.loadInventarFromGoogleSheets = async function() {
+async function loadInventarFromGoogleSheets() {
 const progressText = document.getElementById('inventarProgressText');
 if (progressText) progressText.innerText = 'Lade Daten...';
 if ((!window.inventarData || window.inventarData.length === 0) && window.inventarCategories) {
 window.inventarData = JSON.parse(JSON.stringify(window.inventarCategories));
-window.renderInventar();
+renderInventar();
 }
 try {
 const res = await fetch(GOOGLE_SCRIPT_URL);
@@ -209,12 +235,12 @@ try { data = JSON.parse(data); } catch (e) {}
 const isValid = Array.isArray(data) && data.length > 0 && Array.isArray(data[0].items);
 if (isValid) {
 window.inventarData = data;
-window.renderInventar();
+renderInventar();
 } else {
 console.warn('Google Sheets hat leere/ungültige Daten geliefert. Lokale Daten bleiben bestehen.');
 if (!window.inventarData || window.inventarData.length === 0) {
 window.inventarData = JSON.parse(JSON.stringify(window.inventarCategories));
-window.renderInventar();
+renderInventar();
 }
 }
 }
@@ -222,20 +248,23 @@ window.renderInventar();
 console.warn('Google Sheets Fehler / Offline - erstelle mit lokalen Daten:', e);
 if (!window.inventarData || window.inventarData.length === 0) {
 window.inventarData = JSON.parse(JSON.stringify(window.inventarCategories));
-window.renderInventar();
+renderInventar();
 }
 }
-};
-window.setInventarFilter = function(filterStatus) {
+}
+window.loadInventarFromGoogleSheets = loadInventarFromGoogleSheets;
+function setInventarFilter(filterStatus) {
 window.currentFilterStatus = filterStatus;
-window.updateFilterButtonsUI();
-window.renderInventar();
-};
-window.handleInventarSearch = function(val) {
+updateFilterButtonsUI();
+renderInventar();
+}
+window.setInventarFilter = setInventarFilter;
+function handleInventarSearch(val) {
 window.currentSearchTerm = (val || '').toLowerCase().trim();
-window.renderInventar();
-};
-window.toggleEditMode = function() {
+renderInventar();
+}
+window.handleInventarSearch = handleInventarSearch;
+function toggleEditMode() {
 if (window.currentUserRole !== 'admin' && window.currentUserRole !== 'orga') {
 alert('Nur Admins und Orga können den Bearbeitungsmodus aktivieren.');
 return;
@@ -251,16 +280,17 @@ editBtn.innerText = '✏️ Bearbeiten';
 editBtn.className = 'px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-xl transition shadow';
 }
 }
-window.renderInventar();
-};
-window.updateFilterButtonsUI = function() {
+renderInventar();
+}
+window.toggleEditMode = toggleEditMode;
+function updateFilterButtonsUI() {
 const container = document.getElementById('filterButtonsContainer');
 if (!container) return;
 const baseOrder = ['Offen', 'Vorbereitet', 'Verteilt', 'Eingekauft', 'Erledigt'];
 const allStatusesSet = new Set(baseOrder);
 if (window.inventarData && Array.isArray(window.inventarData)) {
 window.inventarData.forEach(cat => {
-const catStatuses = window.getCategoryStatuses(cat);
+const catStatuses = getCategoryStatuses(cat);
 catStatuses.forEach(st => allStatusesSet.add(st));
 (cat.items || []).forEach(item => {
 if (item.status) allStatusesSet.add(item.status);
@@ -301,11 +331,12 @@ inactiveClass += "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 borde
 activeClass += "bg-indigo-600 text-white";
 inactiveClass += "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/20";
 }
-buttonsHtml += ⁠<button data-filter-btn="${escapeHtml(status)}" onclick="window.setInventarFilter('${escapeHtml(status)}')"  class="${isActive ? activeClass : inactiveClass}"> ${escapeHtml(label)} </button>⁠;
+buttonsHtml += ⁠<button data-filter-btn="${escapeHtml(status)}" onclick="setInventarFilter('${escapeHtml(status)}')"  class="${isActive ? activeClass : inactiveClass}"> ${escapeHtml(label)} </button>⁠;
 });
 container.innerHTML = buttonsHtml;
-};
-window.getCategoryStatuses = function(cat) {
+}
+window.updateFilterButtonsUI = updateFilterButtonsUI;
+function getCategoryStatuses(cat) {
 if (cat.statuses && Array.isArray(cat.statuses) && cat.statuses.length > 0) {
 return cat.statuses;
 }
@@ -314,11 +345,12 @@ if (title.includes('zutat') || title.includes('einkauf') || title.includes('lebe
 return DEFAULT_STATUSES_EINKAUF;
 }
 return DEFAULT_STATUSES_STANDARD;
-};
-window.editCategoryStatuses = function(catIdx) {
+}
+window.getCategoryStatuses = getCategoryStatuses;
+function editCategoryStatuses(catIdx) {
 const cat = window.inventarData[catIdx];
 if (!cat) return;
-const currentList = window.getCategoryStatuses(cat).join(', ');
+const currentList = getCategoryStatuses(cat).join(', ');
 const input = prompt(
 ⁠Verfügbare Status-Optionen für "${cat.title}" festlegen (kommagetrennt):\n\nBeispiel: Offen, Vorbereitet, Verteilt, Eingekauft, Erledigt⁠,
 currentList
@@ -330,49 +362,54 @@ cat.statuses = list;
 } else {
 delete cat.statuses;
 }
-window.syncWithGoogleSheets();
-window.renderInventar();
+syncWithGoogleSheets();
+renderInventar();
 }
-};
-window.addCategory = function() {
+}
+window.editCategoryStatuses = editCategoryStatuses;
+function addCategory() {
 const name = prompt('Name der neuen Kategorie (z.B. 🍿 SNACKS):');
 if (!name || !name.trim()) return;
 window.inventarData.push({
 title: name.trim(),
 items: []
 });
-window.syncWithGoogleSheets();
-window.renderInventar();
-};
-window.renameCategory = function(catIdx) {
+syncWithGoogleSheets();
+renderInventar();
+}
+window.addCategory = addCategory;
+function renameCategory(catIdx) {
 const cat = window.inventarData[catIdx];
 if (!cat) return;
 const newName = prompt('Kategoriename ändern:', cat.title);
 if (newName !== null && newName.trim()) {
 cat.title = newName.trim();
-window.syncWithGoogleSheets();
-window.renderInventar();
+syncWithGoogleSheets();
+renderInventar();
 }
-};
-window.deleteCategory = function(catIdx) {
+}
+window.renameCategory = renameCategory;
+function deleteCategory(catIdx) {
 const cat = window.inventarData[catIdx];
 if (!cat) return;
 if (confirm(⁠Möchtest du die Kategorie "${cat.title}" inklusive aller ${cat.items.length} Einträge wirklich löschen?⁠)) {
 window.inventarData.splice(catIdx, 1);
-window.syncWithGoogleSheets();
-window.renderInventar();
+syncWithGoogleSheets();
+renderInventar();
 }
-};
-window.moveCategory = function(catIdx, direction) {
+}
+window.deleteCategory = deleteCategory;
+function moveCategory(catIdx, direction) {
 const targetIdx = catIdx + direction;
 if (targetIdx < 0 || targetIdx >= window.inventarData.length) return;
 const temp = window.inventarData[catIdx];
 window.inventarData[catIdx] = window.inventarData[targetIdx];
 window.inventarData[targetIdx] = temp;
-window.syncWithGoogleSheets();
-window.renderInventar();
-};
-window.addItem = function(catIdx) {
+syncWithGoogleSheets();
+renderInventar();
+}
+window.moveCategory = moveCategory;
+function addItem(catIdx) {
 const cat = window.inventarData[catIdx];
 if (!cat) return;
 const name = prompt('Name des neuen Gegenstands:');
@@ -389,19 +426,21 @@ empfaenger: '',
 pack: false,
 box: ''
 });
-window.syncWithGoogleSheets();
-window.renderInventar();
-};
-window.deleteItem = function(catIdx, itemIdx) {
+syncWithGoogleSheets();
+renderInventar();
+}
+window.addItem = addItem;
+function deleteItem(catIdx, itemIdx) {
 const cat = window.inventarData[catIdx];
 if (!cat || !cat.items[itemIdx]) return;
 if (confirm(⁠Eintrag "${cat.items[itemIdx].name}" wirklich löschen?⁠)) {
 cat.items.splice(itemIdx, 1);
-window.syncWithGoogleSheets();
-window.renderInventar();
+syncWithGoogleSheets();
+renderInventar();
 }
-};
-window.moveItem = function(catIdx, itemIdx, direction) {
+}
+window.deleteItem = deleteItem;
+function moveItem(catIdx, itemIdx, direction) {
 const cat = window.inventarData[catIdx];
 if (!cat) return;
 const targetIdx = itemIdx + direction;
@@ -409,9 +448,10 @@ if (targetIdx < 0 || targetIdx >= cat.items.length) return;
 const temp = cat.items[itemIdx];
 cat.items[itemIdx] = cat.items[targetIdx];
 cat.items[targetIdx] = temp;
-window.syncWithGoogleSheets();
-window.renderInventar();
-};
+syncWithGoogleSheets();
+renderInventar();
+}
+window.moveItem = moveItem;
 function getStatusStyleClass(status) {
 switch (status) {
 case 'Offen':
@@ -438,7 +478,7 @@ case 'Erledigt': return 'text-emerald-600 dark:text-emerald-400';
 default: return 'text-slate-800 dark:text-slate-200';
 }
 }
-window.renderInventar = function() {
+function renderInventar() {
 const container = document.getElementById('inventarTablesContainer');
 if (!container) return;
 if (!window.inventarData || window.inventarData.length === 0) {
@@ -449,7 +489,7 @@ container.innerHTML = '<div class="p-8 text-center text-slate-500 dark:text-slat
 return;
 }
 }
-window.updateFilterButtonsUI();
+updateFilterButtonsUI();
 let totalItems = 0;
 let completedItems = 0;
 let html = '';
@@ -457,7 +497,7 @@ const isReadonly = window.currentUserRole === 'gast';
 const showEditControls = window.isEditMode && (window.currentUserRole === 'admin' || window.currentUserRole === 'orga');
 window.inventarData.forEach((cat, catIdx) => {
 const isOrga = (cat.title || '').toLowerCase().includes('orga');
-const availableStatuses = window.getCategoryStatuses(cat);
+const availableStatuses = getCategoryStatuses(cat);
 (cat.items || []).forEach(item => {
 totalItems++;
 if (item.status === 'Erledigt' || item.status === 'Eingekauft' || item.pack) {
@@ -530,10 +570,10 @@ optionsList.push(currentItemStatus);
 }
 html += ⁠<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition"> <td class="py-2.5 px-4 font-semibold text-slate-900 dark:text-slate-100"> ${showEditControls ?⁠
 <input type="text" value="${escapeHtml(item.name)}" placeholder="Name..." 
-onchange="window.updateInventarItem(${catIdx},${itemIdx}, 'name', this.value)"
+onchange="updateInventarItem(${catIdx},${itemIdx}, 'name', this.value)"
 class="w-full font-bold bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded py-0.5 px-1.5 text-xs text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:outline-none mb-1" />
 <input type="text" value="${escapeHtml(item.sub || '')}" placeholder="Beschreibung/Subtext..." 
-onchange="window.updateInventarItem(${catIdx},${itemIdx}, 'sub', this.value)"
+onchange="updateInventarItem(${catIdx},${itemIdx}, 'sub', this.value)"
 class="w-full text-[10px] bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded py-0.5 px-1.5 text-slate-600 dark:text-slate-400 focus:border-amber-500 focus:outline-none" />
 ⁠:⁠
 <div class="leading-tight text-slate-900 dark:text-slate-100 font-bold">￼{item.sub ? ⁠<div class="text-[10px] font-normal text-slate-500 dark:text-slate-400 mt-0.5">${escapeHtml(item.sub)}</div>⁠ : ''}
@@ -548,7 +588,7 @@ class="w-12 text-center bg-white dark:bg-slate-950 border border-slate-300 dark:
 ￼{itemIdx}, 'lager', parseInt(this.value) || 0)"
 class="w-12 text-center bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-1 text-emerald-600 dark:text-emerald-400 font-black focus:border-amber-500 focus:outline-none disabled:opacity-60" />
 </td>
-⁠} <td class="py-2.5 px-2 text-center"> <select ${isReadonly ? 'disabled' : ''} onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'status', this.value)" class="w-full bg-white dark:bg-slate-950 border rounded-md py-1 px-2 text-xs font-bold focus:border-amber-500 focus:outline-none disabled:opacity-60 ${statusStyle}"> ${optionsList.map(st => ⁠
+⁠} <td class="py-2.5 px-2 text-center"> <select ${isReadonly ? 'disabled' : ''} onchange="updateInventarItem(${catIdx}, ${itemIdx}, 'status', this.value)" class="w-full bg-white dark:bg-slate-950 border rounded-md py-1 px-2 text-xs font-bold focus:border-amber-500 focus:outline-none disabled:opacity-60 ${statusStyle}"> ${optionsList.map(st => ⁠
 <option value="${escapeHtml(st)}" class="bg-white dark:bg-slate-900 ￼
 ￼
 ￼
@@ -584,14 +624,14 @@ ${showEditControls ? `
 ￼
 ￼{catIdx}, ${itemIdx}, -1)" ￼
 ￼{catIdx}, ${itemIdx}, 1)" ${itemIdx === cat.items.length - 1 ? 'disabled' : ''} title="Nach unten" class="p-1 text-[10px] bg-slate-200 dark:bg-slate-800 rounded disabled:opacity-30">⬇️</button>
-<button onclick="window.deleteItem(${catIdx},${itemIdx})" title="Löschen" class="p-1 text-[10px] bg-rose-500/20 text-rose-500 border border-rose-500/30 rounded font-bold">🗑️</button>
+<button onclick="deleteItem(${catIdx},${itemIdx})" title="Löschen" class="p-1 text-[10px] bg-rose-500/20 text-rose-500 border border-rose-500/30 rounded font-bold">🗑️</button>
 </div>
 </td>
 ⁠: ''} </tr>⁠;
 });
 html += ⁠</tbody> </table> </div> ${showEditControls ?⁠
 <div class="p-3 bg-slate-100/50 dark:bg-slate-950/40 border-t border-slate-200 dark:border-slate-800 text-center">
-<button onclick="window.addItem(${catIdx})" class="px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold rounded-lg transition inline-flex items-center gap-1">
+<button onclick="addItem(${catIdx})" class="px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold rounded-lg transition inline-flex items-center gap-1">
 ➕ Neuer Gegenstand in ${escapeHtml(cat.title)}
 </button>
 </div>
@@ -599,7 +639,7 @@ html += ⁠</tbody> </table> </div> ${showEditControls ?⁠
 }
 });
 if (showEditControls) {
-html += ⁠<div class="p-6 bg-slate-50 dark:bg-slate-900 border-2 border-dashed border-amber-500/40 rounded-2xl text-center"> <button onclick="window.addCategory()" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2 mx-auto"> ➕ Neue Kategorie hinzufügen </button> </div>⁠;
+html += ⁠<div class="p-6 bg-slate-50 dark:bg-slate-900 border-2 border-dashed border-amber-500/40 rounded-2xl text-center"> <button onclick="addCategory()" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2 mx-auto"> ➕ Neue Kategorie hinzufügen </button> </div>⁠;
 }
 container.innerHTML = html || '<div class="p-8 text-center text-slate-500 dark:text-slate-400 text-xs">Keine passenden Einträge für diesen Filter gefunden.</div>';
 const percent = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
@@ -607,14 +647,16 @@ const progressText = document.getElementById('inventarProgressText');
 if (progressText) {
 progressText.innerText = ⁠${percent}% erledigt (${completedItems}/${totalItems})⁠;
 }
-};
-window.updateInventarItem = function(catIdx, itemIdx, field, val) {
+}
+window.renderInventar = renderInventar;
+function updateInventarItem(catIdx, itemIdx, field, val) {
 if (!window.inventarData[catIdx] || !window.inventarData[catIdx].items[itemIdx]) return;
 window.inventarData[catIdx].items[itemIdx][field] = val;
-window.syncWithGoogleSheets();
-window.renderInventar();
-};
-window.syncWithGoogleSheets = async function() {
+syncWithGoogleSheets();
+renderInventar();
+}
+window.updateInventarItem = updateInventarItem;
+async function syncWithGoogleSheets() {
 try {
 await fetch(GOOGLE_SCRIPT_URL, {
 method: 'POST',
@@ -625,7 +667,8 @@ body: JSON.stringify(window.inventarData)
 } catch (e) {
 console.warn('Fehler beim Speichern in Google Sheets:', e);
 }
-};
+}
+window.syncWithGoogleSheets = syncWithGoogleSheets;
 function escapeHtml(str) {
 if (!str) return '';
 return String(str)
@@ -636,8 +679,12 @@ return String(str)
 .replace(/'/g, "'");
 }
 document.addEventListener('DOMContentLoaded', () => {
-window.initTheme();
-window.applyRolePermissions(window.currentUserRole);
-window.renderKasse();
-window.renderStatistik();
+try {
+initTheme();
+applyRolePermissions(window.currentUserRole);
+renderKasse();
+renderStatistik();
+} catch (e) {
+console.error('Fehler bei der Initialisierung:', e);
+}
 });
