@@ -13,7 +13,7 @@ window.currentSearchTerm = '';
 
 // Default Status-Listen
 const DEFAULT_STATUSES_STANDARD = ['Offen', 'Vorbereitet', 'Verteilt', 'Erledigt'];
-const DEFAULT_STATUSES_EINKAUF = ['Offen', 'Eingekauft', 'Vorbereitet', 'Verteilt', 'Erledigt'];
+const DEFAULT_STATUSES_EINKAUF = ['Offen', 'Vorbereitet', 'Verteilt', 'Eingekauft', 'Erledigt'];
 
 // ------------------------------------------
 // 1. THEME ENGINE (DARK / LIGHT MODE)
@@ -200,52 +200,83 @@ window.toggleEditMode = function() {
   if (editBtn) {
     if (window.isEditMode) {
       editBtn.innerText = '❌ Bearbeiten Beenden';
-      editBtn.className = 'px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition shadow';
+      editBtn.className = 'px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition shadow';
     } else {
       editBtn.innerText = '✏️ Bearbeiten';
-      editBtn.className = 'px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-xl transition shadow';
+      editBtn.className = 'px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-xl transition shadow';
     }
   }
 
   window.renderInventar();
 };
 
+// Dynamisches Rendern und Hervorheben aller aktiven Filter-Buttons
 window.updateFilterButtonsUI = function() {
-  const buttons = document.querySelectorAll('[data-filter-btn]');
-  buttons.forEach(btn => {
-    const status = btn.getAttribute('data-filter-btn');
-    const isActive = (window.currentFilterStatus === status);
+  const container = document.getElementById('filterButtonsContainer');
+  if (!container) return;
 
-    if (isActive) {
-      if (status === 'alle') {
-        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-950 shadow-md";
-      } else if (status === 'Offen') {
-        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-rose-500 text-white shadow-md";
-      } else if (status === 'Eingekauft') {
-        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-purple-600 text-white shadow-md";
-      } else if (status === 'Vorbereitet') {
-        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-orange-500 text-white shadow-md";
-      } else if (status === 'Verteilt') {
-        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-sky-500 text-white shadow-md";
-      } else if (status === 'Erledigt') {
-        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition bg-emerald-500 text-white shadow-md";
-      }
-    } else {
-      if (status === 'Offen') {
-        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30 hover:bg-rose-500/20";
-      } else if (status === 'Eingekauft') {
-        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30 hover:bg-purple-500/20";
-      } else if (status === 'Vorbereitet') {
-        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/30 hover:bg-orange-500/20";
-      } else if (status === 'Verteilt') {
-        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/30 hover:bg-sky-500/20";
-      } else if (status === 'Erledigt') {
-        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20";
-      } else {
-        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700";
-      }
+  // Sammle alle eindeutigen Status-Optionen aus den Daten
+  const baseOrder = ['Offen', 'Vorbereitet', 'Verteilt', 'Eingekauft', 'Erledigt'];
+  const allStatusesSet = new Set(baseOrder);
+
+  if (window.inventarData && Array.isArray(window.inventarData)) {
+    window.inventarData.forEach(cat => {
+      const catStatuses = window.getCategoryStatuses(cat);
+      catStatuses.forEach(st => allStatusesSet.add(st));
+      (cat.items || []).forEach(item => {
+        if (item.status) allStatusesSet.add(item.status);
+      });
+    });
+  }
+
+  // Bilde geordnete Liste: erst Standard-Reihenfolge, danach benutzerdefinierte Filter
+  const orderedStatuses = ['alle', ...baseOrder];
+  allStatusesSet.forEach(st => {
+    if (!orderedStatuses.includes(st)) {
+      orderedStatuses.push(st);
     }
   });
+
+  let buttonsHtml = '';
+  orderedStatuses.forEach(status => {
+    const isActive = (window.currentFilterStatus.toLowerCase() === status.toLowerCase());
+    const label = status === 'alle' ? 'Alle' : status;
+
+    let activeClass = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition shadow-md ";
+    let inactiveClass = "px-3.5 py-1.5 rounded-lg text-xs font-medium transition border ";
+
+    if (status === 'alle') {
+      activeClass += "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-950";
+      inactiveClass += "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 border-slate-300 dark:border-slate-700";
+    } else if (status === 'Offen') {
+      activeClass += "bg-rose-500 text-white";
+      inactiveClass += "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/20";
+    } else if (status === 'Vorbereitet') {
+      activeClass += "bg-amber-500 text-slate-950 font-black";
+      inactiveClass += "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20";
+    } else if (status === 'Verteilt') {
+      activeClass += "bg-sky-500 text-white";
+      inactiveClass += "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30 hover:bg-sky-500/20";
+    } else if (status === 'Eingekauft') {
+      activeClass += "bg-purple-600 text-white";
+      inactiveClass += "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30 hover:bg-purple-500/20";
+    } else if (status === 'Erledigt') {
+      activeClass += "bg-emerald-500 text-white";
+      inactiveClass += "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20";
+    } else {
+      activeClass += "bg-indigo-600 text-white";
+      inactiveClass += "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/20";
+    }
+
+    buttonsHtml += `
+      <button data-filter-btn="${escapeHtml(status)}" onclick="window.setInventarFilter('${escapeHtml(status)}')" 
+        class="${isActive ? activeClass : inactiveClass}">
+        ${escapeHtml(label)}
+      </button>
+    `;
+  });
+
+  container.innerHTML = buttonsHtml;
 };
 
 // ------------------------------------------
@@ -268,7 +299,7 @@ window.editCategoryStatuses = function(catIdx) {
 
   const currentList = window.getCategoryStatuses(cat).join(', ');
   const input = prompt(
-    `Verfügbare Status-Optionen für "${cat.title}" festlegen (kommagetrennt):\n\nBeispiel: Offen, Eingekauft, Vorbereitet, Verteilt, Erledigt`,
+    `Verfügbare Status-Optionen für "${cat.title}" festlegen (kommagetrennt):\n\nBeispiel: Offen, Vorbereitet, Verteilt, Eingekauft, Erledigt`,
     currentList
   );
 
@@ -390,7 +421,7 @@ function getStatusStyleClass(status) {
     case 'Eingekauft':
       return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-300 dark:border-purple-800/80 font-bold';
     case 'Vorbereitet':
-      return 'bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-400 dark:border-orange-500/80 font-bold';
+      return 'bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-400 dark:border-amber-500/80 font-extrabold';
     case 'Verteilt':
       return 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-300 dark:border-sky-800/80 font-bold';
     case 'Erledigt':
@@ -404,7 +435,7 @@ function getStatusOptionTextColor(status) {
   switch (status) {
     case 'Offen': return 'text-rose-600 dark:text-rose-400';
     case 'Eingekauft': return 'text-purple-600 dark:text-purple-400';
-    case 'Vorbereitet': return 'text-orange-600 dark:text-orange-400';
+    case 'Vorbereitet': return 'text-amber-600 dark:text-amber-400';
     case 'Verteilt': return 'text-sky-600 dark:text-sky-400';
     case 'Erledigt': return 'text-emerald-600 dark:text-emerald-400';
     default: return 'text-slate-800 dark:text-slate-200';
@@ -427,6 +458,9 @@ window.renderInventar = function() {
     }
   }
 
+  // Aktualisiere dynamische Filter-Buttons
+  window.updateFilterButtonsUI();
+
   let totalItems = 0;
   let completedItems = 0;
   let html = '';
@@ -440,7 +474,8 @@ window.renderInventar = function() {
 
     (cat.items || []).forEach(item => {
       totalItems++;
-      if (item.status === 'Erledigt' || item.pack) {
+      // Sowohl 'Erledigt', 'Eingekauft' als auch angehaktes 'Pack' zählen als erledigt
+      if (item.status === 'Erledigt' || item.status === 'Eingekauft' || item.pack) {
         completedItems++;
       }
     });
@@ -489,16 +524,16 @@ window.renderInventar = function() {
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse text-xs">
               <thead>
-                <tr class="border-b border-slate-200 dark:border-slate-800 text-[10px] font-extrabold uppercase text-slate-500 dark:text-slate-400 tracking-wider bg-slate-100/80 dark:bg-slate-950/60">
-                  <th class="py-2.5 px-4">${isOrga ? 'DETAIL' : 'GEGENSTAND'}</th>
-                  ${isOrga ? '' : '<th class="py-2.5 px-2 text-center w-16">BEDARF</th>'}
-                  ${isOrga ? '' : '<th class="py-2.5 px-2 text-center w-16">LAGER</th>'}
-                  <th class="py-2.5 px-2 text-center w-36">STATUS</th>
-                  ${isOrga ? '<th class="py-2.5 px-2 text-center w-36">EMPFÄNGER</th>' : ''}
-                  <th class="py-2.5 px-2 text-center w-40">VERANTWORTLICH</th>
-                  ${isOrga ? '' : '<th class="py-2.5 px-2 text-center w-24">EINGEPACKT</th>'}
-                  <th class="py-2.5 px-2 text-center w-20">BOX</th>
-                  ${showEditControls ? '<th class="py-2.5 px-2 text-center w-24">AKTIONEN</th>' : ''}
+                <tr class="border-b border-slate-300 dark:border-slate-800 text-[10px] font-black uppercase text-slate-700 dark:text-slate-300 tracking-wider bg-slate-200/80 dark:bg-slate-950/80">
+                  <th class="py-3 px-4">${isOrga ? 'DETAIL' : 'GEGENSTAND'}</th>
+                  ${isOrga ? '' : '<th class="py-3 px-2 text-center w-16">BEDARF</th>'}
+                  ${isOrga ? '' : '<th class="py-3 px-2 text-center w-16">LAGER</th>'}
+                  <th class="py-3 px-2 text-center w-36">STATUS</th>
+                  ${isOrga ? '<th class="py-3 px-2 text-center w-36">EMPFÄNGER</th>' : ''}
+                  <th class="py-3 px-2 text-center w-40">VERANTWORTLICH</th>
+                  ${isOrga ? '' : '<th class="py-3 px-2 text-center w-24">EINGEPACKT</th>'}
+                  <th class="py-3 px-2 text-center w-20">BOX</th>
+                  ${showEditControls ? '<th class="py-3 px-2 text-center w-24">AKTIONEN</th>' : ''}
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-200 dark:divide-slate-800/60">
@@ -520,32 +555,32 @@ window.renderInventar = function() {
 
         html += `
           <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-            <td class="py-2 px-4 font-semibold text-slate-800 dark:text-slate-100">
+            <td class="py-2.5 px-4 font-semibold text-slate-900 dark:text-slate-100">
               ${showEditControls ? `
                 <input type="text" value="${escapeHtml(item.name)}" placeholder="Name..." 
                   onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'name', this.value)"
-                  class="w-full font-bold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded py-0.5 px-1.5 text-xs text-slate-800 dark:text-slate-100 focus:border-amber-500 focus:outline-none mb-1" />
+                  class="w-full font-bold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded py-0.5 px-1.5 text-xs text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:outline-none mb-1" />
                 <input type="text" value="${escapeHtml(item.sub || '')}" placeholder="Beschreibung/Subtext..." 
                   onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'sub', this.value)"
-                  class="w-full text-[10px] bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded py-0.5 px-1.5 text-slate-500 dark:text-slate-400 focus:border-amber-500 focus:outline-none" />
+                  class="w-full text-[10px] bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded py-0.5 px-1.5 text-slate-600 dark:text-slate-400 focus:border-amber-500 focus:outline-none" />
               ` : `
-                <div class="leading-tight">${escapeHtml(item.name)}</div>
+                <div class="leading-tight text-slate-900 dark:text-slate-100 font-bold">${escapeHtml(item.name)}</div>
                 ${item.sub ? `<div class="text-[10px] font-normal text-slate-500 dark:text-slate-400 mt-0.5">${escapeHtml(item.sub)}</div>` : ''}
               `}
             </td>
             ${isOrga ? '' : `
-            <td class="py-2 px-2 text-center">
+            <td class="py-2.5 px-2 text-center">
               <input type="number" value="${item.bedarf ?? 1}" min="0" ${isReadonly ? 'disabled' : ''}
                 onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'bedarf', parseInt(this.value) || 0)"
-                class="w-12 text-center bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-1 text-slate-800 dark:text-slate-100 font-medium focus:border-amber-500 focus:outline-none disabled:opacity-60" />
+                class="w-12 text-center bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-1 text-slate-900 dark:text-slate-100 font-bold focus:border-amber-500 focus:outline-none disabled:opacity-60" />
             </td>
-            <td class="py-2 px-2 text-center">
+            <td class="py-2.5 px-2 text-center">
               <input type="number" value="${item.lager ?? 0}" min="0" ${isReadonly ? 'disabled' : ''}
                 onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'lager', parseInt(this.value) || 0)"
-                class="w-12 text-center bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-1 text-emerald-600 dark:text-emerald-400 font-bold focus:border-amber-500 focus:outline-none disabled:opacity-60" />
+                class="w-12 text-center bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-1 text-emerald-600 dark:text-emerald-400 font-black focus:border-amber-500 focus:outline-none disabled:opacity-60" />
             </td>
             `}
-            <td class="py-2 px-2 text-center">
+            <td class="py-2.5 px-2 text-center">
               <select ${isReadonly ? 'disabled' : ''}
                 onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'status', this.value)"
                 class="w-full bg-slate-50 dark:bg-slate-950 border rounded-md py-1 px-2 text-xs font-bold focus:border-amber-500 focus:outline-none disabled:opacity-60 ${statusStyle}">
@@ -557,31 +592,31 @@ window.renderInventar = function() {
               </select>
             </td>
             ${isOrga ? `
-            <td class="py-2 px-2 text-center">
+            <td class="py-2.5 px-2 text-center">
               <input type="text" value="${escapeHtml(item.empfaenger || '')}" placeholder="Gemeinde/Amt..." ${isReadonly ? 'disabled' : ''}
                 onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'empfaenger', this.value)"
-                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-2 text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:border-amber-500 focus:outline-none disabled:opacity-60 text-center" />
+                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-2 text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:border-amber-500 focus:outline-none disabled:opacity-60 text-center font-medium" />
             </td>
             ` : ''}
-            <td class="py-2 px-2 text-center">
+            <td class="py-2.5 px-2 text-center">
               <input type="text" value="${escapeHtml(verantwortlicherVal)}" placeholder="Name..." ${isReadonly ? 'disabled' : ''}
                 onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'verantwortlich', this.value)"
-                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-2 text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:border-amber-500 focus:outline-none disabled:opacity-60 text-center" />
+                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-2 text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:border-amber-500 focus:outline-none disabled:opacity-60 text-center font-medium" />
             </td>
             ${isOrga ? '' : `
-            <td class="py-2 px-2 text-center">
+            <td class="py-2.5 px-2 text-center">
               <input type="checkbox" ${item.pack ? 'checked' : ''} ${isReadonly ? 'disabled' : ''}
                 onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'pack', this.checked)"
                 class="w-4 h-4 mx-auto rounded bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-amber-500 focus:ring-amber-500 accent-amber-500 disabled:opacity-60 cursor-pointer block" />
             </td>
             `}
-            <td class="py-2 px-2 text-center">
+            <td class="py-2.5 px-2 text-center">
               <input type="text" value="${escapeHtml(item.box || '')}" placeholder="" ${isReadonly ? 'disabled' : ''}
                 onchange="window.updateInventarItem(${catIdx}, ${itemIdx}, 'box', this.value)"
-                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-1.5 text-center text-slate-800 dark:text-slate-200 uppercase focus:border-amber-500 focus:outline-none disabled:opacity-60" />
+                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-1 px-1.5 text-center text-slate-900 dark:text-slate-200 font-bold uppercase focus:border-amber-500 focus:outline-none disabled:opacity-60" />
             </td>
             ${showEditControls ? `
-              <td class="py-2 px-2 text-center">
+              <td class="py-2.5 px-2 text-center">
                 <div class="flex items-center justify-center gap-1">
                   <button onclick="window.moveItem(${catIdx}, ${itemIdx}, -1)" ${itemIdx === 0 ? 'disabled' : ''} title="Nach oben" class="p-1 text-[10px] bg-slate-200 dark:bg-slate-800 rounded disabled:opacity-30">⬆️</button>
                   <button onclick="window.moveItem(${catIdx}, ${itemIdx}, 1)" ${itemIdx === cat.items.length - 1 ? 'disabled' : ''} title="Nach unten" class="p-1 text-[10px] bg-slate-200 dark:bg-slate-800 rounded disabled:opacity-30">⬇️</button>
