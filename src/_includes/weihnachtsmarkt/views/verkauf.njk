@@ -1,4 +1,4 @@
-<div id="viewKasse" class="hidden space-y-6">
+<div id="viewVerkauf" class="hidden space-y-6">
 <!-- Header -->
 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm gap-4">
 <div>
@@ -31,8 +31,8 @@
 <div class="text-2xl font-black text-emerald-600 dark:text-emerald-400" id="countKinderpunschPaid">0</div>
 </div>
 <div class="flex items-center gap-2">
-<button onclick="window.changeKasseCount('kinderpunsch', 'paid', -1)" class="w-10 h-10 bg-slate-200 dark:bg-slate-800 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 rounded-xl font-black text-lg transition flex items-center justify-center shadow-sm">-</button>
-<button onclick="window.changeKasseCount('kinderpunsch', 'paid', 1)" class="w-12 h-10 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-black text-xl transition flex items-center justify-center shadow-md">+1</button>
+<button onclick="changeKasseCount('kinderpunsch', 'paid', -1)" class="w-10 h-10 bg-slate-200 dark:bg-slate-800 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 rounded-xl font-black text-lg transition flex items-center justify-center shadow-sm">-</button>
+<button onclick="changeKasseCount('kinderpunsch', 'paid', 1)" class="w-12 h-10 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-black text-xl transition flex items-center justify-center shadow-md">+1</button>
 </div>
 </div>
 <!-- Helfer / Gratis Zähler -->
@@ -42,8 +42,8 @@
 <div class="text-2xl font-black text-indigo-600 dark:text-indigo-400" id="countKinderpunschFree">0</div>
 </div>
 <div class="flex items-center gap-2">
-<button onclick="window.changeKasseCount('kinderpunsch', 'free', -1)" class="w-10 h-10 bg-slate-200 dark:bg-slate-800 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 rounded-xl font-black text-lg transition flex items-center justify-center shadow-sm">-</button>
-<button onclick="window.changeKasseCount('kinderpunsch', 'free', 1)" class="w-12 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-xl transition flex items-center justify-center shadow-md">+1</button>
+<button onclick="changeKasseCount('kinderpunsch', 'free', -1)" class="w-10 h-10 bg-slate-200 dark:bg-slate-800 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 rounded-xl font-black text-lg transition flex items-center justify-center shadow-sm">-</button>
+<button onclick="changeKasseCount('kinderpunsch', 'free', 1)" class="w-12 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-xl transition flex items-center justify-center shadow-md">+1</button>
 </div>
 </div>
 </div>
@@ -65,8 +65,8 @@
 <div class="text-2xl font-black text-emerald-600 dark:text-emerald-400" id="countWaffelPaid">0</div>
 </div>
 <div class="flex items-center gap-2">
-<button onclick="window.changeKasseCount('waffel', 'paid', -1)" class="w-10 h-10 bg-slate-200 dark:bg-slate-800 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 rounded-xl font-black text-lg transition flex items-center justify-center shadow-sm">-</button>
-<button onclick="window.changeKasseCount('waffel', 'paid', 1)" class="w-12 h-10 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-black text-xl transition flex items-center justify-center shadow-md">+1</button>
+<button onclick="changeKasseCount('waffel', 'paid', -1)" class="w-10 h-10 bg-slate-200 dark:bg-slate-800 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 rounded-xl font-black text-lg transition flex items-center justify-center shadow-sm">-</button>
+<button onclick="changeKasseCount('waffel', 'paid', 1)" class="w-12 h-10 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-black text-xl transition flex items-center justify-center shadow-md">+1</button>
 </div>
 </div>
 <!-- Helfer / Gratis Zähler -->
@@ -76,8 +76,8 @@
 <div class="text-2xl font-black text-indigo-600 dark:text-indigo-400" id="countWaffelFree">0</div>
 </div>
 <div class="flex items-center gap-2">
-<button onclick="window.changeKasseCount('waffel', 'free', -1)" class="w-10 h-10 bg-slate-200 dark:bg-slate-800 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 rounded-xl font-black text-lg transition flex items-center justify-center shadow-sm">-</button>
-<button onclick="window.changeKasseCount('waffel', 'free', 1)" class="w-12 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-xl transition flex items-center justify-center shadow-md">+1</button>
+<button onclick="changeKasseCount('waffel', 'free', -1)" class="w-10 h-10 bg-slate-200 dark:bg-slate-800 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 rounded-xl font-black text-lg transition flex items-center justify-center shadow-sm">-</button>
+<button onclick="changeKasseCount('waffel', 'free', 1)" class="w-12 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-xl transition flex items-center justify-center shadow-md">+1</button>
 </div>
 </div>
 </div>
@@ -87,7 +87,7 @@
 <div class="text-xs font-bold text-slate-800 dark:text-slate-200">
 Geschätzter Umsatz (Bezahlt): <span id="kasseLiveTotalEuros" class="text-base font-black text-emerald-600 dark:text-emerald-400 ml-1">0,00 €</span>
 </div>
-<button onclick="window.switchView('statistik')" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl shadow transition">
+<button onclick="switchView('statistik')" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl shadow transition">
 📊 Detaillierte Statistik ansehen
 </button>
 </div>
