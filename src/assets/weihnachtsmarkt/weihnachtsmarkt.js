@@ -31,7 +31,8 @@ waffelPrice: 2.00
 };
 try {
 const savedKasse = localStorage.getItem('kasseData');
-window.kasseData = savedKasse ? JSON.parse(savedKasse) : { ...DEFAULT_KASSE_DATA };
+const parsed = savedKasse ? JSON.parse(savedKasse) : {};
+window.kasseData = Object.assign({}, DEFAULT_KASSE_DATA, parsed);
 } catch (e) {
 window.kasseData = { ...DEFAULT_KASSE_DATA };
 }
@@ -79,7 +80,7 @@ views.forEach(v => v.classList.add('hidden'));
 const lowerName = (viewName || '').toLowerCase();
 let targetView = null;
 if (lowerName === 'verkauf' || lowerName === 'kasse') {
-targetView = document.getElementById('viewVerkauf');
+targetView = document.getElementById('viewVerkauf') || document.getElementById('viewKasse');
 } else {
 const targetId = 'view' + viewName.charAt(0).toUpperCase() + viewName.slice(1);
 targetView = document.getElementById(targetId);
@@ -166,11 +167,11 @@ window.applyRolePermissions = applyRolePermissions;
 // ------------------------------------------
 function changeKasseCount(item, type, delta) {
 const key = item + (type === 'paid' ? 'Paid' : 'Free');
-if (typeof window.kasseData[key] === 'number') {
-window.kasseData[key] = Math.max(0, window.kasseData[key] + delta);
+const currentVal = typeof window.kasseData[key] === 'number' ? window.kasseData[key] : 0;
+window.kasseData[key] = Math.max(0, currentVal + delta);
 localStorage.setItem('kasseData', JSON.stringify(window.kasseData));
 renderKasse();
-}
+renderStatistik();
 }
 window.changeKasseCount = changeKasseCount;
 function renderKasse() {
