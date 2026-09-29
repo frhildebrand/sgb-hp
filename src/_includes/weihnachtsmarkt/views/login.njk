@@ -1,0 +1,64 @@
+<div id="viewLogin" class="max-w-4xl mx-auto space-y-4 hidden">
+
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex items-center gap-3">
+    <span class="text-2xl">🔐</span>
+    <div>
+      <h2 class="font-black text-base text-slate-800 dark:text-slate-100">Anmelden</h2>
+      <p class="text-[11px] text-slate-500 dark:text-slate-400">Rolle wählen. Die Anmeldung bleibt auf diesem Gerät gespeichert.</p>
+    </div>
+  </div>
+
+  <!-- Fehlermeldung -->
+  <div id="loginErrorMessage" class="hidden bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 p-3 rounded-xl text-xs font-bold flex items-center gap-3">
+    <span>⚠️</span>
+    <span id="loginErrorText">Falsches Passwort für die gewählte Rolle.</span>
+  </div>
+
+  <!-- Alle Rollen nebeneinander -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-sm flex flex-col gap-2 text-center">
+      <div class="text-2xl leading-none">👁️</div>
+      <div>
+        <h3 class="font-bold text-xs text-slate-800 dark:text-slate-100">Gast</h3>
+        <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-snug">Nur Aushänge</p>
+      </div>
+      <div class="mt-auto">
+        <button onclick="setRole('gast')" class="w-full py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg transition-colors cursor-pointer">Weiter als Gast</button>
+      </div>
+    </div>
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-sm flex flex-col gap-2 text-center">
+      <div class="text-2xl leading-none">🧑‍🍳</div>
+      <div>
+        <h3 class="font-bold text-xs text-slate-800 dark:text-slate-100">Helfer</h3>
+        <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-snug">Kasse, Rezepte, Lager</p>
+      </div>
+      <div class="space-y-1.5 mt-auto">
+        <input type="password" id="passHelfer" placeholder="Passwort" autocomplete="off" class="w-full px-2 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+        <button onclick="tryLogin('helfer', 'passHelfer')" class="w-full py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-lg transition-colors cursor-pointer">Anmelden</button>
+      </div>
+    </div>
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-sm flex flex-col gap-2 text-center">
+      <div class="text-2xl leading-none">📋</div>
+      <div>
+        <h3 class="font-bold text-xs text-slate-800 dark:text-slate-100">Orga-Team</h3>
+        <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-snug">Inventar, Einkäufe, Strom</p>
+      </div>
+      <div class="space-y-1.5 mt-auto">
+        <input type="password" id="passOrga" placeholder="Passwort" autocomplete="off" class="w-full px-2 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+        <button onclick="tryLogin('orga', 'passOrga')" class="w-full py-1.5 bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer">Anmelden</button>
+      </div>
+    </div>
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-sm flex flex-col gap-2 text-center">
+      <div class="text-2xl leading-none">🛡️</div>
+      <div>
+        <h3 class="font-bold text-xs text-slate-800 dark:text-slate-100">Administrator</h3>
+        <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-snug">Vollzugriff</p>
+      </div>
+      <div class="space-y-1.5 mt-auto">
+        <input type="password" id="passAdmin" placeholder="Passwort" autocomplete="off" class="w-full px-2 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+        <button onclick="tryLogin('admin', 'passAdmin')" class="w-full py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer">Anmelden</button>
+      </div>
+    </div>
+  </div>
+
+</div>
