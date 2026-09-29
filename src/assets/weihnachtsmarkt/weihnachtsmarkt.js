@@ -4,7 +4,7 @@
 // angezeigt. Danach wird im Hintergrund mit Google Sheets
 // synchronisiert.
 // ==========================================================
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz5_j65a248FUib9POAAWryFHFh6-613bhVpXUaBuTIpDEHx_kUOrOnh-NVhBduT8Ks/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzv1_LF-Qu2Ck7oEv79IcUoAkTI3HIcB941VF4SOn2aXYCUkubcq8TbRMCoRbhNWVyX/exec';
 
 // Passwoerter (nur Sichtschutz, im Quelltext lesbar)
 const ROLE_PASSWORDS = { '1': 'helfer', '2': 'orga', '3': 'admin' };
