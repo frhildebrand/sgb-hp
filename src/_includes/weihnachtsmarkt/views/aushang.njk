@@ -1,0 +1,71 @@
+<div id="viewAushang" class="space-y-6">
+
+  <!-- Hinweis für Gast-Nutzer -->
+  <div id="guestLockNotice" class="bg-amber-500/10 dark:bg-amber-950/40 border border-amber-500/30 rounded-2xl p-6 backdrop-blur-md shadow-sm flex items-start gap-4">
+    <div class="text-3xl">🔒</div>
+    <div class="space-y-1">
+      <h3 class="font-bold text-base text-amber-700 dark:text-amber-400">Eingeschränkte Ansicht</h3>
+      <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+        Du bist aktuell als <span class="font-black text-amber-600 dark:text-amber-300 px-1.5 py-0.5 bg-amber-500/20 rounded-md">GAST</span> angemeldet und siehst nur die Aushänge. Tippe oben rechts auf deinen Status, um dich anzumelden und weitere Bereiche freizuschalten.
+      </p>
+    </div>
+  </div>
+
+  <!-- Ankündigungen -->
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+    <div class="flex items-center gap-3 mb-2">
+      <span class="text-2xl">📌</span>
+      <h2 class="font-extrabold text-lg text-slate-800 dark:text-slate-100">Ankündigungen</h2>
+    </div>
+    <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+      Hier hängen die aktuellen Aushänge für unseren Weihnachtsmarktstand. Für Samstag und Sonntag gibt es jeweils ein Blatt mit den Teigspenden und dem Schichtplan. Tippe auf ein Blatt, um es im Vollbild zu lesen.
+    </p>
+  </div>
+
+  <!-- Samstag & Sonntag: je ein DIN-A4-Blatt -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+    <!-- SAMSTAG -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+        <div>
+          <h3 class="font-black text-base text-amber-600 dark:text-amber-400 flex items-center gap-2"><span>📅</span> Samstag</h3>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Teigspenden & Schichtplan</p>
+        </div>
+        <span class="text-xs font-semibold px-2.5 py-1 bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 rounded-lg">Tag 1</span>
+      </div>
+      <button type="button" onclick="openAushang('samstag')" class="block w-full text-left cursor-pointer" aria-label="Aushang Samstag vergrößern">
+        <div class="relative w-full rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700" style="aspect-ratio: 1 / 1.414;">
+          <img id="aushangImgSamstag" alt="Aushang Samstag" class="hidden absolute inset-0 w-full h-full object-contain bg-white">
+          <div id="aushangEmptySamstag" class="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-center text-slate-400 dark:text-slate-500">
+            <span class="text-4xl">📄</span>
+            <span class="text-xs font-semibold">Noch kein Aushang hochgeladen</span>
+          </div>
+        </div>
+      </button>
+      <p id="aushangHintSamstag" class="hidden text-center text-[11px] font-medium text-slate-500 dark:text-slate-400">🔍 Tippen zum Vergrößern</p>
+    </div>
+
+    <!-- SONNTAG -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+        <div>
+          <h3 class="font-black text-base text-sky-600 dark:text-sky-400 flex items-center gap-2"><span>📅</span> Sonntag</h3>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Teigspenden & Schichtplan</p>
+        </div>
+        <span class="text-xs font-semibold px-2.5 py-1 bg-sky-100 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 rounded-lg">Tag 2</span>
+      </div>
+      <button type="button" onclick="openAushang('sonntag')" class="block w-full text-left cursor-pointer" aria-label="Aushang Sonntag vergrößern">
+        <div class="relative w-full rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700" style="aspect-ratio: 1 / 1.414;">
+          <img id="aushangImgSonntag" alt="Aushang Sonntag" class="hidden absolute inset-0 w-full h-full object-contain bg-white">
+          <div id="aushangEmptySonntag" class="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-center text-slate-400 dark:text-slate-500">
+            <span class="text-4xl">📄</span>
+            <span class="text-xs font-semibold">Noch kein Aushang hochgeladen</span>
+          </div>
+        </div>
+      </button>
+      <p id="aushangHintSonntag" class="hidden text-center text-[11px] font-medium text-slate-500 dark:text-slate-400">🔍 Tippen zum Vergrößern</p>
+    </div>
+
+  </div>
+</div>

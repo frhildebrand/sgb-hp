@@ -1,0 +1,155 @@
+<div id="viewVerkauf" class="hidden space-y-6 max-w-5xl mx-auto">
+<!-- Header -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg gap-4">
+<div>
+<div class="flex items-center gap-3">
+<h2 class="font-black text-2xl text-amber-400 flex items-center gap-2">
+🪙 Kasse & Schnellverkauf
+</h2>
+<span id="kasseSyncBadge" class="text-xs px-3 py-1 rounded-full font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span> Synchronisiert
+</span>
+</div>
+<p class="text-xs text-slate-400 mt-1">Live-Erfassung: Summe aller Geräte am Stand</p>
+</div>
+<div class="flex items-center gap-2">
+<button onclick="window.loadKasseFromGoogleSheets()" title="Manuell synchronisieren" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition border border-slate-700 flex items-center gap-1.5">
+🔄 Sync
+</button>
+<button onclick="window.openBackupModal()" title="Letzte Buchungen dieses Geräts wiederherstellen" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition border border-slate-700 flex items-center gap-1.5">
+↩️ Backup
+</button>
+<button onclick="window.switchView('aushang')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition border border-slate-700 flex items-center gap-2">
+⬅️ Zurück zu Aushänge
+</button>
+</div>
+</div>
+<!-- Produkte Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- CARD 1: KINDERPUNSCH -->
+<div class="bg-slate-900 rounded-2xl border border-slate-800 p-6 shadow-xl space-y-5">
+<!-- Product Header -->
+<div class="flex items-start justify-between border-b border-slate-800 pb-4">
+<div class="flex items-center gap-3">
+<span class="text-4xl p-2 bg-slate-800/80 rounded-2xl border border-slate-700/60">☕</span>
+<div>
+<h3 class="font-black text-lg text-slate-100">Kinderpunsch</h3>
+<div class="text-[11px] font-semibold text-amber-400/90 flex items-center gap-1 mt-0.5">
+<span>🥤 0,2l Thermobecher</span> • <span>Vereinsrezept</span>
+</div>
+<div class="flex items-center gap-2 mt-1">
+<span id="displayKinderpunschPrice" class="text-sm font-bold text-amber-400">2,00 € / Becher</span>
+<!-- Admin / Orga Preis-Editor -->
+<div class="admin-only-control hidden flex items-center gap-1 ml-2">
+<input type="number" step="0.50" id="inputKinderpunschPrice" value="2.00" 
+onchange="window.updateKassePrice('kinderpunsch', this.value)"
+class="w-16 px-2 py-0.5 text-xs font-bold bg-amber-500/10 border border-amber-500/40 rounded text-amber-300 text-center focus:outline-none" />
+<span class="text-xs text-slate-400">€</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bezahlt Zähler (Große Buttons) -->
+<div class="bg-slate-950 p-5 rounded-2xl border border-slate-800/90 space-y-3">
+<div class="flex items-center justify-between">
+<div class="text-xs font-bold uppercase tracking-wider text-slate-400">Verkauft (Bezahlt)</div>
+<div class="text-3xl font-black text-emerald-400" id="countKinderpunschPaid">0</div>
+</div>
+<div class="grid grid-cols-3 gap-2 pt-1">
+<button onclick="window.changeKasseCount('kinderpunsch', 'paid', -1)" class="h-14 bg-slate-800 hover:bg-rose-900/80 hover:text-white rounded-xl font-black text-2xl transition flex items-center justify-center border border-slate-700 text-slate-300 shadow-sm active:scale-95">-1</button>
+<button onclick="window.changeKasseCount('kinderpunsch', 'paid', 1)" class="col-span-2 h-14 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-black text-2xl transition flex items-center justify-center shadow-lg active:scale-95 gap-2">
+<span>+1 Verkauf</span>
+</button>
+</div>
+</div>
+<!-- Team & Helfer Verpflegung -->
+<div class="bg-indigo-950/40 p-4 rounded-2xl border border-indigo-900/60 space-y-3">
+<div class="flex items-center justify-between">
+<div>
+<div class="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+<span>🤝 Team & Helfer</span>
+</div>
+<div class="text-[10px] text-indigo-400/80">Vereinsverpflegung</div>
+</div>
+<div class="text-2xl font-black text-indigo-400" id="countKinderpunschFree">0</div>
+</div>
+<div class="grid grid-cols-3 gap-2">
+<button onclick="window.changeKasseCount('kinderpunsch', 'free', -1)" class="h-11 bg-slate-800 hover:bg-rose-900/80 text-slate-300 rounded-xl font-bold text-lg transition flex items-center justify-center border border-slate-700 active:scale-95">-1</button>
+<button onclick="window.changeKasseCount('kinderpunsch', 'free', 1)" class="col-span-2 h-11 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition flex items-center justify-center shadow-md active:scale-95 gap-1.5">
+<span>+1 Helfer-Tasse</span>
+</button>
+</div>
+</div>
+</div>
+<!-- CARD 2: BELGISCHE WAFFELN -->
+<div class="bg-slate-900 rounded-2xl border border-slate-800 p-6 shadow-xl space-y-5">
+<!-- Product Header -->
+<div class="flex items-start justify-between border-b border-slate-800 pb-4">
+<div class="flex items-center gap-3">
+<span class="text-4xl p-2 bg-slate-800/80 rounded-2xl border border-slate-700/60">🧇</span>
+<div>
+<h3 class="font-black text-lg text-slate-100">Belgische Waffeln</h3>
+<div class="text-[11px] font-semibold text-amber-400/90 mt-0.5">Frisch gebacken</div>
+<div class="flex items-center gap-2 mt-1">
+<span id="displayWaffelPrice" class="text-sm font-bold text-amber-400">2,00 € / Stück</span>
+<!-- Admin / Orga Preis-Editor -->
+<div class="admin-only-control hidden flex items-center gap-1 ml-2">
+<input type="number" step="0.50" id="inputWaffelPrice" value="2.00" 
+onchange="window.updateKassePrice('waffel', this.value)"
+class="w-16 px-2 py-0.5 text-xs font-bold bg-amber-500/10 border border-amber-500/40 rounded text-amber-300 text-center focus:outline-none" />
+<span class="text-xs text-slate-400">€</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bezahlt Zähler (Große Buttons) -->
+<div class="bg-slate-950 p-5 rounded-2xl border border-slate-800/90 space-y-3">
+<div class="flex items-center justify-between">
+<div class="text-xs font-bold uppercase tracking-wider text-slate-400">Verkauft (Bezahlt)</div>
+<div class="text-3xl font-black text-emerald-400" id="countWaffelPaid">0</div>
+</div>
+<div class="grid grid-cols-3 gap-2 pt-1">
+<button onclick="window.changeKasseCount('waffel', 'paid', -1)" class="h-14 bg-slate-800 hover:bg-rose-900/80 hover:text-white rounded-xl font-black text-2xl transition flex items-center justify-center border border-slate-700 text-slate-300 shadow-sm active:scale-95">-1</button>
+<button onclick="window.changeKasseCount('waffel', 'paid', 1)" class="col-span-2 h-14 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-black text-2xl transition flex items-center justify-center shadow-lg active:scale-95 gap-2">
+<span>+1 Verkauf</span>
+</button>
+</div>
+</div>
+<!-- Team & Helfer Verpflegung -->
+<div class="bg-indigo-950/40 p-4 rounded-2xl border border-indigo-900/60 space-y-3">
+<div class="flex items-center justify-between">
+<div>
+<div class="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+<span>🤝 Team & Helfer</span>
+</div>
+<div class="text-[10px] text-indigo-400/80">Vereinsverpflegung</div>
+</div>
+<div class="text-2xl font-black text-indigo-400" id="countWaffelFree">0</div>
+</div>
+<div class="grid grid-cols-3 gap-2">
+<button onclick="window.changeKasseCount('waffel', 'free', -1)" class="h-11 bg-slate-800 hover:bg-rose-900/80 text-slate-300 rounded-xl font-bold text-lg transition flex items-center justify-center border border-slate-700 active:scale-95">-1</button>
+<button onclick="window.changeKasseCount('waffel', 'free', 1)" class="col-span-2 h-11 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition flex items-center justify-center shadow-md active:scale-95 gap-1.5">
+<span>+1 Helfer-Waffel</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Live Umsatz Summary Footer -->
+<div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-md">
+<div class="text-sm font-bold text-slate-200 flex items-center gap-2">
+<span>Geschätzter Schicht-Umsatz:</span>
+<span id="kasseLiveTotalEuros" class="text-xl font-black text-emerald-400 ml-1">0,00 €</span>
+</div>
+<div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+<button onclick="window.resetKasseData()" class="admin-only-control hidden px-3.5 py-2.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 font-bold text-xs rounded-xl transition">
+🔄 Schicht auf 0 zurücksetzen
+</button>
+<button onclick="window.switchView('statistik')" class="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow transition">
+📊 Live-Statistik
+</button>
+</div>
+</div>
+</div>
