@@ -563,7 +563,7 @@ ${matchingItems.length} Einträge
 ￼
 ￼
 ￼
-￼{isOrga ? 'DETAIL' : 'GEGENSTAND'}</th>
+<th class="py-3 px-4 text-left text-slate-900 dark:text-slate-100">{isOrga ? 'DETAIL' : 'GEGENSTAND'}</th>
 ${isOrga ? '' : '<th class="py-3 px-2 text-center w-16 text-slate-900 dark:text-slate-100">BEDARF</th>'}
 ${isOrga ? '' : '<th class="py-3 px-2 text-center w-16 text-slate-900 dark:text-slate-100">LAGER</th>'}
 <th class="py-3 px-2 text-center w-36 text-slate-900 dark:text-slate-100">STATUS</th>
