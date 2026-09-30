@@ -1,0 +1,153 @@
+---
+layout: base.njk
+title: SG Barnstorf Weihnachtsmarkt
+---
+<!-- Design vor dem ersten Zeichnen setzen (Auto = Geräteeinstellung), damit nichts aufblitzt -->
+<script>
+  (function () {
+    try {
+      var m = localStorage.getItem('themeMode');
+      var dark = m === 'dark' || (m !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.classList.toggle('dark', dark);
+    } catch (e) {}
+  })();
+</script>
+<!-- Fehleranzeige: zeigt Fehler und Versionsprobleme auf dem Bildschirm (auf dem iPad gibt es keine Konsole) -->
+<script>
+  window.WM_PAGE_VERSION = 11;
+  (function () {
+    var errs = [];
+    window.__wmErrors = errs;
+    function holder() {
+      var b = document.getElementById('wmBanners');
+      if (!b) {
+        b = document.createElement('div');
+        b.id = 'wmBanners';
+        b.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:2147483000;padding:env(safe-area-inset-top,0px) 8px 0;pointer-events:none';
+        (document.body || document.documentElement).appendChild(b);
+      }
+      return b;
+    }
+    window.wmBanner = function (id, text) {
+      try {
+        var old = document.getElementById('wmB_' + id);
+        if (old) old.remove();
+        var d = document.createElement('div');
+        d.id = 'wmB_' + id;
+        d.style.cssText = 'pointer-events:auto;margin:6px auto;max-width:720px;background:#7f1d1d;color:#fff;border-radius:12px;padding:10px 12px;font:600 13px/1.4 -apple-system,system-ui,sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.35);display:flex;gap:8px;align-items:flex-start';
+        var t = document.createElement('div');
+        t.style.flex = '1';
+        t.textContent = text;
+        d.appendChild(t);
+        var mk = function (label, fn) {
+          var b = document.createElement('button');
+          b.textContent = label;
+          b.style.cssText = 'min-width:44px;min-height:44px;border:0;border-radius:10px;background:rgba(255,255,255,.18);color:#fff;font:700 13px system-ui;padding:0 10px';
+          b.onclick = fn;
+          d.appendChild(b);
+        };
+        mk('Kopieren', function () { try { navigator.clipboard.writeText(text); } catch (e) {} });
+        mk('✕', function () { d.remove(); });
+        holder().appendChild(d);
+      } catch (e) {}
+    };
+    function report(msg) {
+      if (errs.indexOf(msg) >= 0) return;
+      errs.push(msg);
+      try { localStorage.setItem('wmErrors', JSON.stringify(errs.slice(-5))); } catch (e) {}
+      window.wmBanner('err', 'Fehler im Portal: ' + msg);
+    }
+    window.addEventListener('error', function (e) {
+      if (!e.message || /ResizeObserver/.test(e.message) || (e.message === 'Script error.' && !e.lineno)) return;
+      report(e.message + (e.filename ? ' [' + String(e.filename).split('/').pop() + ':' + e.lineno + ']' : ''));
+    });
+    window.addEventListener('unhandledrejection', function (e) {
+      var r = e.reason;
+      report('Nicht abgefangener Fehler: ' + (r && r.message ? r.message : String(r)));
+    });
+    setTimeout(function () {
+      if (window.__wmBooted) return;
+      window.wmBanner('boot', 'Das Portal ist nicht vollständig gestartet: das Skript fehlt, ist veraltet oder hat einen Fehler.' + (errs.length ? ' Letzter Fehler: ' + errs[errs.length - 1] : '') + ' Bitte Seite neu laden. Hilft das nicht: am iPad unter Einstellungen > Apps > Safari die Websitedaten für sgbarnstorf.de löschen.');
+    }, 9000);
+  })();
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class'
+  }
+</script>
+
+<!-- Hintergrund und Fußzeile der ganzen Seite folgen dem gewählten Design -->
+<style>
+  html, body { background-color: #f1f5f9 !important; }
+  html.dark, html.dark body { background-color: #020617 !important; color: #f8fafc; }
+  html.dark .footer { background-color: #0b1120 !important; color: #cbd5e1 !important; }
+  html.dark .footer a, html.dark .footer .menu-label { color: #94a3b8 !important; }
+  html.dark .footer a:hover { color: #e2e8f0 !important; }
+  html.dark .footer .has-text-grey { color: #94a3b8 !important; }
+  html.dark .footer hr.has-background-grey-lighter { background-color: #1e293b !important; }
+  /* Ueberschriften aller Ansichten: einheitlich gross und gut lesbar */
+  main > div[id^="view"] h2 { font-size: 1.75rem; line-height: 2.15rem; }
+  @media (min-width: 640px) { main > div[id^="view"] h2 { font-size: 2.1rem; line-height: 2.5rem; } }
+  /* Kasse: kleine Rückmeldung beim Buchen */
+  @keyframes kassePop { 0% { transform: scale(1); } 40% { transform: scale(1.25); } 100% { transform: scale(1); } }
+  .kasse-pop { animation: kassePop .25s ease-out; }
+
+  /* Drucken: nur das DIN-A4-Blatt (Aushang, Aufbauplan, Stromplan) */
+  #printSheet { display: none; }
+  @media print {
+    @page { size: A4; margin: 14mm; }
+    body > *:not(#printSheet) { display: none !important; }
+    html, body { background: #fff !important; }
+    #printSheet { display: block !important; color: #000; background: #fff; font-family: Arial, Helvetica, sans-serif; font-size: 11pt; }
+    #printSheet h1 { font-size: 24pt; font-weight: 400; margin: 0; }
+    #printSheet h2 { font-size: 16pt; font-weight: 400; margin: 12pt 0 4pt; }
+    #printSheet h3 { font-size: 12pt; margin: 10pt 0 2pt; }
+    #printSheet .ps-head { display: flex; justify-content: space-between; align-items: flex-start; }
+    #printSheet .ps-head img { max-height: 20mm; max-width: 45mm; }
+    #printSheet .ps-page { page-break-after: always; page-break-inside: avoid; }
+    #printSheet .ps-page:last-child { page-break-after: auto; }
+    #printSheet table { width: 100%; border-collapse: collapse; margin-top: 4pt; }
+    #printSheet th, #printSheet td { border: 1px solid #000; padding: 5pt 6pt; text-align: left; vertical-align: top; }
+    #printSheet th { background: #eee; font-weight: 700; }
+    #printSheet .ps-slots td, #printSheet .ps-teig td { padding: 3pt 6pt; box-sizing: border-box; }
+    #printSheet table { page-break-inside: avoid; }
+    #printSheet .ps-slots .c1 { width: 24%; }
+    #printSheet .ps-slots .c3 { width: 20%; }
+    #printSheet .ps-teig td { width: 50%; }
+    #printSheet .ps-img { page-break-inside: avoid; margin: 6pt 0; }
+    #printSheet .ps-img img { max-width: 100%; max-height: 120mm; }
+    #printSheet svg { max-width: 100%; height: auto; }
+  }
+</style>
+
+<div id="appBody" class="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-200 pb-16">
+  
+  {% include "weihnachtsmarkt/components/header.njk" %}
+  {% include "weihnachtsmarkt/components/navigation.njk" %}
+
+  <main class="max-w-7xl mx-auto px-4 pt-6 space-y-6">
+    {% include "weihnachtsmarkt/views/aushang.njk" %}
+    {% include "weihnachtsmarkt/views/login.njk" %}
+    {% include "weihnachtsmarkt/views/inventar.njk" %}
+    {% include "weihnachtsmarkt/views/verkauf.njk" %}
+    {% include "weihnachtsmarkt/views/statistik.njk" %}
+    {% include "weihnachtsmarkt/views/einkaufsliste.njk" %}
+    {% include "weihnachtsmarkt/views/verkabelung.njk" %}
+    {% include "weihnachtsmarkt/views/lagerbestand.njk" %}
+    {% include "weihnachtsmarkt/views/boxen.njk" %}
+    {% include "weihnachtsmarkt/views/rezepte.njk" %}
+    {% include "weihnachtsmarkt/views/aufbau.njk" %}
+    {% include "weihnachtsmarkt/views/admin.njk" %}
+    {% include "weihnachtsmarkt/views/status.njk" %}
+    {% include "weihnachtsmarkt/views/protokoll.njk" %}
+  </main>
+
+  {% include "weihnachtsmarkt/components/modals.njk" %}
+
+</div>
+
+<!-- Skripte für Daten und Logik -->
+<script src="/assets/weihnachtsmarkt/weihnachtsmarkt-data.js"></script>
+<script src="/assets/weihnachtsmarkt/weihnachtsmarkt.js"></script>
