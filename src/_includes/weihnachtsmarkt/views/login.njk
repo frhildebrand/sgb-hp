@@ -1,0 +1,36 @@
+<div id="viewLogin" class="max-w-4xl mx-auto space-y-4 hidden">
+
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex items-center gap-3">
+    <span class="text-2xl">🔐</span>
+    <div>
+      <h2 class="font-black text-base text-slate-800 dark:text-slate-100">Anmelden</h2>
+      <p class="text-[11px] text-slate-500 dark:text-slate-400">Mit dem Passwort einer Rolle oder persönlich mit Benutzername. Die Anmeldung bleibt auf diesem Gerät gespeichert.</p>
+    </div>
+  </div>
+
+  <!-- Wer ist angemeldet -->
+  <div id="loginStatus" class="hidden bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 flex items-center justify-between gap-3">
+    <span id="loginStatusText" class="text-xs font-bold text-emerald-700 dark:text-emerald-300"></span>
+    <button type="button" onclick="logout()" class="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg">Abmelden</button>
+  </div>
+
+  <!-- Fehlermeldung -->
+  <div id="loginErrorMessage" class="hidden bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 p-3 rounded-xl text-xs font-bold flex items-center gap-3">
+    <span>⚠️</span>
+    <span id="loginErrorText">Falsche Anmeldedaten.</span>
+  </div>
+
+  <!-- Rollen (werden aus der Rollenverwaltung aufgebaut) -->
+  <div id="loginRoleCards" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+
+  <!-- Persönlich anmelden -->
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm space-y-3">
+    <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100 flex items-center gap-2"><span>👤</span> Persönlich anmelden</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2">
+      <input type="text" id="loginUserName" placeholder="Benutzername" autocomplete="username" class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500" />
+      <input type="password" id="loginUserPw" placeholder="Passwort" autocomplete="current-password" class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500" />
+      <button type="button" onclick="tryUserLogin()" class="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-sm font-bold rounded-lg transition-colors">Anmelden</button>
+    </div>
+  </div>
+
+</div>
