@@ -4,7 +4,7 @@
 // angezeigt. Danach wird im Hintergrund mit Google Sheets
 // synchronisiert.
 // ==========================================================
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz5_j65a248FUib9POAAWryFHFh6-613bhVpXUaBuTIpDEHx_kUOrOnh-NVhBduT8Ks/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwmvV4TXcwM_FGtK_xCF4M5W39KWXxlOfw7eDv81N1yewZRtEN69i17DgjqTzFtV8M0/exec';
 
 // Punsch-Rezept (Vereinsrezept, Mengen fuer 8 Liter)
 const PUNSCH_BASIS_LITER = 8;
