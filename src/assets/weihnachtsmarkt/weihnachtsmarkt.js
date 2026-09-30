@@ -2,7 +2,7 @@
 // SG BARNSTORF WEIHNACHTSMARKT - MAIN ENGINE (Version 4)
 // Prinzip: Alles wird zuerst lokal gespeichert und sofort
 // angezeigt. Danach wird im Hintergrund mit Google Sheets
-// synchronisiert.
+// synchronisiert
 // ==========================================================
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxElC3sEqLvRzXPVZDle97RTTD5BUryDYJmWGmiFEYHOo09Z9eF4OOIrZ4C996lcMKb/exec';
 
