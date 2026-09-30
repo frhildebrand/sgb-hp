@@ -1,0 +1,22 @@
+<div id="viewProtokoll" class="hidden space-y-6">
+  <div class="flex flex-wrap justify-between items-center gap-3 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+    <h2 class="font-black text-xl text-slate-800 dark:text-slate-100 flex items-center gap-2">📝 Änderungsprotokoll</h2>
+    <button onclick="switchView('aushang')" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 transition">⬅️ Zurück</button>
+  </div>
+
+  <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+    <p class="text-[11px] text-slate-500 dark:text-slate-400">Hier steht, wer wann was geändert hat. Name und Gerät kommen vom jeweiligen Gerät und sind ein Hinweis, kein Beweis. Es werden die letzten etwa 6000 Einträge aufbewahrt.</p>
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-2">
+      <select id="logArea" onchange="loadProtokoll(true)" class="px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100"><option value="">Alle Bereiche</option></select>
+      <input id="logQ" type="text" placeholder="Suche (Person oder Text)" onchange="loadProtokoll(true)" class="px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100" />
+      <input id="logFrom" type="date" onchange="loadProtokoll(true)" class="px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100" />
+      <input id="logTo" type="date" onchange="loadProtokoll(true)" class="px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100" />
+      <button type="button" onclick="loadProtokoll(true)" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-sm font-black rounded-lg transition">Suchen</button>
+    </div>
+  </div>
+
+  <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+    <div id="logList"></div>
+  </div>
+  <div class="text-center"><button id="logMore" type="button" onclick="loadProtokoll(false)" class="hidden px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 transition">Mehr laden</button></div>
+</div>

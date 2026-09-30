@@ -1,0 +1,16 @@
+<div id="viewStatus" class="hidden space-y-6">
+  <div class="flex flex-wrap justify-between items-center gap-3 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+    <h2 class="font-black text-xl text-emerald-600 dark:text-emerald-400 flex items-center gap-2">🩺 Systemstatus</h2>
+    <button onclick="switchView('aushang')" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 transition">⬅️ Zurück</button>
+  </div>
+
+  <div id="statusAmpel" class="rounded-2xl p-5 border flex items-center gap-4 bg-slate-500/10 border-slate-500/30"></div>
+
+  <div class="flex flex-wrap gap-2">
+    <button type="button" onclick="runStatusCheck()" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 transition">🔄 Verbindung testen</button>
+    <button id="statusBackupBtn" type="button" onclick="backupNow()" class="hidden px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 transition">🗄️ Jetzt sichern</button>
+    <button type="button" onclick="reloadApp()" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 transition">♻️ Neu laden und aktuelle Version holen</button>
+  </div>
+
+  <div id="statusRoot" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
+</div>
