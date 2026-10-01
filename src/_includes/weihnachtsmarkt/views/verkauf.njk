@@ -1,0 +1,46 @@
+<div id="viewVerkauf" class="hidden space-y-5 max-w-4xl mx-auto pb-20">
+
+  <!-- Kopf: Titel, Live-Anzeige, Statistik (nur wer sie sehen darf) -->
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div class="flex items-center gap-3 flex-wrap">
+      <h2 class="font-black text-xl text-amber-600 dark:text-amber-400">🪙 Kasse</h2>
+      <span id="kasseSyncBadge" class="text-xs px-3 py-1 rounded-full font-bold border flex items-center gap-1.5 bg-slate-500/10 text-slate-500 dark:text-slate-300 border-slate-500/30">
+        <span class="w-2.5 h-2.5 rounded-full bg-slate-400 animate-pulse"></span> Verbinde...
+      </span>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <button id="kasseEditBtn" type="button" onclick="toggleKasseEdit()" class="hidden px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl border border-slate-300 dark:border-slate-700 transition">✏️ Zahlen korrigieren</button>
+      <button id="kasseStatistikBtn" type="button" onclick="switchView('statistik')" class="hidden px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl shadow transition">📊 Statistik</button>
+    </div>
+  </div>
+
+  <!-- Werkzeuge (je nach Recht) -->
+  <div class="flex flex-wrap items-center gap-2">
+    <button id="kasseSturzBtn" type="button" onclick="toggleSturz()" class="hidden px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl border border-slate-300 dark:border-slate-700 transition">💰 Kassensturz</button>
+    <button id="kasseCloseBtn" type="button" onclick="toggleDayClosed()" class="hidden px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl border border-slate-300 dark:border-slate-700 transition">🔒 Tag abschließen</button>
+    <button id="kassePracticeBtn" type="button" onclick="togglePractice()" class="hidden px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl border border-slate-300 dark:border-slate-700 transition">🎓 Übungsmodus</button>
+    <button id="kasseKioskBtn" type="button" onclick="startKiosk()" class="hidden px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl border border-slate-300 dark:border-slate-700 transition">📌 Kiosk-Modus</button>
+  </div>
+  <div id="kasseKioskHint" class="hidden text-[11px] font-semibold text-slate-500 dark:text-slate-400 text-center">📌 Kiosk-Modus. Zum Beenden den Titel oben 3 Sekunden gedrückt halten.</div>
+  <div id="kasseBanner" class="hidden"></div>
+
+  <!-- Tag wählen -->
+  <div class="grid grid-cols-2 gap-2 bg-slate-200/60 dark:bg-slate-900 p-1.5 rounded-2xl">
+    <button id="kasseDayTabSamstag" type="button" onclick="setKasseDay('samstag')" class="py-3 rounded-xl text-sm font-black bg-amber-500 text-slate-950 shadow transition">📅 Samstag</button>
+    <button id="kasseDayTabSonntag" type="button" onclick="setKasseDay('sonntag')" class="py-3 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 transition">📅 Sonntag</button>
+  </div>
+
+  <!-- Produkte: werden aus der Produktliste aufgebaut (Punsch links, Waffeln rechts, weitere danach) -->
+  <div id="kasseProducts" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
+
+  <!-- Kassensturz -->
+  <div id="kasseSturzPanel" class="hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+    <div id="sturzRoot"></div>
+  </div>
+
+  <!-- Rückgängig-Leiste: erscheint nach jeder Buchung -->
+  <div id="kasseUndoBar" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 pl-4 pr-2 py-2 rounded-2xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-2xl">
+    <span id="kasseUndoText" class="text-xs font-bold"></span>
+    <button type="button" onclick="undoKasse()" class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black">↩ Rückgängig</button>
+  </div>
+</div>
