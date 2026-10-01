@@ -1,0 +1,97 @@
+<!-- NAVIGATION MODAL / DRAWER -->
+<div id="navigationModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex justify-end hidden">
+
+  <div class="bg-white dark:bg-slate-900 w-full max-w-sm h-full p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl space-y-5 flex flex-col justify-between overflow-y-auto border-l border-slate-200 dark:border-slate-800">
+
+    <div class="space-y-4">
+      <!-- Kopf: wer ist angemeldet -->
+      <div class="flex items-start justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+        <div class="flex items-center gap-3 min-w-0">
+          <span class="text-2xl">🎄</span>
+          <div class="min-w-0">
+            <div id="navUserName" class="font-black text-lg text-slate-900 dark:text-slate-100 leading-tight truncate">Gast</div>
+            <div id="navUserRole" class="text-xs font-semibold text-slate-500 dark:text-slate-400">nicht angemeldet</div>
+          </div>
+        </div>
+        <button onclick="toggleBurgerMenu()" aria-label="Menü schließen" class="shrink-0 w-12 h-12 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 font-bold text-3xl leading-none cursor-pointer">✕</button>
+      </div>
+
+      <!-- Seiten, nach Aufgabe gruppiert -->
+      <nav class="space-y-3">
+      <div data-nav-group="Am Stand" class="space-y-1">
+        <div data-nav-head role="button" aria-expanded="true" onclick="toggleNavGroup(this)" class="px-4 py-2.5 flex items-center justify-between cursor-pointer select-none text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"><span>Am Stand</span><span data-nav-chev class="text-base">▾</span></div>
+        <div data-nav-items class="space-y-1">
+        <button onclick="switchView('aushang')" class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-3">
+          <span class="text-lg">📌</span> Aushang
+        </button>
+        <button onclick="switchView('verkauf')" class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-3">
+          <span class="text-lg">💶</span> Kasse
+        </button>
+        <button onclick="switchView('statistik')" class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-3">
+          <span class="text-lg">📊</span> Statistik
+        </button>
+        <button onclick="switchView('rezepte')" class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-3">
+          <span class="text-lg">🧇</span> Rezepte
+        </button>
+        </div>
+      </div>
+      <div data-nav-group="Vorbereitung" class="space-y-1">
+        <div data-nav-head role="button" aria-expanded="true" onclick="toggleNavGroup(this)" class="px-4 py-2.5 flex items-center justify-between cursor-pointer select-none text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"><span>Vorbereitung</span><span data-nav-chev class="text-base">▾</span></div>
+        <div data-nav-items class="space-y-1">
+        <button onclick="switchView('aufbau')" class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-3">
+          <span class="text-lg">🧰</span> Auf- &amp; Abbau
+        </button>
+        <button onclick="switchView('inventar')" class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-3">
+          <span class="text-lg">📦</span> Inventar
+        </button>
+        <button onclick="switchView('einkaufsliste')" class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-3">
+          <span class="text-lg">🛒</span> Einkaufsliste
+        </button>
+        <button onclick="switchView('verkabelung')" class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-3">
+          <span class="text-lg">⚡</span> Strom &amp; Verkabelung
+        </button>
+        <button onclick="switchView('lagerbestand')" class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-3">
+          <span class="text-lg">🏬</span> Lagerbestand
+        </button>
+        <button onclick="switchView('boxen')" class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-3">
+          <span class="text-lg">📥</span> Kisten &amp; Boxen
+        </button>
+        <button onclick="switchView('leihgaben')" class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-3">
+          <span class="text-lg">🤝</span> Leihgaben
+        </button>
+        </div>
+      </div>
+      <div data-nav-group="Verwaltung" class="space-y-1">
+        <div data-nav-head role="button" aria-expanded="true" onclick="toggleNavGroup(this)" class="px-4 py-2.5 flex items-center justify-between cursor-pointer select-none text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"><span>Verwaltung</span><span data-nav-chev class="text-base">▾</span></div>
+        <div data-nav-items class="space-y-1">
+        <button onclick="switchView('admin')" class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-3 bg-purple-500/10 text-purple-600 dark:text-purple-400">
+          <span class="text-lg">🛡️</span> Admin-Panel
+        </button>
+        <button onclick="switchView('status')" class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-3">
+          <span class="text-lg">🩺</span> Systemstatus
+        </button>
+        <button onclick="switchView('protokoll')" class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-3">
+          <span class="text-lg">📝</span> Änderungsprotokoll
+        </button>
+        </div>
+      </div>
+      <div data-nav-group="Hilfe" class="space-y-1">
+        <div data-nav-head role="button" aria-expanded="true" onclick="toggleNavGroup(this)" class="px-4 py-2.5 flex items-center justify-between cursor-pointer select-none text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"><span>Hilfe</span><span data-nav-chev class="text-base">▾</span></div>
+        <div data-nav-items class="space-y-1">
+        <button onclick="switchView('hilfe')" class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-3">
+          <span class="text-lg">❓</span> Hilfe
+        </button>
+        </div>
+      </div>
+      </nav>
+    </div>
+
+    <!-- Fuß: Anmeldung und Version -->
+    <div class="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+      <button id="navLogoutBtn" onclick="logout(); toggleBurgerMenu()" class="hidden w-full py-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-sm font-black rounded-xl transition-colors">🚪 Abmelden</button>
+      <button onclick="switchView('login')" class="w-full py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm font-bold rounded-xl transition-colors">🔐 Anmelden / Rolle wechseln</button>
+      <div id="navVersion" class="text-center text-[11px] font-semibold text-slate-400 dark:text-slate-500 pt-1">App 11</div>
+    </div>
+
+  </div>
+</div>
