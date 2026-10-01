@@ -1,0 +1,30 @@
+<header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200 dark:border-slate-800">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+
+    <!-- Links: Home-Button (Aushänge) + Titel -->
+    <div class="flex items-center gap-3 min-w-0">
+      <button id="homeBtn" type="button" onclick="switchView('aushang')" class="shrink-0 w-10 h-10 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-lg transition-colors cursor-pointer" aria-label="Home - zu den Aushängen" title="Home">🏠</button>
+      <h1 id="headerTitle" onclick="switchView('aushang')" class="font-black text-base sm:text-lg leading-none text-slate-900 dark:text-slate-100 truncate cursor-pointer select-none">Weihnachtsmarkt 2026</h1>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <!-- Rolle / Status Badge (Klick öffnet das Rollenmenü) -->
+      <button onclick="switchView('login')" id="roleBadge" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer">
+        <span id="roleIcon">👁️</span>
+        <span id="roleLabel">GAST</span>
+      </button>
+
+      <!-- Design: Auto (folgt dem Gerät) -> Hell -> Dunkel -->
+      <button id="themeToggleBtn" onclick="toggleTheme()" class="px-2.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors text-sm cursor-pointer flex items-center gap-1.5" title="Design wechseln">
+        <span id="themeToggleIcon">🌓</span>
+        <span id="themeToggleLabel" class="hidden sm:inline text-[11px] font-bold text-slate-600 dark:text-slate-300">Auto</span>
+      </button>
+
+      <!-- Burger Button -->
+      <button id="burgerMenuBtn" onclick="toggleBurgerMenu()" class="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors hidden cursor-pointer">
+        <span class="text-lg">☰</span>
+      </button>
+    </div>
+
+  </div>
+</header>
