@@ -1,0 +1,144 @@
+<div id="viewStatistik" class="hidden space-y-6">
+
+  <!-- Kopf -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm gap-4">
+    <div class="flex items-center gap-3 flex-wrap">
+      <div>
+        <h2 class="font-black text-xl text-amber-600 dark:text-amber-400 flex items-center gap-2">📊 Statistik</h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Umsatz je Tag, Standgebühr, Ausgaben und Gewinn</p>
+      </div>
+      <span id="statSyncBadge" class="text-xs px-3 py-1 rounded-full font-bold border flex items-center gap-1.5 bg-slate-500/10 text-slate-500 dark:text-slate-300 border-slate-500/30">
+        <span class="w-2.5 h-2.5 rounded-full bg-slate-400 animate-pulse"></span> Verbinde...
+      </span>
+    </div>
+    <button type="button" onclick="switchView('verkauf')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition border border-slate-300 dark:border-slate-700">🪙 Zur Kasse</button>
+  </div>
+
+  <!-- Samstag links, Sonntag rechts -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+        <h3 class="font-black text-base text-amber-600 dark:text-amber-400 flex items-center gap-2"><span>📅</span> Samstag</h3>
+        <span class="text-xs font-semibold px-2.5 py-1 bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 rounded-lg">Tag 1</span>
+      </div>
+      <div class="space-y-2 text-xs">
+        <div id="statProductsSamstag"></div>
+        <div id="statHelferSamstag" class="text-[11px] font-semibold text-indigo-600 dark:text-indigo-300 bg-indigo-500/10 border border-indigo-500/30 rounded-lg px-2.5 py-1.5">🎁 Helfer: –</div>
+        <div class="flex justify-between gap-3 pt-1 border-t border-slate-100 dark:border-slate-800/60"><span class="text-slate-600 dark:text-slate-400">Verkäufe</span><span id="statSalesSamstag" class="font-bold text-slate-900 dark:text-slate-100">0,00 €</span></div>
+        <div class="flex items-center justify-between gap-3">
+          <label for="statSpendeSamstag" class="text-slate-600 dark:text-slate-400">🦆 Spendenente</label>
+          <span class="flex items-center gap-1">
+            <input id="statSpendeSamstag" type="text" inputmode="decimal" value="0,00" onchange="saveSpende('samstag', this.value)" class="w-24 text-right bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg py-1.5 px-2 font-bold text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:outline-none disabled:opacity-60" />
+            <span class="text-slate-500">€</span>
+          </span>
+        </div>
+      </div>
+      <div class="flex items-center justify-between gap-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3">
+        <span class="text-xs font-bold text-emerald-700 dark:text-emerald-300">Umsatz Samstag</span>
+        <span id="statDayTotalSamstag" class="text-xl font-black text-emerald-600 dark:text-emerald-400">0,00 €</span>
+      </div>
+    </div>
+    <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+        <h3 class="font-black text-base text-sky-600 dark:text-sky-400 flex items-center gap-2"><span>📅</span> Sonntag</h3>
+        <span class="text-xs font-semibold px-2.5 py-1 bg-sky-100 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 rounded-lg">Tag 2</span>
+      </div>
+      <div class="space-y-2 text-xs">
+        <div id="statProductsSonntag"></div>
+        <div id="statHelferSonntag" class="text-[11px] font-semibold text-indigo-600 dark:text-indigo-300 bg-indigo-500/10 border border-indigo-500/30 rounded-lg px-2.5 py-1.5">🎁 Helfer: –</div>
+        <div class="flex justify-between gap-3 pt-1 border-t border-slate-100 dark:border-slate-800/60"><span class="text-slate-600 dark:text-slate-400">Verkäufe</span><span id="statSalesSonntag" class="font-bold text-slate-900 dark:text-slate-100">0,00 €</span></div>
+        <div class="flex items-center justify-between gap-3">
+          <label for="statSpendeSonntag" class="text-slate-600 dark:text-slate-400">🦆 Spendenente</label>
+          <span class="flex items-center gap-1">
+            <input id="statSpendeSonntag" type="text" inputmode="decimal" value="0,00" onchange="saveSpende('sonntag', this.value)" class="w-24 text-right bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg py-1.5 px-2 font-bold text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:outline-none disabled:opacity-60" />
+            <span class="text-slate-500">€</span>
+          </span>
+        </div>
+      </div>
+      <div class="flex items-center justify-between gap-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3">
+        <span class="text-xs font-bold text-emerald-700 dark:text-emerald-300">Umsatz Sonntag</span>
+        <span id="statDayTotalSonntag" class="text-xl font-black text-emerald-600 dark:text-emerald-400">0,00 €</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gesamtübersicht Verbrauch -->
+  <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+    <h3 class="font-black text-base text-slate-900 dark:text-slate-100 border-b border-slate-100 dark:border-slate-800 pb-3">🥤 Gesamtübersicht Verbrauch</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      <div class="rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-4 space-y-1">
+        <div class="text-xs font-bold text-slate-500 dark:text-slate-400">☕ Punsch gesamt (inkl. Helfer)</div>
+        <div id="statPunschTotal" class="text-3xl font-black text-amber-600 dark:text-amber-400">0 Becher</div>
+        <div id="statPunschLiters" class="text-base font-bold text-slate-800 dark:text-slate-100">0,0 Liter</div>
+        <div class="text-[11px] text-slate-400 dark:text-slate-500">1 Becher = 0,2 Liter</div>
+      </div>
+
+      <div class="rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-4 space-y-1">
+        <div class="text-xs font-bold text-slate-500 dark:text-slate-400">🧇 Waffeln gesamt (inkl. Helfer)</div>
+        <div id="statWaffelTotal" class="text-3xl font-black text-amber-600 dark:text-amber-400">0 Stück</div>
+        <div id="statWaffelTeige" class="text-base font-bold text-slate-800 dark:text-slate-100">Waffeln pro Teig eintragen, dann wird der Teigverbrauch berechnet</div>
+        <div class="flex items-center gap-2 pt-2 text-[11px] text-slate-500 dark:text-slate-400">
+          <label for="statWaffelnProTeig" class="font-bold">Waffeln pro Teig:</label>
+          <input id="statWaffelnProTeig" type="text" inputmode="numeric" placeholder="15" onchange="saveWaffelnProTeig(this.value)" class="w-24 text-right bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg py-1.5 px-2 font-bold text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:outline-none disabled:opacity-60" />
+        </div>
+      </div>
+
+    </div>
+    <div id="statCustomTotals" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+  </div>
+
+  <!-- Gesamtabrechnung -->
+  <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+    <h3 class="font-black text-base text-slate-900 dark:text-slate-100 border-b border-slate-100 dark:border-slate-800 pb-3">🧮 Gesamtabrechnung</h3>
+
+    <div class="flex justify-between items-center text-sm">
+      <span class="font-bold text-slate-700 dark:text-slate-200">Gesamtumsatz (Samstag + Sonntag)</span>
+      <span id="statTotalRevenue" class="font-black text-emerald-600 dark:text-emerald-400">0,00 €</span>
+    </div>
+
+    <div class="flex items-center justify-between gap-3 text-sm">
+      <label for="statStandgebuehrInput" class="font-bold text-slate-700 dark:text-slate-200">− Standgebühr</label>
+      <span class="flex items-center gap-1">
+        <input id="statStandgebuehrInput" type="text" inputmode="decimal" value="0,00" onchange="saveStandgebuehr(this.value)" class="w-28 text-right bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg py-1.5 px-2 font-bold text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:outline-none disabled:opacity-60" />
+        <span class="text-slate-500">€</span>
+      </span>
+    </div>
+
+    <div class="space-y-2">
+      <div class="flex justify-between items-center text-sm">
+        <span class="font-bold text-slate-700 dark:text-slate-200">− Ausgaben</span>
+        <span id="statExpensesTotal" class="font-black text-rose-600 dark:text-rose-400">0,00 €</span>
+      </div>
+      <div id="expenseList" class="px-1"></div>
+      <div class="grid grid-cols-1 sm:grid-cols-[8rem_1fr_auto] gap-2 pt-1">
+        <input id="expenseAmountInput" type="text" inputmode="decimal" placeholder="Betrag, z. B. 12,50" class="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg py-2 px-3 text-xs font-bold text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:outline-none disabled:opacity-60" />
+        <input id="expenseNoteInput" type="text" maxlength="120" placeholder="Verwendungszweck, z. B. Mehl & Eier" class="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg py-2 px-3 text-xs text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:outline-none disabled:opacity-60" />
+        <button type="button" onclick="addExpense()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-lg shadow transition">➕ Hinzufügen</button>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between gap-3 bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-4">
+      <span class="text-sm font-black text-slate-800 dark:text-slate-100">Gesamtgewinn</span>
+      <span id="statProfit" class="text-3xl font-black text-emerald-600 dark:text-emerald-400">0,00 €</span>
+    </div>
+    <p class="text-[11px] text-slate-500 dark:text-slate-400">Gesamtgewinn = Gesamtumsatz − Standgebühr − Summe der Ausgaben. Preise stehen im Admin-Panel.</p>
+  </div>
+
+  <!-- Verkäufe pro Stunde -->
+  <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 space-y-3">
+    <h3 class="font-extrabold text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">🕒 Verkäufe pro Stunde</h3>
+    <p class="text-[11px] text-slate-500 dark:text-slate-400">Bezahlte Stück je Stunde, getrennt nach Tag und Produkt. Rückgängig gemachte Buchungen sind schon abgezogen.</p>
+    <div id="statHourlyRoot"></div>
+  </div>
+
+  <!-- Abrechnung -->
+  <div id="statExportCard" class="hidden bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 space-y-3">
+    <h3 class="font-extrabold text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">🧾 Abrechnung ausgeben</h3>
+    <p class="text-[11px] text-slate-500 dark:text-slate-400">Umsatz je Tag und Produkt, Spendenente, Standgebühr, Ausgaben mit Belegvermerk, Gewinn und Kassensturz. CSV öffnet sich direkt in Excel oder Numbers. Für ein PDF auf „Drucken“ tippen und im iPad-Druckdialog oben rechts „Teilen“ und „In Dateien sichern“ wählen, genau wie bei den Aushängen.</p>
+    <div class="flex flex-wrap gap-2">
+      <button type="button" onclick="exportCsv()" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl border border-slate-300 dark:border-slate-700 transition">📄 Als CSV speichern</button>
+      <button type="button" onclick="exportPrint()" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl border border-slate-300 dark:border-slate-700 transition">🖨️ Drucken / als PDF sichern</button>
+    </div>
+  </div>
+</div>
