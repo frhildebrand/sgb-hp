@@ -4,7 +4,7 @@
 // angezeigt. Danach wird im Hintergrund mit Google Sheets
 // synchronisiert.
 // ==========================================================
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxfj7M5dbsFuIhQmP0pfSOrdpLlq1ctiiI64IlBQt_d6MogJEaOzckK6sICBzP5_Z2X/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwCXvG--mQmKyKbxeFAneGdCO2-Mj_k5Xvkk-h5VrSdGjcg1V7HN4a1Y2eMzPbSuK_I/exec';
 const APP_VERSION = 11;            // Stand dieser Dateien
 const SCRIPT_VERSION_NEEDED = 11;   // so neu muss das Google-Script mindestens sein
 window.syncTimes = {};
@@ -36,6 +36,12 @@ const COUNT_KEY_RE = /^(samstag|sonntag)_([A-Za-z0-9]+)_(paid|free)$/;
 // (Blatt "Zugang") und wird im Admin-Panel unter "Rollen & Benutzer" geaendert.
 // ------------------------------------------
 const PERMISSION_GROUPS = [
+  {
+    id: 'hub', title: 'Systeme (Hub)', perms: [
+      ['hub.weihnachtsmarkt', 'Weihnachtsmarkt im Hub anzeigen', 'ghoa'],
+      ['hub.jugend', 'Jugend im Hub anzeigen', 'a']
+    ]
+  },
   {
     id: 'view', title: 'Seiten ansehen', perms: [
       ['view.aushang', 'Aushang', 'ghoa'],
@@ -3994,7 +4000,7 @@ async function updateSwInfo() {
   try {
     if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
       info.supported = true;
-      const reg = await navigator.serviceWorker.getRegistration('/weihnachtsmarkt/');
+      const reg = await navigator.serviceWorker.getRegistration('/intranet/weihnachtsmarkt/');
       info.active = !!(reg && reg.active);
       if (typeof caches !== 'undefined') {
         const keys = (await caches.keys()).filter((k) => k.indexOf('wm-shell-') === 0);
@@ -4201,7 +4207,7 @@ function setupApp() {
         .filter((u) => /^https?:/.test(u) && !/script\.google/.test(u)));
       if (reg && reg.active) reg.active.postMessage({ type: 'cache-urls', urls: Array.from(new Set(urls)) });
     };
-    navigator.serviceWorker.register('/weihnachtsmarkt/sw.js', { scope: '/weihnachtsmarkt/' })
+    navigator.serviceWorker.register('/intranet/weihnachtsmarkt/sw.js', { scope: '/intranet/weihnachtsmarkt/' })
       .then(() => navigator.serviceWorker.ready)
       .then((reg) => { if (!navigator.serviceWorker.controller) setTimeout(() => send(reg), 4000); })
       .catch(() => { /* egal */ });
