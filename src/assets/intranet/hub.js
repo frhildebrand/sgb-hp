@@ -13,30 +13,48 @@
   function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* egal */ } }
   function esc(s) { return String(s === undefined || s === null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function token() { return (state.session && state.session.token) || ''; }
+  var TIMEOUT = window.HUB_TIMEOUT_MS || 15000;
+  var DIAG = [];
+  // Eine Anfrage mit Zeitlimit. Jede Panne landet als Zeile in DIAG (wird in "Keine Verbindung" angezeigt).
+  function req(url, opts, label) {
+    var t0 = Date.now(); var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timer = ctl ? setTimeout(function () { ctl.abort(); }, TIMEOUT) : null;
+    var o = Object.assign({}, opts || {}); if (ctl) o.signal = ctl.signal;
+    return fetch(url, o).then(function (r) {
+      return r.text().then(function (txt) {
+        if (timer) clearTimeout(timer);
+        var note = 'HTTP ' + r.status + ', ' + (Date.now() - t0) + ' ms';
+        if (!r.ok) { DIAG.push(label + ': ' + note); return null; }
+        try { return JSON.parse(txt); } catch (e) { DIAG.push(label + ': ' + note + ', keine gültige Antwort: ' + txt.replace(/\s+/g, ' ').slice(0, 80)); return null; }
+      });
+    }).catch(function (e) {
+      if (timer) clearTimeout(timer);
+      DIAG.push(label + ': ' + (e && e.name === 'AbortError' ? 'keine Antwort nach ' + Math.round(TIMEOUT / 1000) + ' s' : 'Netzwerkfehler (' + ((e && e.message) || 'unbekannt') + ')') + ', ' + (Date.now() - t0) + ' ms');
+      return null;
+    });
+  }
   function get(action, params) {
     var qs = new URLSearchParams(Object.assign({ action: action }, params || {}));
     if (token() && !qs.has('token')) qs.set('token', token());
-    return fetch(API + '?' + qs.toString(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+    var url = API + '?' + qs.toString();
+    return req(url, { cache: 'no-store' }, action).then(function (r) { return r || req(url, { cache: 'no-store' }, action + ' (2. Versuch)'); });
   }
   function post(payload) {
-    return fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) })
-      .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+    return req(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) }, String(payload.action || 'POST'));
   }
   function has(perm) { return !!(state.me && state.me.perms && state.me.perms.indexOf(perm) >= 0); }
 
   function load() {
-    state.loaded = false; render();
-    var pm = token() ? get('me') : Promise.resolve(null);
-    return pm.then(function (me) {
+    DIAG = []; state.loaded = false; render();
+    var tm = token() ? get('me') : Promise.resolve(null);
+    return Promise.all([tm, get('systems'), get('roles')]).then(function (res) {
+      var me = res[0], sys = res[1], roles = res[2];
       if (me && me.status === 'success') state.me = me;
       else {
         state.me = null;
         if (me && me.code === 'auth' && token()) { state.session = { token: '', user: '' }; lsSet('session4', state.session); }
       }
-      return Promise.all([get('systems'), get('roles')]);
-    }).then(function (res) {
-      var sys = res[0], roles = res[1];
-      if (!sys || sys.status !== 'success') { state.offline = true; state.systems = []; }
+      if (!sys || sys.status !== 'success') { if (sys) DIAG.push('systems: Antwort ' + JSON.stringify(sys).slice(0, 120)); state.offline = true; state.systems = []; }
       else { state.offline = false; state.systems = sys.systems || []; }
       state.roles = roles && roles.roles ? roles.roles.filter(function (r) { return r.id !== 'gast' && r.hasPw; }) : [];
       state.loaded = true; render();
@@ -76,7 +94,8 @@
       var nm = state.me.user || (state.me.role && state.me.role.name) || '';
       who = '<span class="hub-pill">' + (state.me.user ? '👤 ' : '🔑 ') + esc(nm) + (state.me.user && state.me.role ? ' · ' + esc(state.me.role.name) : '') + '</span><button type="button" class="hub-btn hub-ghost" data-act="logout">Abmelden</button>';
     }
-    return '<header class="hub-head"><a class="hub-logo" href="' + HUB_URL + '" aria-label="Zum Hub"><img src="/assets/weihnachtsmarkt/sharks-logo.png" alt=""></a><h1>SG Barnstorf · Intern</h1><div class="hub-user">' + who + '</div></header>';
+    var th = window.HubTheme ? '<button type="button" class="hub-btn hub-ghost" data-act="theme">' + esc(window.HubTheme.label()) + '</button>' : '';
+    return '<header class="hub-head"><a class="hub-logo" href="' + HUB_URL + '" aria-label="Zum Hub"><img src="/assets/weihnachtsmarkt/sharks-logo.png" alt=""></a><h1>SG Barnstorf · Intranet</h1><div class="hub-user">' + who + th + '</div></header>';
   }
   function loginCard() {
     var userMode = state.mode === 'user';
@@ -98,7 +117,7 @@
 
   function body() {
     if (!state.loaded) return '<section class="hub-grid">' + skeleton() + '</section>';
-    if (state.offline) return '<section class="hub-card hub-offline"><h2>Keine Verbindung</h2><p class="hub-sub">Das Konto-System ist gerade nicht erreichbar. Bitte prüfe das Internet und versuche es nochmal.</p><button type="button" class="hub-btn hub-gold" data-act="retry">Nochmal versuchen</button></section>';
+    if (state.offline) return '<section class="hub-card hub-offline"><h2>Keine Verbindung</h2><p class="hub-sub">Das Konto-System ist gerade nicht erreichbar. Bitte prüfe das Internet und versuche es nochmal.</p><button type="button" class="hub-btn hub-gold" data-act="retry">Nochmal versuchen</button><details class="hub-diag"><summary>Technische Details</summary><pre>' + esc(DIAG.length ? DIAG.join('\n') : 'Keine Angaben.') + '</pre></details></section>';
     var out = '';
     var greet = state.me ? 'Hallo ' + esc(state.me.user || (state.me.role && state.me.role.name) || '') : 'Willkommen';
     if (PAGE) {
@@ -121,7 +140,7 @@
     return out;
   }
   function render() {
-    root.innerHTML = head() + '<main class="hub-main">' + body() + '</main><footer class="hub-foot"><div class="hub-orn"><span>❄</span><span>⭐</span><span>🎄</span><span>⭐</span><span>❄</span></div><div>Frohe Weihnachten · <b>SG Barnstorf Sharks</b></div></footer>';
+    root.innerHTML = head() + '<main class="hub-main">' + body() + '</main>';
   }
 
   root.addEventListener('click', function (ev) {
@@ -130,6 +149,7 @@
     if (t.getAttribute('data-mode')) { state.mode = t.getAttribute('data-mode'); state.error = ''; render(); }
     else if (t.getAttribute('data-act') === 'logout') logout();
     else if (t.getAttribute('data-act') === 'retry') load();
+    else if (t.getAttribute('data-act') === 'theme') { if (window.HubTheme) window.HubTheme.cycle(); render(); }
   });
   root.addEventListener('submit', function (ev) { if (ev.target.classList && ev.target.classList.contains('hub-login')) loginSubmit(ev); });
   load();

@@ -188,7 +188,7 @@
   }
   function head() {
     var who = S.me ? '<span class="hub-pill">' + (S.me.user ? '👤 ' : '🔑 ') + esc(S.me.user || (S.me.role && S.me.role.name) || '') + '</span>' : '';
-    return '<header class="hub-head"><a class="hub-logo" href="' + HUB_URL + '" aria-label="Zum Hub"><img src="/assets/weihnachtsmarkt/sharks-logo.png" alt=""></a><h1>Verwaltung</h1><div class="hub-user">' + who + '<a class="hub-btn hub-ghost" href="' + HUB_URL + '">← Hub</a></div></header>';
+    return '<header class="hub-head"><a class="hub-logo" href="' + HUB_URL + '" aria-label="Zum Hub"><img src="/assets/weihnachtsmarkt/sharks-logo.png" alt=""></a><h1>Verwaltung</h1><div class="hub-user">' + who + (window.HubTheme ? '<button type="button" class="hub-btn hub-ghost" data-act="theme">' + esc(window.HubTheme.label()) + '</button>' : '') + '<a class="hub-btn hub-ghost" href="' + HUB_URL + '">← Hub</a></div></header>';
   }
   function body() {
     if (!S.loaded) return '<section class="hub-grid"><div class="hub-skel"></div><div class="hub-skel"></div></section>';
@@ -217,6 +217,7 @@
     var t = ev.target.closest ? ev.target.closest('[data-tab],[data-ed],[data-mv],[data-dx],[data-cf],[data-act]') : null; if (!t) return;
     if (t.getAttribute('data-tab')) { S.tab = t.getAttribute('data-tab'); S.msg = ''; render(); return; }
     if (t.getAttribute('data-act') === 'retry') { load(); return; }
+    if (t.getAttribute('data-act') === 'theme') { if (window.HubTheme) window.HubTheme.cycle(); render(); return; }
     if (t.getAttribute('data-cf')) { var d = S.dialog; S.dialog = null; render(); if (d && d.done) d.done(t.getAttribute('data-cf') === 'yes'); return; }
     if (t.getAttribute('data-dx')) {
       var dx = t.getAttribute('data-dx'); if (dx === 'cancel') { closeDialog(); return; }
