@@ -2,7 +2,7 @@
    Die Anmeldung gilt für alle Systeme (gleicher Browser-Speicher, gleiches Konto-System im Script). */
 (function () {
   'use strict';
-  var API = 'https://script.google.com/macros/s/AKfycbz5_j65a248FUib9POAAWryFHFh6-613bhVpXUaBuTIpDEHx_kUOrOnh-NVhBduT8Ks/exec';
+  var API = 'https://script.google.com/macros/s/AKfycby7gQCbTizF8qBnrfLgtEMMsdUu0ZG00AaQ8mrLn5wThBf_G8GiqBUS5knb4QElBVVh/exec';
   var root = document.getElementById('hubRoot');
   if (!root) return;
   var PAGE = root.getAttribute('data-system') || '';   // '' = Startseite, sonst die Kennung des Systems (z. B. jugend)
