@@ -1,0 +1,159 @@
+<div id="viewAdminpanel" class="hidden space-y-6">
+  <div class="flex flex-wrap justify-between items-center gap-3 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+    <h2 class="font-extrabold text-lg text-amber-500 flex items-center gap-2">👑 Admin-Bereich</h2>
+    <button onclick="switchView('aushang')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition">⬅️ Zurück</button>
+  </div>
+
+  <!-- Register -->
+  <div class="flex flex-wrap items-center gap-2">
+    <button id="adminTabVerwaltung" type="button" onclick="setAdminTab('verwaltung')" class="px-5 py-2.5 rounded-xl text-sm font-bold bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700">⚙️ Verwaltung</button>
+    <button id="adminTabBenutzer" type="button" onclick="setAdminTab('benutzer')" class="px-5 py-2.5 rounded-xl text-sm font-bold bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700">👤 Benutzerverwaltung</button>
+    <button id="adminTabZugang" type="button" onclick="setAdminTab('zugang')" class="px-5 py-2.5 rounded-xl text-sm font-bold bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700">🛡️ Zugangsverwaltung</button>
+  </div>
+
+  <div id="adminHubHint" class="bg-sky-500/10 border border-sky-500/30 text-sky-800 dark:text-sky-200 p-3 rounded-xl text-xs font-semibold flex flex-wrap items-center justify-between gap-3"><span>Benutzer, Rollen und Rechte für alle Systeme verwaltest du jetzt im Hub.</span><a href="/intranet/verwaltung/" class="px-3 py-1.5 bg-amber-500 text-slate-950 text-xs font-black rounded-xl shadow">Zur Verwaltung</a></div>
+  <div id="adminRolesHint" class="hidden bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 p-3 rounded-xl text-xs font-semibold">Zum Speichern von Änderungen an Rollen und Benutzern bitte einmal abmelden und wieder anmelden.</div>
+
+  <div id="adminPanelVerwaltung" class="space-y-4">
+  <details id="adminCardKasse" open class="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+    <summary class="cursor-pointer list-none flex items-center justify-between gap-3 px-5 py-4 font-extrabold text-sm text-slate-900 dark:text-slate-100">
+      <span>🪙 Kassenverwaltung</span>
+      <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
+    </summary>
+    <div class="px-5 pb-5 space-y-5">
+      <div class="bg-amber-50/50 dark:bg-amber-950/20 p-4 rounded-xl border border-amber-200 dark:border-amber-800/50 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h4 class="font-extrabold text-xs text-amber-600 dark:text-amber-400 uppercase tracking-wider">🏷️ Produkte &amp; Verkaufspreise</h4>
+          <button id="adminAddProductBtn" type="button" onclick="addProduct()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black rounded-xl shadow transition">➕ Neues Produkt</button>
+        </div>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400">Neue Produkte erscheinen automatisch in der Kasse, in der Statistik und in der Abrechnung.</p>
+        <div id="adminProductList" class="space-y-2 text-xs"></div>
+      </div>
+      <div class="bg-rose-50/60 dark:bg-rose-950/20 p-4 rounded-xl border border-rose-200 dark:border-rose-800/50 space-y-3">
+        <h4 class="font-extrabold text-xs text-rose-600 dark:text-rose-400 uppercase tracking-wider">🔄 Kasse zurücksetzen</h4>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400">Setzt die Zähler (verkauft und Helfer) des gewählten Tages für alle Geräte auf 0. Das geht nur mit Internet. Spendenente, Ausgaben und Standgebühr bleiben erhalten. Einzelne Zahlen korrigierst du direkt in der Kasse mit „Zahlen korrigieren“.</p>
+        <div class="flex flex-wrap gap-2 text-xs font-bold">
+          <button id="adminResetSamstagBtn" onclick="resetKasseDay('samstag')" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl shadow transition">Samstag zurücksetzen</button>
+          <button id="adminResetSonntagBtn" onclick="resetKasseDay('sonntag')" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl shadow transition">Sonntag zurücksetzen</button>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details id="adminCardAushang"  class="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+    <summary class="cursor-pointer list-none flex items-center justify-between gap-3 px-5 py-4 font-extrabold text-sm text-slate-900 dark:text-slate-100">
+      <span>📌 Aushänge</span>
+      <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
+    </summary>
+    <div class="px-5 pb-5 space-y-5">
+      <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
+        <h4 class="font-extrabold text-xs text-amber-600 dark:text-amber-400 uppercase tracking-wider">📤 Zusätzlichen Aushang hochladen (je Tag ein DIN-A4-Blatt)</h4>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400">Foto oder Scan auswählen. Das Bild wird automatisch verkleinert und erscheint danach unter der Liste des Tages auf allen Geräten.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div class="space-y-1">
+            <label class="font-bold block">📅 Samstag:</label>
+            <input type="file" accept="image/*" onchange="uploadRoshopImage('samstag', this)" class="text-xs text-slate-500 block w-full cursor-pointer" />
+            <div id="uploadStatusSamstag" class="text-[11px] font-semibold text-slate-500 dark:text-slate-400"></div>
+          </div>
+          <div class="space-y-1">
+            <label class="font-bold block">📅 Sonntag:</label>
+            <input type="file" accept="image/*" onchange="uploadRoshopImage('sonntag', this)" class="text-xs text-slate-500 block w-full cursor-pointer" />
+            <div id="uploadStatusSonntag" class="text-[11px] font-semibold text-slate-500 dark:text-slate-400"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details id="adminCardCountdown" class="hidden group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+    <summary class="cursor-pointer list-none flex items-center justify-between gap-3 px-5 py-4 font-extrabold text-sm text-slate-900 dark:text-slate-100">
+      <span>⏳ Countdown</span>
+      <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
+    </summary>
+    <div class="px-5 pb-5 space-y-4">
+      <p class="text-[11px] text-slate-500 dark:text-slate-400">Der Countdown erscheint oben auf der Aushang-Seite für alle. Nach dem Ende verschwindet er von selbst. Ohne Ende gilt: Start plus zwei Tage.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+        <label class="space-y-1 block"><span class="font-bold">Start (Datum und Uhrzeit)</span><input id="cdAt" type="datetime-local" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm" /></label>
+        <label class="space-y-1 block"><span class="font-bold">Ende (leer lassen ist möglich)</span><input id="cdEnd" type="datetime-local" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm" /></label>
+        <label class="space-y-1 block sm:col-span-2"><span class="font-bold">Bezeichnung</span><input id="cdLabel" type="text" maxlength="60" placeholder="Weihnachtsmarkt" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm" /></label>
+      </div>
+      <div id="cdStatus" class="text-[11px] font-semibold text-slate-500 dark:text-slate-400"></div>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" onclick="saveCountdown()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black rounded-xl shadow transition">💾 Speichern</button>
+        <button type="button" onclick="removeCountdown()" class="px-4 py-2 bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30 text-xs font-bold rounded-xl">🗑️ Entfernen</button>
+      </div>
+    </div>
+  </details>
+
+  <details id="adminCardArchiv" class="hidden group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+    <summary class="cursor-pointer list-none flex items-center justify-between gap-3 px-5 py-4 font-extrabold text-sm text-slate-900 dark:text-slate-100">
+      <span>🗂️ Saison-Archiv</span>
+      <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
+    </summary>
+    <div class="px-5 pb-5"><div id="archivRoot" class="space-y-3"></div></div>
+  </details>
+
+  <details id="adminCardDaten"  class="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+    <summary class="cursor-pointer list-none flex items-center justify-between gap-3 px-5 py-4 font-extrabold text-sm text-slate-900 dark:text-slate-100">
+      <span>💾 Daten</span>
+      <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
+    </summary>
+    <div class="px-5 pb-5 space-y-5">
+      <div class="flex flex-wrap gap-2 text-xs font-bold">
+        <button id="adminBackupBtn" onclick="downloadBackup()" class="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl shadow transition">💾 Backup herunterladen</button>
+        <button id="adminSeasonResetBtn" onclick="resetSeasonPrompt()" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl shadow transition">🔄 Saison-Reset</button>
+      </div>
+      <p class="text-[11px] text-slate-500 dark:text-slate-400">„Backup herunterladen“ speichert eine Datei auf dem Gerät (Inventar, Kasse, Ausgaben, Produkte, Rezepte, Aufbau, Aushang, Strom, Rollen ohne Passwörter).</p>
+      <div id="adminBackupsBox" class="space-y-3 bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h4 class="font-extrabold text-xs text-amber-600 dark:text-amber-400 uppercase tracking-wider">🗄️ Sicherungen im Sheet</h4>
+          <button id="adminBackupNowBtn" type="button" onclick="backupNow()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black rounded-xl shadow transition">🗄️ Jetzt sichern</button>
+        </div>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400">Einmal am Tag wird automatisch gesichert, bei der ersten Änderung des Tages. Die letzten 14 bleiben. Eine Sicherung enthält Inventar, Kasse, Ausgaben, Produkte, Rezepte, Aufbau, Aushang, Strom und Boxen. Bilder, Benutzer und Rollen sind nicht dabei und bleiben beim Wiederherstellen unverändert.</p>
+        <div id="adminBackupList" class="space-y-2"></div>
+      </div>
+    </div>
+  </details>
+  </div>
+
+  <div id="adminPanelBenutzer" class="hidden space-y-4">
+    <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h3 class="font-extrabold text-sm text-slate-900 dark:text-slate-100">👤 Benutzer</h3>
+        <button id="adminAddUserBtn" type="button" onclick="openUserDialog()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black rounded-xl shadow transition">➕ Neuer Benutzer</button>
+      </div>
+      <p class="text-[11px] text-slate-500 dark:text-slate-400">Benutzer haben einen eigenen Namen und ein eigenes Passwort, eine oder mehrere Rollen und auf Wunsch Sonderrechte. Die Rechte aus allen Rollen und Sonderrechten zählen zusammen.</p>
+      <div id="adminUsersList" class="space-y-2"></div>
+    </div>
+  </div>
+
+  <div id="adminPanelZugang" class="hidden space-y-4">
+    <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h3 class="font-extrabold text-sm text-slate-900 dark:text-slate-100">🛡️ Rollen</h3>
+        <button id="adminAddRoleBtn" type="button" onclick="openRoleDialog()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black rounded-xl shadow transition">➕ Neue Rolle</button>
+      </div>
+      <p class="text-[11px] text-slate-500 dark:text-slate-400">Pro Rolle lassen sich Name, Beschreibung, Passwort und alle einzelnen Rechte einstellen. Die Rechte gelten sofort auf allen Geräten.</p>
+      <div id="adminRolesList" class="space-y-2"></div>
+    </div>
+    <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h3 class="font-extrabold text-sm text-slate-900 dark:text-slate-100">✨ Sonderrechte</h3>
+        <button id="adminAddExtraBtn" type="button" onclick="openExtraDialog()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black rounded-xl shadow transition">➕ Neues Sonderrecht</button>
+      </div>
+      <p class="text-[11px] text-slate-500 dark:text-slate-400">Ein Sonderrecht ist ein eigenes Rechte-Paket, das man einzelnen Benutzern zusätzlich zu ihren Rollen gibt, zum Beispiel „Statistik bearbeiten“ für einen Helfer. Es gilt nur bei persönlicher Anmeldung mit Benutzername, nicht bei der Anmeldung mit dem Passwort der Rolle.</p>
+      <div id="adminExtrasList" class="space-y-2"></div>
+    </div>
+    <details id="adminMatrixCard" class="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+      <summary class="cursor-pointer list-none flex items-center justify-between gap-3 px-5 py-4 font-extrabold text-sm text-slate-900 dark:text-slate-100">
+        <span>📊 Rechte-Übersicht (wer darf was)</span>
+        <span class="text-slate-400 transition-transform group-open:rotate-180">⌄</span>
+      </summary>
+      <div class="px-5 pb-5">
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-3">Nur zum Ansehen. Geändert wird bei den einzelnen Rollen und Sonderrechten.</p>
+        <div id="adminMatrix" class="overflow-x-auto"></div>
+      </div>
+    </details>
+
+  </div>
+</div>
