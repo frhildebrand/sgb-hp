@@ -4,7 +4,7 @@
 // angezeigt. Danach wird im Hintergrund mit Google Sheets
 // synchronisiert.
 // ==========================================================
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwCXvG--mQmKyKbxeFAneGdCO2-Mj_k5Xvkk-h5VrSdGjcg1V7HN4a1Y2eMzPbSuK_I/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby7gQCbTizF8qBnrfLgtEMMsdUu0ZG00AaQ8mrLn5wThBf_G8GiqBUS5knb4QElBVVh/exec';
 const APP_VERSION = 11;            // Stand dieser Dateien
 const SCRIPT_VERSION_NEEDED = 11;   // so neu muss das Google-Script mindestens sein
 window.syncTimes = {};
