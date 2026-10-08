@@ -71,26 +71,61 @@ templateEngineOverride: false
   }
 
   // ---------- Dialoge ----------
-  // Rechte als ausklappbare Gruppen mit Haken (wie im Weihnachtsmarkt). Oben steht "Seiten": welche Systeme im Hub erscheinen.
+  // Rechte: oben Werkzeugleiste (Suche, Vorlage, alle an/aus), darunter je System ein ausklappbarer Bereich
+  // (Intranet, Weihnachtsmarkt, Jugend) mit den Rechte-Gruppen. Nur Rechte, die man selbst hat, lassen sich vergeben.
+  var HUB_KEYS = ['system.users', 'system.roles', 'system.rechte', 'system.passwords', 'account.password'];
+  function sectionsFor() {
+    var out = [{ id: 'hub', title: '🌐 Intranet', hint: 'Welche Seiten im Hub erscheinen und wer Benutzer, Rollen und Rechte verwalten darf.', groups: [] }, { id: 'weihnachtsmarkt', title: '🎄 Weihnachtsmarkt', groups: [] }, { id: 'jugend', title: '🏊 Jugend', groups: [], empty: 'Für Jugend gibt es noch keine eigenen Rechte. Sie kommen mit der Jugendkasse.' }];
+    var verw = { title: 'Verwaltung', perms: [] };
+    S.catalog.groups.forEach(function (g) {
+      var sec = out.filter(function (x) { return x.id === g.system; })[0]; if (!sec) return;
+      if (g.system === 'hub') { sec.groups.push({ title: 'Seiten im Hub', perms: g.perms }); return; }
+      var keep = [];
+      g.perms.forEach(function (q) { if (HUB_KEYS.indexOf(q.key) >= 0) verw.perms.push(q); else keep.push(q); });
+      if (keep.length) sec.groups.push({ title: g.title, perms: keep });
+    });
+    if (verw.perms.length) out[0].groups.push(verw);
+    return out;
+  }
   function permGrid(d, key, value, locked, forced) {
     var sel = {}; (value || []).forEach(function (k) { sel[k] = true; }); (forced || []).forEach(function (k) { sel[k] = true; });
     var forcedSet = {}; (forced || []).forEach(function (k) { forcedSet[k] = true; });
-    var systems = [{ id: 'hub', title: '🌐 Seiten (Systeme im Hub)' }, { id: 'weihnachtsmarkt', title: '🎄 Weihnachtsmarkt' }, { id: 'jugend', title: '🏊 Jugend' }];
-    var html = '<div class="ha-pbar"><a href="#" data-px="open">alle aufklappen</a> <a href="#" data-px="close">alle zuklappen</a></div>';
-    systems.forEach(function (sys) {
-      var groups = S.catalog.groups.filter(function (g) { return g.system === sys.id; });
-      if (!groups.length) return;
-      html += '<div class="ha-sys"><h4>' + esc(sys.title) + '</h4>' + (sys.id === 'hub' ? '<p class="ha-hint">Hier legst du fest, welche Seiten (Systeme) im Hub erscheinen, zum Beispiel der Weihnachtsmarkt. Darunter stehen die Rechte je System.</p>' : '') + '<div class="ha-grid">';
-      groups.forEach(function (g) {
-        var n = g.perms.filter(function (q) { return sel[q.key]; }).length;
-        html += '<details class="ha-acc"' + (sys.id === 'hub' ? ' open' : '') + '><summary><span>' + esc(sys.id === 'hub' ? 'Seiten im Hub' : g.title) + '</span><span class="ha-cnt">(' + n + ' von ' + g.perms.length + ')</span></summary><div class="ha-accbody">' + g.perms.map(function (q) {
-          var on = !!sel[q.key]; var dis = locked || forcedSet[q.key];
-          return '<label class="ha-perm"><input type="checkbox" data-pk="' + esc(q.key) + '"' + (on ? ' checked' : '') + (dis ? ' disabled' : '') + '> <span>' + esc(q.label) + '</span></label>';
+    var isAdmin = !!(S.me && S.me.roles && S.me.roles.some(function (r) { return r.id === 'admin'; }));
+    var presets = S.roles.map(function (r) { return '<option value="' + esc(r.id) + '">' + esc(r.name) + '</option>'; }).join('');
+    var bar = '<div class="ha-ptool"><input type="search" class="ha-psearch" placeholder="🔎 Recht suchen …" data-psearch="1" autocomplete="off">' +
+      (locked ? '' : '<select class="ha-ppreset" data-ppreset="1"><option value="">Vorlage übernehmen …</option>' + presets + '</select><button type="button" class="wm-btn" data-pgall="on">✓ Alle an</button><button type="button" class="wm-btn" data-pgall="off">✗ Alle aus</button>') +
+      '<span class="ha-ptotal"></span></div>';
+    var first = true;
+    var secs = sectionsFor().map(function (sec) {
+      var cards = sec.groups.map(function (g) {
+        return '<details class="ha-acc" open><summary><span class="ha-gt">' + esc(g.title) + '</span><span class="ha-cnt"></span>' +
+          (locked ? '' : '<span class="ha-gbtn"><button type="button" class="wm-btn" data-pall="on">alle</button><button type="button" class="wm-btn" data-pall="off">keine</button></span>') + '</summary><div class="ha-accbody">' + g.perms.map(function (q) {
+          var on = !!sel[q.key]; var mine = isAdmin || has(q.key);
+          var dis = locked || forcedSet[q.key] || (!mine && !on);
+          return '<label class="ha-perm' + (!mine && !locked ? ' nomine' : '') + '"' + (!mine && !locked ? ' title="Dieses Recht hast du selbst nicht und kannst es daher nicht vergeben."' : '') + '><input type="checkbox" class="ha-sw" data-pk="' + esc(q.key) + '"' + (on ? ' checked' : '') + (dis ? ' disabled' : '') + '><span>' + esc(q.label) + '</span></label>';
         }).join('') + '</div></details>';
-      });
-      html += '</div></div>';
-    });
-    return html;
+      }).join('');
+      var o = first; first = false;
+      return '<details class="ha-sysacc"' + (o ? ' open' : '') + ' data-sys="' + sec.id + '"><summary><span class="ha-st">' + esc(sec.title) + '</span><span class="ha-ptc"></span>' +
+        (locked || !sec.groups.length ? '' : '<span class="ha-gbtn"><button type="button" class="wm-btn" data-pall="on">alle</button><button type="button" class="wm-btn" data-pall="off">keine</button></span>') + '</summary><div class="ha-sysbody">' +
+        (sec.hint ? '<p class="ha-hint">' + esc(sec.hint) + '</p>' : '') + (cards ? '<div class="ha-grid">' + cards + '</div>' : '<p class="ha-hint">' + esc(sec.empty || 'Keine Rechte.') + '</p>') + '</div></details>';
+    }).join('');
+    return bar + secs;
+  }
+  function permCount(scope) {
+    var all = scope.querySelectorAll('input[data-pk]'); var n = 0;
+    Array.prototype.forEach.call(all, function (i) { if (i.checked) n++; });
+    return [n, all.length];
+  }
+  function permRefresh() {
+    Array.prototype.forEach.call(root.querySelectorAll('details.ha-acc'), function (det) { var c = permCount(det); var e = det.querySelector('.ha-cnt'); if (e) e.textContent = c[0] + ' von ' + c[1]; });
+    Array.prototype.forEach.call(root.querySelectorAll('details.ha-sysacc'), function (det) { var c = permCount(det); var e = det.querySelector('.ha-ptc'); if (e) e.textContent = c[1] ? c[0] + ' von ' + c[1] : ''; });
+    var dlg = root.querySelector('.ha-dialog'); var t = root.querySelector('.ha-ptotal');
+    if (dlg && t) { var c2 = permCount(dlg); t.textContent = 'Gesamt ' + c2[0] + ' von ' + c2[1]; }
+  }
+  function permSet(scope, on) {
+    Array.prototype.forEach.call(scope.querySelectorAll('input[data-pk]'), function (i) { if (!i.disabled) i.checked = on; });
+    permRefresh();
   }
   function openDialog(cfg) { S.dialog = cfg; render(); }
   function closeDialog() { S.dialog = null; render(); }
@@ -258,11 +293,17 @@ templateEngineOverride: false
     var keep = root.querySelector('.ha-body') ? root.querySelector('.ha-body').scrollTop : 0;
     root.innerHTML = head() + '<main class="hub-main">' + body() + '</main>' + SH.overlay() + dialogOrConfirm();
     var b = root.querySelector('.ha-body'); if (b && keep) b.scrollTop = keep;
+    permRefresh();
   }
 
   root.addEventListener('click', function (ev) {
-    var px = ev.target.closest ? ev.target.closest('[data-px]') : null;
-    if (px) { ev.preventDefault(); var open = px.getAttribute('data-px') === 'open'; Array.prototype.forEach.call(root.querySelectorAll('details.ha-acc'), function (x) { x.open = open; }); return; }
+    var ct = ev.target.closest ? ev.target.closest('[data-pall],[data-pgall]') : null;
+    if (ct) {
+      ev.preventDefault();
+      if (ct.getAttribute('data-pall')) { permSet(ct.closest('details.ha-acc') || ct.closest('details.ha-sysacc'), ct.getAttribute('data-pall') === 'on'); }
+      else { permSet(root.querySelector('.ha-dialog'), ct.getAttribute('data-pgall') === 'on'); }
+      return;
+    }
     if (SH.click(ev, render, load)) return;
     var t = ev.target.closest ? ev.target.closest('[data-tab],[data-ed],[data-mv],[data-dx],[data-cf],[data-act]') : null; if (!t) return;
     if (t.getAttribute('data-tab')) { S.tab = t.getAttribute('data-tab'); S.msg = ''; render(); return; }
@@ -279,10 +320,26 @@ templateEngineOverride: false
     else if (ed === 'newrole') roleDialog(); else if (ed === 'extra') extraDialog(id); else if (ed === 'newextra') extraDialog();
   });
   root.addEventListener('change', function (ev) {
-    var t = ev.target; if (!t || !t.getAttribute || !t.getAttribute('data-pk')) return;
-    var det = t.closest('details.ha-acc'); if (!det) return;
-    var all = det.querySelectorAll('input[data-pk]'); var n = 0; Array.prototype.forEach.call(all, function (i) { if (i.checked) n++; });
-    var c = det.querySelector('.ha-cnt'); if (c) c.textContent = '(' + n + ' von ' + all.length + ')';
+    var t = ev.target; if (!t || !t.getAttribute) return;
+    if (t.getAttribute('data-pk')) { permRefresh(); return; }
+    if (t.getAttribute('data-ppreset')) {
+      var r = S.roles.filter(function (x) { return x.id === t.value; })[0]; if (!r) return;
+      Array.prototype.forEach.call(root.querySelectorAll('input[data-pk]'), function (i) { if (!i.disabled) i.checked = (r.perms || []).indexOf(i.getAttribute('data-pk')) >= 0; });
+      t.value = ''; permRefresh();
+    }
+  });
+  root.addEventListener('input', function (ev) {
+    var t = ev.target; if (!t || !t.getAttribute || !t.getAttribute('data-psearch')) return;
+    var q = String(t.value || '').trim().toLowerCase();
+    Array.prototype.forEach.call(root.querySelectorAll('details.ha-acc'), function (det) {
+      var any = false;
+      Array.prototype.forEach.call(det.querySelectorAll('.ha-perm'), function (l) { var m = !q || l.textContent.toLowerCase().indexOf(q) >= 0; l.style.display = m ? '' : 'none'; if (m) any = true; });
+      det.style.display = any ? '' : 'none'; if (q && any) det.open = true;
+    });
+    Array.prototype.forEach.call(root.querySelectorAll('details.ha-sysacc'), function (sec) {
+      var vis = Array.prototype.some.call(sec.querySelectorAll('details.ha-acc'), function (x) { return x.style.display !== 'none'; });
+      sec.style.display = !q || vis ? '' : 'none'; if (q && vis) sec.open = true;
+    });
   });
   root.addEventListener('submit', function (ev) {
     if (SH.submit(ev, render, load)) return;

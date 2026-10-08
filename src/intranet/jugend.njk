@@ -196,6 +196,50 @@ permalink: /intranet/jugend/
   #hubRoot .ha-cnt { color: #64748b; }
   #hubRoot .ha-dialog .hub-gold { background: #f59e0b; color: #0f172a; font-weight: 900; }
   #hubRoot .ha-dialog .hub-gold:hover { background: #d97706; }
+  /* Rechte-Editor */
+  #hubRoot .ha-dialog.wide { max-width: min(96vw, 1500px); }
+  #hubRoot .ha-ptool { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0 10px; }
+  #hubRoot .ha-psearch { flex: 1 1 220px; min-width: 160px; padding: 10px 14px; border-radius: 12px; border: 1px solid #cbd5e1; background: #f1f5f9; color: inherit; font-size: 14px; }
+  .dark #hubRoot .ha-psearch, .dark #hubRoot .ha-ppreset { background: #131d30; border-color: #334155; }
+  #hubRoot .ha-ppreset { padding: 10px 12px; border-radius: 12px; border: 1px solid #cbd5e1; background: #f1f5f9; color: inherit; font-size: 13px; }
+  #hubRoot .ha-ptotal { margin-left: auto; font-size: 12px; font-weight: 800; color: #64748b; text-transform: none; letter-spacing: 0; }
+  #hubRoot .ha-ptabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+  #hubRoot .ha-ptab { padding: 10px 16px; border-radius: 12px; border: 1px solid #cbd5e1; background: transparent; color: inherit; font: 800 14px -apple-system, system-ui, sans-serif; text-transform: none; letter-spacing: 0; cursor: pointer; }
+  #hubRoot .ha-ptab.on { background: #f59e0b; border-color: #f59e0b; color: #0f172a; }
+  #hubRoot .ha-ptc { font-size: 11px; font-weight: 700; opacity: .75; margin-left: 4px; }
+  #hubRoot .ha-ppanel { display: none; }
+  #hubRoot .ha-ppanel.on, #hubRoot .ha-ppanel.all { display: block; }
+  #hubRoot .ha-ppanel.all::before { content: attr(data-panel); display: block; margin: 8px 0 4px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; opacity: .55; }
+  #hubRoot .ha-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  #hubRoot .ha-acc { background: transparent; border: 1px solid rgba(148,163,184,.3); }
+  #hubRoot .ha-acc summary { background: rgba(148,163,184,.14); padding: 12px 14px; }
+  #hubRoot .ha-gt { flex: 1; }
+  #hubRoot .ha-gbtn { display: inline-flex; gap: 4px; }
+  #hubRoot .ha-gbtn .wm-btn { padding: 4px 9px; font-size: 11px; }
+  #hubRoot .ha-accbody { gap: 4px; padding: 6px 8px 8px; }
+  #hubRoot .ha-perm { padding: 8px 8px; border-radius: 10px; align-items: center; justify-content: flex-start; gap: 12px; cursor: pointer; }
+  #hubRoot .ha-perm:hover { background: rgba(148,163,184,.12); }
+  #hubRoot .ha-perm span { flex: 1; }
+  #hubRoot input.ha-sw { appearance: none; -webkit-appearance: none; flex: 0 0 auto; order: 2; width: 42px; height: 24px; margin: 0; border-radius: 999px; background: #cbd5e1; position: relative; transition: background .15s; cursor: pointer; }
+  #hubRoot input.ha-sw::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: transform .15s; }
+  #hubRoot input.ha-sw:checked { background: #f59e0b; }
+  #hubRoot input.ha-sw:checked::after { transform: translateX(18px); }
+  #hubRoot input.ha-sw:disabled { opacity: .5; }
+  #hubRoot .ha-dialog.wide .ha-body { max-height: 72vh; }
+  /* Rechte-Editor: Bereiche zum Ausklappen und Haken */
+  #hubRoot .ha-sysacc { border: 1px solid rgba(148,163,184,.35); border-radius: 16px; margin: 0 0 12px; overflow: hidden; }
+  #hubRoot .ha-sysacc > summary { display: flex; align-items: center; gap: 10px; padding: 14px 16px; cursor: pointer; list-style: none; background: rgba(148,163,184,.16); font: 800 17px ui-rounded, 'SF Pro Rounded', system-ui, sans-serif; text-transform: none; letter-spacing: 0; color: inherit; }
+  #hubRoot .ha-sysacc > summary::-webkit-details-marker { display: none; }
+  #hubRoot .ha-sysacc > summary::before { content: '▸'; font-size: 12px; opacity: .6; transition: transform .15s; }
+  #hubRoot .ha-sysacc[open] > summary::before { transform: rotate(90deg); }
+  #hubRoot .ha-st { flex: 1; }
+  #hubRoot .ha-ptc { font-size: 12px; font-weight: 700; color: #64748b; text-transform: none; letter-spacing: 0; }
+  #hubRoot .ha-sysbody { padding: 12px 14px 14px; }
+  #hubRoot input.ha-sw { width: 24px; height: 24px; border-radius: 7px; background: transparent; border: 2px solid #94a3b8; order: 0; }
+  #hubRoot input.ha-sw::after { content: '✓'; position: static; display: block; width: auto; height: auto; background: none; box-shadow: none; transform: none; color: #fff; font-size: 16px; font-weight: 900; line-height: 20px; text-align: center; opacity: 0; }
+  #hubRoot input.ha-sw:checked { background: #10b981; border-color: #10b981; }
+  #hubRoot input.ha-sw:checked::after { opacity: 1; transform: none; }
+  #hubRoot .ha-perm.nomine span { opacity: .55; }
   #hubRoot .ha-group { border: 1px solid rgba(148,163,184,.3); border-radius: 14px; padding: 8px 12px 10px; margin: 0; }
   #hubRoot .ha-group legend { padding: 0 6px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #64748b; }
   #hubRoot .ha-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
