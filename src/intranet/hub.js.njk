@@ -13,7 +13,7 @@ templateEngineOverride: false
   if (!SH) { root.textContent = 'Der Grundbaustein hub-common.js fehlt.'; return; }
   var PAGE = root.getAttribute('data-system') || '';   // '' = Startseite, sonst die Kennung des Systems (z. B. jugend)
   var HUB_URL = '/intranet/';
-  var state = { loaded: false };
+  var state = { loaded: false, next: SH.lsGet('hubnext', null) };
   var esc = SH.esc;
 
   function systemCard(s) {
@@ -33,12 +33,37 @@ templateEngineOverride: false
     }
     out += '<h2 class="hub-hello">' + (S.me ? 'Hallo ' + esc(S.me.user || (S.me.role && S.me.role.name) || '') : 'Willkommen') + '</h2>';
     out += S.systems.length ? '<section class="hub-grid">' + S.systems.map(systemCard).join('') + '</section>' : '<section class="hub-card"><p class="hub-sub">Für dein Konto sind noch keine Systeme freigeschaltet.</p></section>';
+    out += nextHtml();
     if (!S.me) out += '<section class="hub-card hub-note"><h3>Weitere Systeme?</h3><p class="hub-sub">Melde dich an, dann siehst du alle Systeme, die für dich freigeschaltet sind.</p><button type="button" class="hub-btn hub-gold" data-sh="login">Anmelden</button></section>';
     if (SH.canAdmin()) out += '<section class="hub-card hub-note"><h3>Verwaltung</h3><p class="hub-sub">Benutzer, Rollen und die Sichtbarkeit der Systeme stellst du hier ein. Oben stehen die Schalter für die Systeme, darunter die Rechte je System. Das gilt für alle Systeme.</p><a class="hub-btn hub-gold" href="/intranet/verwaltung/">Zur Verwaltung</a></section>';
     return out;
   }
+  // Kleine Übersicht auf der Startseite: nächste Wettkämpfe und offene Aufgaben (nur wenn das Konto sie sehen darf)
+  function fmtD(iso) { if (!iso) return ''; var d = new Date(iso + 'T12:00:00'); return ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][d.getDay()] + ', ' + ('0' + d.getDate()).slice(-2) + '.' + ('0' + (d.getMonth() + 1)).slice(-2) + '.'; }
+  function todayIso() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function nextHtml() {
+    var n = state.next; if (!n || n.token !== SH.token() || (!n.wk.length && !n.tasks.length)) return '';
+    var out = '<section class="hub-grid hub-next">';
+    if (n.wk.length) out += '<div class="hub-card"><h3>🏁 Nächste Wettkämpfe</h3>' + n.wk.map(function (w) { return '<a class="hub-nrow" href="/intranet/wettkaempfe/"><b>' + esc(fmtD(w.date)) + '</b> ' + esc(w.title) + (w.ort ? ' <span class="hub-sub">· ' + esc(w.ort) + '</span>' : '') + '</a>'; }).join('') + '</div>';
+    if (n.tasks.length) out += '<div class="hub-card"><h3>✅ ' + (n.mine ? 'Meine Aufgaben' : 'Offene Aufgaben') + '</h3>' + n.tasks.map(function (t) { var over = t.due && t.due < todayIso(); return '<a class="hub-nrow" href="/intranet/aufgaben/">' + esc(t.title) + (t.due ? ' <span class="hub-sub"' + (over ? ' style="color:#dc2626;font-weight:800"' : '') + '>· ' + esc(fmtD(t.due)) + '</span>' : '') + '</a>'; }).join('') + '</div>';
+    return out + '</section>';
+  }
+  function loadNext() {
+    var want = []; if (SH.has('wettkaempfe.view')) want.push('wettkaempfe'); if (SH.has('aufgaben.view') || SH.has('aufgaben.own')) want.push('aufgaben');
+    if (!want.length) { if (state.next) { state.next = null; SH.lsSet('hubnext', null); render(); } return; }
+    SH.get('data', { colls: want.join(',') }).then(function (r) {
+      if (!r || r.status !== 'success') return;
+      var t = todayIso(); var d = r.data || {}; var me = (SH.S.me && (SH.S.me.user || '')).toLowerCase();
+      var wk = (d.wettkaempfe || []).filter(function (w) { return (w.date || '') >= t; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }).slice(0, 3).map(function (w) { return { date: w.date, title: w.title, ort: w.ort }; });
+      var mine = !SH.has('aufgaben.view');
+      var tasks = (d.aufgaben || []).filter(function (x) { return x.status !== 'erledigt' && (mine || !me || true); });
+      if (!mine && me) { var m2 = tasks.filter(function (x) { return (x.who || []).some(function (w) { return String(w).toLowerCase() === me; }); }); if (m2.length) { tasks = m2; mine = true; } }
+      tasks = tasks.sort(function (a, b) { return (a.due || '9999') < (b.due || '9999') ? -1 : 1; }).slice(0, 5).map(function (x) { return { title: x.title, due: x.due }; });
+      state.next = { token: SH.token(), wk: wk, tasks: tasks, mine: mine }; SH.lsSet('hubnext', state.next); render();
+    });
+  }
   function render() { root.innerHTML = SH.header('SG Barnstorf · Intranet') + '<main class="hub-main">' + body() + '</main>' + SH.overlay(); }
-  function load() { state.loaded = SH.restore(); render(); return SH.loadAccount().then(function () { state.loaded = true; render(); }); }
+  function load() { state.loaded = SH.restore(); render(); return SH.loadAccount().then(function () { state.loaded = true; render(); if (!PAGE) loadNext(); }); }
 
   root.addEventListener('click', function (ev) {
     if (SH.click(ev, render, load)) return;

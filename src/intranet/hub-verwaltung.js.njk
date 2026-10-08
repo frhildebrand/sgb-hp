@@ -75,7 +75,8 @@ templateEngineOverride: false
   // (Intranet, Weihnachtsmarkt, Jugend) mit den Rechte-Gruppen. Nur Rechte, die man selbst hat, lassen sich vergeben.
   var HUB_KEYS = ['system.users', 'system.roles', 'system.rechte', 'system.passwords', 'account.password'];
   function sectionsFor() {
-    var out = [{ id: 'hub', title: '🌐 Intranet', hint: 'Welche Seiten im Hub erscheinen und wer Benutzer, Rollen und Rechte verwalten darf.', groups: [] }, { id: 'weihnachtsmarkt', title: '🎄 Weihnachtsmarkt', groups: [] }, { id: 'jugend', title: '🏊 Jugend', groups: [], empty: 'Für Jugend gibt es noch keine eigenen Rechte. Sie kommen mit der Jugendkasse.' }];
+    var defs = S.catalog.sections && S.catalog.sections.length ? S.catalog.sections : [{ id: 'hub', title: '🌐 Intranet', hint: 'Welche Seiten im Hub erscheinen und wer Benutzer, Rollen und Rechte verwalten darf.' }, { id: 'weihnachtsmarkt', title: '🎄 Weihnachtsmarkt' }, { id: 'jugend', title: '🏊 Jugend' }];
+    var out = defs.map(function (d) { return { id: d.id, title: d.title, hint: d.hint, groups: [], empty: 'Für diesen Bereich gibt es keine eigenen Rechte.' }; });
     var verw = { title: 'Verwaltung', perms: [] };
     S.catalog.groups.forEach(function (g) {
       var sec = out.filter(function (x) { return x.id === g.system; })[0]; if (!sec) return;
@@ -220,7 +221,8 @@ templateEngineOverride: false
 
   // ---------- Anzeige ----------
   function sysBadges(perms) {
-    return (S.catalog ? ['hub.weihnachtsmarkt', 'hub.jugend'] : []).filter(function (k) { return (perms || []).indexOf(k) >= 0; }).map(function (k) { return '<span class="ha-badge">' + (k === 'hub.jugend' ? '🏊 Jugend' : '🎄 Weihnachtsmarkt') + '</span>'; }).join('');
+    var secs = S.catalog && S.catalog.sections ? S.catalog.sections : [{ id: 'weihnachtsmarkt', title: '🎄 Weihnachtsmarkt' }, { id: 'jugend', title: '🏊 Jugend' }];
+    return secs.filter(function (x) { return x.id !== 'hub' && (perms || []).indexOf('hub.' + x.id) >= 0; }).map(function (x) { return '<span class="ha-badge">' + esc(x.title) + '</span>'; }).join('');
   }
   function when(t) { if (!t) return 'noch nie angemeldet'; var m = Math.round((Date.now() - Number(t)) / 60000); return m < 2 ? 'zuletzt angemeldet gerade eben' : m < 120 ? 'zuletzt angemeldet vor ' + m + ' Min.' : m < 2880 ? 'zuletzt angemeldet vor ' + Math.round(m / 60) + ' Std.' : 'zuletzt angemeldet vor ' + Math.round(m / 1440) + ' Tagen'; }
   function roleIcon(id) { return { admin: '👑', orga: '🧭', helfer: '🙋', gast: '👁️' }[id] || '🛡️'; }

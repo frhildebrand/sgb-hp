@@ -2009,6 +2009,23 @@ function flushPendingNow() {
     if (invPending.length) window.syncInventar();
   } catch (e) { /* egal */ }
 }
+// Zeichnet erst neu, wenn gerade nicht in ein Feld getippt wird (sonst verschwindet auf dem iPad die Tastatur)
+let idleJobs = [];
+function typingNow() {
+  const a = document.activeElement;
+  return !!(a && ['INPUT', 'TEXTAREA', 'SELECT'].indexOf(a.tagName) >= 0 && a.type !== 'checkbox' && a.type !== 'radio' && a.type !== 'button');
+}
+function runWhenIdle(fn) {
+  if (!typingNow()) { fn(); return; }
+  if (idleJobs.indexOf(fn) < 0) idleJobs.push(fn);
+}
+document.addEventListener('focusout', () => {
+  setTimeout(() => {
+    if (typingNow() || !idleJobs.length) return;
+    const jobs = idleJobs; idleJobs = [];
+    jobs.forEach((f) => { try { f(); } catch (e) { /* egal */ } });
+  }, 350);
+});
 function createListStore(name, onChange) {
   const key = 'list3_' + name;
   const saved = lsGet(key, null) || {};
@@ -2053,15 +2070,22 @@ function createListStore(name, onChange) {
           // Ohne Anmeldung verweigerte Aenderungen (z. B. direkt nach dem Abmelden) bleiben in der Warteschlange, bis jemand mit Recht angemeldet ist
           const kept = (r.anon && r.deniedIdx && r.deniedIdx.length) ? r.deniedIdx.map((i) => sent[i]).filter(Boolean) : [];
           if (!kept.length) deniedHint(r.denied);
+          // Gesendete Aenderungen sofort in den Grundstand uebernehmen, sonst springt die Anzeige bis zur Antwort kurz zurueck
+          const keptSet = new Set((r.anon && r.deniedIdx) ? r.deniedIdx : []);
+          let nb = clone(base);
+          sent.forEach((op, i) => { if (!keptSet.has(i)) nb = applyListOp(nb, op); });
+          base = nb;
           pending = kept.concat(pending.slice(sent.length));
           if (!pending.length) pendingToken = '';
           persist();
         }
         const res = await getFromSheets('list', { name: name });
         if (res && Array.isArray(res.items) && !res.denied) {
+          const changed = JSON.stringify(res.items) !== JSON.stringify(base);
           base = res.items;
           persist();
-          if (onChange) onChange();
+          // Nur neu zeichnen, wenn sich wirklich etwas geaendert hat, und nie mitten im Tippen (sonst klappt die Tastatur weg)
+          if (onChange && changed) runWhenIdle(onChange);
         }
       } finally {
         syncing = false;
@@ -7053,15 +7077,20 @@ function initApp() {
       }
     }
   }, 10000);
-  document.addEventListener('visibilitychange', () => {
+  function syncNow() {
     if (document.hidden) return;
     window.refreshRoles();
     window.pullAushang();
+    try { LIST_STORES.forEach((st) => st.sync()); } catch (e) { /* egal */ }
     if (window.isLoggedIn()) {
       window.syncKasse();
       window.syncInventar();
     }
-  });
+  }
+  document.addEventListener('visibilitychange', syncNow);
+  window.addEventListener('focus', syncNow);
+  window.addEventListener('online', syncNow);
+  window.addEventListener('pageshow', syncNow);
   window.__wmBooted = true;
   try { const bb = document.getElementById('wmB_boot'); if (bb) bb.remove(); } catch (e) { /* egal */ }
 }
