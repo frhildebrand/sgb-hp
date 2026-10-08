@@ -186,25 +186,46 @@ templateEngineOverride: false
     return (S.catalog ? ['hub.weihnachtsmarkt', 'hub.jugend'] : []).filter(function (k) { return (perms || []).indexOf(k) >= 0; }).map(function (k) { return '<span class="ha-badge">' + (k === 'hub.jugend' ? '🏊 Jugend' : '🎄 Weihnachtsmarkt') + '</span>'; }).join('');
   }
   function when(t) { if (!t) return 'noch nie angemeldet'; var m = Math.round((Date.now() - Number(t)) / 60000); return m < 2 ? 'zuletzt angemeldet gerade eben' : m < 120 ? 'zuletzt angemeldet vor ' + m + ' Min.' : m < 2880 ? 'zuletzt angemeldet vor ' + Math.round(m / 60) + ' Std.' : 'zuletzt angemeldet vor ' + Math.round(m / 1440) + ' Tagen'; }
+  function roleIcon(id) { return { admin: '👑', orga: '🧭', helfer: '🙋', gast: '👁️' }[id] || '🛡️'; }
   function usersHtml() {
-    if (!S.users.length) return '<p class="hub-sub">Noch keine persönlichen Konten. Mit „Neuer Benutzer" legst du das erste an.</p>';
+    if (!S.users.length) return '<p class="wm-note">Noch keine Benutzer. Ohne Benutzer meldet man sich mit dem Passwort der Rolle an.</p>';
     return S.users.map(function (u) {
-      return '<div class="ha-item' + (u.disabled ? ' off' : '') + '"><div class="ha-main"><b>' + esc(u.name) + '</b>' + (u.disabled ? ' <span class="ha-badge warn">gesperrt</span>' : '') + '<div class="ha-sub">' + (u.roles || []).map(function (r) { return esc(roleName(r)); }).join(', ') + ((u.extras || []).length ? ' · ' + u.extras.length + ' Sonderrecht(e)' : '') + ' · ' + esc(when(u.lastLogin || u.last)) + '</div></div><button type="button" class="hub-btn hub-ghost" data-ed="user" data-id="' + esc(u.id) + '">Bearbeiten</button></div>';
+      var ex = (u.extras || []).map(function (id) { var x = S.extras.filter(function (e) { return e.id === id; })[0]; return x ? x.name : null; }).filter(Boolean);
+      return '<div class="wm-row' + (u.disabled ? ' off' : '') + '"><span class="wm-ic">' + (u.disabled ? '🚫' : '👤') + '</span><div class="wm-main"><div class="wm-name">' + esc(u.name) + (u.disabled ? ' <span class="wm-lock">gesperrt</span>' : '') + '</div><div class="wm-sub">' + esc((u.roles || []).map(roleName).join(' + ') || 'keine Rolle') + (ex.length ? ' · ✨ ' + esc(ex.join(', ')) : '') + ' · ' + esc(when(u.last)) + '</div></div>' +
+        (has('system.users') ? '<button type="button" class="wm-btn" data-ed="user" data-id="' + esc(u.id) + '">✏️ Bearbeiten</button>' : '') + '</div>';
     }).join('');
   }
   function rolesHtml() {
-    return S.roles.map(function (r, i) {
-      var mv = has('system.roles') && r.id !== 'admin' ? '<button type="button" class="ha-mini" data-mv="-1" data-id="' + esc(r.id) + '" title="Nach oben">↑</button><button type="button" class="ha-mini" data-mv="1" data-id="' + esc(r.id) + '" title="Nach unten">↓</button>' : '';
-      return '<div class="ha-item"><div class="ha-main"><b>' + esc(r.name) + '</b> ' + (r.hasPw ? '<span class="ha-badge">Rollen-Passwort</span>' : '') + ' ' + sysBadges(r.perms) + '<div class="ha-sub">' + esc(r.desc || '') + ' · Rechte ' + (r.perms || []).length + ' von ' + allPermKeys().length + '</div></div>' + mv + (has('system.roles') ? '<button type="button" class="hub-btn hub-ghost" data-ed="copy" data-id="' + esc(r.id) + '">Kopieren</button>' : '') + '<button type="button" class="hub-btn hub-ghost" data-ed="role" data-id="' + esc(r.id) + '">Bearbeiten</button></div>';
+    var total = allPermKeys().length;
+    return S.roles.map(function (r, i, all) {
+      var n = (r.perms || []).filter(function (k) { return allPermKeys().indexOf(k) >= 0; }).length;
+      var mv = has('system.roles') ? '<span class="wm-nowrap"><button type="button" class="wm-btn" data-mv="-1" data-id="' + esc(r.id) + '" title="Höher einstufen"' + (i === 0 ? ' disabled' : '') + '>▲</button> <button type="button" class="wm-btn" data-mv="1" data-id="' + esc(r.id) + '" title="Niedriger einstufen"' + (i === all.length - 1 ? ' disabled' : '') + '>▼</button></span>' : '';
+      return '<div class="wm-row"><span class="wm-num">' + (i + 1) + '</span><span class="wm-ic">' + roleIcon(r.id) + '</span><div class="wm-main"><div class="wm-name">' + esc(r.name) + (r.builtin ? ' <span class="wm-fest">(fest)</span>' : '') + '</div><div class="wm-sub">' + esc(r.desc || 'ohne Beschreibung') + (r.last ? ' · ' + esc(when(r.last)) : '') + '</div></div>' +
+        '<span class="wm-meta">Rechte ' + n + ' von ' + total + '</span><span class="wm-meta ' + (r.hasPw ? 'ok' : 'dim') + '">' + (r.id === 'gast' ? 'ohne Passwort' : (r.hasPw ? '🔑 Passwort' : 'Rollen-Anmeldung aus')) + '</span>' + mv +
+        (has('system.roles') && has('system.rechte') ? '<button type="button" class="wm-btn" data-ed="copy" data-id="' + esc(r.id) + '" title="Als Vorlage für eine neue Rolle kopieren">⧉ Kopieren</button>' : '') +
+        (canAny(['system.roles', 'system.rechte', 'system.passwords']) ? '<button type="button" class="wm-btn" data-ed="role" data-id="' + esc(r.id) + '">✏️ Bearbeiten</button>' : '') + '</div>';
     }).join('');
   }
   function extrasHtml() {
-    if (!S.extras.length) return '<p class="hub-sub">Sonderrechte sind Pakete aus Einzelrechten, die du einzelnen Benutzern zusätzlich zu ihren Rollen gibst.</p>';
-    return S.extras.map(function (x) { return '<div class="ha-item"><div class="ha-main"><b>' + esc(x.name) + '</b> ' + sysBadges(x.perms) + '<div class="ha-sub">' + esc(x.desc || '') + ' · ' + (x.perms || []).length + ' Rechte</div></div><button type="button" class="hub-btn hub-ghost" data-ed="extra" data-id="' + esc(x.id) + '">Bearbeiten</button></div>'; }).join('');
+    if (!S.extras.length) return '<p class="wm-note">Noch keine Sonderrechte angelegt.</p>';
+    return S.extras.map(function (x) {
+      var n = S.users.filter(function (u) { return (u.extras || []).indexOf(x.id) >= 0; }).length;
+      return '<div class="wm-row"><span class="wm-ic">✨</span><div class="wm-main"><div class="wm-name">' + esc(x.name) + '</div><div class="wm-sub">' + esc(x.desc || 'ohne Beschreibung') + '</div></div><span class="wm-meta">' + (x.perms || []).length + ((x.perms || []).length === 1 ? ' Recht' : ' Rechte') + ' · ' + n + ' Benutzer</span>' +
+        (has('system.rechte') ? '<button type="button" class="wm-btn" data-ed="extra" data-id="' + esc(x.id) + '">✏️ Bearbeiten</button>' : '') + '</div>';
+    }).join('');
+  }
+  function matrixHtml() {
+    var cols = S.roles.map(function (r) { return { name: r.name, perms: r.perms || [] }; }).concat(S.extras.map(function (x) { return { name: '✨ ' + x.name, perms: x.perms || [] }; }));
+    var h = '<table class="wm-matrix"><thead><tr><th class="left">Recht</th>' + cols.map(function (c) { return '<th>' + esc(c.name) + '</th>'; }).join('') + '</tr></thead><tbody>';
+    S.catalog.groups.forEach(function (g) {
+      h += '<tr><td colspan="' + (cols.length + 1) + '" class="grp">' + esc(g.title) + '</td></tr>';
+      g.perms.forEach(function (q) { h += '<tr><td class="left">' + esc(q.label) + '</td>' + cols.map(function (c) { var on = c.perms.indexOf(q.key) >= 0; return '<td class="' + (on ? 'yes' : 'no') + '">' + (on ? '✓' : '–') + '</td>'; }).join('') + '</tr>'; });
+    });
+    return h + '</tbody></table>';
   }
   function head() {
     var ok = !!S.me && canAny(CAN_ENTER);
-    SH.S.menuExtra = ok ? [['benutzer', '👤', 'Benutzer'], ['rollen', '🛡️', 'Rollen'], ['extras', '✨', 'Sonderrechte']].map(function (t) { return { key: t[0], icon: t[1], label: t[2], on: S.tab === t[0] }; }) : [];
+    SH.S.menuExtra = ok ? [['benutzer', '👤', 'Benutzerverwaltung'], ['zugang', '🛡️', 'Zugangsverwaltung']].map(function (t) { return { key: t[0], icon: t[1], label: t[2], on: S.tab === t[0] }; }) : [];
     return SH.header('Verwaltung');
   }
   function body() {
@@ -212,19 +233,25 @@ templateEngineOverride: false
     if (!S.me) return '<section class="hub-card hub-offline"><h2>Bitte anmelden</h2><p class="hub-sub">Die Verwaltung ist nur mit Anmeldung erreichbar.</p><button type="button" class="hub-btn hub-gold" data-sh="login">Anmelden</button></section>';
     if (!canAny(CAN_ENTER)) return '<section class="hub-card hub-offline"><h2>Kein Zugriff</h2><p class="hub-sub">Für dein Konto ist die Verwaltung nicht freigeschaltet.</p><a class="hub-btn hub-ghost" href="' + HUB_URL + '">← Hub</a></section>';
     if (S.offline) return '<section class="hub-card hub-offline"><h2>Keine Verbindung</h2><p class="hub-sub">Das Konto-System ist gerade nicht erreichbar.</p><button type="button" class="hub-btn hub-gold" data-act="retry">Nochmal versuchen</button><details class="hub-diag"><summary>Technische Details</summary><pre>' + esc(SH.DIAG.length ? SH.DIAG.join('\n') : 'Keine Angaben.') + '</pre></details></section>';
-    var tabs = [['benutzer', 'Benutzer'], ['rollen', 'Rollen'], ['extras', 'Sonderrechte']].map(function (t) { return '<button type="button" data-tab="' + t[0] + '" class="' + (S.tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('');
+    if (S.tab !== 'benutzer' && S.tab !== 'zugang') S.tab = 'benutzer';
+    var tabs = [['benutzer', '👤 Benutzerverwaltung'], ['zugang', '🛡️ Zugangsverwaltung']].map(function (t) { return '<button type="button" data-tab="' + t[0] + '" class="wm-tab' + (S.tab === t[0] ? ' on' : '') + '">' + t[1] + '</button>'; }).join('');
+    var top = '<div class="wm-card wm-top"><h2>👑 Verwaltung</h2><a class="wm-btn" href="' + HUB_URL + '">⬅️ Zurück zum Hub</a></div>';
     var inner = '';
-    if (S.tab === 'benutzer') inner = '<div class="ha-bar"><h2>👤 Benutzer</h2>' + (has('system.users') ? '<button type="button" class="hub-btn hub-gold" data-ed="newuser">Neuer Benutzer</button>' : '') + '</div>' + (has('system.users') ? usersHtml() : '<p class="hub-sub">Du darfst Benutzer nicht ansehen.</p>');
-    else if (S.tab === 'rollen') inner = '<div class="ha-bar"><h2>🛡️ Rollen</h2>' + (has('system.roles') ? '<button type="button" class="hub-btn hub-gold" data-ed="newrole">Neue Rolle</button>' : '') + '</div><p class="hub-sub">Eine Rolle bestimmt, welche Systeme sichtbar sind und was jemand darin darf. Bearbeiten zeigt oben die Schalter für die Systeme und darunter die Rechte je System.</p>' + rolesHtml();
-    else inner = '<div class="ha-bar"><h2>✨ Sonderrechte</h2>' + (has('system.rechte') ? '<button type="button" class="hub-btn hub-gold" data-ed="newextra">Neues Sonderrecht</button>' : '') + '</div>' + extrasHtml();
-    return (S.msg ? '<div class="hub-err" style="margin-bottom:14px">' + esc(S.msg) + '</div>' : '') + '<div class="hub-tabs ha-tabs">' + tabs + '</div><section class="hub-card ha-card">' + inner + '</section>';
+    if (S.tab === 'benutzer') {
+      inner = '<div class="wm-card"><div class="wm-bar"><h3>👤 Benutzer</h3>' + (has('system.users') ? '<button type="button" class="wm-amber" data-ed="newuser">➕ Neuer Benutzer</button>' : '') + '</div><p class="wm-note">Benutzer haben einen eigenen Namen und ein eigenes Passwort, eine oder mehrere Rollen und auf Wunsch Sonderrechte. Die Rechte aus allen Rollen und Sonderrechten zählen zusammen.</p>' + (canAny(['system.users', 'system.rechte', 'system.roles']) ? usersHtml() : '<p class="wm-note">Du darfst Benutzer nicht ansehen.</p>') + '</div>';
+    } else {
+      inner = '<div class="wm-card"><div class="wm-bar"><h3>🛡️ Rollen</h3>' + (has('system.roles') ? '<button type="button" class="wm-amber" data-ed="newrole">➕ Neue Rolle</button>' : '') + '</div><p class="wm-note">Pro Rolle lassen sich Name, Beschreibung, Passwort und alle einzelnen Rechte einstellen. Die Rechte gelten sofort auf allen Geräten.</p>' + rolesHtml() + '</div>' +
+        '<div class="wm-card"><div class="wm-bar"><h3>✨ Sonderrechte</h3>' + (has('system.rechte') ? '<button type="button" class="wm-amber" data-ed="newextra">➕ Neues Sonderrecht</button>' : '') + '</div><p class="wm-note">Ein Sonderrecht ist ein eigenes Rechte-Paket, das man einzelnen Benutzern zusätzlich zu ihren Rollen gibt, zum Beispiel „Statistik bearbeiten“ für einen Helfer. Es gilt nur bei persönlicher Anmeldung mit Benutzername, nicht bei der Anmeldung mit dem Passwort der Rolle.</p>' + extrasHtml() + '</div>' +
+        '<details class="wm-card wm-det"><summary>📊 Rechte-Übersicht (wer darf was)</summary><p class="wm-note">Nur zum Ansehen. Geändert wird bei den einzelnen Rollen und Sonderrechten.</p><div class="wm-scroll">' + matrixHtml() + '</div></details>';
+    }
+    return top + (S.msg ? '<div class="hub-err" style="margin-bottom:14px">' + esc(S.msg) + '</div>' : '') + '<div class="wm-tabs">' + tabs + '</div>' + inner;
   }
   function dialogOrConfirm() {
     var d = S.dialog; if (!d) return '';
     if (d.confirm) return '<div class="ha-overlay"><div class="ha-dialog small"><h3>' + esc(d.title) + '</h3><p class="hub-sub">' + esc(d.message) + '</p><div class="ha-actions"><span class="ha-extra"></span><button type="button" class="hub-btn hub-ghost" data-cf="no">Abbrechen</button><button type="button" class="hub-btn ha-danger" data-cf="yes">' + esc(d.ok) + '</button></div></div></div>';
     return dialogHtml().replace('class="ha-dialog"', 'class="ha-dialog' + (d.wide ? ' wide' : '') + '"');
   }
-  SH.S.onMenu = function (k) { S.tab = k; S.msg = ''; };
+  SH.S.onMenu = function (k) { S.tab = k === 'zugang' ? 'zugang' : 'benutzer'; S.msg = ''; };
   function render() {
     var keep = root.querySelector('.ha-body') ? root.querySelector('.ha-body').scrollTop : 0;
     root.innerHTML = head() + '<main class="hub-main">' + body() + '</main>' + SH.overlay() + dialogOrConfirm();

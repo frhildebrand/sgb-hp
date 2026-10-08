@@ -113,22 +113,23 @@ window.HubShell = (function () {
     return '<div class="hub-menu-bg" data-sh="menuclose"></div><nav class="hub-menu" aria-label="Menü">' + items + '</nav>';
   }
   function header(title) {
-    var acc = S.me ? '<button type="button" class="hub-pill" data-sh="menu" title="Menü">' + (S.me.user ? '👤 ' : '🔑 ') + esc(S.me.user || (S.me.role && S.me.role.name) || '') + (S.me.user && S.me.role ? ' · ' + esc(S.me.role.name) : '') + '</button>' : '<button type="button" class="hub-btn hub-gold" data-sh="login">🔑 Anmelden</button>';
+    var acc = S.me ? '<button type="button" class="hub-pill" data-sh="login" title="Rolle / Anmeldung">' + (S.me.user ? '👤 ' : '🔑 ') + esc(S.me.user || (S.me.role && S.me.role.name) || '') + (S.me.user && S.me.role ? ' · ' + esc(S.me.role.name) : '') + '</button>' : '<button type="button" class="hub-btn hub-gold" data-sh="login">🔑 Anmelden</button>';
     return '<header class="hub-head"><a class="hub-logo" href="' + HUB_URL + '" aria-label="Zum Hub"><img src="/assets/weihnachtsmarkt/sharks-logo.png" alt=""></a><h1>' + esc(title) + '</h1><div class="hub-user">' + acc +
       '<button type="button" class="hub-btn hub-ghost" data-sh="theme">' + esc(window.HubTheme.label()) + '</button><button type="button" class="hub-burger" data-sh="menu" aria-label="Menü" aria-expanded="' + (S.menu ? 'true' : 'false') + '">☰</button></div>' + menuHtml() + '</header>';
   }
   function dialogHtml() {
     var d = S.dialog; if (!d) return '';
     if (d === 'login') {
-      var userMode = S.mode === 'user';
-      var opts = S.loginRoles.map(function (r) { return '<option value="' + esc(r.id) + '">' + esc(r.name) + '</option>'; }).join('');
-      return '<div class="ha-overlay" data-sh="cancelbg"><div class="ha-dialog small"><h3>Anmelden</h3><p class="hub-sub">Mit deinem Konto siehst du die Systeme, die für dich freigeschaltet sind. Ohne Anmeldung gilt der Gastzugang.</p>' +
-        '<div class="hub-tabs"><button type="button" data-shmode="user" class="' + (userMode ? 'on' : '') + '">Mit Konto</button><button type="button" data-shmode="role" class="' + (!userMode ? 'on' : '') + '">Mit Rollen-Passwort</button></div>' +
-        '<form class="hub-login" data-shform="login" autocomplete="on">' +
-        (userMode ? '<label>Name<input name="name" type="text" autocomplete="username" autocapitalize="off" required></label>' : '<label>Rolle<select name="role">' + opts + '</select></label>') +
-        '<label>Passwort<input name="password" type="password" autocomplete="' + (userMode ? 'current-password' : 'off') + '" required></label>' +
+      var who = S.me ? '<div class="hub-status"><span>' + (S.me.user ? '👤 ' : '🔑 ') + 'Angemeldet: <b>' + esc(S.me.user || (S.me.role && S.me.role.name) || '') + '</b>' + (S.me.user && S.me.role ? ' · ' + esc(S.me.role.name) : '') + '</span><span class="hub-status-btns">' + (S.me.user ? '<button type="button" class="hub-btn hub-ghost" data-sh="password">Passwort ändern</button>' : '') + '<button type="button" class="hub-btn hub-ghost" data-sh="logout">Abmelden</button></span></div>' : '';
+      var cards = S.loginRoles.map(function (r) {
+        return '<form class="hub-rcard" data-shform="login" autocomplete="off"><input type="hidden" name="kind" value="role"><input type="hidden" name="role" value="' + esc(r.id) + '"><b>' + esc(r.name) + '</b>' + (r.desc ? '<span class="hub-rdesc">' + esc(r.desc) + '</span>' : '') + '<input name="password" type="password" placeholder="Passwort" autocomplete="off" required><button type="submit" class="hub-btn hub-gold"' + (S.busy ? ' disabled' : '') + '>Anmelden</button></form>';
+      }).join('');
+      return '<div class="ha-overlay" data-sh="cancelbg"><div class="ha-dialog"><div class="hub-dhead"><h3>🔐 Anmelden</h3><button type="button" class="hub-btn hub-ghost" data-sh="cancel" aria-label="Schließen">✕</button></div>' +
+        '<p class="hub-sub">Mit dem Passwort einer Rolle oder persönlich mit Benutzername. Die Anmeldung bleibt auf diesem Gerät gespeichert.</p>' + who +
         (S.error ? '<div class="hub-err">' + esc(S.error) + '</div>' : '') +
-        '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-sh="cancel">Abbrechen</button><button type="submit" class="hub-btn hub-gold"' + (S.busy ? ' disabled' : '') + '>' + (S.busy ? 'Moment …' : 'Anmelden') + '</button></div></form></div></div>';
+        (cards ? '<div class="hub-rgrid">' + cards + '</div>' : '') +
+        '<form class="hub-login hub-rcard hub-ruser" data-shform="login" autocomplete="on"><input type="hidden" name="kind" value="user"><b>👤 Persönlich anmelden</b>' +
+        '<div class="hub-urow"><input name="name" type="text" placeholder="Benutzername" autocomplete="username" autocapitalize="off" required><input name="password" type="password" placeholder="Passwort" autocomplete="current-password" required><button type="submit" class="hub-btn hub-gold"' + (S.busy ? ' disabled' : '') + '>' + (S.busy ? 'Moment …' : 'Anmelden') + '</button></div></form></div></div>';
     }
     if (d === 'password') {
       return '<div class="ha-overlay"><div class="ha-dialog small"><h3>Passwort ändern</h3><form class="hub-login" data-shform="password">' +
@@ -156,7 +157,7 @@ window.HubShell = (function () {
     if (a === 'password') { S.menu = false; S.dialog = 'password'; S.error = ''; rerender(); return true; }
     if (a === 'cancel') { S.dialog = null; S.error = ''; rerender(); return true; }
     if (a === 'logout') {
-      var tk = token(); S.menu = false;
+      var tk = token(); S.menu = false; S.dialog = null;
       S.session = { token: '', user: '' }; lsSet('session4', S.session); try { localStorage.setItem('userRole', 'gast'); } catch (e) { /* egal */ }
       S.me = null; S.systems = []; S.restored = false; lsSet('hubcache', null); lsSet('verwcache', null); if (tk) post({ action: 'logout', token: tk });
       reload(); return true;
@@ -167,8 +168,9 @@ window.HubShell = (function () {
     var f = ev.target; var kind = f && f.getAttribute ? f.getAttribute('data-shform') : null; if (!kind) return false;
     ev.preventDefault(); if (S.busy) return true;
     if (kind === 'login') {
-      var payload = { action: 'login', kind: S.mode };
-      if (S.mode === 'user') payload.name = f.elements.name.value; else payload.role = f.elements.role.value;
+      var lk = f.elements.kind ? f.elements.kind.value : S.mode;
+      var payload = { action: 'login', kind: lk };
+      if (lk === 'user') payload.name = f.elements.name.value; else payload.role = f.elements.role.value;
       payload.password = f.elements.password.value;
       S.busy = true; S.error = ''; rerender();
       post(payload).then(function (res) {

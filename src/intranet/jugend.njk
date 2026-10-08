@@ -35,6 +35,20 @@ permalink: /intranet/jugend/
   #hubRoot .hub-pill { padding: 8px 14px; border-radius: 12px; font-weight: 700; font-size: 13px; background: #eef2f7; border: 1px solid #e2e8f0; }
   #hubRoot .hub-pill { color: inherit; cursor: pointer; font-family: inherit; }
   #hubRoot .hub-mi.hub-on { background: rgba(148,163,184,.2); }
+  #hubRoot .hub-dhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  #hubRoot .hub-dhead h3 { margin: 0; }
+  #hubRoot .hub-status { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; margin: 0 0 14px; border-radius: 12px; font-size: 13px; background: rgba(16,185,129,.12); border: 1px solid rgba(16,185,129,.35); color: #047857; }
+  .dark #hubRoot .hub-status { color: #6ee7b7; }
+  #hubRoot .hub-status-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  #hubRoot .hub-rgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 0 0 14px; }
+  #hubRoot .hub-rcard { display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 14px; border: 1px solid #e2e8f0; background: #fff; text-align: center; }
+  .dark #hubRoot .hub-rcard { background: #0e1626; border-color: #1f2a3d; }
+  #hubRoot .hub-rcard input { width: 100%; padding: 9px 10px; border-radius: 10px; border: 1px solid #cbd5e1; background: #f1f5f9; color: inherit; font-size: 14px; }
+  .dark #hubRoot .hub-rcard input { background: #131d30; border-color: #334155; }
+  #hubRoot .hub-rdesc { font-size: 12px; color: #64748b; }
+  #hubRoot .hub-ruser { text-align: left; }
+  #hubRoot .hub-urow { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; }
+  @media (max-width: 640px) { #hubRoot .hub-urow { grid-template-columns: 1fr; } }
   .dark #hubRoot .hub-pill { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.14); }
   #hubRoot .hub-main { max-width: none; margin: 0; padding: 24px 24px 8px; }
   #hubRoot .hub-hello { margin: 0 0 18px; font: 800 clamp(1.4rem, 3vw, 1.9rem) ui-rounded, 'SF Pro Rounded', system-ui, sans-serif; }
@@ -89,6 +103,49 @@ permalink: /intranet/jugend/
   @keyframes hubShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
   @media (prefers-reduced-motion: reduce) { #hubRoot .hub-skel { animation: none; } }
 
+  /* Verwaltung im Stil des Weihnachtsmarkt-Admins */
+  #hubRoot .wm-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(15,23,42,.06); }
+  .dark #hubRoot .wm-card { background: #0f172a; border-color: #1e293b; box-shadow: none; }
+  #hubRoot .wm-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+  #hubRoot .wm-top h2 { margin: 0; font: 800 20px ui-rounded, 'SF Pro Rounded', system-ui, sans-serif; color: #f59e0b; }
+  #hubRoot .wm-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  #hubRoot .wm-bar h3 { margin: 0; font-size: 15px; font-weight: 800; }
+  #hubRoot .wm-note { margin: 6px 0 14px; font-size: 12px; line-height: 1.5; color: #64748b; }
+  .dark #hubRoot .wm-note { color: #94a3b8; }
+  #hubRoot .wm-amber { padding: 8px 14px; border: 0; border-radius: 12px; background: #f59e0b; color: #0f172a; font: 900 13px -apple-system, system-ui, sans-serif; box-shadow: 0 2px 6px rgba(245,158,11,.35); cursor: pointer; }
+  #hubRoot .wm-amber:hover { background: #d97706; }
+  #hubRoot .wm-btn { display: inline-block; padding: 7px 12px; border-radius: 10px; border: 1px solid #cbd5e1; background: #f1f5f9; color: inherit; font: 700 12px -apple-system, system-ui, sans-serif; text-decoration: none; cursor: pointer; }
+  .dark #hubRoot .wm-btn { background: #1e293b; border-color: #334155; }
+  #hubRoot .wm-btn[disabled] { opacity: .3; cursor: default; }
+  #hubRoot .wm-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  #hubRoot .wm-tab { padding: 10px 20px; border-radius: 12px; border: 1px solid #cbd5e1; background: #fff; color: #334155; font: 700 14px -apple-system, system-ui, sans-serif; cursor: pointer; }
+  .dark #hubRoot .wm-tab { background: #0f172a; border-color: #334155; color: #e2e8f0; }
+  #hubRoot .wm-tab.on { background: #f59e0b; border-color: #f59e0b; color: #0f172a; font-weight: 900; box-shadow: 0 2px 8px rgba(245,158,11,.4); }
+  #hubRoot .wm-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 10px 12px; margin-bottom: 8px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; }
+  .dark #hubRoot .wm-row { background: #0f172a; border-color: #1e293b; }
+  #hubRoot .wm-row.off { opacity: .6; }
+  #hubRoot .wm-ic { font-size: 20px; }
+  #hubRoot .wm-num { width: 20px; text-align: center; font-size: 12px; font-weight: 900; color: #94a3b8; }
+  #hubRoot .wm-main { flex: 1; min-width: 9rem; }
+  #hubRoot .wm-name { font-weight: 700; }
+  #hubRoot .wm-fest { font-size: 10px; font-weight: 600; color: #94a3b8; }
+  #hubRoot .wm-lock { font-size: 10px; font-weight: 900; text-transform: uppercase; color: #f43f5e; }
+  #hubRoot .wm-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+  .dark #hubRoot .wm-sub { color: #94a3b8; }
+  #hubRoot .wm-meta { font-size: 11px; font-weight: 700; color: #475569; }
+  .dark #hubRoot .wm-meta { color: #cbd5e1; }
+  #hubRoot .wm-meta.ok { color: #059669; }
+  #hubRoot .wm-meta.dim { color: #94a3b8; }
+  #hubRoot .wm-nowrap { white-space: nowrap; }
+  #hubRoot .wm-det summary { cursor: pointer; font-weight: 800; font-size: 14px; list-style: none; }
+  #hubRoot .wm-scroll { overflow-x: auto; }
+  #hubRoot .wm-matrix { min-width: 100%; border-collapse: collapse; font-size: 12px; }
+  #hubRoot .wm-matrix th { padding: 8px; font-size: 11px; font-weight: 900; text-align: center; white-space: nowrap; }
+  #hubRoot .wm-matrix th.left, #hubRoot .wm-matrix td.left { text-align: left; }
+  #hubRoot .wm-matrix td { padding: 6px 8px; text-align: center; border-bottom: 1px solid rgba(148,163,184,.2); }
+  #hubRoot .wm-matrix td.grp { text-align: left; background: rgba(148,163,184,.18); font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
+  #hubRoot .wm-matrix td.yes { color: #059669; font-weight: 900; }
+  #hubRoot .wm-matrix td.no { color: #cbd5e1; }
   #hubRoot .ha-tabs { max-width: 28rem; margin-bottom: 16px; }
   #hubRoot .ha-card { margin-bottom: 20px; }
   #hubRoot .ha-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
