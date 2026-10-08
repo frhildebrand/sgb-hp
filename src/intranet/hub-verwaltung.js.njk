@@ -71,20 +71,22 @@ templateEngineOverride: false
   }
 
   // ---------- Dialoge ----------
+  // Rechte als ausklappbare Gruppen mit Haken (wie im Weihnachtsmarkt). Oben steht "Seiten": welche Systeme im Hub erscheinen.
   function permGrid(d, key, value, locked, forced) {
     var sel = {}; (value || []).forEach(function (k) { sel[k] = true; }); (forced || []).forEach(function (k) { sel[k] = true; });
     var forcedSet = {}; (forced || []).forEach(function (k) { forcedSet[k] = true; });
-    var systems = [{ id: 'hub', title: 'Systeme im Hub' }, { id: 'weihnachtsmarkt', title: 'Weihnachtsmarkt' }, { id: 'jugend', title: 'Jugend' }];
-    var html = '';
+    var systems = [{ id: 'hub', title: '🌐 Seiten (Systeme im Hub)' }, { id: 'weihnachtsmarkt', title: '🎄 Weihnachtsmarkt' }, { id: 'jugend', title: '🏊 Jugend' }];
+    var html = '<div class="ha-pbar"><a href="#" data-px="open">alle aufklappen</a> <a href="#" data-px="close">alle zuklappen</a></div>';
     systems.forEach(function (sys) {
       var groups = S.catalog.groups.filter(function (g) { return g.system === sys.id; });
       if (!groups.length) return;
-      html += '<div class="ha-sys"><h4>' + esc(sys.title) + '</h4>' + (sys.id === 'hub' ? '<p class="ha-hint">Diese Schalter bestimmen, welche Systeme im Hub erscheinen. Darunter stehen die Rechte je System.</p>' : '') + '<div class="ha-grid">';
+      html += '<div class="ha-sys"><h4>' + esc(sys.title) + '</h4>' + (sys.id === 'hub' ? '<p class="ha-hint">Hier legst du fest, welche Seiten (Systeme) im Hub erscheinen, zum Beispiel der Weihnachtsmarkt. Darunter stehen die Rechte je System.</p>' : '') + '<div class="ha-grid">';
       groups.forEach(function (g) {
-        html += '<fieldset class="ha-group"><legend>' + esc(sys.id === 'hub' ? g.title : g.title) + '</legend>' + g.perms.map(function (q) {
+        var n = g.perms.filter(function (q) { return sel[q.key]; }).length;
+        html += '<details class="ha-acc"' + (sys.id === 'hub' ? ' open' : '') + '><summary><span>' + esc(sys.id === 'hub' ? 'Seiten im Hub' : g.title) + '</span><span class="ha-cnt">(' + n + ' von ' + g.perms.length + ')</span></summary><div class="ha-accbody">' + g.perms.map(function (q) {
           var on = !!sel[q.key]; var dis = locked || forcedSet[q.key];
           return '<label class="ha-perm"><input type="checkbox" data-pk="' + esc(q.key) + '"' + (on ? ' checked' : '') + (dis ? ' disabled' : '') + '> <span>' + esc(q.label) + '</span></label>';
-        }).join('') + '</fieldset>';
+        }).join('') + '</div></details>';
       });
       html += '</div></div>';
     });
@@ -259,6 +261,8 @@ templateEngineOverride: false
   }
 
   root.addEventListener('click', function (ev) {
+    var px = ev.target.closest ? ev.target.closest('[data-px]') : null;
+    if (px) { ev.preventDefault(); var open = px.getAttribute('data-px') === 'open'; Array.prototype.forEach.call(root.querySelectorAll('details.ha-acc'), function (x) { x.open = open; }); return; }
     if (SH.click(ev, render, load)) return;
     var t = ev.target.closest ? ev.target.closest('[data-tab],[data-ed],[data-mv],[data-dx],[data-cf],[data-act]') : null; if (!t) return;
     if (t.getAttribute('data-tab')) { S.tab = t.getAttribute('data-tab'); S.msg = ''; render(); return; }
@@ -273,6 +277,12 @@ templateEngineOverride: false
     var ed = t.getAttribute('data-ed'), id = t.getAttribute('data-id');
     if (ed === 'user') userDialog(id); else if (ed === 'newuser') userDialog(); else if (ed === 'role') roleDialog(id); else if (ed === 'copy') roleDialog(null, id);
     else if (ed === 'newrole') roleDialog(); else if (ed === 'extra') extraDialog(id); else if (ed === 'newextra') extraDialog();
+  });
+  root.addEventListener('change', function (ev) {
+    var t = ev.target; if (!t || !t.getAttribute || !t.getAttribute('data-pk')) return;
+    var det = t.closest('details.ha-acc'); if (!det) return;
+    var all = det.querySelectorAll('input[data-pk]'); var n = 0; Array.prototype.forEach.call(all, function (i) { if (i.checked) n++; });
+    var c = det.querySelector('.ha-cnt'); if (c) c.textContent = '(' + n + ' von ' + all.length + ')';
   });
   root.addEventListener('submit', function (ev) {
     if (SH.submit(ev, render, load)) return;

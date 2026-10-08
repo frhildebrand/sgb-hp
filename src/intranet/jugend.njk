@@ -179,6 +179,23 @@ permalink: /intranet/jugend/
   #hubRoot .ha-sys { margin-top: 6px; padding-top: 10px; border-top: 2px solid rgba(148,163,184,.25); }
   #hubRoot .ha-sys h4 { margin: 0 0 6px; font: 800 16px ui-rounded, 'SF Pro Rounded', system-ui, sans-serif; text-transform: none; letter-spacing: 0; color: inherit; }
   #hubRoot .ha-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 8px; }
+  #hubRoot .ha-pbar { display: flex; gap: 16px; margin: 4px 0 6px; font-size: 12px; }
+  #hubRoot .ha-pbar a { color: inherit; text-decoration: underline; opacity: .8; }
+  #hubRoot .ha-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+  @media (max-width: 900px) { #hubRoot .ha-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 560px) { #hubRoot .ha-grid { grid-template-columns: 1fr; } }
+  #hubRoot .ha-acc { border-radius: 14px; background: rgba(148,163,184,.14); overflow: hidden; }
+  #hubRoot .ha-acc summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; cursor: pointer; font-weight: 800; font-size: 15px; list-style: none; }
+  #hubRoot .ha-acc summary::-webkit-details-marker { display: none; }
+  #hubRoot .ha-acc summary::before { content: '▸'; font-size: 11px; opacity: .6; margin-right: 8px; transition: transform .15s; }
+  #hubRoot .ha-acc[open] summary::before { transform: rotate(90deg); }
+  #hubRoot .ha-acc summary span:first-child { flex: 1; }
+  #hubRoot .ha-cnt { font-size: 12px; font-weight: 600; color: #64748b; }
+  #hubRoot .ha-accbody { display: flex; flex-direction: column; gap: 10px; padding: 4px 14px 14px; }
+  #hubRoot .ha-acc summary, #hubRoot .ha-cnt { text-transform: none; letter-spacing: 0; color: inherit; }
+  #hubRoot .ha-cnt { color: #64748b; }
+  #hubRoot .ha-dialog .hub-gold { background: #f59e0b; color: #0f172a; font-weight: 900; }
+  #hubRoot .ha-dialog .hub-gold:hover { background: #d97706; }
   #hubRoot .ha-group { border: 1px solid rgba(148,163,184,.3); border-radius: 14px; padding: 8px 12px 10px; margin: 0; }
   #hubRoot .ha-group legend { padding: 0 6px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #64748b; }
   #hubRoot .ha-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
