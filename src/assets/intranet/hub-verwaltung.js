@@ -22,16 +22,16 @@
 
   function load() {
     S.loaded = false; render();
-    return SH.loadAccount().then(function () {
+    // alles gleichzeitig abfragen (statt nacheinander): Konto, Rollen, Katalog, Benutzer
+    var hasTok = !!token();
+    return Promise.all([SH.loadAccount(), hasTok ? get('roles') : null, hasTok ? get('catalog') : null, hasTok ? get('users') : null]).then(function (res) {
       S.me = SH.S.me;
-      if (SH.S.offline) { S.offline = true; S.loaded = true; render(); return null; }
-      if (!S.me) { S.loaded = true; render(); return null; }
-      return Promise.all([get('roles'), get('catalog'), canAny(['system.users', 'system.rechte', 'system.roles']) ? get('users') : Promise.resolve(null)]).then(function (res) {
-        if (!res[0] || !res[1]) { S.offline = true; S.loaded = true; render(); return; }
-        S.offline = false; S.roles = sortRoles(res[0].roles); S.catalog = res[1];
-        if (res[2] && Array.isArray(res[2].users)) { S.users = res[2].users; S.extras = res[2].extras || []; }
-        S.loaded = true; render();
-      });
+      if (SH.S.offline) { S.offline = true; S.loaded = true; render(); return; }
+      if (!S.me) { S.loaded = true; render(); return; }
+      if (!res[1] || !res[2]) { S.offline = true; S.loaded = true; render(); return; }
+      S.offline = false; S.roles = sortRoles(res[1].roles); S.catalog = res[2];
+      if (res[3] && Array.isArray(res[3].users)) { S.users = res[3].users; S.extras = res[3].extras || []; }
+      S.loaded = true; render();
     });
   }
   function access(ops) {

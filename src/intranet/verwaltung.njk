@@ -1,7 +1,7 @@
 ---
 layout: base.njk
-title: SG Barnstorf Intranet
-permalink: /intranet/
+title: SG Barnstorf Verwaltung
+permalink: /intranet/verwaltung/
 ---
 <script>
   (function () {
@@ -12,6 +12,16 @@ permalink: /intranet/
     } catch (e) {}
   })();
 </script>
+<!-- Hintergrund und Fußzeile der ganzen Seite folgen dem gewählten Design (auch bei Hell/Dunkel von Hand) -->
+<style>
+  html, body { background-color: #f1f5f9 !important; }
+  html.dark, html.dark body { background-color: #0b1220 !important; color: #f8fafc; }
+  html.dark .footer { background-color: #0b1120 !important; color: #cbd5e1 !important; }
+  html.dark .footer a, html.dark .footer .menu-label { color: #94a3b8 !important; }
+  html.dark .footer a:hover { color: #e2e8f0 !important; }
+  html.dark .footer .has-text-grey { color: #94a3b8 !important; }
+  html.dark .footer hr.has-background-grey-lighter { background-color: #1e293b !important; }
+</style>
 <style>
   #hubRoot { position: relative; min-height: 70vh; padding-bottom: 48px; font-family: -apple-system, system-ui, 'Helvetica Neue', Arial, sans-serif; color: #0f172a; background: #f1f5f9; }
   .dark #hubRoot { color: #e2e8f0; background: #0b1220; }
@@ -119,4 +129,4 @@ permalink: /intranet/
 <div id="hubRoot" data-system=""><noscript><p style="padding:24px">Dafür wird JavaScript gebraucht.</p></noscript></div>
 <script src="/assets/intranet/hub-config.js" defer></script>
 <script src="/assets/intranet/hub-common.js" defer></script>
-<script src="/assets/intranet/hub.js" defer></script>
+<script src="/assets/intranet/hub-verwaltung.js" defer></script>

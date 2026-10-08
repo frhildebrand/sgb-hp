@@ -15,7 +15,7 @@ window.HubTheme = (function () {
 })();
 
 window.HubShell = (function () {
-  var API = window.HUB_API || 'https://script.google.com/macros/s/AKfycbyMM0bC9AvZjJZMFA2sT6IIKW9V_RAvl6Z0N2x48Ux8R4rk9vdV0YFPnIeRHB6d8_DY/exec';
+  var API = window.HUB_API || 'https://script.google.com/macros/s/AKfycby7gQCbTizF8qBnrfLgtEMMsdUu0ZG00AaQ8mrLn5wThBf_G8GiqBUS5knb4QElBVVh/exec';
   var TIMEOUT = window.HUB_TIMEOUT_MS || 15000;
   var HUB_URL = '/intranet/';
   var DIAG = [];
@@ -24,6 +24,7 @@ window.HubShell = (function () {
   function esc(s) { return String(s === undefined || s === null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   var S = { session: lsGet('session4', null) || { token: '', user: '' }, me: null, systems: [], loginRoles: [], offline: false, menu: false, dialog: null, mode: 'user', error: '', busy: false, info: '' };
   function token() { return (S.session && S.session.token) || ''; }
+  // Gemerkter Name, falls noch kein Konto geladen ist (zeigt die Anmeldung auch bei langsamem Netz)
   function has(p) { return !!(S.me && S.me.perms && S.me.perms.indexOf(p) >= 0); }
   function canAdmin() { return ['system.users', 'system.roles', 'system.rechte', 'system.passwords'].some(has); }
 
@@ -56,19 +57,31 @@ window.HubShell = (function () {
   }
 
   // ---------- Konto laden: wer bin ich, welche Systeme sehe ich ----------
+  // Der zuletzt bekannte Stand liegt im Browser (hubcache). So erscheint die Seite beim Aktualisieren sofort mit
+  // Name und Systemen; im Hintergrund wird nur noch geprüft. Abgemeldet wird nur, wenn das Script die Anmeldung
+  // ausdrücklich für ungültig erklärt, nicht bei langsamem Netz.
+  function saveCache() { lsSet('hubcache', { token: token(), me: S.me, systems: S.systems, loginRoles: S.loginRoles, ts: Date.now() }); }
+  function restore() {
+    var c = lsGet('hubcache', null);
+    if (!c || (c.token || '') !== token() || !Array.isArray(c.systems)) return false;
+    if (token() && !c.me) return false;
+    S.me = c.me || null; S.systems = c.systems; S.loginRoles = c.loginRoles || []; S.offline = false; S.restored = true;
+    return true;
+  }
   function loadAccount() {
     DIAG.length = 0;
-    var tm = token() ? get('me') : Promise.resolve(null);
-    return Promise.all([tm, get('systems'), get('roles')]).then(function (res) {
-      var me = res[0], sys = res[1], roles = res[2];
-      if (me && me.status === 'success') S.me = me;
-      else {
-        S.me = null;
-        if (me && me.code === 'auth' && token()) { S.session = { token: '', user: '' }; lsSet('session4', S.session); }
+    return get('hub').then(function (h) {
+      if (!h || h.status !== 'success') {
+        if (h) DIAG.push('hub: Antwort ' + JSON.stringify(h).slice(0, 120));
+        if (S.restored) { S.stale = true; return; }          // alter Stand bleibt sichtbar
+        S.me = null; S.offline = true; S.systems = []; return;
       }
-      if (!sys || sys.status !== 'success') { if (sys) DIAG.push('systems: Antwort ' + JSON.stringify(sys).slice(0, 120)); S.offline = true; S.systems = []; }
-      else { S.offline = false; S.systems = sys.systems || []; }
-      S.loginRoles = roles && roles.roles ? roles.roles.filter(function (r) { return r.id !== 'gast' && r.hasPw; }) : [];
+      S.stale = false; S.restored = false; S.offline = false;
+      if (h.authFailed) { S.session = { token: '', user: '' }; lsSet('session4', S.session); S.me = null; }
+      else S.me = h.me && h.me.status === 'success' ? h.me : null;
+      S.systems = h.systems || [];
+      S.loginRoles = (h.roles || []).filter(function (r) { return r.id !== 'gast' && r.hasPw; });
+      saveCache();
     });
   }
 
@@ -129,7 +142,7 @@ window.HubShell = (function () {
     if (a === 'logout') {
       var tk = token(); S.menu = false;
       S.session = { token: '', user: '' }; lsSet('session4', S.session); try { localStorage.setItem('userRole', 'gast'); } catch (e) { /* egal */ }
-      S.me = null; if (tk) post({ action: 'logout', token: tk });
+      S.me = null; S.systems = []; S.restored = false; lsSet('hubcache', null); if (tk) post({ action: 'logout', token: tk });
       reload(); return true;
     }
     return false;
@@ -167,5 +180,5 @@ window.HubShell = (function () {
     }
     return false;
   }
-  return { S: S, API: API, DIAG: DIAG, esc: esc, lsGet: lsGet, lsSet: lsSet, token: token, has: has, canAdmin: canAdmin, get: get, post: post, loadAccount: loadAccount, header: header, overlay: overlay, click: click, submit: submit, HUB_URL: HUB_URL };
+  return { S: S, API: API, DIAG: DIAG, esc: esc, lsGet: lsGet, lsSet: lsSet, token: token, has: has, canAdmin: canAdmin, get: get, post: post, loadAccount: loadAccount, restore: restore, header: header, overlay: overlay, click: click, submit: submit, HUB_URL: HUB_URL };
 })();

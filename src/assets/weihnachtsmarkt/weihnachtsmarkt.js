@@ -4,7 +4,7 @@
 // angezeigt. Danach wird im Hintergrund mit Google Sheets
 // synchronisiert.
 // ==========================================================
-const GOOGLE_SCRIPT_URL = window.HUB_API || 'https://script.google.com/macros/s/AKfycbyMM0bC9AvZjJZMFA2sT6IIKW9V_RAvl6Z0N2x48Ux8R4rk9vdV0YFPnIeRHB6d8_DY/exec';
+const GOOGLE_SCRIPT_URL = window.HUB_API || 'https://script.google.com/macros/s/AKfycby7gQCbTizF8qBnrfLgtEMMsdUu0ZG00AaQ8mrLn5wThBf_G8GiqBUS5knb4QElBVVh/exec';
 const APP_VERSION = 11;            // Stand dieser Dateien
 const SCRIPT_VERSION_NEEDED = 11;   // so neu muss das Google-Script mindestens sein
 window.syncTimes = {};
@@ -5807,8 +5807,9 @@ window.HILFE = HILFE;
 
 function renderAdmin() {
   const show = (id, on) => { const el = document.getElementById(id); if (el) el.classList.toggle('hidden', !on); };
-  const canBenutzer = window.can('system.users');
-  const canZugang = window.canAny(['system.roles', 'system.rechte', 'system.passwords']);
+  // Benutzer, Rollen und Rechte werden im Hub verwaltet (/intranet/verwaltung/), hier gibt es dafür keine Register mehr
+  const canBenutzer = false;
+  const canZugang = false;
   if ((window.adminTab === 'benutzer' && !canBenutzer) || (window.adminTab === 'zugang' && !canZugang)) window.adminTab = 'verwaltung';
   show('adminTabBenutzer', canBenutzer);
   show('adminTabZugang', canZugang);
@@ -6103,7 +6104,34 @@ function removePrintFallback() {
   if (printFallbackEl) { try { printFallbackEl.remove(); } catch (e) { /* egal */ } }
   printFallbackEl = null;
 }
+// Druck in einem eigenen Tab: Das Blatt steht allein auf einer weißen Seite. Das funktioniert auf dem iPad zuverlässiger
+// als das Drucken der Portalseite. Oben stehen eine Drucken-Taste und der Hinweis auf Teilen / In Dateien sichern (PDF).
+const PRINT_DOC_CSS = 'body{margin:0;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;font-size:11pt}' +
+  '.bar{position:sticky;top:0;display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px 14px;background:#f1f5f9;border-bottom:1px solid #cbd5e1;font:600 13px system-ui,sans-serif}' +
+  '.bar button{padding:10px 16px;border:0;border-radius:10px;background:#f59e0b;color:#0f172a;font:800 15px system-ui,sans-serif}' +
+  '#printSheet{max-width:210mm;margin:0 auto;padding:14mm}' +
+  '@page{size:A4;margin:14mm}@media print{.bar{display:none}#printSheet{padding:0;max-width:none}}' +
+  'h1{font-size:24pt;font-weight:400;margin:0}h2{font-size:16pt;font-weight:400;margin:12pt 0 4pt}h3{font-size:12pt;margin:10pt 0 2pt}' +
+  '.ps-head{display:flex;justify-content:space-between;align-items:flex-start}.ps-head img{max-height:20mm;max-width:45mm}' +
+  '.ps-page{page-break-after:always;page-break-inside:avoid}.ps-page:last-child{page-break-after:auto}' +
+  'table{width:100%;border-collapse:collapse;margin-top:4pt;page-break-inside:avoid}th,td{border:1px solid #000;padding:5pt 6pt;text-align:left;vertical-align:top}th{background:#eee;font-weight:700}' +
+  '.ps-slots td,.ps-teig td{padding:3pt 6pt;box-sizing:border-box}.ps-slots .c1{width:24%}.ps-slots .c3{width:20%}.ps-teig td{width:50%}' +
+  '.ps-img{page-break-inside:avoid;margin:6pt 0}.ps-img img{max-width:100%;max-height:120mm}svg{max-width:100%;height:auto}';
+function openPrintWindow(html) {
+  let w = null;
+  try { w = window.open('', '_blank'); } catch (e) { w = null; }
+  if (!w) return false;
+  try {
+    w.document.open();
+    w.document.write('<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Drucken</title><style>' + PRINT_DOC_CSS + '</style></head><body>' +
+      '<div class="bar"><button type="button" onclick="window.print()">🖨️ Drucken</button><span>iPad: Alternativ oben auf Teilen tippen, dann „Drucken“ oder „In Dateien sichern“ (PDF).</span></div><div id="printSheet">' + html + '</div></body></html>');
+    w.document.close();
+    try { w.focus(); } catch (e) { /* egal */ }
+  } catch (e) { return false; }
+  return true;
+}
 window.printHtml = function (html) {
+  if (openPrintWindow(html)) return;
   let sheet = document.getElementById('printSheet');
   if (!sheet) {
     sheet = mk('div', { id: 'printSheet' });
@@ -6120,7 +6148,7 @@ window.printHtml = function (html) {
   setTimeout(() => {
     if (fired || printFallbackEl) return;
     const btn = mk('button', { class: 'fixed right-4 bottom-20 z-[80] px-5 py-3 rounded-2xl bg-amber-500 text-slate-950 font-black shadow-2xl border border-amber-600', text: '🖨️ Drucken' });
-    btn.onclick = () => { removePrintFallback(); try { window.print(); } catch (e) { notify('Drucken ist hier nicht möglich. Öffne das Portal in Safari.'); } };
+    btn.onclick = () => { removePrintFallback(); if (openPrintWindow(html)) return; try { window.print(); } catch (e) { notify('Drucken ist hier nicht möglich. Öffne das Portal in Safari.'); } };
     document.body.appendChild(btn);
     printFallbackEl = btn;
     setTimeout(() => { if (printFallbackEl === btn) removePrintFallback(); }, 12000);

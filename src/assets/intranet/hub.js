@@ -32,7 +32,7 @@
     return out;
   }
   function render() { root.innerHTML = SH.header('SG Barnstorf · Intranet') + '<main class="hub-main">' + body() + '</main>' + SH.overlay(); }
-  function load() { state.loaded = false; render(); return SH.loadAccount().then(function () { state.loaded = true; render(); }); }
+  function load() { state.loaded = SH.restore(); render(); return SH.loadAccount().then(function () { state.loaded = true; render(); }); }
 
   root.addEventListener('click', function (ev) {
     if (SH.click(ev, render, load)) return;
