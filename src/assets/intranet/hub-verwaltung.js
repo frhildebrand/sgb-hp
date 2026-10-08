@@ -2,24 +2,16 @@
    Oben stehen die Schalter für die Systeme, darunter die Rechte je System. */
 (function () {
   'use strict';
-  var API = 'https://script.google.com/macros/s/AKfycbz5_j65a248FUib9POAAWryFHFh6-613bhVpXUaBuTIpDEHx_kUOrOnh-NVhBduT8Ks/exec';
   var root = document.getElementById('hubRoot');
   if (!root) return;
+  var SH = window.HubShell;
+  if (!SH) { root.textContent = 'Der Grundbaustein hub-common.js fehlt.'; return; }
   var HUB_URL = '/intranet/';
-  var S = { session: lsGet('session4', null) || { token: '', user: '' }, me: null, roles: [], users: [], extras: [], catalog: null, tab: 'benutzer', loaded: false, offline: false, dialog: null, msg: '' };
-
-  function lsGet(k, d) { try { var r = localStorage.getItem(k); return r === null ? d : JSON.parse(r); } catch (e) { return d; } }
-  function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* egal */ } }
-  function esc(s) { return String(s === undefined || s === null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function token() { return (S.session && S.session.token) || ''; }
-  function get(action, params) {
-    var qs = new URLSearchParams(Object.assign({ action: action }, params || {}));
-    if (token() && !qs.has('token')) qs.set('token', token());
-    return fetch(API + '?' + qs.toString(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
-  }
-  function post(payload) {
-    return fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
-  }
+  var S = { me: null, roles: [], users: [], extras: [], catalog: null, tab: 'benutzer', loaded: false, offline: false, dialog: null, msg: '' };
+  var esc = SH.esc;
+  function token() { return SH.token(); }
+  function get(a, p) { return SH.get(a, p); }
+  function post(o) { return SH.post(o); }
   function has(p) { return !!(S.me && S.me.perms && S.me.perms.indexOf(p) >= 0); }
   function canAny(list) { return list.some(has); }
   var CAN_ENTER = ['system.users', 'system.roles', 'system.rechte', 'system.passwords'];
@@ -30,9 +22,9 @@
 
   function load() {
     S.loaded = false; render();
-    var pm = token() ? get('me') : Promise.resolve(null);
-    return pm.then(function (me) {
-      S.me = me && me.status === 'success' ? me : null;
+    return SH.loadAccount().then(function () {
+      S.me = SH.S.me;
+      if (SH.S.offline) { S.offline = true; S.loaded = true; render(); return null; }
       if (!S.me) { S.loaded = true; render(); return null; }
       return Promise.all([get('roles'), get('catalog'), canAny(['system.users', 'system.rechte', 'system.roles']) ? get('users') : Promise.resolve(null)]).then(function (res) {
         if (!res[0] || !res[1]) { S.offline = true; S.loaded = true; render(); return; }
@@ -186,15 +178,12 @@
     if (!S.extras.length) return '<p class="hub-sub">Sonderrechte sind Pakete aus Einzelrechten, die du einzelnen Benutzern zusätzlich zu ihren Rollen gibst.</p>';
     return S.extras.map(function (x) { return '<div class="ha-item"><div class="ha-main"><b>' + esc(x.name) + '</b> ' + sysBadges(x.perms) + '<div class="ha-sub">' + esc(x.desc || '') + ' · ' + (x.perms || []).length + ' Rechte</div></div><button type="button" class="hub-btn hub-ghost" data-ed="extra" data-id="' + esc(x.id) + '">Bearbeiten</button></div>'; }).join('');
   }
-  function head() {
-    var who = S.me ? '<span class="hub-pill">' + (S.me.user ? '👤 ' : '🔑 ') + esc(S.me.user || (S.me.role && S.me.role.name) || '') + '</span>' : '';
-    return '<header class="hub-head"><a class="hub-logo" href="' + HUB_URL + '" aria-label="Zum Hub"><img src="/assets/weihnachtsmarkt/sharks-logo.png" alt=""></a><h1>Verwaltung</h1><div class="hub-user">' + who + (window.HubTheme ? '<button type="button" class="hub-btn hub-ghost" data-act="theme">' + esc(window.HubTheme.label()) + '</button>' : '') + '<a class="hub-btn hub-ghost" href="' + HUB_URL + '">← Hub</a></div></header>';
-  }
+  function head() { return SH.header('Verwaltung'); }
   function body() {
     if (!S.loaded) return '<section class="hub-grid"><div class="hub-skel"></div><div class="hub-skel"></div></section>';
-    if (!S.me) return '<section class="hub-card hub-offline"><h2>Bitte anmelden</h2><p class="hub-sub">Die Verwaltung ist nur mit Anmeldung erreichbar.</p><a class="hub-btn hub-gold" href="' + HUB_URL + '">Zum Hub</a></section>';
+    if (!S.me) return '<section class="hub-card hub-offline"><h2>Bitte anmelden</h2><p class="hub-sub">Die Verwaltung ist nur mit Anmeldung erreichbar.</p><button type="button" class="hub-btn hub-gold" data-sh="login">Anmelden</button></section>';
     if (!canAny(CAN_ENTER)) return '<section class="hub-card hub-offline"><h2>Kein Zugriff</h2><p class="hub-sub">Für dein Konto ist die Verwaltung nicht freigeschaltet.</p><a class="hub-btn hub-ghost" href="' + HUB_URL + '">← Hub</a></section>';
-    if (S.offline) return '<section class="hub-card hub-offline"><h2>Keine Verbindung</h2><p class="hub-sub">Das Konto-System ist gerade nicht erreichbar.</p><button type="button" class="hub-btn hub-gold" data-act="retry">Nochmal versuchen</button></section>';
+    if (S.offline) return '<section class="hub-card hub-offline"><h2>Keine Verbindung</h2><p class="hub-sub">Das Konto-System ist gerade nicht erreichbar.</p><button type="button" class="hub-btn hub-gold" data-act="retry">Nochmal versuchen</button><details class="hub-diag"><summary>Technische Details</summary><pre>' + esc(SH.DIAG.length ? SH.DIAG.join('\n') : 'Keine Angaben.') + '</pre></details></section>';
     var tabs = [['benutzer', 'Benutzer'], ['rollen', 'Rollen'], ['extras', 'Sonderrechte']].map(function (t) { return '<button type="button" data-tab="' + t[0] + '" class="' + (S.tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('');
     var inner = '';
     if (S.tab === 'benutzer') inner = '<div class="ha-bar"><h2>👤 Benutzer</h2>' + (has('system.users') ? '<button type="button" class="hub-btn hub-gold" data-ed="newuser">Neuer Benutzer</button>' : '') + '</div>' + (has('system.users') ? usersHtml() : '<p class="hub-sub">Du darfst Benutzer nicht ansehen.</p>');
@@ -209,11 +198,12 @@
   }
   function render() {
     var keep = root.querySelector('.ha-body') ? root.querySelector('.ha-body').scrollTop : 0;
-    root.innerHTML = head() + '<main class="hub-main">' + body() + '</main>' + dialogOrConfirm();
+    root.innerHTML = head() + '<main class="hub-main">' + body() + '</main>' + SH.overlay() + dialogOrConfirm();
     var b = root.querySelector('.ha-body'); if (b && keep) b.scrollTop = keep;
   }
 
   root.addEventListener('click', function (ev) {
+    if (SH.click(ev, render, load)) return;
     var t = ev.target.closest ? ev.target.closest('[data-tab],[data-ed],[data-mv],[data-dx],[data-cf],[data-act]') : null; if (!t) return;
     if (t.getAttribute('data-tab')) { S.tab = t.getAttribute('data-tab'); S.msg = ''; render(); return; }
     if (t.getAttribute('data-act') === 'retry') { load(); return; }
@@ -229,6 +219,7 @@
     else if (ed === 'newrole') roleDialog(); else if (ed === 'extra') extraDialog(id); else if (ed === 'newextra') extraDialog();
   });
   root.addEventListener('submit', function (ev) {
+    if (SH.submit(ev, render, load)) return;
     if (!ev.target.getAttribute || !ev.target.getAttribute('data-dlg')) return;
     ev.preventDefault();
     var d = S.dialog; if (!d || !d.submit) return;
