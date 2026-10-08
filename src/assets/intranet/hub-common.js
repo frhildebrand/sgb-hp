@@ -15,7 +15,7 @@ window.HubTheme = (function () {
 })();
 
 window.HubShell = (function () {
-  var API = window.HUB_API || 'https://script.google.com/macros/s/AKfycby7gQCbTizF8qBnrfLgtEMMsdUu0ZG00AaQ8mrLn5wThBf_G8GiqBUS5knb4QElBVVh/exec';
+  var API = window.HUB_API || 'https://script.google.com/macros/s/AKfycbyMM0bC9AvZjJZMFA2sT6IIKW9V_RAvl6Z0N2x48Ux8R4rk9vdV0YFPnIeRHB6d8_DY/exec';
   var TIMEOUT = window.HUB_TIMEOUT_MS || 15000;
   var HUB_URL = '/intranet/';
   var DIAG = [];
