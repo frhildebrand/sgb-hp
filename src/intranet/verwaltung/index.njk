@@ -16,7 +16,7 @@ permalink: /intranet/verwaltung/
   #hubRoot { position: relative; min-height: 70vh; padding-bottom: 48px; font-family: -apple-system, system-ui, 'Helvetica Neue', Arial, sans-serif; color: #0f172a; background: #f1f5f9; }
   .dark #hubRoot { color: #e2e8f0; background: #0b1220; }
   #hubRoot * { box-sizing: border-box; }
-  #hubRoot .hub-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 14px 24px; color: #0f172a; background: #ffffff; border-bottom: 1px solid #e2e8f0; }
+  #hubRoot .hub-head { position: relative; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 14px 24px; color: #0f172a; background: #ffffff; border-bottom: 1px solid #e2e8f0; }
   .dark #hubRoot .hub-head { color: #f8fafc; background: #111a2b; border-bottom-color: #1f2a3d; }
   #hubRoot .hub-logo { display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 14px; background: #0f2a43; }
   #hubRoot .hub-logo img { height: 30px; width: auto; display: block; }
@@ -24,7 +24,7 @@ permalink: /intranet/verwaltung/
   #hubRoot .hub-user { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   #hubRoot .hub-pill { padding: 8px 14px; border-radius: 12px; font-weight: 700; font-size: 13px; background: #eef2f7; border: 1px solid #e2e8f0; }
   .dark #hubRoot .hub-pill { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.14); }
-  #hubRoot .hub-main { max-width: 64rem; margin: 0 auto; padding: 28px 20px 8px; }
+  #hubRoot .hub-main { max-width: none; margin: 0; padding: 24px 24px 8px; }
   #hubRoot .hub-hello { margin: 0 0 18px; font: 800 clamp(1.4rem, 3vw, 1.9rem) ui-rounded, 'SF Pro Rounded', system-ui, sans-serif; }
   #hubRoot .hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-bottom: 22px; }
   #hubRoot .hub-card { display: block; background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 22px; box-shadow: 0 1px 3px rgba(15,23,42,.06); margin-bottom: 18px; }
@@ -49,7 +49,16 @@ permalink: /intranet/verwaltung/
   #hubRoot .hub-gold[disabled] { opacity: .6; }
   #hubRoot .hub-ghost { background: transparent; border: 1px solid #cbd5e1; color: inherit; }
   .dark #hubRoot .hub-ghost { border-color: #334155; }
-  #hubRoot .hub-loginbox { max-width: 28rem; }
+  #hubRoot .hub-burger { width: 44px; height: 44px; border-radius: 12px; border: 1px solid #cbd5e1; background: transparent; color: inherit; font-size: 20px; cursor: pointer; }
+  .dark #hubRoot .hub-burger { border-color: #334155; }
+  #hubRoot .hub-menu-bg { position: fixed; inset: 0; z-index: 80; }
+  #hubRoot .hub-menu { position: absolute; z-index: 85; top: calc(100% + 8px); right: 16px; width: min(22rem, calc(100vw - 32px)); max-height: 80vh; overflow-y: auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 18px; padding: 10px; box-shadow: 0 18px 50px rgba(15,23,42,.25); }
+  .dark #hubRoot .hub-menu { background: #131d30; border-color: #1f2a3d; }
+  #hubRoot .hub-mi { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px; border-radius: 12px; border: 0; background: transparent; color: inherit; font: 700 15px -apple-system, system-ui, sans-serif; text-decoration: none; cursor: pointer; text-align: left; }
+  #hubRoot .hub-mi:hover { background: rgba(148,163,184,.16); }
+  #hubRoot .hub-mic { width: 26px; text-align: center; font-size: 18px; }
+  #hubRoot .hub-mlabel { padding: 8px 12px 4px; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #64748b; }
+  #hubRoot .hub-msep { height: 1px; margin: 6px 8px; background: rgba(148,163,184,.3); }
   #hubRoot .hub-tabs { display: flex; gap: 6px; padding: 5px; border-radius: 14px; background: #e2e8f0; margin-bottom: 14px; }
   .dark #hubRoot .hub-tabs { background: #1b2740; }
   #hubRoot .hub-tabs button { flex: 1; border: 0; border-radius: 10px; padding: 9px; font: 700 13px -apple-system, system-ui, sans-serif; background: transparent; color: inherit; cursor: pointer; }
@@ -108,5 +117,6 @@ permalink: /intranet/verwaltung/
   #hubRoot .hub-note { display: block; }
 </style>
 <div id="hubRoot" data-system=""><noscript><p style="padding:24px">Dafür wird JavaScript gebraucht.</p></noscript></div>
+<script src="/assets/intranet/hub-config.js" defer></script>
 <script src="/assets/intranet/hub-common.js" defer></script>
 <script src="/assets/intranet/hub-verwaltung.js" defer></script>
