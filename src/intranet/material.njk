@@ -14,7 +14,7 @@ permalink: /intranet/material/
 </script>
 <!-- Hintergrund und Fußzeile der ganzen Seite folgen dem gewählten Design (auch bei Hell/Dunkel von Hand) -->
 <style>
-  html, body { background-color: #f1f5f9 !important; }
+  html, body { background-color: #f3f1ed !important; }
   html.dark, html.dark body { background-color: #0b1220 !important; color: #f8fafc; }
   html.dark .footer { background-color: #0b1120 !important; color: #cbd5e1 !important; }
   html.dark .footer a, html.dark .footer .menu-label { color: #94a3b8 !important; }
@@ -23,7 +23,7 @@ permalink: /intranet/material/
   html.dark .footer hr.has-background-grey-lighter { background-color: #1e293b !important; }
 </style>
 <style>
-  #hubRoot { position: relative; min-height: 70vh; padding-bottom: 48px; font-family: -apple-system, system-ui, 'Helvetica Neue', Arial, sans-serif; color: #0f172a; background: #f1f5f9; }
+  #hubRoot { position: relative; min-height: 70vh; padding-bottom: 48px; font-family: -apple-system, system-ui, 'Helvetica Neue', Arial, sans-serif; color: #0f172a; background: #f3f1ed; }
   .dark #hubRoot { color: #e2e8f0; background: #0b1220; }
   #hubRoot * { box-sizing: border-box; }
   #hubRoot .hub-head { position: relative; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 14px 24px; color: #0f172a; background: #ffffff; border-bottom: 1px solid #e2e8f0; }
@@ -77,6 +77,13 @@ permalink: /intranet/material/
   .dark #hubRoot .hub-ghost { border-color: #334155; }
   #hubRoot .hub-burger { width: 44px; height: 44px; border-radius: 12px; border: 1px solid #cbd5e1; background: transparent; color: inherit; font-size: 20px; cursor: pointer; }
   .dark #hubRoot .hub-burger { border-color: #334155; }
+  /* Kopfzeile im Stil des Weihnachtsmarkts: dunkler Verlauf, goldene Linie, Schatten, helle Glas-Buttons */
+  #hubRoot .hub-head, .dark #hubRoot .hub-head { position: sticky; top: 0; z-index: 40; color: #fff; background: linear-gradient(135deg, #0a1f36, #12395c 55%, #0d2b47); border-bottom: 4px solid #d6a23a; box-shadow: 0 8px 20px rgba(0,0,0,.30); }
+  #hubRoot .hub-head h1 { color: #fff; letter-spacing: .2px; }
+  #hubRoot .hub-head .hub-logo { width: 50px; height: 50px; border-radius: 15px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.24); }
+  #hubRoot .hub-head .hub-pill, #hubRoot .hub-head .hub-ghost, #hubRoot .hub-head .hub-burger, .dark #hubRoot .hub-head .hub-pill, .dark #hubRoot .hub-head .hub-ghost, .dark #hubRoot .hub-head .hub-burger { background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.24); color: #fff; }
+  #hubRoot .hub-head .hub-gold { background: #d6a23a; color: #0f172a; }
+  #hubRoot .hub-head .hub-gold:hover { background: #c4912c; }
   #hubRoot .hub-menu-bg { position: fixed; inset: 0; z-index: 80; }
   #hubRoot .hub-menu { position: absolute; z-index: 85; top: calc(100% + 8px); right: 16px; width: min(22rem, calc(100vw - 32px)); max-height: 80vh; overflow-y: auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 18px; padding: 10px; box-shadow: 0 18px 50px rgba(15,23,42,.25); }
   .dark #hubRoot .hub-menu { background: #131d30; border-color: #1f2a3d; }
@@ -249,6 +256,53 @@ permalink: /intranet/material/
   #hubRoot .hub-nrow:last-child { border-bottom: 0; }
   #hubRoot .hub-next { margin-top: 16px; }
   #hubRoot .hub-next h3 { margin: 0 0 6px; font-size: 15px; font-weight: 800; }
+
+  /* ===== Gemeinsames Farbschema: Vereins-Marineblau, Gold nur als Akzent, Systemfarbe nur als Streifen ===== */
+  #hubRoot { --navy: #12395c; --navy-d: #0a1f36; --gold: #d6a23a; --ok: #059669; --warn: #d97706; --bad: #dc2626; --info: #2563eb; --line: #e7e2d9; --soft: #7a7365; }
+  .dark #hubRoot { --line: #1f2a3d; --soft: #94a3b8; }
+  #hubRoot .hub-card, #hubRoot .wm-card { border-color: var(--line); }
+  #hubRoot .wm-tab.on { background: var(--navy); border-color: var(--navy); color: #fff; box-shadow: 0 2px 8px rgba(18,57,92,.35); }
+  .dark #hubRoot .wm-tab.on { background: #2b5f93; border-color: #2b5f93; }
+  #hubRoot .m-chip.on { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .dark #hubRoot .m-chip.on { background: #2b5f93; border-color: #2b5f93; }
+  /* Konto-Knopf mit Initialen */
+  #hubRoot .hub-avatar { display: inline-flex; align-items: center; gap: 10px; padding: 5px 14px 5px 5px; border-radius: 999px; border: 1px solid rgba(255,255,255,.24); background: rgba(255,255,255,.14); color: #fff; font: 700 14px -apple-system, system-ui, sans-serif; cursor: pointer; }
+  #hubRoot .hub-avatar:hover { background: rgba(255,255,255,.22); }
+  #hubRoot .hub-av { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; background: var(--gold); color: #0a1f36; font: 900 15px ui-rounded, 'SF Pro Rounded', system-ui, sans-serif; letter-spacing: .02em; }
+  #hubRoot .hub-avn { max-width: 11em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #hubRoot .hub-avr { display: block; font-size: 11px; font-weight: 600; opacity: .75; line-height: 1.1; }
+  @media (max-width: 720px) { #hubRoot .hub-avn { display: none; } #hubRoot .hub-avatar { padding: 5px; } #hubRoot .hub-head { padding: 12px 14px; } #hubRoot .hub-head h1 { font-size: 18px; } }
+  #hubRoot .hub-menu.acc { right: 16px; }
+  /* Startseite */
+  #hubRoot .hub-sec { margin: 0 0 30px; }
+  #hubRoot .hub-sech { margin: 0 0 12px; font: 800 12px -apple-system, system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--soft); }
+  #hubRoot .hub-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  @media (max-width: 760px) { #hubRoot .hub-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } }
+  @media (max-width: 420px) { #hubRoot .hub-tiles { grid-template-columns: 1fr; } }
+  #hubRoot .hub-t2 { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 22px 20px 18px; min-height: 168px; border-radius: 22px; background: #fff; border: 1px solid var(--line); box-shadow: 0 1px 3px rgba(60,50,30,.06); color: inherit; text-decoration: none; overflow: hidden; transition: transform .12s, box-shadow .12s; }
+  .dark #hubRoot .hub-t2 { background: #131d30; box-shadow: none; }
+  #hubRoot .hub-t2::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: var(--acc); }
+  #hubRoot .hub-t2:active { transform: scale(.98); }
+  #hubRoot .hub-t2:hover { box-shadow: 0 6px 18px rgba(60,50,30,.12); }
+  #hubRoot .hub-t2ic { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 16px; font-size: 30px; background: color-mix(in srgb, var(--acc) 16%, transparent); }
+  #hubRoot .hub-t2n { font: 800 19px ui-rounded, 'SF Pro Rounded', system-ui, sans-serif; line-height: 1.15; }
+  #hubRoot .hub-t2d { font-size: 13px; line-height: 1.4; color: var(--soft); }
+  #hubRoot .hub-t2h { margin-top: auto; display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 800; }
+  #hubRoot .hub-t2h::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--ok); }
+  #hubRoot .hub-t2h.warn::before { background: var(--warn); }
+  #hubRoot .hub-t2h.bad::before { background: var(--bad); }
+  #hubRoot .hub-t2h.info::before { background: var(--info); }
+  #hubRoot .hub-t2h.none::before { background: #cbd5e1; }
+  #hubRoot .hub-t2h.none { font-weight: 600; color: var(--soft); }
+  #hubRoot .hub-main { max-width: 1180px; margin: 0 auto; padding: 28px 24px 8px; }
+  #hubRoot .hub-nextgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 8px; }
+  @media (max-width: 760px) { #hubRoot .hub-nextgrid { grid-template-columns: 1fr; } }
+  #hubRoot .hub-nextgrid .hub-card { padding: 22px 22px 14px; margin: 0; }
+  #hubRoot .hub-nextgrid h3 { margin: 0 0 10px; font-size: 16px; }
+  #hubRoot .hub-nrow { padding: 12px 0; }
+  #hubRoot .hub-nrow b { font-weight: 800; }
+  #hubRoot .hub-nmeta { display: block; font-size: 12px; color: var(--soft); margin-top: 2px; }
+  #hubRoot .hub-over { color: var(--bad); font-weight: 800; }
 </style>
 <div id="hubRoot" data-modul="material"><noscript><p style="padding:24px">Dafür wird JavaScript gebraucht.</p></noscript></div>
 <script src="/intranet/js/hub-config.js" defer></script>

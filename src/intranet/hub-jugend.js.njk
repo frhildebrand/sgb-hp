@@ -1,0 +1,209 @@
+---
+permalink: /intranet/js/hub-jugend.js
+layout: false
+eleventyExcludeFromCollections: true
+templateEngineOverride: false
+---
+/* Jugend: Abzeichen (mit eigener Liste) und die Jugendkasse (Buchungen, Auslagen, Budgets, Kassensturz, Monatsabschluss, Kassenbuch). */
+(function () {
+  'use strict';
+  var M = window.HubMod; if (!M) return;
+  var esc = M.esc;
+  var DEF_ABZ = ['DLA Bronze (Hai)', 'DLA Silber', 'DLA Gold'];
+  var DEF_KATS = ['Material', 'Veranstaltung', 'Ausflug / Freizeit', 'Pokale / Preise', 'Verpflegung', 'Sonstiges'];
+  function fd(iso) { return iso ? M.fmtDate(iso) : ''; }
+  function fs(iso) { return iso ? M.fmtDate(iso, true) : ''; }
+  function ym(iso) { return String(iso || '').slice(0, 7); }
+  function lower(s) { return String(s || '').toLowerCase(); }
+
+  /* ================= Abzeichen ================= */
+  function abzList() { var d = M.find('abzListe', 'main'); var l = d && Array.isArray(d.list) && d.list.length ? d.list : DEF_ABZ; return l; }
+  var abzTab = {
+    id: 'abz', label: 'Abzeichen', coll: 'abzeichen', view: ['jugend.abzeichen.view'], edit: ['jugend.abzeichen.edit'], addLabel: 'Abzeichen eintragen', search: ['name', 'abz', 'notiz'], sortBy: { k: 'date', dir: -1 },
+    hint: 'Wer hat wann welches Abzeichen abgelegt?',
+    get fields() { return [{ k: 'name', t: 'text', label: 'Name', req: true, list: 'mPeople' }, { k: 'abz', t: 'sel', label: 'Abzeichen', opts: abzList() }, { k: 'date', t: 'date', label: 'Abgelegt am' }, { k: 'notiz', t: 'area', label: 'Notiz', rows: 2 }]; },
+    newItem: function () { return { date: M.today(), abz: abzList()[0] }; },
+    beforeSave: function (it) { it.title = it.name; },
+    summary: function (all) {
+      var cnt = {}; all.forEach(function (x) { cnt[x.abz] = (cnt[x.abz] || 0) + 1; });
+      var edit = M.anyCan(['jugend.abzeichen.edit']);
+      return '<div class="m-chips">' + abzList().map(function (a) { return '<span class="m-chip">' + esc(a) + ': <b>' + (cnt[a] || 0) + '</b></span>'; }).join('') + '</div>' + (edit ? '<p><button type="button" class="wm-btn" data-ma="abzliste">⚙️ Abzeichen-Liste bearbeiten</button></p>' : '');
+    },
+    card: function (it) { return { title: it.name, badges: it.abz ? M.badge(it.abz, 'blue') : '', sub: fd(it.date), body: it.notiz ? '<pre>' + esc(it.notiz) + '</pre>' : '' }; }
+  };
+
+  /* ================= Jugendkasse ================= */
+  function cfg() { return M.find('kasseCfg', 'main'); }
+  function kats() { var c = cfg(); return c && Array.isArray(c.kats) && c.kats.length ? c.kats : DEF_KATS; }
+  function canOk() { return M.can('jugend.kasse.bestaetigen'); }
+  function canBook() { return M.can('jugend.kasse.buchen'); }
+  function canAdm() { return M.can('jugend.kasse.verwalten'); }
+  function closedSet() { var s = {}; M.items('kasseAbschluss').forEach(function (a) { s[a.id] = a; }); return s; }
+  function isClosed(date) { return !!closedSet()[ym(date)]; }
+  function buchungen() { return M.items('kasseBuchungen').sort(function (a, b) { return (a.datum || '') < (b.datum || '') ? -1 : (a.datum || '') > (b.datum || '') ? 1 : (a.ts || 0) - (b.ts || 0); }); }
+  function signed(b) { return (b.typ === 'aus' ? -1 : 1) * M.num(b.betrag); }
+  function stand(onlyConfirmed, upto) {
+    var c = cfg(); var s = c ? M.num(c.anfang) : 0;
+    buchungen().forEach(function (b) { if ((!onlyConfirmed || b.status === 'bestaetigt') && (!upto || (b.datum || '') <= upto)) s += signed(b); });
+    return s;
+  }
+  function kv() { var s = M.S.sub; if (!s.kv) s.kv = 'uebersicht'; return s.kv; }
+  function kmon() { var s = M.S.sub; if (!s.km) s.km = ym(M.today()); return s.km; }
+  function shift(m, n) { var p = m.split('-'); var d = new Date(+p[0], +p[1] - 1 + n, 1); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); }
+  function lastDay(m) { var p = m.split('-'); var d = new Date(+p[0], +p[1], 0); return m + '-' + ('0' + d.getDate()).slice(-2); }
+  var VIEWS = [['uebersicht', 'Übersicht'], ['buchungen', 'Buchungen'], ['auslagen', 'Auslagen'], ['budgets', 'Budgets'], ['abschluss', 'Abschluss']];
+
+  function kasseTab() {
+    var out = '<section class="wm-card"><div class="wm-bar"><h3>Jugendkasse</h3><span class="m-actions">' + M.seg(VIEWS, kv(), 'kview') + '</span></div><p class="wm-note">Nur für die Jugendvertretung. Meldegeld wird hier nicht geführt.</p></section>';
+    var v = kv();
+    if (v === 'buchungen') return out + buchungenView();
+    if (v === 'auslagen') return out + auslagenView();
+    if (v === 'budgets') return out + budgetsView();
+    if (v === 'abschluss') return out + abschlussView();
+    return out + uebersichtView();
+  }
+  function uebersichtView() {
+    var c = cfg(); var st = stand(true); var all = stand(false);
+    var open = M.items('kasseBuchungen').filter(function (b) { return b.status !== 'bestaetigt'; });
+    var ausl = M.items('kasseAuslagen').filter(function (a) { return a.status === 'beantragt'; });
+    var out = '<div class="m-stats">' + M.stat(M.euro(st), 'Kassenstand (bestätigt)', st < 0 ? 'bad' : 'ok') + M.stat(M.euro(c ? c.anfang : 0), 'Anfangsbestand') + M.stat(open.length, 'Buchungen offen', open.length ? 'warn' : '', 'data-ma="kview" data-v="buchungen"') + M.stat(ausl.length, 'Auslagen beantragt', ausl.length ? 'warn' : '', 'data-ma="kview" data-v="auslagen"') + '</div>';
+    if (Math.abs(all - st) > 0.004) out += '<p class="wm-note">Mit noch unbestätigten Buchungen wären es ' + M.euro(all) + '.</p>';
+    out += '<section class="wm-card"><div class="m-sec" style="margin-top:0">Wo ist die Kasse?</div>';
+    if (!c) out += '<p class="wm-note">Die Kasse ist noch nicht eingerichtet.</p>' + (canAdm() ? '<button type="button" class="wm-amber" data-ma="ksetup">Kasse einrichten</button>' : '<p class="wm-note">Bitte jemanden mit dem Recht „Jugendkasse verwalten“ bitten.</p>');
+    else {
+      out += '<div style="font-size:18px;font-weight:800">' + esc(c.ort || '–') + '</div><div class="wm-sub">' + (c.holder ? 'Verwahrt von <b>' + esc(c.holder) + '</b>' : '') + (c.seit ? ' · seit ' + fd(c.seit) : '') + '</div>' +
+        '<div class="m-btns">' + (canBook() ? '<button type="button" class="wm-btn" data-ma="kort">📍 Kasse übergeben / verlegt</button>' : '') + (canAdm() ? '<button type="button" class="wm-btn" data-ma="ksetup">⚙️ Einstellungen</button>' : '') + '</div>';
+      var log = (c.ortLog || []).slice(-4).reverse();
+      if (log.length) out += '<div class="m-sec">Zuletzt</div>' + log.map(function (l) { return '<div class="wm-sub">' + fs(l.seit) + ' · ' + esc(l.ort || '') + (l.holder ? ' (' + esc(l.holder) + ')' : '') + '</div>'; }).join('');
+    }
+    out += '</section><section class="wm-card"><div class="m-btns" style="margin-top:0">' + (canBook() ? '<button type="button" class="wm-amber" data-ma="kbnew" data-typ="ein">+ Einnahme</button><button type="button" class="wm-amber" data-ma="kbnew" data-typ="aus">+ Ausgabe</button><button type="button" class="wm-btn" data-ma="kansend">🧾 Auslage beantragen</button><button type="button" class="wm-btn" data-ma="ksturz">💶 Kassensturz</button>' : '') + (M.can('jugend.kasse.print') ? '<button type="button" class="wm-btn" data-ma="kprint">🖨️ Kassenbuch drucken</button>' : '') + '</div></section>';
+    var sturz = M.items('kasseSturz').sort(function (a, b) { return a.datum < b.datum ? 1 : -1; })[0];
+    if (sturz) out += '<p class="wm-note">Letzter Kassensturz: ' + fd(sturz.datum) + ' · gezählt ' + M.euro(sturz.gezaehlt) + ' · ' + (Math.abs(M.num(sturz.diff)) < 0.005 ? '<span class="m-ok">stimmt</span>' : '<span class="m-over">Differenz ' + M.euro(sturz.diff) + '</span>') + '</p>';
+    return out;
+  }
+  function bRow(b) {
+    var closed = isClosed(b.datum); var conf = b.status === 'bestaetigt';
+    var edit = canBook() && !closed && (!conf || canOk());
+    return '<article class="m-card' + (conf ? '' : '') + '" data-id="' + esc(b.id) + '"><div class="m-head"><div class="m-main"><div class="m-title">' + esc(b.text || (b.typ === 'aus' ? 'Ausgabe' : 'Einnahme')) + (conf ? M.badge('bestätigt', 'green') : M.badge('offen', 'amber')) + (closed ? ' 🔒' : '') + '</div><div class="wm-sub">' + [fs(b.datum), esc(b.kat || ''), b.beleg ? 'Beleg ' + esc(b.beleg) : '', b.von ? 'von ' + esc(b.von) : '', conf && b.okBy ? 'bestätigt von ' + esc(b.okBy) : ''].filter(Boolean).join(' · ') + '</div></div><b class="' + (b.typ === 'aus' ? 'm-over' : 'm-ok') + '" style="white-space:nowrap">' + (b.typ === 'aus' ? '−' : '+') + M.euro(b.betrag) + '</b></div>' +
+      '<div class="m-body" style="padding-top:8px"><div class="m-btns" style="margin-top:0">' + (canOk() && !closed ? (conf ? '<button type="button" class="wm-btn" data-ma="kbconf" data-s="offen">Bestätigung zurücknehmen</button>' : '<button type="button" class="wm-amber" data-ma="kbconf" data-s="bestaetigt">✓ Bestätigen</button>') : '') + (edit ? '<button type="button" class="wm-btn" data-ma="kbedit">✏️</button><button type="button" class="wm-btn m-danger" data-ma="kbdel">🗑️</button>' : '') + '</div></div></article>';
+  }
+  function buchungenView() {
+    var m = kmon(); var all = buchungen().filter(function (b) { return ym(b.datum) === m; });
+    var ein = 0, aus = 0; all.forEach(function (b) { if (b.typ === 'aus') aus += M.num(b.betrag); else ein += M.num(b.betrag); });
+    var out = '<section class="wm-card"><div class="wm-bar"><h3>Buchungen</h3><span class="m-actions">' + (canBook() ? '<button type="button" class="wm-amber" data-ma="kbnew" data-typ="ein">+ Einnahme</button><button type="button" class="wm-amber" data-ma="kbnew" data-typ="aus">+ Ausgabe</button>' : '') + '</span></div>' +
+      '<div class="m-chips" style="align-items:center"><button type="button" class="m-chip" data-ma="kmon" data-d="-1">‹</button><b>' + esc(M.monthLabel(m)) + '</b><button type="button" class="m-chip" data-ma="kmon" data-d="1">›</button>' + (closedSet()[m] ? '<span class="wm-sub">🔒 abgeschlossen</span>' : '') + '</div>' +
+      '<p class="wm-note">Einnahmen <b class="m-ok">' + M.euro(ein) + '</b> · Ausgaben <b class="m-over">' + M.euro(aus) + '</b></p>';
+    if (!all.length) out += '<p class="wm-note">In diesem Monat gibt es keine Buchungen.</p>';
+    return out + all.map(bRow).join('') + '</section>';
+  }
+  function bFields() { return [{ k: 'typ', t: 'sel', label: 'Art', opts: [['ein', 'Einnahme'], ['aus', 'Ausgabe']] }, { k: 'betrag', t: 'num', label: 'Betrag (€)', req: true }, { k: 'datum', t: 'date', label: 'Datum', req: true }, { k: 'kat', t: 'sel', label: 'Kategorie', opts: kats() }, { k: 'text', t: 'text', label: 'Wofür?', req: true }, { k: 'beleg', t: 'text', label: 'Beleg-Nr. / Notiz', ph: 'z. B. 2026-07' }]; }
+  function bookForm(item, isNew) {
+    M.openForm({ title: isNew ? (item.typ === 'aus' ? 'Ausgabe buchen' : 'Einnahme buchen') : 'Buchung ändern', fields: bFields(), item: item, onSave: function (v) {
+      if (!(M.num(v.betrag) > 0)) { M.toast('Der Betrag muss größer als 0 sein.'); return false; }
+      if (isClosed(v.datum)) { M.toast('Dieser Monat ist abgeschlossen.'); return false; }
+      if (isNew) M.op({ op: 'set', coll: 'kasseBuchungen', item: Object.assign({ id: M.uid(), status: 'offen' }, v) });
+      else M.op({ op: 'patch', coll: 'kasseBuchungen', id: item.id, fields: v });
+    } });
+  }
+  function auslagenView() {
+    var list = M.items('kasseAuslagen').sort(function (a, b) { return (a.datum || '') < (b.datum || '') ? 1 : -1; });
+    var out = '<section class="wm-card"><div class="wm-bar"><h3>Auslagen (Erstattung)</h3><span class="m-actions">' + (canBook() ? '<button type="button" class="wm-amber" data-ma="kansend">+ Auslage beantragen</button>' : '') + '</span></div><p class="wm-note">Wer etwas vorgestreckt hat, trägt es hier ein. Die Kassenführung genehmigt und erstattet.</p>';
+    if (!list.length) out += '<p class="wm-note">Keine Anträge.</p>';
+    list.forEach(function (a) {
+      var col = a.status === 'erstattet' ? 'green' : a.status === 'genehmigt' ? 'blue' : a.status === 'abgelehnt' ? 'red' : 'amber';
+      out += '<article class="m-card" data-id="' + esc(a.id) + '"><div class="m-head"><div class="m-main"><div class="m-title">' + esc(a.text || 'Auslage') + M.badge(a.status || 'beantragt', col) + '</div><div class="wm-sub">' + [fs(a.datum), a.von ? 'von ' + esc(a.von) : '', a.beleg ? 'Beleg ' + esc(a.beleg) : '', a.okBy ? 'bearbeitet von ' + esc(a.okBy) : ''].filter(Boolean).join(' · ') + '</div></div><b style="white-space:nowrap">' + M.euro(a.betrag) + '</b></div><div class="m-body" style="padding-top:8px"><div class="m-btns" style="margin-top:0">' +
+        (canOk() && a.status === 'beantragt' ? '<button type="button" class="wm-amber" data-ma="kaset" data-s="genehmigt">Genehmigen</button><button type="button" class="wm-btn m-danger" data-ma="kaset" data-s="abgelehnt">Ablehnen</button>' : '') +
+        (canOk() && a.status === 'genehmigt' ? '<button type="button" class="wm-amber" data-ma="kaset" data-s="erstattet">Erstattet (als Ausgabe buchen)</button>' : '') +
+        (canBook() && (!a.status || a.status === 'beantragt') ? '<button type="button" class="wm-btn m-danger" data-ma="kadel">🗑️</button>' : '') + '</div></div></article>';
+    });
+    return out + '</section>';
+  }
+  function ansend() {
+    M.openForm({ title: 'Auslage beantragen', fields: [{ k: 'betrag', t: 'num', label: 'Betrag (€)', req: true }, { k: 'datum', t: 'date', label: 'Datum', req: true }, { k: 'text', t: 'text', label: 'Wofür?', req: true }, { k: 'beleg', t: 'text', label: 'Beleg-Nr. / Notiz' }], item: { datum: M.today() }, onSave: function (v) {
+      if (!(M.num(v.betrag) > 0)) { M.toast('Der Betrag muss größer als 0 sein.'); return false; }
+      M.op({ op: 'set', coll: 'kasseAuslagen', item: Object.assign({ id: M.uid(), status: 'beantragt' }, v) }); M.S.sub.kv = 'auslagen';
+    } });
+  }
+  function budgetsView() {
+    var y = M.S.sub.by || String(new Date().getFullYear());
+    var bud = M.items('kasseBudgets').filter(function (b) { return String(b.jahr) === y; });
+    var spent = {}; buchungen().forEach(function (b) { if (b.typ === 'aus' && b.status === 'bestaetigt' && String(b.datum).slice(0, 4) === y) spent[b.kat] = (spent[b.kat] || 0) + M.num(b.betrag); });
+    var years = []; for (var i = 0; i < 4; i++) years.push([String(new Date().getFullYear() + 1 - i), String(new Date().getFullYear() + 1 - i)]);
+    var out = '<section class="wm-card"><div class="wm-bar"><h3>Budgets ' + esc(y) + '</h3><span class="m-actions">' + M.seg(years, y, 'kbyear') + (canAdm() ? '<button type="button" class="wm-amber" data-ma="kbudnew">+ Budget</button>' : '') + '</span></div>';
+    if (!bud.length) out += '<p class="wm-note">Noch keine Budgets für ' + esc(y) + '.</p>';
+    bud.forEach(function (b) {
+      var sp = spent[b.kat] || 0; var rest = M.num(b.betrag) - sp;
+      out += '<div class="m-chk" data-id="' + esc(b.id) + '" style="flex-wrap:wrap"><span style="flex:1;min-width:10em"><b>' + esc(b.kat) + '</b><div class="wm-sub">' + M.euro(sp) + ' von ' + M.euro(b.betrag) + ' · ' + (rest < 0 ? '<span class="m-over">' + M.euro(-rest) + ' drüber</span>' : 'noch ' + M.euro(rest)) + '</div></span>' + M.prog(Math.min(sp, M.num(b.betrag)), M.num(b.betrag) || 1, false) + (canAdm() ? '<button type="button" class="wm-btn" data-ma="kbudedit">✏️</button><button type="button" class="wm-btn m-danger" data-ma="kbuddel">🗑️</button>' : '') + '</div>';
+    });
+    return out + '</section>';
+  }
+  function abschlussView() {
+    var cl = closedSet(); var m = kmon();
+    var out = '<section class="wm-card"><div class="wm-bar"><h3>Monatsabschluss</h3></div><p class="wm-note">Ein abgeschlossener Monat ist gesperrt: Buchungen darin lassen sich nicht mehr ändern.</p>';
+    var months = []; var cur = ym(M.today()); for (var i = 0; i < 12; i++) months.push(shift(cur, -i));
+    out += months.map(function (mm) {
+      var c = cl[mm]; var bk = buchungen().filter(function (b) { return ym(b.datum) === mm; }); var open = bk.filter(function (b) { return b.status !== 'bestaetigt'; }).length;
+      return '<div class="m-chk" data-mm="' + mm + '"><span style="flex:1"><b>' + esc(M.monthLabel(mm)) + '</b><div class="wm-sub">' + bk.length + ' Buchungen' + (open ? ' · <span class="m-over">' + open + ' unbestätigt</span>' : '') + (c ? ' · Saldo ' + M.euro(c.saldo) + ' · abgeschlossen von ' + esc(c.by || '') : '') + '</div></span>' +
+        (canAdm() ? (c ? '<button type="button" class="wm-btn" data-ma="kabopen">🔓 Öffnen</button>' : (mm < cur ? '<button type="button" class="wm-btn" data-ma="kabclose"' + (open ? ' disabled title="Erst alle Buchungen bestätigen"' : '') + '>🔒 Abschließen</button>' : '')) : (c ? '🔒' : '')) + '</div>';
+    }).join('');
+    out += '</section><section class="wm-card"><div class="wm-bar"><h3>Kassenstürze</h3>' + (canBook() ? '<button type="button" class="wm-amber" data-ma="ksturz">+ Kassensturz</button>' : '') + '</div>';
+    var st = M.items('kasseSturz').sort(function (a, b) { return a.datum < b.datum ? 1 : -1; });
+    if (!st.length) out += '<p class="wm-note">Noch kein Kassensturz.</p>';
+    st.slice(0, 10).forEach(function (s) { out += '<div class="m-chk"><span style="flex:1"><b>' + fd(s.datum) + '</b><div class="wm-sub">gezählt ' + M.euro(s.gezaehlt) + ' · Soll ' + M.euro(s.soll) + (s.von ? ' · ' + esc(s.von) : '') + (s.notiz ? ' · ' + esc(s.notiz) : '') + '</div></span>' + (Math.abs(M.num(s.diff)) < 0.005 ? '<span class="m-ok">stimmt</span>' : '<span class="m-over">' + M.euro(s.diff) + '</span>') + '</div>'; });
+    return out + '</section>';
+  }
+  function sturzForm() {
+    var soll = stand(true);
+    M.openForm({ title: 'Kassensturz', fields: [{ k: 'datum', t: 'date', label: 'Datum', req: true }, { k: 'gezaehlt', t: 'num', label: 'Gezähltes Bargeld (€)', req: true, hint: 'Soll laut Kassenbuch (bestätigt): ' + M.euro(soll) }, { k: 'notiz', t: 'text', label: 'Notiz' }], item: { datum: M.today() }, onSave: function (v) {
+      var diff = Math.round((M.num(v.gezaehlt) - soll) * 100) / 100;
+      M.op({ op: 'set', coll: 'kasseSturz', item: { id: M.uid(), datum: v.datum, gezaehlt: M.num(v.gezaehlt), soll: soll, diff: diff, notiz: v.notiz, von: M.userName() } });
+      M.toast(Math.abs(diff) < 0.005 ? 'Kasse stimmt.' : 'Differenz: ' + M.euro(diff));
+    } });
+  }
+  function printBook() {
+    var y = M.S.sub.by || String(new Date().getFullYear()); var c = cfg();
+    var start = (c ? M.num(c.anfang) : 0);
+    buchungen().forEach(function (b) { if (b.status === 'bestaetigt' && String(b.datum).slice(0, 4) < y) start += signed(b); });
+    var s = start; var ein = 0, aus = 0;
+    var rows = buchungen().filter(function (b) { return b.status === 'bestaetigt' && String(b.datum).slice(0, 4) === y; }).map(function (b) {
+      s += signed(b); if (b.typ === 'aus') aus += M.num(b.betrag); else ein += M.num(b.betrag);
+      return '<tr><td class="nowrap">' + esc(M.fmtDate(b.datum, true)) + '</td><td>' + esc(b.beleg || '') + '</td><td>' + esc(b.text || '') + '</td><td>' + esc(b.kat || '') + '</td><td style="text-align:right">' + (b.typ === 'aus' ? '' : M.euro(b.betrag)) + '</td><td style="text-align:right">' + (b.typ === 'aus' ? M.euro(b.betrag) : '') + '</td><td style="text-align:right">' + M.euro(s) + '</td></tr>';
+    }).join('');
+    M.print('Kassenbuch Jugendkasse ' + y, '<h1>Kassenbuch Jugendkasse ' + esc(y) + '</h1><div class="sub">SG Barnstorf · nur bestätigte Buchungen · gedruckt am ' + M.fmtDate(M.today()) + '</div><table><tr><th>Datum</th><th>Beleg</th><th>Text</th><th>Kategorie</th><th>Einnahme</th><th>Ausgabe</th><th>Bestand</th></tr><tr><td colspan="6"><i>Anfangsbestand ' + esc(y) + '</i></td><td style="text-align:right">' + M.euro(start) + '</td></tr>' + rows + '<tr><td colspan="4"><b>Summe</b></td><td style="text-align:right"><b>' + M.euro(ein) + '</b></td><td style="text-align:right"><b>' + M.euro(aus) + '</b></td><td style="text-align:right"><b>' + M.euro(s) + '</b></td></tr></table>' +
+      '<p style="margin-top:50px">Kassenführung: ________________________ &nbsp;&nbsp;&nbsp; Kassenprüfung: ________________________</p>');
+  }
+
+  M.register('jugend', {
+    title: 'Jugend', icon: '🏊', colls: ['abzeichen', 'abzListe', 'kasseBuchungen', 'kasseAuslagen', 'kasseCfg', 'kasseSturz', 'kasseBudgets', 'kasseAbschluss'],
+    tabs: [abzTab, { id: 'kasse', label: '💶 Jugendkasse', view: ['jugend.kasse.view'], render: function () { return kasseTab(); } }],
+    actions: {
+      abzliste: function () { M.openForm({ title: 'Abzeichen-Liste', fields: [{ k: 'list', t: 'lines', label: 'Abzeichen (eins pro Zeile)', rows: 6 }], item: { list: abzList() }, onSave: function (v) { if (!v.list.length) { M.toast('Mindestens ein Abzeichen.'); return false; } M.op({ op: 'set', coll: 'abzListe', item: { id: 'main', list: v.list } }); } }); },
+      kview: function (it, el) { M.S.sub.kv = el.getAttribute('data-v'); M.render(true); },
+      kmon: function (it, el) { M.S.sub.km = shift(kmon(), +el.getAttribute('data-d')); M.render(true); },
+      kbyear: function (it, el) { M.S.sub.by = el.getAttribute('data-v'); M.render(true); },
+      ksetup: function () { var c = cfg() || {}; M.openForm({ title: 'Kasse einrichten', fields: [{ k: 'anfang', t: 'num', label: 'Anfangsbestand (€)' }, { k: 'ort', t: 'text', label: 'Wo ist die Kasse?' }, { k: 'holder', t: 'text', label: 'Wer verwahrt sie?', list: 'mPeople' }, { k: 'seit', t: 'date', label: 'Seit' }, { k: 'kats', t: 'lines', label: 'Kategorien (eine pro Zeile)', rows: 6 }], item: { anfang: c.anfang || 0, ort: c.ort, holder: c.holder, seit: c.seit || M.today(), kats: c.kats && c.kats.length ? c.kats : DEF_KATS }, onSave: function (v) { M.op({ op: 'set', coll: 'kasseCfg', item: Object.assign({}, c, v, { id: 'main', anfang: M.num(v.anfang), ortLog: c.ortLog || [] }) }); } }); },
+      kort: function () { var c = cfg(); if (!c) return; M.openForm({ title: 'Kasse übergeben / verlegt', fields: [{ k: 'ort', t: 'text', label: 'Neuer Ort', req: true }, { k: 'holder', t: 'text', label: 'Neue Verwahrung (Name)', req: true, list: 'mPeople' }, { k: 'seit', t: 'date', label: 'Seit' }], item: { ort: c.ort, holder: c.holder, seit: M.today() }, onSave: function (v) { var log = (c.ortLog || []).concat([{ ort: c.ort, holder: c.holder, seit: c.seit, bis: v.seit, by: M.userName() }]).slice(-20); M.op({ op: 'patch', coll: 'kasseCfg', id: 'main', fields: { ort: v.ort, holder: v.holder, seit: v.seit, ortLog: log } }); } }); },
+      kbnew: function (it, el) { bookForm({ typ: el.getAttribute('data-typ') || 'ein', datum: M.today(), kat: kats()[0] }, true); },
+      kbedit: function (it, el, ev, c) { var b = M.find('kasseBuchungen', c.id); if (b) bookForm(b, false); },
+      kbdel: function (it, el, ev, c) { var b = M.find('kasseBuchungen', c.id); if (b) M.confirm('Buchung „' + (b.text || '') + '“ löschen?', 'Löschen', function () { M.op({ op: 'del', coll: 'kasseBuchungen', id: b.id }); }); },
+      kbconf: function (it, el, ev, c) { M.op({ op: 'patch', coll: 'kasseBuchungen', id: c.id, fields: { status: el.getAttribute('data-s') } }); },
+      kansend: function () { ansend(); },
+      kaset: function (it, el, ev, c) {
+        var a = M.find('kasseAuslagen', c.id); if (!a) return; var s = el.getAttribute('data-s'); var list = [{ op: 'patch', coll: 'kasseAuslagen', id: a.id, fields: { status: s } }];
+        if (s === 'erstattet') {
+          if (!canBook()) { M.toast('Zum Buchen fehlt das Recht.'); return; }
+          list.push({ op: 'set', coll: 'kasseBuchungen', item: { id: M.uid(), typ: 'aus', betrag: M.num(a.betrag), datum: M.today(), kat: kats()[kats().length - 1], text: 'Erstattung: ' + (a.text || '') + (a.von ? ' (' + a.von + ')' : ''), beleg: a.beleg || '', status: 'bestaetigt', ref: a.id } });
+        }
+        M.ops(list);
+      },
+      kadel: function (it, el, ev, c) { M.confirm('Antrag löschen?', 'Löschen', function () { M.op({ op: 'del', coll: 'kasseAuslagen', id: c.id }); }); },
+      kbudnew: function () { var y = M.S.sub.by || String(new Date().getFullYear()); M.openForm({ title: 'Budget ' + y, fields: [{ k: 'kat', t: 'sel', label: 'Kategorie', opts: kats() }, { k: 'betrag', t: 'num', label: 'Budget (€)', req: true }], item: { kat: kats()[0] }, onSave: function (v) { M.op({ op: 'set', coll: 'kasseBudgets', item: { id: 'bd-' + y + '-' + M.slug(v.kat), jahr: y, kat: v.kat, betrag: M.num(v.betrag) } }); } }); },
+      kbudedit: function (it, el, ev, c) { var b = M.find('kasseBudgets', c.id); if (!b) return; M.openForm({ title: 'Budget ' + b.kat, fields: [{ k: 'betrag', t: 'num', label: 'Budget (€)', req: true }], item: b, onSave: function (v) { M.op({ op: 'patch', coll: 'kasseBudgets', id: b.id, fields: { betrag: M.num(v.betrag) } }); } }); },
+      kbuddel: function (it, el, ev, c) { M.op({ op: 'del', coll: 'kasseBudgets', id: c.id }); },
+      ksturz: function () { sturzForm(); },
+      kabclose: function (it, el) { var mm = el.closest('[data-mm]').getAttribute('data-mm'); var s = stand(true, lastDay(mm)); M.confirm(M.monthLabel(mm) + ' abschließen? Saldo am Monatsende: ' + M.euro(s), 'Abschließen', function () { M.op({ op: 'set', coll: 'kasseAbschluss', item: { id: mm, saldo: s, by: M.userName(), at: M.today() } }); }); },
+      kabopen: function (it, el) { var mm = el.closest('[data-mm]').getAttribute('data-mm'); M.confirm(M.monthLabel(mm) + ' wieder öffnen?', 'Öffnen', function () { M.op({ op: 'del', coll: 'kasseAbschluss', id: mm }); }); },
+      kprint: function () { printBook(); }
+    }
+  });
+})();

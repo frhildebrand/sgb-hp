@@ -4,66 +4,105 @@ layout: false
 eleventyExcludeFromCollections: true
 templateEngineOverride: false
 ---
-/* Hub der SG Barnstorf: Auswahl der Systeme. Anmeldung und Menü stecken in der Kopfzeile (hub-common.js). */
+/* Hub der SG Barnstorf: Auswahl der Systeme in Gruppen, mit kleinen Hinweisen. Anmeldung und Menü stecken in der Kopfzeile (hub-common.js). */
 (function () {
   'use strict';
   var root = document.getElementById('hubRoot');
   if (!root) return;
   var SH = window.HubShell;
   if (!SH) { root.textContent = 'Der Grundbaustein hub-common.js fehlt.'; return; }
-  var PAGE = root.getAttribute('data-system') || '';   // '' = Startseite, sonst die Kennung des Systems (z. B. jugend)
   var HUB_URL = '/intranet/';
   var state = { loaded: false, next: SH.lsGet('hubnext', null) };
   var esc = SH.esc;
+  var GROUPS = ['Meine Arbeit', 'Verein', 'Weihnachtsmarkt'];
 
-  function systemCard(s) {
-    return '<a class="hub-card hub-sys" href="' + esc(s.url) + '" style="--acc:' + esc(s.color || '#94a3b8') + '"><span class="hub-tile">' + esc(s.icon || '•') + '</span><span class="hub-sysbody"><span class="hub-sysname">' + esc(s.name) + '</span><span class="hub-sysdesc">' + esc(s.desc || '') + '</span></span><span class="hub-go">Öffnen →</span></a>';
+  function todayIso() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function daysTo(iso) { if (!iso) return null; return Math.round((new Date(iso + 'T12:00:00') - new Date(todayIso() + 'T12:00:00')) / 86400000); }
+  function fmtD(iso) { if (!iso) return ''; var d = new Date(iso + 'T12:00:00'); return ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][d.getDay()] + ', ' + ('0' + d.getDate()).slice(-2) + '.' + ('0' + (d.getMonth() + 1)).slice(-2) + '.'; }
+  function inDays(n) { return n === 0 ? 'heute' : n === 1 ? 'morgen' : 'in ' + n + ' Tagen'; }
+
+  function hintOf(s) {
+    var h = state.next && state.next.token === SH.token() ? (state.next.hints || {})[s.id] : null;
+    if (!h) return '';
+    return '<span class="hub-t2h ' + esc(h.c || '') + '">' + esc(h.t) + '</span>';
+  }
+  function tile(s) {
+    return '<a class="hub-t2" href="' + esc(s.url) + '" style="--acc:' + esc(s.color || '#94a3b8') + '"><span class="hub-t2ic">' + esc(s.icon || '•') + '</span><span class="hub-t2n">' + esc(s.name) + '</span><span class="hub-t2d">' + esc(s.desc || '') + '</span>' + hintOf(s) + '</a>';
+  }
+  function groupsHtml(systems) {
+    var by = {}; systems.forEach(function (s) { var g = s.group || 'Verein'; (by[g] = by[g] || []).push(s); });
+    var names = GROUPS.filter(function (g) { return by[g]; }).concat(Object.keys(by).filter(function (g) { return GROUPS.indexOf(g) < 0; }));
+    return names.map(function (g) { return '<section class="hub-sec"><h3 class="hub-sech">' + esc(g) + '</h3><div class="hub-tiles">' + by[g].map(tile).join('') + '</div></section>'; }).join('');
   }
   function body() {
     var S = SH.S;
-    if (!state.loaded) return '<section class="hub-grid"><div class="hub-skel"></div><div class="hub-skel"></div></section>';
+    if (!state.loaded) return '<section class="hub-tiles"><div class="hub-skel"></div><div class="hub-skel"></div><div class="hub-skel"></div></section>';
     if (S.offline) return '<section class="hub-card hub-offline"><h2>Keine Verbindung</h2><p class="hub-sub">Das Konto-System ist gerade nicht erreichbar. Bitte prüfe das Internet und versuche es nochmal.</p><button type="button" class="hub-btn hub-gold" data-act="retry">Nochmal versuchen</button><details class="hub-diag"><summary>Technische Details</summary><pre>' + esc(SH.DIAG.length ? SH.DIAG.join('\n') : 'Keine Angaben.') + '</pre></details></section>';
-    var out = '';
-    if (PAGE) {
-      var sys = S.systems.filter(function (x) { return x.id === PAGE; })[0];
-      if (sys) {
-        return '<section class="hub-card hub-page" style="--acc:' + esc(sys.color) + '"><span class="hub-tile big">' + esc(sys.icon) + '</span><div><h2>' + esc(sys.name) + '</h2><p class="hub-sub">Dieses System ist noch in Arbeit. Hier entsteht als Erstes die <b>Jugendkasse</b>. Sobald sie fertig ist, erscheint sie an dieser Stelle.</p><a class="hub-btn hub-ghost" href="' + HUB_URL + '">← Alle Systeme</a></div></section>';
-      }
-      return '<section class="hub-card hub-offline"><h2>Kein Zugriff</h2><p class="hub-sub">Für dein Konto ist dieser Bereich nicht freigeschaltet. Melde dich an oder frag jemanden aus der Orga.</p>' + (S.me ? '' : '<button type="button" class="hub-btn hub-gold" data-sh="login">Anmelden</button> ') + '<a class="hub-btn hub-ghost" href="' + HUB_URL + '">← Alle Systeme</a></section>';
-    }
-    out += '<h2 class="hub-hello">' + (S.me ? 'Hallo ' + esc(S.me.user || (S.me.role && S.me.role.name) || '') : 'Willkommen') + '</h2>';
-    out += S.systems.length ? '<section class="hub-grid">' + S.systems.map(systemCard).join('') + '</section>' : '<section class="hub-card"><p class="hub-sub">Für dein Konto sind noch keine Systeme freigeschaltet.</p></section>';
+    var out = '<h2 class="hub-hello">' + (S.me ? 'Hallo ' + esc(S.me.user || (S.me.role && S.me.role.name) || '') : 'Willkommen') + '</h2>';
+    out += S.systems.length ? groupsHtml(S.systems) : '<section class="hub-card"><p class="hub-sub">Für dein Konto sind noch keine Systeme freigeschaltet.</p></section>';
     out += nextHtml();
     if (!S.me) out += '<section class="hub-card hub-note"><h3>Weitere Systeme?</h3><p class="hub-sub">Melde dich an, dann siehst du alle Systeme, die für dich freigeschaltet sind.</p><button type="button" class="hub-btn hub-gold" data-sh="login">Anmelden</button></section>';
     if (SH.canAdmin()) out += '<section class="hub-card hub-note"><h3>Verwaltung</h3><p class="hub-sub">Benutzer, Rollen und die Sichtbarkeit der Systeme stellst du hier ein. Oben stehen die Schalter für die Systeme, darunter die Rechte je System. Das gilt für alle Systeme.</p><a class="hub-btn hub-gold" href="/intranet/verwaltung/">Zur Verwaltung</a></section>';
     return out;
   }
-  // Kleine Übersicht auf der Startseite: nächste Wettkämpfe und offene Aufgaben (nur wenn das Konto sie sehen darf)
-  function fmtD(iso) { if (!iso) return ''; var d = new Date(iso + 'T12:00:00'); return ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][d.getDay()] + ', ' + ('0' + d.getDate()).slice(-2) + '.' + ('0' + (d.getMonth() + 1)).slice(-2) + '.'; }
-  function todayIso() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  // „Als Nächstes“: nächste Wettkämpfe (mit Fortschritt), nächste Veranstaltung und offene Aufgaben
   function nextHtml() {
-    var n = state.next; if (!n || n.token !== SH.token() || (!n.wk.length && !n.tasks.length)) return '';
-    var out = '<section class="hub-grid hub-next">';
-    if (n.wk.length) out += '<div class="hub-card"><h3>🏁 Nächste Wettkämpfe</h3>' + n.wk.map(function (w) { return '<a class="hub-nrow" href="/intranet/wettkaempfe/"><b>' + esc(fmtD(w.date)) + '</b> ' + esc(w.title) + (w.ort ? ' <span class="hub-sub">· ' + esc(w.ort) + '</span>' : '') + '</a>'; }).join('') + '</div>';
-    if (n.tasks.length) out += '<div class="hub-card"><h3>✅ ' + (n.mine ? 'Meine Aufgaben' : 'Offene Aufgaben') + '</h3>' + n.tasks.map(function (t) { var over = t.due && t.due < todayIso(); return '<a class="hub-nrow" href="/intranet/aufgaben/">' + esc(t.title) + (t.due ? ' <span class="hub-sub"' + (over ? ' style="color:#dc2626;font-weight:800"' : '') + '>· ' + esc(fmtD(t.due)) + '</span>' : '') + '</a>'; }).join('') + '</div>';
+    var n = state.next; if (!n || n.token !== SH.token() || (!n.wk.length && !n.tasks.length && !(n.ev || []).length)) return '';
+    var out = '<h3 class="hub-sech" style="margin-top:8px">Als Nächstes</h3><section class="hub-nextgrid">';
+    if (n.wk.length) out += '<div class="hub-card"><h3>🏁 Wettkämpfe</h3>' + n.wk.map(function (w) {
+      var d = daysTo(w.date);
+      var meta = [d !== null ? inDays(d) : '', w.ort || '', w.prog || '', w.ms ? 'Meldeschluss ' + fmtD(w.ms) + (daysTo(w.ms) !== null && daysTo(w.ms) >= 0 && daysTo(w.ms) <= 7 ? ' (' + inDays(daysTo(w.ms)) + ')' : '') : ''].filter(Boolean);
+      return '<a class="hub-nrow" href="/intranet/wettkaempfe/"><b>' + esc(fmtD(w.date)) + '</b> ' + esc(w.title) + '<span class="hub-nmeta">' + esc(meta.join(' · ')) + '</span></a>';
+    }).join('') + '</div>';
+    if ((n.ev || []).length) out += '<div class="hub-card"><h3>🎪 Veranstaltungen</h3>' + n.ev.map(function (e) { var d = daysTo(e.date); return '<a class="hub-nrow" href="/intranet/veranstaltungen/"><b>' + esc(fmtD(e.date)) + '</b> ' + esc(e.title) + '<span class="hub-nmeta">' + esc([d !== null ? inDays(d) : '', e.prog || ''].filter(Boolean).join(' · ')) + '</span></a>'; }).join('') + '</div>';
+    if (n.tasks.length) out += '<div class="hub-card"><h3>✅ ' + (n.mine ? 'Meine Aufgaben' : 'Offene Aufgaben') + '</h3>' + n.tasks.map(function (t) { var over = t.due && t.due < todayIso(); return '<a class="hub-nrow" href="/intranet/aufgaben/">' + esc(t.title) + (t.due ? '<span class="hub-nmeta' + (over ? ' hub-over' : '') + '">' + (over ? '⚠️ überfällig seit ' : 'bis ') + esc(fmtD(t.due)) + '</span>' : '') + '</a>'; }).join('') + '</div>';
     return out + '</section>';
   }
+  function wkProgress(w) {
+    var KEYS = ['webclub', 'krabfrage', 'bekWA', 'bekHP', 'lizenzen', 'geprueft', 'versendet', 'bestaetigung', 'waGruppe', 'meWA', 'meHP', 'urkGedruckt', 'urkVerteilt'];
+    var chk = w.chk || {}; var done = KEYS.filter(function (k) { return chk[k] && chk[k].d; }).length;
+    return done + '/' + KEYS.length + ' erledigt';
+  }
   function loadNext() {
-    var want = []; if (SH.has('wettkaempfe.view')) want.push('wettkaempfe'); if (SH.has('aufgaben.view') || SH.has('aufgaben.own')) want.push('aufgaben');
+    var want = [];
+    if (SH.has('wettkaempfe.view')) want.push('wettkaempfe');
+    if (SH.has('aufgaben.view') || SH.has('aufgaben.own')) want.push('aufgaben');
+    if (SH.has('material.view')) want.push('material');
+    if (SH.has('veranstaltungen.view')) want.push('veranstaltungen');
+    if (SH.has('vorstand.view') || SH.has('vorstand.antrag')) want.push('vorstandAntraege');
+    if (SH.has('abrechnung.eigene') || SH.has('abrechnung.alle')) want.push('abrechnungen');
+    if (SH.has('fahrten.eigene') || SH.has('fahrten.alle')) want.push('fahrten');
+    if (SH.has('training.tage.view')) want.push('trainingTage');
     if (!want.length) { if (state.next) { state.next = null; SH.lsSet('hubnext', null); render(); } return; }
     SH.get('data', { colls: want.join(',') }).then(function (r) {
       if (!r || r.status !== 'success') return;
       var t = todayIso(); var d = r.data || {}; var me = (SH.S.me && (SH.S.me.user || '')).toLowerCase();
-      var wk = (d.wettkaempfe || []).filter(function (w) { return (w.date || '') >= t; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }).slice(0, 3).map(function (w) { return { date: w.date, title: w.title, ort: w.ort }; });
+      var comps = d.wettkaempfe || [];
+      var pastIds = {}; comps.forEach(function (w) { if ((w.date || '9999') < t) pastIds[w.id] = 1; });
+      var up = comps.filter(function (w) { return (w.date || '') >= t; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+      var wk = up.slice(0, 3).map(function (w) { return { date: w.date, title: w.title, ort: w.ort, prog: wkProgress(w), ms: (w.intMs && w.intMs >= t) ? w.intMs : (w.meldeschluss && w.meldeschluss >= t ? w.meldeschluss : '') }; });
       var mine = !SH.has('aufgaben.view');
-      var tasks = (d.aufgaben || []).filter(function (x) { return x.status !== 'erledigt' && (mine || !me || true); });
+      var tasks = (d.aufgaben || []).filter(function (x) { return x.status !== 'erledigt' && !(x.ref && x.ref.indexOf('wk:') === 0 && pastIds[x.ref.slice(3)]); });
       if (!mine && me) { var m2 = tasks.filter(function (x) { return (x.who || []).some(function (w) { return String(w).toLowerCase() === me; }); }); if (m2.length) { tasks = m2; mine = true; } }
+      var overdue = tasks.filter(function (x) { return x.due && x.due < t; }).length;
+      var open = tasks.length;
       tasks = tasks.sort(function (a, b) { return (a.due || '9999') < (b.due || '9999') ? -1 : 1; }).slice(0, 5).map(function (x) { return { title: x.title, due: x.due }; });
-      state.next = { token: SH.token(), wk: wk, tasks: tasks, mine: mine }; SH.lsSet('hubnext', state.next); render();
+      var evs = (d.veranstaltungen || []).filter(function (e) { return (e.date || '') >= t && e.status !== 'Abgeschlossen'; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+      var ev = evs.slice(0, 2).map(function (e) { var c = e.check || []; var dn = c.filter(function (x) { return x.d; }).length; return { date: e.date, title: e.title, prog: c.length ? dn + '/' + c.length + ' erledigt' : '' }; });
+      var hints = {};
+      if (d.aufgaben) hints.aufgaben = open ? { t: open + ' offen' + (overdue ? ', ' + overdue + ' überfällig' : ''), c: overdue ? 'bad' : 'warn' } : { t: 'Alles erledigt', c: '' };
+      if (d.wettkaempfe) hints.wettkaempfe = up.length ? (function () { var dd = daysTo(up[0].date); return { t: 'Nächster ' + inDays(dd), c: dd <= 7 ? 'warn' : 'info' }; })() : { t: 'Kein Termin', c: 'none' };
+      if (d.material) { var out = d.material.filter(function (x) { return (x.loans || []).some(function (l) { return !l.back; }); }).length; hints.material = { t: out ? out + ' verliehen' : 'Nichts verliehen', c: out ? 'info' : 'none' }; }
+      if (d.veranstaltungen) hints.veranstaltungen = evs.length ? (function () { var dd = daysTo(evs[0].date); return { t: 'Nächste ' + inDays(dd), c: 'info' }; })() : { t: 'Nichts geplant', c: 'none' };
+      if (d.vorstandAntraege) { var oa = d.vorstandAntraege.filter(function (x) { return x.status === 'Eingereicht'; }).length; hints.vorstand = oa ? { t: oa + (oa > 1 ? ' Anträge' : ' Antrag') + ' offen', c: 'warn' } : { t: 'Keine offenen Anträge', c: 'none' }; }
+      if (d.abrechnungen) { var ent = d.abrechnungen.filter(function (x) { return x.status === 'entwurf' || x.status === 'eingereicht'; }).length; hints.abrechnung = ent ? { t: ent + ' in Arbeit', c: 'warn' } : { t: 'Alles abgerechnet', c: 'none' }; }
+      if (d.fahrten) { var fo = d.fahrten.filter(function (x) { return x.status !== 'abgerechnet'; }).length; hints.fahrten = fo ? { t: fo + ' Fahrt' + (fo > 1 ? 'en' : '') + ' offen', c: 'warn' } : { t: 'Nichts offen', c: 'none' }; }
+      if (d.trainingTage) { var last = d.trainingTage.slice().sort(function (a, b) { return String(b.date) < String(a.date) ? -1 : 1; }).filter(function (x) { return (x.date || '') <= t; })[0]; if (last) { var an = Object.keys(last.anw || {}).filter(function (k) { return last.anw[k] === 'a'; }).length; hints.training = { t: 'Zuletzt ' + fmtD(last.date) + ', ' + an + ' da', c: 'none' }; } }
+      state.next = { token: SH.token(), wk: wk, tasks: tasks, ev: ev, mine: mine, hints: hints }; SH.lsSet('hubnext', state.next); render();
     });
   }
   function render() { root.innerHTML = SH.header('SG Barnstorf · Intranet') + '<main class="hub-main">' + body() + '</main>' + SH.overlay(); }
-  function load() { state.loaded = SH.restore(); render(); return SH.loadAccount().then(function () { state.loaded = true; render(); if (!PAGE) loadNext(); }); }
+  function load() { state.loaded = SH.restore(); render(); return SH.loadAccount().then(function () { state.loaded = true; render(); loadNext(); }); }
 
   root.addEventListener('click', function (ev) {
     if (SH.click(ev, render, load)) return;

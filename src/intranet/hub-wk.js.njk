@@ -4,160 +4,11 @@ layout: false
 eleventyExcludeFromCollections: true
 templateEngineOverride: false
 ---
-/* ---------- Meldeergebnis (EasyWk-PDF) auslesen ---------- */
-var WKParse = (function () {
-  function normTime(t) { return t; }
-  function isoDate(d) { var m = /(\d{2})\.(\d{2})\.(\d{4})/.exec(d || ''); return m ? m[3] + '-' + m[2] + '-' + m[1] : ''; }
-  function toMin(hhmm) { var m = /(\d{1,2}):(\d{2})/.exec(hhmm || ''); return m ? (+m[1]) * 60 + (+m[2]) : null; }
-  function sexOf(name, evName) {
-    var m = /\((M|W|X)\)\s*$/.exec(name);
-    if (m) return m[1];
-    if (/männlich/i.test(evName || '')) return 'M';
-    if (/weiblich/i.test(evName || '')) return 'W';
-    return '';
-  }
-  // lines: Array von Textzeilen (Spalten durch mindestens zwei Leerzeichen getrennt)
-  function parse(lines, club) {
-    var clubL = String(club || '').toLowerCase();
-    var out = { title: '', date: '', veranstalter: '', ausrichter: '', becken: '', temp: '', stand: '', ort: '', abschnitte: [], events: {}, starts: [], gericht: [], vereine: {}, warnings: [] };
-    var i, line, m;
-    // Kopf
-    var head = [];
-    for (i = 0; i < lines.length && i < 40; i++) { if (lines[i].trim()) head.push(lines[i].trim()); }
-    var mi = head.indexOf('Meldeergebnis');
-    if (mi >= 0) {
-      var t = [];
-      for (i = mi + 1; i < head.length; i++) { if (/^am\s+\d{2}\.\d{2}\.\d{4}/.test(head[i])) { out.date = isoDate(head[i]); break; } if (/^Veranstalter:/.test(head[i])) break; t.push(head[i]); }
-      out.title = t.join(' ');
-    }
-    var addrN = 0, addr = [];
-    var abNo = 0, abIdx = null, curEv = null, curLauf = null, inGericht = false, gGroup = '', gAb = 0;
-    for (i = 0; i < lines.length; i++) {
-      line = lines[i].replace(/\s+$/, '');
-      var tl = line.trim();
-      if (!tl) continue;
-      if ((m = /^Veranstalter:\s*(.+)$/.exec(tl))) { out.veranstalter = m[1].trim(); continue; }
-      if ((m = /^Ausrichter:\s*(.+)$/.exec(tl))) { out.ausrichter = m[1].trim(); continue; }
-      if ((m = /(\d+)\s*Bahnen\s*(?:á|a|à)\s*(\d+)\s*m/i.exec(tl)) && !out.becken) { out.becken = m[1] + ' Bahnen à ' + m[2] + ' m'; }
-      if ((m = /Wassertemperatur ca\.\s*(\d+)/i.exec(tl)) && !out.temp) { out.temp = m[1] + ' °C'; }
-      if ((m = /Stand:\s*(\d{2}\.\d{2}\.\d{4}),\s*(\d{2}:\d{2})/.exec(tl)) && !out.stand) { out.stand = isoDate(m[1]) + ' ' + m[2]; }
-      if (/Schwimmbad-Adresse/.test(tl)) { addrN = 5; continue; }
-      if (addrN > 0) {
-        addrN--;
-        var ac = line.trim().split(/\s{3,}/);
-        if (ac.length > 1) addr.push(ac[ac.length - 1]); else if (/^\s{20,}\S/.test(line)) addr.push(tl);
-        out.ort = addr.join(', ');
-      }
-      // Kampfgericht
-      if ((m = /^Kampfgericht Abschnitt\s+(\d+)/.exec(tl))) { inGericht = true; gAb = +m[1]; gGroup = 'Kampfgericht'; continue; }
-      if ((m = /^Abschnitt\s+(\d+)\s*-\s*(\S+)\s+(\d{2}\.\d{2}\.\d{4})/.exec(tl))) {
-        inGericht = false; curEv = null; curLauf = null;
-        abNo = +m[1];
-        abIdx = { no: abNo, tag: m[2], date: isoDate(m[3]), einlass: '', einschwimmen: '', kr: '', beginn: '' };
-        out.abschnitte.push(abIdx); continue;
-      }
-      if (abIdx && !abIdx.beginn) {
-        if ((m = /Einlass:\s*([^|]+?)\s*(?:\||$)/.exec(tl))) abIdx.einlass = m[1].trim();
-        if ((m = /Einschwimmen:\s*([^|]+?)\s*(?:\||$)/.exec(tl))) abIdx.einschwimmen = m[1].trim();
-        if ((m = /Kampfrichtersitzung:\s*([^|]+?)\s*(?:\||$)/.exec(tl))) abIdx.kr = m[1].trim();
-        if ((m = /^Beginn:\s*(.+)$/.exec(tl))) { abIdx.beginn = m[1].trim(); continue; }
-        if (/Einlass:/.test(tl)) continue;
-      }
-      if (/^Wettkampffolge für Abschnitt/.test(tl)) { inGericht = false; continue; }
-      if (inGericht) {
-        if (/^Position\s+Name\s+Verein/.test(tl)) continue;
-        var cols = line.trim().split(/\s{2,}/);
-        if (cols.length === 1 && !/\s{2,}/.test(line.trim()) && cols[0].length < 40 && !/^(Schiedsrichter|Starter|Sprecher|Auswerter|Protokollf|Computer|Zeitnehmer|Reservezeit|Wenderichter|Zielrichter|Schwimmrichter)/.test(cols[0])) { gGroup = cols[0]; continue; }
-        if (cols.length >= 3) {
-          var g = { a: gAb, g: gGroup, pos: cols[0], name: cols[1], v: cols.slice(2).join(' ') };
-          if (clubL && g.v.toLowerCase().indexOf(clubL) >= 0) out.gericht.push(g);
-          continue;
-        }
-        if (/^(Zielgericht|Zeitgericht|Wendegericht|Kampfgericht)/.test(tl)) { gGroup = tl; continue; }
-        continue;
-      }
-      // Wettkampf-Zeile (Liste oder Kopf)
-      if ((m = /^Wettkampf\s+(\d+)\s*-\s*(.+?)\s*$/.exec(tl))) {
-        var no = +m[1]; var rest = m[2]; var laeufe = null; var ca = '';
-        var mc = /\s*\(ca\.\s*(\d{1,2}:\d{2})\s*Uhr\)\s*$/.exec(rest); if (mc) { ca = mc[1]; rest = rest.slice(0, mc.index); }
-        var ml = /\s*\((\d+)\s*Läufe?\)\s*$/.exec(rest); if (ml) { laeufe = +ml[1]; rest = rest.slice(0, ml.index); }
-        var ev = out.events[no] || (out.events[no] = { no: no, name: '', ab: abNo, laeufe: null, ca: '' });
-        ev.name = rest.trim(); if (laeufe) ev.laeufe = laeufe; if (ca) ev.ca = ca; if (abNo) ev.ab = abNo;
-        curEv = ev; curLauf = null; continue;
-      }
-      if ((m = /^Lauf\s+(\d+)\s*\/\s*(\d+)\s*-\s*ca\.\s*(\d{1,2}:\d{2})\s*Uhr/.exec(tl))) { curLauf = { l: +m[1], lt: +m[2], t: m[3] }; if (curEv && !curEv.laeufe) curEv.laeufe = +m[2]; if (curEv && !curEv.ca) curEv.ca = m[3]; continue; }
-      if (/^Bahn\s+Schwimmer/.test(tl)) continue;
-      if (curEv && curLauf && (m = /^Bahn\s+(\d+)\s+(.+?)\s+(\d{4}|Offen)\s+(\S.*?)\s+(\d{1,2}:\d{2},\d{2})\s*$/.exec(tl))) {
-        var st = { e: curEv.no, l: curLauf.l, lt: curLauf.lt, t: curLauf.t, b: +m[1], n: m[2].replace(/\s+\((M|W|X)\)\s*$/, '').trim(), s: sexOf(m[2], curEv.name), j: m[3] === 'Offen' ? 'Staffel' : m[3], v: m[4].trim(), m: m[5] === '00:00,00' ? '' : m[5] };
-        if (/Mannschaft/i.test(st.n) && !st.s) st.s = 'X';
-        out.vereine[st.v] = (out.vereine[st.v] || 0) + 1;
-        if (!clubL || st.v.toLowerCase().indexOf(clubL) >= 0) out.starts.push(st);
-        continue;
-      }
-    }
-    var evs = Object.keys(out.events).map(function (k) { return out.events[k]; }).sort(function (a, b) { return a.no - b.no; });
-    out.events = evs;
-    var names = {}; out.starts.forEach(function (s) { names[s.n + '|' + s.j] = 1; });
-    out.swimmers = Object.keys(names).length;
-    if (!out.title) out.warnings.push('Titel nicht gefunden.');
-    if (!out.date) out.warnings.push('Datum nicht gefunden.');
-    if (!evs.length) out.warnings.push('Keine Wettkämpfe gefunden. Ist das ein Meldeergebnis aus EasyWk?');
-    if (!out.starts.length) out.warnings.push('Für „' + club + '“ wurden keine Starts gefunden. Vereinsname prüfen. Im PDF kommen vor: ' + Object.keys(out.vereine).slice(0, 8).join(', ') + '.');
-    return out;
-  }
-  // PDF-Text (pdf.js) in Zeilen wandeln: Elemente einer Zeile nach x sortieren, grosse Luecken als mehrere Leerzeichen
-  function linesFromItems(pages) {
-    var all = [];
-    pages.forEach(function (items) {
-      var rows = []; var byY = {};
-      items.forEach(function (it) {
-        if (!it.str) return;
-        var ky = Math.round(it.y); var r = null;
-        [0, -1, 1, -2, 2].forEach(function (d) { if (!r && byY[ky + d]) r = byY[ky + d]; });
-        if (!r) { r = { y: it.y, its: [] }; rows.push(r); byY[ky] = r; }
-        r.its.push(it);
-      });
-      rows.sort(function (a, b) { return b.y - a.y; });
-      rows.forEach(function (r) {
-        r.its.sort(function (a, b) { return a.x - b.x; });
-        var s = ''; var endX = null;
-        r.its.forEach(function (it) {
-          if (endX !== null) {
-            var gap = it.x - endX;
-            var cw = it.w && it.str.length ? it.w / it.str.length : 4;
-            if (gap > cw * 2.2) s += '   ';
-            else if (gap > cw * 0.25 && !/^\s/.test(it.str) && !/\s$/.test(s)) s += ' ';
-          }
-          s += it.str; endX = it.x + (it.w || 0);
-        });
-        all.push(s);
-      });
-    });
-    return all;
-  }
-  // Zeitformat: "31,2" -> "00:31,20"; "1:05,85" -> "01:05,85"; "65,85" -> "01:05,85"
-  function fmtTime(v) {
-    v = String(v || '').trim().replace('.', ',').replace(/\s+/g, '');
-    if (!v) return '';
-    var m = /^(?:(\d{1,2}):)?(\d{1,3})(?:,(\d{1,2}))?$/.exec(v);
-    if (!m) return null;
-    var min = m[1] ? +m[1] : 0; var sec = +m[2]; var h = m[3] === undefined ? 0 : +(m[3].length === 1 ? m[3] + '0' : m[3]);
-    if (!m[1] && sec >= 60) { min = Math.floor(sec / 60); sec = sec % 60; }
-    if (sec >= 60 || min > 59) return null;
-    return ('0' + min).slice(-2) + ':' + ('0' + sec).slice(-2) + ',' + ('0' + h).slice(-2);
-  }
-  function timeMs(t) { var m = /^(\d{2}):(\d{2}),(\d{2})$/.exec(t || ''); return m ? (+m[1]) * 60000 + (+m[2]) * 1000 + (+m[3]) * 10 : null; }
-  function diffStr(ms) { var a = Math.abs(ms); var s = Math.floor(a / 1000), h = Math.round((a % 1000) / 10); return (ms < 0 ? '−' : '+') + s + ',' + ('0' + h).slice(-2) + ' s'; }
-  return { parse: parse, linesFromItems: linesFromItems, fmtTime: fmtTime, timeMs: timeMs, diffStr: diffStr, isoDate: isoDate, toMin: toMin };
-})();
-
-/* Wettkämpfe: Meldeergebnis (PDF aus EasyWk) hochladen, Übersicht wer wann wo schwimmt, Zeiten eintragen, Drucken. */
+/* Wettkämpfe: Checkliste pro Wettkampf, Tabellenansicht, Unterlagen (Ausschreibung → Meldedatei → Meldeergebnis → Protokoll), Zeiten, Drucken. */
 (function () {
   'use strict';
   var M = window.HubMod; if (!M) return;
   var P = WKParse; var esc = M.esc;
-  var PDFJS = ['https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js', 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js'];
-  var WORKER = ['https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js', 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js'];
   var CLUB_KEY = 'wkclub';
   var imp = null;        // laufender Import { parsed, fileName, club }
   function club() { return M.lsGet(CLUB_KEY, 'SG Barnstorf') || 'SG Barnstorf'; }
@@ -179,7 +30,6 @@ var WKParse = (function () {
     return Object.keys(m).map(function (k) { return m[k]; }).sort(function (a, b) { return a.n.localeCompare(b.n, 'de'); });
   }
   function resOf(wk, s) { return (wk.res || {})[key(s)] || null; }
-  function todosOf(id) { return M.items('aufgaben').filter(function (t) { return t.ref === 'wk:' + id; }).sort(function (a, b) { return (a.due || '9999') < (b.due || '9999') ? -1 : 1; }); }
   function openDuties(wk) { return (wk.gericht || []).filter(function (g) { return /^N\s?N$/i.test(g.name || '') || !g.name; }).length; }
   function timeRange(wk) {
     var st = sortStarts(wk); if (!st.length) return '';
@@ -193,15 +43,67 @@ var WKParse = (function () {
     var d = a - m; return '<span class="' + (d < 0 ? 'm-ok' : '') + '">' + P.diffStr(d) + (d < 0 ? ' 🎉 Bestzeit' : '') + '</span>';
   }
 
+  var STEPS = 13;
+  var PHASES = [
+    { id: 'plan', label: 'Planung', items: [['webclub', 'WebClub angelegt'], ['krabfrage', 'Kampfrichter abgefragt'], ['bekWA', 'Bekanntgabe WhatsApp'], ['bekHP', 'Bekanntgabe Homepage']] },
+    { id: 'meld', label: 'Meldung', items: [['lizenzen', 'DSV-Lizenzen geprüft'], ['@intMs', 'Interner Meldeschluss'], ['geprueft', 'Meldungen geprüft'], ['versendet', 'Meldungen versendet'], ['bestaetigung', 'Meldebestätigung erhalten']] },
+    { id: 'erg', label: 'Nach Meldeergebnis', items: [['waGruppe', 'WhatsApp-Gruppe'], ['meWA', 'Meldeergebnis in WhatsApp'], ['meHP', 'Meldeergebnis auf Homepage']] },
+    { id: 'wk', label: 'Wettkampf', items: [['@teilnahme', 'Teilnahme'], ['@kr1', 'Kampfrichter Abschnitt 1'], ['@kr2', 'Kampfrichter Abschnitt 2']] },
+    { id: 'nach', label: 'Nachbereitung', items: [['urkGedruckt', 'Urkunden gedruckt'], ['urkVerteilt', 'Urkunden verteilt']] }
+  ];
+  var BOXES = []; PHASES.forEach(function (p) { p.items.forEach(function (i) { if (i[0].charAt(0) !== '@') BOXES.push(i); }); });
+  function canCheck() { return M.can('wettkaempfe.check'); }
+  function isOn(wk, k) { return !!(wk.chk && wk.chk[k]); }
+  function done(wk) { var n = 0; BOXES.forEach(function (b) { if (isOn(wk, b[0])) n++; }); return n; }
+  function clock(wk) { return wk.meldeschlussUhr ? ' ' + esc(wk.meldeschlussUhr) + ' Uhr' : ''; }
+  function tg(n) { return n + (n === 1 ? ' Tag' : ' Tagen'); }
+  function warnings(wk) {
+    var out = []; var past = wk.date && wk.date < M.today();
+    if (past) return out;
+    var sent = isOn(wk, 'versendet');
+    if (wk.meldeschluss && !sent) {
+      var d = M.daysTo(wk.meldeschluss);
+      if (d < 0) out.push({ c: 'bad', t: 'Meldeschluss vorbei (' + fs(wk.meldeschluss) + ')' });
+      else if (d <= 7) out.push({ c: d <= 2 ? 'bad' : 'warn', t: 'Meldeschluss ' + (d === 0 ? 'heute' : d === 1 ? 'morgen' : 'in ' + tg(d)) + (d <= 1 ? clock(wk) : '') });
+    }
+    if (wk.intMs && !sent && !isOn(wk, 'geprueft')) {
+      var di = M.daysTo(wk.intMs);
+      if (di < 0) out.push({ c: 'bad', t: 'Interner Meldeschluss überschritten (' + fs(wk.intMs) + ')' });
+      else if (di <= 3) out.push({ c: 'warn', t: 'Interner Meldeschluss ' + (di === 0 ? 'heute' : 'in ' + tg(di)) });
+    }
+    var no = openDuties(wk); if (no && (wk.gericht || []).length) out.push({ c: 'warn', t: no + ' Kampfgericht-Platz' + (no > 1 ? 'e' : '') + ' offen' });
+    return out;
+  }
+  function warnHtml(wk) { return warnings(wk).map(function (w) { return '<span class="wk-w ' + w.c + '">' + esc(w.t) + '</span>'; }).join(''); }
+  function teilTxt(v) { return v === 'pos' ? 'Teilnahme: ja' : v === 'neg' ? 'Teilnahme: nein' : ''; }
+
+  /* ---------- Kampfrichter-Vorschlag ---------- */
+  function abList(wk) { var l = (wk.abschnitte || []).map(function (a) { return a.no; }); return l.length ? l : [1]; }
+  function krSuggest(wk, ab) {
+    var g = (wk.gericht || []).filter(function (x) { return x.a === ab; }).length;
+    if (g) return { n: g, src: g + ' Plätze im Meldeergebnis' };
+    var src = (wk.starts || []).length ? wk.starts : ((wk.meld && wk.meld.starts) || []);
+    if (!src.length || !(wk.kr || []).length) return null;
+    var cnt = src.filter(function (s) { return (ev(wk, s.e).ab || 1) === ab; }).length;
+    var n = P.krFor(wk.kr, cnt);
+    return n === null ? null : { n: n, src: cnt + ' Meldungen laut Ausschreibung' };
+  }
+
   /* ---------- Übersicht aller Wettkämpfe ---------- */
+  function sortedAll() { return M.items('wettkaempfe').sort(function (a, b) { return String(a.date || '9999') < String(b.date || '9999') ? -1 : 1; }); }
+  function viewSwitch(v) { return M.seg([['karten', 'Karten'], ['tabelle', 'Tabelle']], v, 'wklist'); }
   function listPage() {
-    var all = M.items('wettkaempfe').sort(function (a, b) { return String(a.date || '') < String(b.date || '') ? -1 : 1; });
-    var t = M.today();
+    var all = sortedAll(); var t = M.today(); var lv = M.S.sub.lv || 'karten';
     var up = all.filter(function (w) { return (w.date || '9999') >= t; });
     var past = all.filter(function (w) { return (w.date || '9999') < t; }).reverse();
     var canImp = M.can('wettkaempfe.import');
-    var out = '<section class="wm-card"><div class="wm-bar"><h3>Nächste Wettkämpfe</h3><span class="m-actions">' + (canImp ? '<button type="button" class="wm-btn" data-ma="wkneu">➕ Termin ohne PDF</button><button type="button" class="wm-amber" data-ma="wkimport">📄 Meldeergebnis hochladen</button>' : '') + '</span></div>';
-    if (!up.length) out += '<p class="wm-note">Keine anstehenden Wettkämpfe. ' + (canImp ? 'Lade ein Meldeergebnis (PDF) hoch, dann erscheint es hier.' : '') + '</p>';
+    var out = '<section class="wm-card"><div class="wm-bar"><h3>Wettkämpfe</h3><span class="m-actions">' + viewSwitch(lv) + (canImp ? '<button type="button" class="wm-btn" data-ma="wkneu">➕ Termin</button><button type="button" class="wm-amber" data-ma="wkaus">📄 Neu aus Ausschreibung</button>' : '') + '</span></div>';
+    if (lv === 'tabelle') {
+      var rows = M.S.sub.allRows ? all : up.concat(past.filter(function (w) { return M.daysTo(w.date) >= -45; }).reverse());
+      out += tableHtml(rows) + '<p class="wm-note"><button type="button" class="m-chip' + (M.S.sub.allRows ? ' on' : '') + '" data-ma="allrows">Auch ältere zeigen</button> Tippe auf ein Feld, um es abzuhaken.</p></section>';
+      return out;
+    }
+    if (!up.length) out += '<p class="wm-note">Keine anstehenden Wettkämpfe. ' + (canImp ? 'Lege einen Termin an oder lade die Ausschreibung hoch.' : '') + '</p>';
     up.forEach(function (w) { out += wkCard(w, false); });
     out += '</section>';
     if (past.length) {
@@ -211,42 +113,113 @@ var WKParse = (function () {
     return out;
   }
   function wkCard(w, isPast) {
-    var dd = M.daysTo(w.date); var todos = isPast ? [] : todosOf(w.id);
-    var openT = todos.filter(function (x) { return x.status !== 'erledigt'; });
+    var dd = M.daysTo(w.date);
     var sw = swimmers(w).length;
     var when = dd === null ? '' : dd === 0 ? 'heute' : dd === 1 ? 'morgen' : dd > 0 ? 'in ' + dd + ' Tagen' : 'vor ' + (-dd) + ' Tagen';
     var d = w.date ? new Date(w.date + 'T12:00:00') : null;
     var dbox = d ? '<div class="wk-date"><b>' + ('0' + d.getDate()).slice(-2) + '</b><span>' + ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'][d.getMonth()] + '</span></div>' : '<div class="wk-date"><b>?</b></div>';
-    var nOpen = openDuties(w);
-    var out = '<article class="m-card wk-card" data-id="' + esc(w.id) + '"><div class="m-head" data-ma="wkopen">' + dbox + '<div class="m-main"><div class="m-title">' + esc(w.title) + '</div><div class="wm-sub">' + [fd(w.date), when, esc(w.ort || '')].filter(Boolean).join(' · ') + '</div><div class="wm-sub">' + [(w.starts || []).length ? sw + ' Schwimmer · ' + w.starts.length + ' Starts' : 'Noch kein Meldeergebnis', timeRange(w), nOpen ? '⚠️ ' + nOpen + ' Kampfgericht-Plätze offen' : ''].filter(Boolean).join(' · ') + '</div></div><span class="m-chev">›</span></div>';
-    if (!isPast && (todos.length || M.can('aufgaben.edit'))) {
-      out += '<div class="wk-todos"><div class="wm-sub" style="font-weight:800;text-transform:uppercase;letter-spacing:.04em">To-dos' + (openT.length ? ' (' + openT.length + ' offen)' : '') + '</div>' +
-        todos.map(function (t) { var done = t.status === 'erledigt'; var o = M.daysTo(t.due); var canTick = M.can('aufgaben.edit') || (M.can('aufgaben.own')); return '<div class="m-chk" data-tid="' + esc(t.id) + '"><button type="button" class="m-box' + (done ? ' on' : '') + '" data-ma="wktick"' + (canTick ? '' : ' disabled') + '>' + (done ? '✓' : '') + '</button><span style="flex:1' + (done ? ';text-decoration:line-through;opacity:.6' : '') + '">' + esc(t.title) + (t.who && t.who.length ? ' <span class="wm-sub">· ' + esc(t.who.join(', ')) + '</span>' : '') + '</span>' + (t.due ? '<span class="wm-sub ' + (!done && o < 0 ? 'm-over' : '') + '">' + fs(t.due) + '</span>' : '') + '</div>'; }).join('') +
-        (M.can('aufgaben.edit') ? '<button type="button" class="wm-btn" data-ma="wktodo" style="margin-top:6px">+ To-do</button>' : '') + '</div>';
-    }
-    return out + '</article>';
+    var nd = done(w);
+    var info = [(w.starts || []).length ? sw + ' Schwimmer · ' + w.starts.length + ' Starts' : ((w.meld && w.meld.starts || []).length ? 'Gemeldet: ' + (w.meld.n || '') + ' Schwimmer' : 'Noch keine Meldung'), isPast ? teilTxt(w.teilnahme) : ''].filter(Boolean).join(' · ');
+    return '<article class="m-card wk-card" data-id="' + esc(w.id) + '"><div class="m-head" data-ma="wkopen">' + dbox + '<div class="m-main"><div class="m-title">' + esc(w.title) + '</div><div class="wm-sub">' + [fd(w.date), when, esc(w.ort || '')].filter(Boolean).join(' · ') + '</div><div class="wm-sub">' + info + '</div>' +
+      (isPast ? '' : '<div class="wk-prog">' + M.prog(nd, STEPS) + ' <span class="wm-sub">erledigt</span></div>' + warnHtml(w)) + '</div><span class="m-chev">›</span></div></article>';
   }
 
-  /* ---------- Detailansicht ---------- */
+  /* ---------- Tabelle wie im Sheet ---------- */
+  function tableHtml(rows) {
+    if (!rows.length) return '<p class="wm-note">Keine Wettkämpfe.</p>';
+    var can = canCheck();
+    var h1 = '<tr class="ph"><th></th>' + PHASES.map(function (p) { return '<th colspan="' + p.items.length + '">' + esc(p.label) + '</th>'; }).join('') + '<th></th></tr>';
+    var h2 = '<tr><th>Wettkampf</th>' + PHASES.map(function (p) { return p.items.map(function (i) { return '<th title="' + esc(i[1]) + '">' + esc(shortLabel(i)) + '</th>'; }).join(''); }).join('') + '<th>Fertig</th></tr>';
+    var body = rows.map(function (w) {
+      var tds = PHASES.map(function (p) {
+        return p.items.map(function (i) {
+          var k = i[0];
+          if (k === '@intMs') return '<td><button type="button" class="m-chip wk-tc" data-ma="wkcell" data-w="' + esc(w.id) + '" data-k="intMs"' + (can ? '' : ' disabled') + '>' + (w.intMs ? esc(fs(w.intMs).replace(/^\S+\s/, '')) : '–') + '</button></td>';
+          if (k === '@teilnahme') return '<td><button type="button" class="m-chip wk-tc" data-ma="wkcell" data-w="' + esc(w.id) + '" data-k="teilnahme"' + (can ? '' : ' disabled') + '>' + (w.teilnahme === 'pos' ? '✓ ja' : w.teilnahme === 'neg' ? '✗ nein' : '–') + '</button></td>';
+          if (k === '@kr1' || k === '@kr2') { var f = k.slice(1); return '<td><button type="button" class="m-chip wk-tc" data-ma="wkcell" data-w="' + esc(w.id) + '" data-k="' + f + '"' + (can ? '' : ' disabled') + '>' + (w[f] === undefined || w[f] === '' || w[f] === null ? '–' : esc(w[f])) + '</button></td>'; }
+          var on = isOn(w, k);
+          return '<td><button type="button" class="m-cell' + (on ? ' on' : '') + '" data-ma="wkcell" data-w="' + esc(w.id) + '" data-k="' + k + '"' + (can ? '' : ' disabled') + '>' + (on ? '✓' : '') + '</button></td>';
+        }).join('');
+      }).join('');
+      return '<tr><td><button type="button" class="wk-tl" data-ma="wkopen" data-id="' + esc(w.id) + '"><b>' + esc(w.title) + '</b></button><div class="wm-sub">' + fs(w.date) + '</div></td>' + tds + '<td><b>' + done(w) + '/' + STEPS + '</b></td></tr>';
+    }).join('');
+    return '<div class="m-twrap"><table>' + h1 + h2 + body + '</table></div>';
+  }
+  function shortLabel(i) {
+    var m = { webclub: 'WebClub', krabfrage: 'KR-Abfr.', bekWA: 'WA', bekHP: 'HP', lizenzen: 'Lizenzen', '@intMs': 'Int. MS', geprueft: 'Geprüft', versendet: 'Versandt', bestaetigung: 'Bestät.', waGruppe: 'WA-Gr.', meWA: 'ME WA', meHP: 'ME HP', '@teilnahme': 'Teiln.', '@kr1': 'KR 1', '@kr2': 'KR 2', urkGedruckt: 'Urk. dr.', urkVerteilt: 'Urk. vert.' };
+    return m[i[0]] || i[1];
+  }
+  function toggleChk(wk, k) {
+    var on = isOn(wk, k); var f = {}; f[k] = on ? null : { by: M.userName(), at: M.today() };
+    M.op({ op: 'patch', coll: 'wettkaempfe', id: wk.id, merge: true, fields: { chk: f } });
+  }
+  function cellEdit(wk, k) {
+    var fields, item = {}, save;
+    if (k === 'intMs') { fields = [{ k: 'v', t: 'date', label: 'Interner Meldeschluss' }]; item.v = wk.intMs || ''; save = function (v) { M.op({ op: 'patch', coll: 'wettkaempfe', id: wk.id, fields: { intMs: v.v } }); }; }
+    else if (k === 'teilnahme') { fields = [{ k: 'v', t: 'sel', label: 'Teilnahme', opts: [['', 'Offen'], ['pos', 'Positiv (nehmen teil)'], ['neg', 'Negativ (nehmen nicht teil)']] }]; item.v = wk.teilnahme || ''; save = function (v) { M.op({ op: 'patch', coll: 'wettkaempfe', id: wk.id, fields: { teilnahme: v.v } }); }; }
+    else { var ab = k === 'kr1' ? 1 : 2; var sg = krSuggest(wk, ab); fields = [{ k: 'v', t: 'num', label: 'Kampfrichter Abschnitt ' + ab, hint: sg ? 'Vorschlag: ' + sg.n + ' (' + sg.src + ')' : '' }]; item.v = wk[k] === undefined ? (sg ? sg.n : '') : wk[k]; save = function (v) { var f = {}; f[k] = v.v; M.op({ op: 'patch', coll: 'wettkaempfe', id: wk.id, fields: f }); }; }
+    M.openForm({ title: wk.title, fields: fields, item: item, onSave: save });
+  }
+
+  /* ---------- Detail ---------- */
   function detail(wk) {
     var s = sub();
-    var views = [['uebersicht', 'Übersicht'], ['ablauf', 'Ablauf'], ['zeiten', 'Zeiten'], ['gericht', 'Kampfgericht']];
-    var canPrint = M.can('wettkaempfe.print');
+    var views = [['check', 'Checkliste'], ['uebersicht', 'Übersicht'], ['ablauf', 'Ablauf'], ['zeiten', 'Zeiten'], ['gericht', 'Kampfgericht'], ['docs', 'Unterlagen']];
+    var canPrint = M.can('wettkaempfe.print'); var canImp = M.can('wettkaempfe.import');
     var out = '<section class="wm-card"><div class="wm-bar"><button type="button" class="wm-btn" data-ma="wkback">← Alle Wettkämpfe</button><span class="m-actions">' +
       (canPrint ? '<button type="button" class="wm-btn" data-ma="wkprint">🖨️ Drucken</button>' : '') +
-      (M.can('wettkaempfe.import') ? '<button type="button" class="wm-btn" data-ma="wkupdate">📄 Meldeergebnis aktualisieren</button><button type="button" class="wm-btn" data-ma="wkedit">✏️</button><button type="button" class="wm-btn m-danger" data-ma="wkdel">🗑️</button>' : '') + '</span></div>' +
+      (canImp ? '<button type="button" class="wm-btn" data-ma="wkedit">✏️</button><button type="button" class="wm-btn m-danger" data-ma="wkdel">🗑️</button>' : '') + '</span></div>' +
       '<h3 class="m-h2" style="margin:6px 0 2px">' + esc(wk.title) + '</h3><div class="wm-sub">' + [fd(wk.date), esc(wk.ort || ''), esc(wk.veranstalter ? 'Veranstalter: ' + wk.veranstalter : ''), esc(wk.becken || ''), esc(wk.temp ? 'Wasser ' + wk.temp : '')].filter(Boolean).join(' · ') + '</div>' +
-      (wk.stand ? '<div class="wm-sub">Stand des Meldeergebnisses: ' + esc(wk.stand.replace(/^(\d{4})-(\d{2})-(\d{2})/, '$3.$2.$1')) + '</div>' : '') + '</section>';
+      (wk.stand ? '<div class="wm-sub">Stand des Meldeergebnisses: ' + esc(wk.stand.replace(/^(\d{4})-(\d{2})-(\d{2})/, '$3.$2.$1')) + '</div>' : '') + '<div class="wk-prog" style="margin-top:8px">' + M.prog(done(wk), STEPS) + ' <span class="wm-sub">erledigt</span></div>' + warnHtml(wk) + '</section>';
     out += '<div class="wm-tabs">' + views.map(function (v) { return '<button type="button" class="wm-tab' + (s.v === v[0] ? ' on' : '') + '" data-ma="wkview" data-v="' + v[0] + '">' + v[1] + '</button>'; }).join('') + '</div>';
-    if (!(wk.starts || []).length && s.v !== 'gericht') return out + '<section class="wm-card"><p class="wm-note">Für diesen Termin gibt es noch kein Meldeergebnis.' + (M.can('wettkaempfe.import') ? ' Tippe oben auf „Meldeergebnis aktualisieren“.' : '') + '</p></section>';
+    if (s.v === 'check') return out + viewCheck(wk);
+    if (s.v === 'docs') return out + viewDocs(wk);
+    if (s.v === 'gericht') return out + viewGericht(wk);
+    if (!(wk.starts || []).length) {
+      if (s.v === 'uebersicht' && wk.meld && (wk.meld.starts || []).length) return out + viewGemeldet(wk);
+      return out + '<section class="wm-card"><p class="wm-note">Für diesen Termin gibt es noch kein Meldeergebnis.' + (canImp ? ' Unter „Unterlagen“ kannst du es hochladen.' : '') + '</p></section>';
+    }
     if (s.v === 'uebersicht') return out + viewUebersicht(wk);
     if (s.v === 'ablauf') return out + viewAblauf(wk);
-    if (s.v === 'zeiten') return out + viewZeiten(wk);
-    return out + viewGericht(wk);
+    return out + viewZeiten(wk);
   }
-  function startLine(wk, st, withName) {
-    var e = ev(wk, st.e);
-    return '<tr><td class="nowrap"><b>' + esc(st.t) + '</b></td><td>' + (withName ? '<b>' + esc(st.n) + '</b> (' + esc(st.j) + ')<br>' : '') + 'WK ' + st.e + ' · ' + esc(e.name) + '</td><td class="nowrap">Lauf ' + st.l + '/' + st.lt + '<br>Bahn ' + st.b + '</td><td class="nowrap">' + (st.m ? esc(st.m) : '<span class="wm-sub">ohne</span>') + '</td></tr>';
+  function whoAt(c) { return c ? '<span class="wm-sub"> · ' + esc(c.by || '') + (c.at ? ', ' + fs(c.at) : '') + '</span>' : ''; }
+  function viewCheck(wk) {
+    var can = canCheck();
+    var out = '';
+    if (wk.meldeschluss || wk.meldegeld || wk.meldeanschrift) {
+      out += '<section class="wm-card"><div class="wm-sub" style="font-weight:800;text-transform:uppercase">Aus der Ausschreibung</div>' +
+        (wk.meldeschluss ? '<div><b>Meldeschluss:</b> ' + fd(wk.meldeschluss) + clock(wk) + '</div>' : '') + (wk.meldegeld ? '<div><b>Meldegeld:</b> ' + esc(wk.meldegeld) + '</div>' : '') + (wk.meldeanschrift ? '<div><b>Meldeanschrift:</b> ' + esc(wk.meldeanschrift) + '</div>' : '') + '</section>';
+    }
+    PHASES.forEach(function (p) {
+      out += '<section class="wm-card"><div class="m-sec" style="margin-top:0">' + esc(p.label) + '</div>';
+      p.items.forEach(function (i) {
+        var k = i[0];
+        if (k === '@intMs') {
+          out += '<div class="m-chk"><span style="flex:1">' + esc(i[1]) + '</span><input type="date" class="m-time" style="width:auto" data-wkims="1" value="' + esc(wk.intMs || '') + '"' + (can ? '' : ' disabled') + '></div>'; return;
+        }
+        if (k === '@teilnahme') {
+          out += '<div class="m-chk"><span style="flex:1">Teilnahme</span>' + M.seg([['', 'Offen'], ['pos', 'Positiv'], ['neg', 'Negativ']], wk.teilnahme || '', can ? 'wkteil' : 'wknop') + '</div>'; return;
+        }
+        if (k === '@kr1' || k === '@kr2') {
+          var f = k.slice(1); var ab = f === 'kr1' ? 1 : 2;
+          if (ab === 2 && abList(wk).length < 2 && (wk[f] === undefined || wk[f] === '')) return;
+          var sg = krSuggest(wk, ab);
+          out += '<div class="m-chk"><span style="flex:1">' + esc(i[1]) + (sg ? '<div class="wm-sub">Vorschlag ' + sg.n + ' · ' + esc(sg.src) + '</div>' : '') + '</span><input type="number" inputmode="numeric" min="0" class="m-time" style="width:5em" data-wkkr="' + f + '" value="' + esc(wk[f] === undefined || wk[f] === null ? '' : wk[f]) + '" placeholder="' + (sg ? sg.n : '') + '"' + (can ? '' : ' disabled') + '>' + (sg && can && (wk[f] === undefined || wk[f] === '') ? '<button type="button" class="wm-btn" data-ma="wkkrtake" data-k="' + f + '" data-n="' + sg.n + '">übernehmen</button>' : '') + '</div>'; return;
+        }
+        var c = wk.chk && wk.chk[k]; var on = !!c;
+        out += '<div class="m-chk"><button type="button" class="m-box' + (on ? ' on' : '') + '" data-ma="wkchk" data-k="' + k + '"' + (can ? '' : ' disabled') + '>' + (on ? '✓' : '') + '</button><span style="flex:1' + (on ? ';opacity:.7' : '') + '">' + esc(i[1]) + whoAt(c) + '</span></div>';
+      });
+      out += '</section>';
+    });
+    return out;
+  }
+  function viewGemeldet(wk) {
+    var m = {}; wk.meld.starts.forEach(function (s) { (m[s.n] = m[s.n] || { n: s.n, j: s.j, st: [] }).st.push(s); });
+    var list = Object.keys(m).map(function (k) { return m[k]; }).sort(function (a, b) { return a.n.localeCompare(b.n, 'de'); });
+    var out = '<section class="wm-card"><div class="wm-bar"><h3>Gemeldet</h3><span class="wm-sub">' + list.length + ' Schwimmer · ' + wk.meld.starts.length + ' Starts</span></div><p class="wm-note">Laut Meldedatei. Uhrzeiten und Bahnen kommen erst mit dem Meldeergebnis.</p>';
+    list.forEach(function (x) { out += '<article class="m-card"><div class="m-body" style="border:0"><b>' + esc(x.n.replace(/^([^,]+),\s*(.+)$/, '$2 $1')) + '</b> <span class="wm-sub">(' + esc(x.j) + ')</span><br>' + x.st.sort(function (a, b) { return a.e - b.e; }).map(function (s) { return 'WK ' + s.e + ' · ' + esc(ev(wk, s.e).name) + (s.m ? ' · Meldezeit ' + esc(s.m) : ''); }).join('<br>') + '</div></article>'; });
+    return out + '</section>';
   }
   function viewUebersicht(wk) {
     var out = '<section class="wm-card"><div class="wm-bar"><h3>Wer schwimmt wann wo</h3><span class="wm-sub">' + swimmers(wk).length + ' Schwimmer · ' + wk.starts.length + ' Starts</span></div><input type="search" class="m-search" data-mq="1" placeholder="🔎 Schwimmer suchen …" value="' + esc(M.S.q) + '" autocomplete="off">';
@@ -262,6 +235,154 @@ var WKParse = (function () {
     if (M.can('wettkaempfe.zeiten')) out += '<section class="wm-card"><label class="m-f wide"><span>Notiz zum Wettkampf</span><textarea data-wknote="1" rows="3">' + esc(wk.note || '') + '</textarea></label></section>';
     else if (wk.note) out += '<section class="wm-card"><div class="wm-sub">Notiz</div><pre style="white-space:pre-wrap;font:inherit">' + esc(wk.note) + '</pre></section>';
     return out;
+  }
+
+  /* ---------- Unterlagen ---------- */
+  var DOCS = [
+    ['aus', 'Ausschreibung', 'PDF. Übernimmt Termin, Ort, Meldeschluss, Meldegeld, Kampfrichter-Tabelle und Wettkampffolge.'],
+    ['meld', 'Meldedatei', 'DSV7-Datei (oder PDF). Zeigt, wer in welchen Strecken gemeldet ist. Als PDF wird nur die Ablage vermerkt.'],
+    ['erg', 'Meldeergebnis', 'PDF aus EasyWk. Übernimmt Uhrzeiten, Läufe, Bahnen und Kampfgericht.'],
+    ['prot', 'Protokoll', 'PDF der Ergebnisse. Trägt die Zeiten deiner Schwimmer ein (bitte Vorschau prüfen).']
+  ];
+  function viewDocs(wk) {
+    var canImp = M.can('wettkaempfe.import') || M.can('wettkaempfe.zeiten');
+    var out = '<section class="wm-card"><div class="wm-bar"><h3>Unterlagen in dieser Reihenfolge</h3></div>';
+    DOCS.forEach(function (d, n) {
+      var x = wk.docs && wk.docs[d[0]]; var ok = d[0] === 'prot' ? M.can('wettkaempfe.zeiten') : M.can('wettkaempfe.import');
+      out += '<div class="wk-doc"><div class="wk-dn">' + (n + 1) + '</div><div style="flex:1;min-width:0"><b>' + d[1] + '</b> ' + (x ? '<span class="m-ok">✓ ' + esc(x.name || '') + '</span> <span class="wm-sub">' + fs(x.at) + '</span>' : '<span class="wm-sub">noch nicht hochgeladen</span>') + '<div class="wm-sub">' + esc(d[2]) + '</div>' +
+        (d[0] === 'meld' && wk.meld ? '<div class="wm-sub">' + (wk.meld.n || 0) + ' Schwimmer · ' + (wk.meld.starts || []).length + ' Starts' + diffMeld(wk) + '</div>' : '') + '</div>' +
+        (ok ? '<button type="button" class="wm-btn" data-ma="wkdoc" data-kind="' + d[0] + '">' + (x ? 'Neu hochladen' : 'Hochladen') + '</button>' : '') + '</div>';
+    });
+    return out + '</section>';
+  }
+  function diffMeld(wk) {
+    if (!(wk.starts || []).length || !wk.meld) return '';
+    var have = {}; wk.starts.forEach(function (s) { have[s.n.toLowerCase() + '|' + s.e] = 1; });
+    var miss = wk.meld.starts.filter(function (s) { var n = s.n.replace(/^([^,]+),\s*(.+)$/, '$2 $1').toLowerCase(); return !have[n + '|' + s.e] && !have[s.n.toLowerCase() + '|' + s.e]; }).length;
+    return miss ? ' · <span class="m-over">' + miss + ' Meldung(en) fehlen im Meldeergebnis</span>' : ' · <span class="m-ok">stimmt mit Meldeergebnis überein</span>';
+  }
+  function docDialog(kind, target) {
+    var d = DOCS.filter(function (x) { return x[0] === kind; })[0];
+    M.openDlg('<div class="hub-dhead"><h3>' + d[1] + ' hochladen</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div><p class="wm-note">' + esc(d[2]) + '</p>' +
+      '<div class="m-fgrid"><label class="m-f wide"><span>Datei</span><input type="file" id="wkfile"' + (kind === 'meld' ? '' : ' accept="application/pdf,.pdf"') + '></label>' +
+      (kind === 'erg' || kind === 'prot' || kind === 'meld' ? '<label class="m-f wide"><span>Vereinsname in der Datei</span><input type="text" id="wkclub" value="' + esc(club()) + '" autocomplete="off"></label>' : '') + '</div>' +
+      '<div id="wkmsg" class="wm-note"></div><div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="wkread" data-kind="' + kind + '" data-target="' + esc(target || '') + '">Auslesen</button></div>');
+  }
+  function fail(e) { var msg = document.getElementById('wkmsg'); if (msg) msg.innerHTML = '<span class="m-over">' + esc(e.message || String(e)) + '</span>'; }
+  function doRead(kind, target) {
+    var f = document.getElementById('wkfile').files[0]; var cEl = document.getElementById('wkclub'); var c = cEl ? (cEl.value.trim() || 'SG Barnstorf') : club(); var msg = document.getElementById('wkmsg');
+    if (!f) { msg.textContent = 'Bitte zuerst eine Datei auswählen.'; return; }
+    if (cEl) M.lsSet(CLUB_KEY, c);
+    msg.textContent = 'Wird gelesen … (beim ersten Mal wird der PDF-Leser geladen)';
+    var tgt = target ? M.find('wettkaempfe', target) : null;
+    if (kind === 'meld' && !/\.pdf$/i.test(f.name)) {
+      HubPdf.text(f).then(function (txt) { imp = { kind: kind, p: P.parseDsv7(txt), file: f.name, club: c, target: target }; prevMeld(); }, fail); return;
+    }
+    if (kind === 'meld') { imp = { kind: kind, p: null, file: f.name, target: target }; prevMeld(); return; }
+    HubPdf.read(f).then(function (r) {
+      if (kind === 'aus') { imp = { kind: kind, p: P.parseAusschreibung(r.lines), file: f.name, target: target }; prevAus(tgt); }
+      else if (kind === 'erg') { imp = { kind: kind, p: P.parse(r.lines, c), file: f.name, club: c, target: target }; previewDialog(); }
+      else { if (!tgt) { fail(new Error('Kein Wettkampf gewählt.')); return; } imp = { kind: kind, p: P.parseProtokoll(r.lines, (tgt.starts || []).length ? tgt.starts : ((tgt.meld && tgt.meld.starts) || [])), file: f.name, target: target }; prevProt(tgt); }
+    }, fail);
+  }
+  function fld(id, label, val, type, wide) { return '<label class="m-f' + (wide ? ' wide' : '') + '"><span>' + label + '</span><input type="' + (type || 'text') + '" id="' + id + '" value="' + esc(val || '') + '" autocomplete="off"></label>'; }
+  function prevAus(tgt) {
+    var p = imp.p;
+    var im = p.meldeschluss ? M.addDays(p.meldeschluss, -5) : '';
+    M.openDlg('<div class="hub-dhead"><h3>Ausschreibung: Das wurde gefunden</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div>' +
+      (p.warnings.length ? '<div class="hub-err">' + p.warnings.map(esc).join('<br>') + ' Bitte unten ergänzen.</div>' : '') +
+      '<div class="m-fgrid">' + fld('as_t', 'Titel', (tgt && tgt.title) || p.title, 'text', true) + fld('as_d', 'Datum', p.date, 'date') + fld('as_o', 'Ort', p.ort) + fld('as_ms', 'Meldeschluss', p.meldeschluss, 'date') + fld('as_mu', 'Uhrzeit Meldeschluss', p.meldeschlussUhr, 'time') + fld('as_im', 'Interner Meldeschluss', (tgt && tgt.intMs) || im, 'date') + fld('as_mg', 'Meldegeld', p.meldegeld, 'text', true) + '</div>' +
+      '<p class="wm-note">' + (p.events.length ? '<b>' + p.events.length + '</b> Wettkämpfe' : 'Keine Wettkampffolge erkannt') + (p.abschnitte.length ? ' · ' + p.abschnitte.length + ' Abschnitt' + (p.abschnitte.length > 1 ? 'e' : '') : '') + (p.kr.length ? ' · Kampfrichter: ' + p.kr.map(function (k) { return (k.bis >= 9999 ? 'ab ' + k.von : k.von + '–' + k.bis) + ' Meldungen = ' + k.n; }).join(', ') : '') + '</p>' +
+      '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="wksaveaus">' + (tgt ? 'Übernehmen' : 'Wettkampf anlegen') + '</button></div>');
+  }
+  function v(id) { var e = document.getElementById(id); return e ? e.value.trim() : ''; }
+  function saveAus() {
+    var p = imp.p; var tgt = imp.target ? M.find('wettkaempfe', imp.target) : null;
+    var f = { title: v('as_t') || p.title || 'Wettkampf', date: v('as_d'), date2: p.date2 || '', ort: v('as_o'), halle: p.halle || '', veranstalter: p.veranstalter || '', meldeschluss: v('as_ms'), meldeschlussUhr: v('as_mu'), intMs: v('as_im'), meldegeld: v('as_mg'), meldeanschrift: p.meldeanschrift || '', kr: p.kr || [] };
+    var docs = Object.assign({}, tgt && tgt.docs || {}); docs.aus = { name: imp.file, at: M.today(), by: M.userName() };
+    if (!tgt || !(tgt.events || []).length) { f.events = p.events.map(function (e) { return { no: e.no, name: e.name, ab: e.ab, jg: e.jg }; }); f.abschnitte = p.abschnitte; }
+    f.docs = docs;
+    if (tgt) { M.op({ op: 'patch', coll: 'wettkaempfe', id: tgt.id, fields: f }); M.closeDlg(); M.toast('Ausschreibung übernommen.'); return; }
+    var wk = Object.assign({ id: M.uid(), club: club(), abschnitte: [], events: [], starts: [], gericht: [], res: {}, chk: {} }, f);
+    M.closeDlg(); M.op({ op: 'set', coll: 'wettkaempfe', item: wk }); M.S.sub.wk = wk.id; M.S.sub.v = 'docs'; M.S.sub.vSet = true; M.toast('Wettkampf angelegt. Weiter mit der Meldedatei.'); M.render(true);
+  }
+  function prevMeld() {
+    var p = imp.p;
+    if (!p) { M.openDlg('<div class="hub-dhead"><h3>Meldedatei (PDF)</h3></div><p class="wm-note">PDF-Meldedateien werden nicht ausgelesen. Es wird nur vermerkt, dass sie vorliegt: <b>' + esc(imp.file) + '</b></p><div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="wksavemeld">Vermerken</button></div>'); return; }
+    var m = {}; p.starts.forEach(function (s) { (m[s.n] = m[s.n] || []).push(s); });
+    M.openDlg('<div class="hub-dhead"><h3>Meldedatei: Das wurde gefunden</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div>' + (p.warnings.length ? '<div class="hub-err">' + p.warnings.map(esc).join('<br>') + '</div>' : '') +
+      '<p class="wm-note"><b>' + esc(p.title || '') + '</b>' + (p.ort ? ' · ' + esc(p.ort) : '') + (p.bahn ? ' · ' + esc(p.bahn) : '') + '<br><b>' + p.swimmerCount + '</b> Schwimmer · <b>' + p.starts.length + '</b> Starts' + (p.verein ? ' · ' + esc(p.verein) : '') + '</p>' +
+      '<div style="max-height:30vh;overflow:auto"><table class="m-table"><tr><th>Schwimmer</th><th>Starts</th></tr>' + Object.keys(m).sort().map(function (k) { return '<tr><td>' + esc(k) + '</td><td>' + m[k].length + '</td></tr>'; }).join('') + '</table></div>' +
+      '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="wksavemeld"' + (p.starts.length ? '' : ' disabled') + '>Übernehmen</button></div>');
+  }
+  function saveMeld() {
+    var p = imp.p; var tgt = M.find('wettkaempfe', imp.target); if (!tgt) return;
+    var docs = Object.assign({}, tgt.docs || {}); docs.meld = { name: imp.file, at: M.today(), by: M.userName() };
+    var f = { docs: docs };
+    if (p) {
+      f.meld = { n: p.swimmerCount, starts: p.starts.map(function (s) { return { e: s.e, n: s.n, s: s.s, j: s.j, m: s.m }; }) };
+      if (!(tgt.events || []).length) { f.events = p.events.map(function (e) { return { no: e.no, name: e.name, ab: e.ab }; }); if (!(tgt.abschnitte || []).length) f.abschnitte = p.abschnitte.map(function (a) { return { no: a.no, tag: a.date, beginn: a.beginn }; }); }
+    }
+    M.op({ op: 'patch', coll: 'wettkaempfe', id: tgt.id, fields: f }); M.closeDlg(); M.toast('Meldedatei übernommen.');
+  }
+  function prevProt(tgt) {
+    var p = imp.p; var src = (tgt.starts || []).length ? tgt.starts : [];
+    var rows = p.found.map(function (x) {
+      var hit = src.filter(function (s) { return s.e === x.e && s.n.toLowerCase() === x.nn; })[0];
+      return { x: x, hit: hit };
+    });
+    imp.rows = rows;
+    var ok = rows.filter(function (r) { return r.hit; }).length;
+    M.openDlg('<div class="hub-dhead"><h3>Protokoll: Das wurde gefunden</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div>' + (p.warnings.length ? '<div class="hub-err">' + p.warnings.map(esc).join('<br>') + '</div>' : '') +
+      (!src.length ? '<div class="hub-err">Es gibt noch kein Meldeergebnis mit Läufen und Bahnen. Bitte zuerst das Meldeergebnis hochladen.</div>' : '') +
+      '<p class="wm-note"><b>' + ok + '</b> von ' + rows.length + ' Zeiten konnten einem Start zugeordnet werden. Bitte kurz prüfen.</p><div style="max-height:34vh;overflow:auto"><table class="m-table"><tr><th>Schwimmer</th><th>WK</th><th>Zeit</th><th></th></tr>' +
+      rows.map(function (r) { return '<tr><td>' + esc(r.x.nn) + '</td><td>' + r.x.e + '</td><td class="nowrap"><b>' + esc(r.x.st || r.x.t) + '</b></td><td>' + (r.hit ? '<span class="m-ok">✓</span>' : '<span class="m-over">kein Start</span>') + '</td></tr>'; }).join('') + '</table></div>' +
+      '<label class="m-f m-fchk" style="margin-top:10px"><input type="checkbox" id="pr_over"><span>Vorhandene Zeiten überschreiben</span></label>' +
+      '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="wksaveprot"' + (ok ? '' : ' disabled') + '>Zeiten eintragen</button></div>');
+  }
+  function saveProt() {
+    var tgt = M.find('wettkaempfe', imp.target); if (!tgt) return;
+    var over = document.getElementById('pr_over') && document.getElementById('pr_over').checked; var res = {}; var n = 0;
+    imp.rows.forEach(function (r) {
+      if (!r.hit) return; var k = key(r.hit); var old = (tgt.res || {})[k];
+      if (old && (old.t || old.st) && !over) return;
+      res[k] = { t: r.x.t, sp: r.x.sp || [], st: r.x.st || '' }; n++;
+    });
+    var docs = Object.assign({}, tgt.docs || {}); docs.prot = { name: imp.file, at: M.today(), by: M.userName() };
+    var list = [];
+    if (n) list.push({ op: 'patch', coll: 'wettkaempfe', id: tgt.id, merge: true, fields: { res: res } });
+    if (M.can('wettkaempfe.import')) list.push({ op: 'patch', coll: 'wettkaempfe', id: tgt.id, fields: { docs: docs } });
+    M.closeDlg(); M.ops(list); M.toast(n + ' Zeiten eingetragen.');
+  }
+
+  /* ---------- Meldeergebnis ---------- */
+  function previewDialog() {
+    var p = imp.p; var tgt = imp.target ? M.find('wettkaempfe', imp.target) : null;
+    var open = (p.gericht || []).filter(function (g) { return /^N\s?N$/i.test(g.name); }).length;
+    M.openDlg('<div class="hub-dhead"><h3>Meldeergebnis: Das wurde gefunden</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div>' +
+      (p.warnings.length ? '<div class="hub-err">' + p.warnings.map(esc).join('<br>') + '</div>' : '') +
+      '<div class="m-fgrid"><label class="m-f wide"><span>Titel</span><input type="text" id="wkt" value="' + esc((tgt && tgt.title) || p.title) + '"></label><label class="m-f"><span>Datum</span><input type="date" id="wkd" value="' + esc((tgt && tgt.date) || p.date) + '"></label><label class="m-f"><span>Ort</span><input type="text" id="wko" value="' + esc((tgt && tgt.ort) || p.ort) + '"></label></div>' +
+      '<p class="wm-note"><b>' + p.events.length + '</b> Wettkämpfe · <b>' + p.swimmers + '</b> Schwimmer · <b>' + p.starts.length + '</b> Starts für „' + esc(imp.club) + '“ · Kampfgericht: <b>' + p.gericht.length + '</b> Plätze (' + open + ' offen)' + (p.abschnitte.length ? ' · ' + p.abschnitte.length + ' Abschnitt' + (p.abschnitte.length > 1 ? 'e' : '') : '') + '</p>' +
+      (p.starts.length ? '<div style="max-height:30vh;overflow:auto"><table class="m-table"><tr><th>Schwimmer</th><th>Starts</th></tr>' + (function () { var m = {}; p.starts.forEach(function (s) { (m[s.n + ' (' + s.j + ')'] = m[s.n + ' (' + s.j + ')'] || []).push(s); }); return Object.keys(m).sort().map(function (k) { return '<tr><td>' + esc(k) + '</td><td>' + m[k].length + '</td></tr>'; }).join(''); })() + '</table></div>' : '') +
+      '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="wksave"' + (p.starts.length || p.events.length ? '' : ' disabled') + '>' + (tgt ? 'Aktualisieren' : 'Übernehmen') + '</button></div>');
+  }
+  function doSave() {
+    var p = imp.p; var tgt = imp.target ? M.find('wettkaempfe', imp.target) : null;
+    var title = document.getElementById('wkt').value.trim() || p.title || 'Wettkampf'; var date = document.getElementById('wkd').value; var ort = document.getElementById('wko').value.trim();
+    var cl = imp.club.toLowerCase();
+    var starts = p.starts.map(function (s) { var o = { e: s.e, l: s.l, lt: s.lt, t: s.t, b: s.b, n: s.n, s: s.s, j: s.j, m: s.m }; if (String(s.v).toLowerCase().indexOf(cl) < 0) o.v = s.v; return o; });
+    var events = p.events.map(function (e) { return { no: e.no, name: e.name, ab: e.ab, laeufe: e.laeufe, ca: e.ca }; });
+    var docs = Object.assign({}, tgt && tgt.docs || {}); docs.erg = { name: imp.file, at: M.today(), by: M.userName() };
+    var wk = Object.assign({}, tgt || { id: M.uid(), res: {}, chk: {} }, { title: title, date: date, ort: ort, veranstalter: p.veranstalter, becken: p.becken, temp: p.temp, stand: p.stand, club: imp.club, abschnitte: p.abschnitte, events: events, starts: starts, gericht: p.gericht, pdf: imp.file, docs: docs });
+    if (tgt) { wk.gericht = p.gericht.map(function (g) { var old = (tgt.gericht || []).filter(function (o) { return o.a === g.a && o.pos === g.pos && o.g === g.g; })[0]; return old && old.name && !/^N\s?N$/i.test(old.name) && /^N\s?N$/i.test(g.name) ? Object.assign({}, g, { name: old.name }) : g; }); }
+    if (JSON.stringify(wk).length > 38000) { M.toast('Das Meldeergebnis ist zu groß. Bitte den Vereinsnamen prüfen.'); return; }
+    M.closeDlg(); M.op({ op: 'set', coll: 'wettkaempfe', item: wk }); M.S.sub.wk = wk.id; M.S.sub.v = 'uebersicht'; M.S.sub.vSet = true; M.toast(tgt ? 'Meldeergebnis aktualisiert.' : 'Wettkampf angelegt.'); M.render(true);
+  }
+  var NEW_FIELDS = [{ k: 'title', t: 'text', label: 'Name des Wettkampfs', req: true }, { k: 'date', t: 'date', label: 'Datum', req: true }, { k: 'ort', t: 'text', label: 'Ort' }, { k: 'meldeschluss', t: 'date', label: 'Meldeschluss' }, { k: 'intMs', t: 'date', label: 'Interner Meldeschluss' }];
+
+  function startLine(wk, st, withName) {
+    var e = ev(wk, st.e);
+    return '<tr><td class="nowrap"><b>' + esc(st.t) + '</b></td><td>' + (withName ? '<b>' + esc(st.n) + '</b> (' + esc(st.j) + ')<br>' : '') + 'WK ' + st.e + ' · ' + esc(e.name) + '</td><td class="nowrap">Lauf ' + st.l + '/' + st.lt + '<br>Bahn ' + st.b + '</td><td class="nowrap">' + (st.m ? esc(st.m) : '<span class="wm-sub">ohne</span>') + '</td></tr>';
   }
   function viewAblauf(wk) {
     var st = sortStarts(wk); var out = '<section class="wm-card"><div class="wm-bar"><h3>Ablauf nach Uhrzeit</h3></div>';
@@ -327,98 +448,18 @@ var WKParse = (function () {
     M.print(wk.title, body);
   }
 
-  /* ---------- Import ---------- */
-  function ensurePdfJs() {
-    if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
-    var i = 0;
-    function tryNext() {
-      if (i >= PDFJS.length) return Promise.reject(new Error('Der PDF-Leser konnte nicht geladen werden. Bitte Internetverbindung prüfen.'));
-      var k = i++;
-      return M.loadScript(PDFJS[k]).then(function () {
-        var lib = window.pdfjsLib; if (!lib) throw new Error('pdf.js fehlt');
-        return fetch(WORKER[k]).then(function (r) { return r.text(); }).then(function (t) { lib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([t], { type: 'text/javascript' })); }, function () { lib.GlobalWorkerOptions.workerSrc = WORKER[k]; }).then(function () { return lib; });
-      }, tryNext);
-    }
-    return tryNext();
-  }
-  function readPdf(file) {
-    return Promise.all([ensurePdfJs(), new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(new Uint8Array(r.result)); }; r.onerror = function () { rej(new Error('Datei konnte nicht gelesen werden.')); }; r.readAsArrayBuffer(file); })]).then(function (a) {
-      return a[0].getDocument({ data: a[1] }).promise.then(function (doc) {
-        var pages = []; var chain = Promise.resolve();
-        for (var n = 1; n <= doc.numPages; n++) (function (n) { chain = chain.then(function () { return doc.getPage(n).then(function (pg) { return pg.getTextContent().then(function (tc) { pages.push(tc.items.map(function (i) { return { str: i.str, x: i.transform[4], y: i.transform[5], w: i.width }; })); }); }); }); })(n);
-        return chain.then(function () { return P.linesFromItems(pages); });
-      });
-    });
-  }
-  function importDialog(target) {
-    var all = M.items('wettkaempfe');
-    M.openDlg('<div class="hub-dhead"><h3>' + (target ? 'Meldeergebnis aktualisieren' : 'Meldeergebnis hochladen') + '</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div>' +
-      '<p class="wm-note">PDF aus EasyWk (Meldeergebnis). Es werden nur die Starts deines Vereins übernommen.' + (target ? ' Bereits eingetragene Zeiten bleiben erhalten.' : '') + '</p>' +
-      '<div class="m-fgrid"><label class="m-f wide"><span>PDF-Datei</span><input type="file" id="wkfile" accept="application/pdf,.pdf"></label><label class="m-f wide"><span>Vereinsname im Meldeergebnis</span><input type="text" id="wkclub" value="' + esc(club()) + '" autocomplete="off"></label></div>' +
-      '<div id="wkmsg" class="wm-note"></div><div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="wkread" data-target="' + esc(target || '') + '">Auslesen</button></div>');
-  }
-  function doRead(target) {
-    var f = document.getElementById('wkfile').files[0]; var c = document.getElementById('wkclub').value.trim() || 'SG Barnstorf'; var msg = document.getElementById('wkmsg');
-    if (!f) { msg.textContent = 'Bitte zuerst eine PDF-Datei auswählen.'; return; }
-    M.lsSet(CLUB_KEY, c); msg.textContent = 'Wird gelesen … (beim ersten Mal wird der PDF-Leser geladen)';
-    readPdf(f).then(function (lines) {
-      var p = P.parse(lines, c); imp = { p: p, file: f.name, club: c, target: target };
-      previewDialog();
-    }, function (e) { msg.innerHTML = '<span class="m-over">' + esc(e.message || String(e)) + '</span>'; });
-  }
-  function previewDialog() {
-    var p = imp.p; var tgt = imp.target ? M.find('wettkaempfe', imp.target) : null;
-    var canTodo = M.can('aufgaben.edit') && !tgt;
-    var open = (p.gericht || []).filter(function (g) { return /^N\s?N$/i.test(g.name); }).length;
-    M.openDlg('<div class="hub-dhead"><h3>Das wurde gefunden</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div>' +
-      (p.warnings.length ? '<div class="hub-err">' + p.warnings.map(esc).join('<br>') + '</div>' : '') +
-      '<div class="m-fgrid"><label class="m-f wide"><span>Titel</span><input type="text" id="wkt" value="' + esc(p.title) + '"></label><label class="m-f"><span>Datum</span><input type="date" id="wkd" value="' + esc(p.date) + '"></label><label class="m-f"><span>Ort</span><input type="text" id="wko" value="' + esc(p.ort) + '"></label></div>' +
-      '<p class="wm-note"><b>' + p.events.length + '</b> Wettkämpfe · <b>' + p.swimmers + '</b> Schwimmer · <b>' + p.starts.length + '</b> Starts für „' + esc(imp.club) + '“ · Kampfgericht: <b>' + p.gericht.length + '</b> Plätze (' + open + ' offen)' + (p.abschnitte.length ? ' · ' + p.abschnitte.length + ' Abschnitt' + (p.abschnitte.length > 1 ? 'e' : '') : '') + '</p>' +
-      (p.starts.length ? '<div style="max-height:30vh;overflow:auto"><table class="m-table"><tr><th>Schwimmer</th><th>Starts</th></tr>' + (function () { var m = {}; p.starts.forEach(function (s) { (m[s.n + ' (' + s.j + ')'] = m[s.n + ' (' + s.j + ')'] || []).push(s); }); return Object.keys(m).sort().map(function (k) { return '<tr><td>' + esc(k) + '</td><td>' + m[k].length + '</td></tr>'; }).join(''); })() + '</table></div>' : '') +
-      (canTodo ? '<label class="m-f m-fchk" style="margin-top:12px"><input type="checkbox" id="wktodo" checked><span>Standard-To-dos als Aufgaben anlegen</span></label>' : '') +
-      '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="wksave"' + (p.starts.length || p.events.length ? '' : ' disabled') + '>' + (tgt ? 'Aktualisieren' : 'Übernehmen') + '</button></div>');
-  }
-  function standardTodos(wk, withPdf) {
-    var d = wk.date; var list = [];
-    function t(title, off) { list.push({ title: title, due: d ? M.addDays(d, off) : '' }); }
-    if (!withPdf) { t('Meldung abgeben', -14); t('Meldeergebnis hochladen', -3); }
-    var open = openDuties(wk); if (open) t('Kampfgericht: ' + open + ' Platz/Plätze besetzen (Zeitnehmer, Kampfrichter)', -7);
-    t('Betreuer und Fahrdienste klären', -5);
-    t('Packliste prüfen (Startkarten, Stoppuhren, Verpflegung)', -1);
-    t('Zeiten eintragen', 1);
-    return list;
-  }
-  function doSave() {
-    var p = imp.p; var tgt = imp.target ? M.find('wettkaempfe', imp.target) : null;
-    var title = document.getElementById('wkt').value.trim() || p.title || 'Wettkampf'; var date = document.getElementById('wkd').value; var ort = document.getElementById('wko').value.trim();
-    var cl = imp.club.toLowerCase();
-    var starts = p.starts.map(function (s) { var o = { e: s.e, l: s.l, lt: s.lt, t: s.t, b: s.b, n: s.n, s: s.s, j: s.j, m: s.m }; if (String(s.v).toLowerCase().indexOf(cl) < 0) o.v = s.v; return o; });
-    var used = {}; starts.forEach(function (s) { used[s.e] = 1; });
-    var events = p.events.filter(function (e) { return used[e.no] || true; }).map(function (e) { return { no: e.no, name: e.name, ab: e.ab, laeufe: e.laeufe, ca: e.ca }; });
-    var wk = { id: tgt ? tgt.id : M.uid(), title: title, date: date, ort: ort, veranstalter: p.veranstalter, becken: p.becken, temp: p.temp, stand: p.stand, club: imp.club, abschnitte: p.abschnitte, events: events, starts: starts, gericht: p.gericht, pdf: imp.file };
-    if (tgt) { wk.res = tgt.res || {}; wk.note = tgt.note || ''; wk.gericht = p.gericht.map(function (g) { var old = (tgt.gericht || []).filter(function (o) { return o.a === g.a && o.pos === g.pos && o.g === g.g; })[0]; return old && old.name && !/^N\s?N$/i.test(old.name) && /^N\s?N$/i.test(g.name) ? Object.assign({}, g, { name: old.name }) : g; }); }
-    else { wk.res = {}; }
-    if (JSON.stringify(wk).length > 38000) { M.toast('Das Meldeergebnis ist zu groß. Bitte den Vereinsnamen prüfen.'); return; }
-    var list = [{ op: 'set', coll: 'wettkaempfe', item: wk }];
-    var todoBox = document.getElementById('wktodo');
-    if (!tgt && todoBox && todoBox.checked) standardTodos(wk, true).forEach(function (x) { list.push({ op: 'set', coll: 'aufgaben', item: { id: M.uid(), title: x.title, due: x.due, who: [], status: 'offen', prio: 'normal', ref: 'wk:' + wk.id, refLabel: title, by: M.userName() } }); });
-    M.closeDlg(); M.ops(list); M.S.sub.wk = wk.id; M.S.sub.v = 'uebersicht'; M.toast(tgt ? 'Meldeergebnis aktualisiert.' : 'Wettkampf angelegt.'); M.render(true);
-  }
-  var NEW_FIELDS = [{ k: 'title', t: 'text', label: 'Name des Wettkampfs', req: true }, { k: 'date', t: 'date', label: 'Datum', req: true }, { k: 'ort', t: 'text', label: 'Ort' }];
-
   /* ---------- Modul ---------- */
+  function curWk() { return M.S.sub.wk ? M.find('wettkaempfe', M.S.sub.wk) : null; }
   M.register('wettkaempfe', {
-    title: 'Wettkämpfe', icon: '🏁', colls: ['wettkaempfe', 'aufgaben'], custom: true, access: ['wettkaempfe.view'],
-    render: function () { var s = sub(); var wk = s.wk ? M.find('wettkaempfe', s.wk) : null; return wk ? detail(wk) : (s.wk = '', listPage()); },
-    onInput: function (ev) {
-      var t = ev.target;
-      if (t && t.getAttribute && t.getAttribute('data-wkt')) return;       // Zeiten werden erst beim Verlassen des Feldes gespeichert
-    },
+    title: 'Wettkämpfe', icon: '🏁', colls: ['wettkaempfe'], custom: true, access: ['wettkaempfe.view'],
+    render: function () { var s = sub(); var wk = s.wk ? M.find('wettkaempfe', s.wk) : null; if (wk) { if (!s.vSet) { s.v = 'check'; s.vSet = true; } return detail(wk); } s.wk = ''; return listPage(); },
     onChange: function (ev) {
       var t = ev.target; if (!t || !t.getAttribute) return;
-      var wk = M.S.sub.wk ? M.find('wettkaempfe', M.S.sub.wk) : null; if (!wk) return;
+      var wk = curWk(); if (!wk) return;
       if (t.getAttribute('data-wkswf')) { M.S.sub.swf = t.value; M.render(true); return; }
       if (t.getAttribute('data-wknote')) { M.op({ op: 'patch', coll: 'wettkaempfe', id: wk.id, fields: { note: t.value } }, true); return; }
+      if (t.getAttribute('data-wkims')) { M.op({ op: 'patch', coll: 'wettkaempfe', id: wk.id, fields: { intMs: t.value } }, true); M.S.dirty = true; return; }
+      if (t.getAttribute('data-wkkr')) { var f = {}; f[t.getAttribute('data-wkkr')] = t.value === '' ? '' : Number(t.value); M.op({ op: 'patch', coll: 'wettkaempfe', id: wk.id, fields: f }, true); M.S.dirty = true; return; }
       if (t.getAttribute('data-wkt')) {
         var row = t.closest('.wk-z'); if (!row) return; var k = row.getAttribute('data-k');
         var tin = row.querySelector('[data-wkt=t]'), spin = row.querySelector('[data-wkt=sp]'), stin = row.querySelector('[data-wkt=st]');
@@ -435,26 +476,41 @@ var WKParse = (function () {
       }
     },
     actions: {
-      wkimport: function () { importDialog(''); },
-      wkneu: function () { M.openForm({ title: 'Wettkampf-Termin anlegen', fields: NEW_FIELDS.concat(M.can('aufgaben.edit') ? [{ k: 'todos', t: 'chk', label: 'Standard-To-dos als Aufgaben anlegen' }] : []), item: { todos: true }, onSave: function (v) { var wk = { id: M.uid(), title: v.title, date: v.date, ort: v.ort, club: club(), abschnitte: [], events: [], starts: [], gericht: [], res: {} }; var list = [{ op: 'set', coll: 'wettkaempfe', item: wk }]; if (v.todos) standardTodos(wk, false).forEach(function (x) { list.push({ op: 'set', coll: 'aufgaben', item: { id: M.uid(), title: x.title, due: x.due, who: [], status: 'offen', prio: 'normal', ref: 'wk:' + wk.id, refLabel: wk.title, by: M.userName() } }); }); M.ops(list); } }); },
-      wkread: function (it, el) { doRead(el.getAttribute('data-target') || ''); },
+      wklist: function (it, el) { M.S.sub.lv = el.getAttribute('data-v'); M.lsSet('wklv', M.S.sub.lv); M.render(true); },
+      allrows: function () { M.S.sub.allRows = !M.S.sub.allRows; M.render(true); },
+      wkcell: function (it, el) {
+        var wk = M.find('wettkaempfe', el.getAttribute('data-w')); if (!wk || !canCheck()) return; var k = el.getAttribute('data-k');
+        if (k === 'intMs' || k === 'teilnahme' || k === 'kr1' || k === 'kr2') cellEdit(wk, k); else toggleChk(wk, k);
+      },
+      wkchk: function (it, el) { var wk = curWk(); if (wk && canCheck()) toggleChk(wk, el.getAttribute('data-k')); },
+      wkteil: function (it, el) { var wk = curWk(); if (wk) M.op({ op: 'patch', coll: 'wettkaempfe', id: wk.id, fields: { teilnahme: el.getAttribute('data-v') } }); },
+      wknop: function () { },
+      wkkrtake: function (it, el) { var wk = curWk(); if (!wk) return; var f = {}; f[el.getAttribute('data-k')] = Number(el.getAttribute('data-n')); M.op({ op: 'patch', coll: 'wettkaempfe', id: wk.id, fields: f }); },
+      wkaus: function () { docDialog('aus', ''); },
+      wkdoc: function (it, el) { docDialog(el.getAttribute('data-kind'), M.S.sub.wk); },
+      wkneu: function () { M.openForm({ title: 'Wettkampf-Termin anlegen', fields: NEW_FIELDS, item: {}, onSave: function (v) { var wk = { id: M.uid(), title: v.title, date: v.date, ort: v.ort, meldeschluss: v.meldeschluss, intMs: v.intMs, club: club(), abschnitte: [], events: [], starts: [], gericht: [], res: {}, chk: {} }; M.op({ op: 'set', coll: 'wettkaempfe', item: wk }); M.S.sub.wk = wk.id; M.S.sub.v = 'check'; M.S.sub.vSet = true; M.render(true); } }); },
+      wkread: function (it, el) { doRead(el.getAttribute('data-kind') || 'erg', el.getAttribute('data-target') || ''); },
       wksave: function () { doSave(); },
+      wksaveaus: function () { saveAus(); },
+      wksavemeld: function () { saveMeld(); },
+      wksaveprot: function () { saveProt(); },
       pasttoggle: function () { M.S.sub.pastOpen = !M.S.sub.pastOpen; M.render(true); },
-      wkopen: function (it, el, ev, c) { M.S.sub.wk = c.id; M.S.sub.v = 'uebersicht'; M.S.q = ''; window.scrollTo(0, 0); M.render(true); },
-      wkback: function () { M.S.sub.wk = ''; M.S.q = ''; M.render(true); },
+      wkopen: function (it, el, ev, c) { M.S.sub.wk = c.id; M.S.sub.v = 'check'; M.S.sub.vSet = true; M.S.q = ''; window.scrollTo(0, 0); M.render(true); },
+      wkback: function () { M.S.sub.wk = ''; M.S.sub.vSet = false; M.S.q = ''; M.render(true); },
       wkview: function (it, el) { M.S.sub.v = el.getAttribute('data-v'); M.S.q = ''; M.render(true); },
-      wkprint: function () { var wk = M.find('wettkaempfe', M.S.sub.wk); if (wk) printMenu(wk); },
-      pr: function (it, el) { var wk = M.find('wettkaempfe', M.S.sub.wk); M.closeDlg(); if (wk) printWhat(wk, el.getAttribute('data-w')); },
-      wkupdate: function () { importDialog(M.S.sub.wk); },
-      wkedit: function () { var wk = M.find('wettkaempfe', M.S.sub.wk); if (!wk) return; M.openForm({ title: 'Wettkampf bearbeiten', fields: NEW_FIELDS, item: wk, onSave: function (v) { M.op({ op: 'patch', coll: 'wettkaempfe', id: wk.id, fields: { title: v.title, date: v.date, ort: v.ort } }); } }); },
-      wkdel: function () { var wk = M.find('wettkaempfe', M.S.sub.wk); if (!wk) return; M.confirm('„' + wk.title + '“ samt aller Zeiten löschen?', 'Löschen', function () { M.S.sub.wk = ''; M.op({ op: 'del', coll: 'wettkaempfe', id: wk.id }); }); },
+      wkprint: function () { var wk = curWk(); if (wk) printMenu(wk); },
+      pr: function (it, el) { var wk = curWk(); M.closeDlg(); if (wk) printWhat(wk, el.getAttribute('data-w')); },
+      wkedit: function () { var wk = curWk(); if (!wk) return; M.openForm({ title: 'Wettkampf bearbeiten', fields: NEW_FIELDS, item: wk, onSave: function (v) { M.op({ op: 'patch', coll: 'wettkaempfe', id: wk.id, fields: { title: v.title, date: v.date, ort: v.ort, meldeschluss: v.meldeschluss, intMs: v.intMs } }); } }); },
+      wkdel: function () { var wk = curWk(); if (!wk) return; M.confirm('„' + wk.title + '“ samt aller Zeiten löschen?', 'Löschen', function () { M.S.sub.wk = ''; M.op({ op: 'del', coll: 'wettkaempfe', id: wk.id }); }); },
       onlyopen: function () { M.S.sub.onlyOpen = !M.S.sub.onlyOpen; M.render(true); },
-      gedit: function (it, el) { var wk = M.find('wettkaempfe', M.S.sub.wk); var i = +el.closest('[data-gi]').getAttribute('data-gi'); if (!wk || !wk.gericht[i]) return; var g = wk.gericht[i]; M.openForm({ title: g.pos + ' (Abschnitt ' + g.a + ')', fields: [{ k: 'name', t: 'text', label: 'Name (leer = offen)' }], item: { name: /^N\s?N$/i.test(g.name) ? '' : g.name }, onSave: function (v) { var l = M.clone(wk.gericht); l[i].name = v.name || 'NN'; M.op({ op: 'patch', coll: 'wettkaempfe', id: wk.id, fields: { gericht: l } }); } }); },
-      wktick: function (it, el, ev) { ev.stopPropagation(); var tid = el.closest('[data-tid]').getAttribute('data-tid'); var t = M.find('aufgaben', tid); if (!t) return; var done = t.status === 'erledigt'; M.op({ op: 'patch', coll: 'aufgaben', id: tid, fields: done ? { status: 'offen', doneAt: 0, doneBy: '' } : { status: 'erledigt', doneAt: Date.now(), doneBy: M.userName() } }); },
-      wktodo: function (it, el, ev, c) { var id = c.id; var w = M.find('wettkaempfe', id); if (!w) return; M.openForm({ title: 'To-do für ' + w.title, fields: [{ k: 'title', t: 'text', label: 'Was ist zu tun?', req: true }, { k: 'who', t: 'tags', label: 'Zuständig' }, { k: 'due', t: 'date', label: 'Bis' }], item: { who: [] }, onSave: function (v) { M.op({ op: 'set', coll: 'aufgaben', item: { id: M.uid(), title: v.title, who: v.who, due: v.due, status: 'offen', prio: 'normal', ref: 'wk:' + id, refLabel: w.title, by: M.userName() } }); } }); },
+      gedit: function (it, el) { var wk = curWk(); var i = +el.closest('[data-gi]').getAttribute('data-gi'); if (!wk || !wk.gericht[i]) return; var g = wk.gericht[i]; M.openForm({ title: g.pos + ' (Abschnitt ' + g.a + ')', fields: [{ k: 'name', t: 'text', label: 'Name (leer = offen)' }], item: { name: /^N\s?N$/i.test(g.name) ? '' : g.name }, onSave: function (v) { var l = M.clone(wk.gericht); l[i].name = v.name || 'NN'; M.op({ op: 'patch', coll: 'wettkaempfe', id: wk.id, fields: { gericht: l } }); } }); },
       sw: function () { }
     }
   });
-  var st = document.createElement('style'); st.textContent = '#hubRoot .wk-date{flex:0 0 auto;width:54px;text-align:center;border-radius:12px;background:#f59e0b;color:#0f172a;padding:6px 0;line-height:1.1}#hubRoot .wk-date b{display:block;font-size:22px;font-weight:900}#hubRoot .wk-date span{font-size:11px;font-weight:800;text-transform:uppercase}#hubRoot .wk-todos{padding:6px 14px 12px;border-top:1px solid rgba(148,163,184,.25)}#hubRoot .wk-z{padding:10px 0;border-bottom:1px solid rgba(148,163,184,.25)}#hubRoot .wk-zi{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}#hubRoot .wk-diff{font-size:13px;font-weight:700}';
+  (function () { var lv = M.lsGet('wklv', ''); if (lv) M.S.sub.lv = lv; })();
+  var st = document.createElement('style'); st.textContent = '#hubRoot .wk-date{flex:0 0 auto;width:54px;text-align:center;border-radius:12px;background:var(--navy);color:#fff;padding:6px 0;line-height:1.1}#hubRoot .wk-date b{display:block;font-size:22px;font-weight:900}#hubRoot .wk-date span{font-size:11px;font-weight:800;text-transform:uppercase;color:var(--gold)}#hubRoot .wk-z{padding:10px 0;border-bottom:1px solid rgba(148,163,184,.25)}#hubRoot .wk-zi{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}#hubRoot .wk-diff{font-size:13px;font-weight:700}' +
+    '#hubRoot .wk-prog{margin-top:6px}#hubRoot .wk-w{display:inline-block;margin:6px 6px 0 0;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:800;background:rgba(245,158,11,.16);color:var(--warn)}#hubRoot .wk-w.bad{background:rgba(239,68,68,.14);color:var(--bad)}' +
+    '#hubRoot .wk-doc{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid rgba(148,163,184,.2)}#hubRoot .wk-doc:last-child{border-bottom:0}#hubRoot .wk-dn{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--navy);color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center}' +
+    '#hubRoot .wk-tl{background:none;border:0;padding:0;color:inherit;font:inherit;text-align:left;cursor:pointer;text-decoration:underline}#hubRoot .wk-tc{padding:5px 10px;font-size:12px;margin:0}';
   document.head.appendChild(st);
 })();

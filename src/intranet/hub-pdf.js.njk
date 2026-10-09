@@ -1,0 +1,388 @@
+---
+permalink: /intranet/js/hub-pdf.js
+layout: false
+eleventyExcludeFromCollections: true
+templateEngineOverride: false
+---
+/* ---------- Meldeergebnis (EasyWk-PDF) auslesen ---------- */
+var WKParse = (function () {
+  function normTime(t) { return t; }
+  function isoDate(d) { var m = /(\d{2})\.(\d{2})\.(\d{4})/.exec(d || ''); return m ? m[3] + '-' + m[2] + '-' + m[1] : ''; }
+  function toMin(hhmm) { var m = /(\d{1,2}):(\d{2})/.exec(hhmm || ''); return m ? (+m[1]) * 60 + (+m[2]) : null; }
+  function sexOf(name, evName) {
+    var m = /\((M|W|X)\)\s*$/.exec(name);
+    if (m) return m[1];
+    if (/männlich/i.test(evName || '')) return 'M';
+    if (/weiblich/i.test(evName || '')) return 'W';
+    return '';
+  }
+  // lines: Array von Textzeilen (Spalten durch mindestens zwei Leerzeichen getrennt)
+  function parse(lines, club) {
+    var clubL = String(club || '').toLowerCase();
+    var out = { title: '', date: '', veranstalter: '', ausrichter: '', becken: '', temp: '', stand: '', ort: '', abschnitte: [], events: {}, starts: [], gericht: [], vereine: {}, warnings: [] };
+    var i, line, m;
+    // Kopf
+    var head = [];
+    for (i = 0; i < lines.length && i < 40; i++) { if (lines[i].trim()) head.push(lines[i].trim()); }
+    var mi = head.indexOf('Meldeergebnis');
+    if (mi >= 0) {
+      var t = [];
+      for (i = mi + 1; i < head.length; i++) { if (/^am\s+\d{2}\.\d{2}\.\d{4}/.test(head[i])) { out.date = isoDate(head[i]); break; } if (/^Veranstalter:/.test(head[i])) break; t.push(head[i]); }
+      out.title = t.join(' ');
+    }
+    var addrN = 0, addr = [];
+    var abNo = 0, abIdx = null, curEv = null, curLauf = null, inGericht = false, gGroup = '', gAb = 0;
+    for (i = 0; i < lines.length; i++) {
+      line = lines[i].replace(/\s+$/, '');
+      var tl = line.trim();
+      if (!tl) continue;
+      if ((m = /^Veranstalter:\s*(.+)$/.exec(tl))) { out.veranstalter = m[1].trim(); continue; }
+      if ((m = /^Ausrichter:\s*(.+)$/.exec(tl))) { out.ausrichter = m[1].trim(); continue; }
+      if ((m = /(\d+)\s*Bahnen\s*(?:á|a|à)\s*(\d+)\s*m/i.exec(tl)) && !out.becken) { out.becken = m[1] + ' Bahnen à ' + m[2] + ' m'; }
+      if ((m = /Wassertemperatur ca\.\s*(\d+)/i.exec(tl)) && !out.temp) { out.temp = m[1] + ' °C'; }
+      if ((m = /Stand:\s*(\d{2}\.\d{2}\.\d{4}),\s*(\d{2}:\d{2})/.exec(tl)) && !out.stand) { out.stand = isoDate(m[1]) + ' ' + m[2]; }
+      if (/Schwimmbad-Adresse/.test(tl)) { addrN = 5; continue; }
+      if (addrN > 0) {
+        addrN--;
+        var ac = line.trim().split(/\s{3,}/);
+        if (ac.length > 1) addr.push(ac[ac.length - 1]); else if (/^\s{20,}\S/.test(line)) addr.push(tl);
+        out.ort = addr.join(', ');
+      }
+      // Kampfgericht
+      if ((m = /^Kampfgericht Abschnitt\s+(\d+)/.exec(tl))) { inGericht = true; gAb = +m[1]; gGroup = 'Kampfgericht'; continue; }
+      if ((m = /^Abschnitt\s+(\d+)\s*-\s*(\S+)\s+(\d{2}\.\d{2}\.\d{4})/.exec(tl))) {
+        inGericht = false; curEv = null; curLauf = null;
+        abNo = +m[1];
+        abIdx = { no: abNo, tag: m[2], date: isoDate(m[3]), einlass: '', einschwimmen: '', kr: '', beginn: '' };
+        out.abschnitte.push(abIdx); continue;
+      }
+      if (abIdx && !abIdx.beginn) {
+        if ((m = /Einlass:\s*([^|]+?)\s*(?:\||$)/.exec(tl))) abIdx.einlass = m[1].trim();
+        if ((m = /Einschwimmen:\s*([^|]+?)\s*(?:\||$)/.exec(tl))) abIdx.einschwimmen = m[1].trim();
+        if ((m = /Kampfrichtersitzung:\s*([^|]+?)\s*(?:\||$)/.exec(tl))) abIdx.kr = m[1].trim();
+        if ((m = /^Beginn:\s*(.+)$/.exec(tl))) { abIdx.beginn = m[1].trim(); continue; }
+        if (/Einlass:/.test(tl)) continue;
+      }
+      if (/^Wettkampffolge für Abschnitt/.test(tl)) { inGericht = false; continue; }
+      if (inGericht) {
+        if (/^Position\s+Name\s+Verein/.test(tl)) continue;
+        var cols = line.trim().split(/\s{2,}/);
+        if (cols.length === 1 && !/\s{2,}/.test(line.trim()) && cols[0].length < 40 && !/^(Schiedsrichter|Starter|Sprecher|Auswerter|Protokollf|Computer|Zeitnehmer|Reservezeit|Wenderichter|Zielrichter|Schwimmrichter)/.test(cols[0])) { gGroup = cols[0]; continue; }
+        if (cols.length >= 3) {
+          var g = { a: gAb, g: gGroup, pos: cols[0], name: cols[1], v: cols.slice(2).join(' ') };
+          if (clubL && g.v.toLowerCase().indexOf(clubL) >= 0) out.gericht.push(g);
+          continue;
+        }
+        if (/^(Zielgericht|Zeitgericht|Wendegericht|Kampfgericht)/.test(tl)) { gGroup = tl; continue; }
+        continue;
+      }
+      // Wettkampf-Zeile (Liste oder Kopf)
+      if ((m = /^Wettkampf\s+(\d+)\s*-\s*(.+?)\s*$/.exec(tl))) {
+        var no = +m[1]; var rest = m[2]; var laeufe = null; var ca = '';
+        var mc = /\s*\(ca\.\s*(\d{1,2}:\d{2})\s*Uhr\)\s*$/.exec(rest); if (mc) { ca = mc[1]; rest = rest.slice(0, mc.index); }
+        var ml = /\s*\((\d+)\s*Läufe?\)\s*$/.exec(rest); if (ml) { laeufe = +ml[1]; rest = rest.slice(0, ml.index); }
+        var ev = out.events[no] || (out.events[no] = { no: no, name: '', ab: abNo, laeufe: null, ca: '' });
+        ev.name = rest.trim(); if (laeufe) ev.laeufe = laeufe; if (ca) ev.ca = ca; if (abNo) ev.ab = abNo;
+        curEv = ev; curLauf = null; continue;
+      }
+      if ((m = /^Lauf\s+(\d+)\s*\/\s*(\d+)\s*-\s*ca\.\s*(\d{1,2}:\d{2})\s*Uhr/.exec(tl))) { curLauf = { l: +m[1], lt: +m[2], t: m[3] }; if (curEv && !curEv.laeufe) curEv.laeufe = +m[2]; if (curEv && !curEv.ca) curEv.ca = m[3]; continue; }
+      if (/^Bahn\s+Schwimmer/.test(tl)) continue;
+      if (curEv && curLauf && (m = /^Bahn\s+(\d+)\s+(.+?)\s+(\d{4}|Offen)\s+(\S.*?)\s+(\d{1,2}:\d{2},\d{2})\s*$/.exec(tl))) {
+        var st = { e: curEv.no, l: curLauf.l, lt: curLauf.lt, t: curLauf.t, b: +m[1], n: m[2].replace(/\s+\((M|W|X)\)\s*$/, '').trim(), s: sexOf(m[2], curEv.name), j: m[3] === 'Offen' ? 'Staffel' : m[3], v: m[4].trim(), m: m[5] === '00:00,00' ? '' : m[5] };
+        if (/Mannschaft/i.test(st.n) && !st.s) st.s = 'X';
+        out.vereine[st.v] = (out.vereine[st.v] || 0) + 1;
+        if (!clubL || st.v.toLowerCase().indexOf(clubL) >= 0) out.starts.push(st);
+        continue;
+      }
+    }
+    var evs = Object.keys(out.events).map(function (k) { return out.events[k]; }).sort(function (a, b) { return a.no - b.no; });
+    out.events = evs;
+    var names = {}; out.starts.forEach(function (s) { names[s.n + '|' + s.j] = 1; });
+    out.swimmers = Object.keys(names).length;
+    if (!out.title) out.warnings.push('Titel nicht gefunden.');
+    if (!out.date) out.warnings.push('Datum nicht gefunden.');
+    if (!evs.length) out.warnings.push('Keine Wettkämpfe gefunden. Ist das ein Meldeergebnis aus EasyWk?');
+    if (!out.starts.length) out.warnings.push('Für „' + club + '“ wurden keine Starts gefunden. Vereinsname prüfen. Im PDF kommen vor: ' + Object.keys(out.vereine).slice(0, 8).join(', ') + '.');
+    return out;
+  }
+  // PDF-Text (pdf.js) in Zeilen wandeln: Elemente einer Zeile nach x sortieren, grosse Luecken als mehrere Leerzeichen
+  function linesFromItems(pages) {
+    var all = [];
+    pages.forEach(function (items) {
+      var rows = []; var byY = {};
+      items.forEach(function (it) {
+        if (!it.str) return;
+        var ky = Math.round(it.y); var r = null;
+        [0, -1, 1, -2, 2].forEach(function (d) { if (!r && byY[ky + d]) r = byY[ky + d]; });
+        if (!r) { r = { y: it.y, its: [] }; rows.push(r); byY[ky] = r; }
+        r.its.push(it);
+      });
+      rows.sort(function (a, b) { return b.y - a.y; });
+      rows.forEach(function (r) {
+        r.its.sort(function (a, b) { return a.x - b.x; });
+        var s = ''; var endX = null;
+        r.its.forEach(function (it) {
+          if (endX !== null) {
+            var gap = it.x - endX;
+            var cw = it.w && it.str.length ? it.w / it.str.length : 4;
+            if (gap > cw * 2.2) s += '   ';
+            else if (gap > cw * 0.25 && !/^\s/.test(it.str) && !/\s$/.test(s)) s += ' ';
+          }
+          s += it.str; endX = it.x + (it.w || 0);
+        });
+        all.push(s);
+      });
+    });
+    return all;
+  }
+  // Zeitformat: "31,2" -> "00:31,20"; "1:05,85" -> "01:05,85"; "65,85" -> "01:05,85"
+  function fmtTime(v) {
+    v = String(v || '').trim().replace('.', ',').replace(/\s+/g, '');
+    if (!v) return '';
+    var m = /^(?:(\d{1,2}):)?(\d{1,3})(?:,(\d{1,2}))?$/.exec(v);
+    if (!m) return null;
+    var min = m[1] ? +m[1] : 0; var sec = +m[2]; var h = m[3] === undefined ? 0 : +(m[3].length === 1 ? m[3] + '0' : m[3]);
+    if (!m[1] && sec >= 60) { min = Math.floor(sec / 60); sec = sec % 60; }
+    if (sec >= 60 || min > 59) return null;
+    return ('0' + min).slice(-2) + ':' + ('0' + sec).slice(-2) + ',' + ('0' + h).slice(-2);
+  }
+  function timeMs(t) { var m = /^(\d{2}):(\d{2}),(\d{2})$/.exec(t || ''); return m ? (+m[1]) * 60000 + (+m[2]) * 1000 + (+m[3]) * 10 : null; }
+  function diffStr(ms) { var a = Math.abs(ms); var s = Math.floor(a / 1000), h = Math.round((a % 1000) / 10); return (ms < 0 ? '−' : '+') + s + ',' + ('0' + h).slice(-2) + ' s'; }
+
+  /* ---------- Weitere Dateien: Ausschreibung (PDF), Meldedatei (DSV7), Protokoll (PDF), Anwesenheitsliste (PDF) ---------- */
+  var MONATE = { januar: 1, februar: 2, märz: 3, maerz: 3, april: 4, mai: 5, juni: 6, juli: 7, august: 8, september: 9, oktober: 10, november: 11, dezember: 12 };
+  function pad2(n) { return ('0' + n).slice(-2); }
+  function dateDe(s) {
+    // "19. April 2026", "Sonntag, 19. April 2026", "20./21. Juni 2026" (erster Tag), "19.04.2026"
+    s = String(s || '');
+    var m = /(\d{1,2})\.\s*(?:\/\s*\d{1,2}\.\s*)?(Januar|Februar|März|Maerz|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember)\s+(\d{4})/i.exec(s);
+    if (m) return m[3] + '-' + pad2(MONATE[m[2].toLowerCase()]) + '-' + pad2(+m[1]);
+    m = /(\d{1,2})\.(\d{1,2})\.(\d{4})/.exec(s);
+    if (m) return m[3] + '-' + pad2(+m[2]) + '-' + pad2(+m[1]);
+    return '';
+  }
+  function clock(s) { var m = /(\d{1,2})[.:](\d{2})/.exec(String(s || '')); return m ? pad2(+m[1]) + ':' + m[2] : ''; }
+  var STROKE = { F: 'Freistil', R: 'Rücken', B: 'Brust', S: 'Schmetterling', L: 'Lagen' };
+  function sexLabel(x) { return x === 'M' ? 'männlich' : x === 'W' ? 'weiblich' : x === 'X' ? 'mixed' : ''; }
+
+  // Meldedatei im DSV7-Format (Vereinsmeldeliste)
+  function parseDsv7(text) {
+    var out = { title: '', ort: '', bahn: '', zeit: '', abschnitte: [], events: [], verein: '', kontakt: '', email: '', swimmers: [], starts: [], warnings: [] };
+    var byPn = {}; var evBy = {};
+    String(text || '').split(/\r?\n/).forEach(function (raw) {
+      var line = raw.replace(/^﻿/, ''); if (!line || line.charAt(0) === '(') return;
+      var i = line.indexOf(':'); if (i < 0) return;
+      var key = line.slice(0, i).trim().toUpperCase(); var f = line.slice(i + 1).split(';').map(function (x) { return x.trim(); });
+      if (key === 'FORMAT') { if (!/Vereinsmeldeliste/i.test(f[0])) out.warnings.push('Das ist keine Vereinsmeldeliste (' + f[0] + ').'); }
+      else if (key === 'VERANSTALTUNG') { out.title = f[0]; out.ort = f[1]; out.bahn = f[2] ? f[2] + ' m' : ''; out.zeit = /hand/i.test(f[3] || '') ? 'Handzeit' : (f[3] ? 'Automatik' : ''); }
+      else if (key === 'ABSCHNITT') { out.abschnitte.push({ no: +f[0], date: dateDe(f[1]), beginn: clock(f[2]) }); }
+      else if (key === 'WETTKAMPF') {
+        var staffel = +f[3] > 1; var name = (staffel ? f[3] + ' x ' : '') + f[4] + ' m ' + (STROKE[f[5]] || f[5]) + (f[6] === 'BE' ? ' Beine' : '') + (sexLabel(f[7]) ? ' ' + sexLabel(f[7]) : '');
+        var ev = { no: +f[0], ab: +f[2] || 1, name: name, staffel: staffel }; out.events.push(ev); evBy[ev.no] = ev;
+      }
+      else if (key === 'VEREIN') { out.verein = f[0]; }
+      else if (key === 'ANSPRECHPARTNER') { out.kontakt = f[0]; out.email = f[7] || ''; }
+      else if (key === 'PNMELDUNG') { var sw = { n: f[0].replace(/^([^,]+),\s*(.+)$/, '$2 $1'), nn: f[0], dsv: f[1], pn: f[2], s: f[3], j: f[4] }; byPn[f[2]] = sw; out.swimmers.push(sw); }
+      else if (key === 'STARTPN') {
+        var sw2 = byPn[f[0]]; if (!sw2) return;
+        var m = /^(\d+):(\d{2}):(\d{2}),(\d{2})$/.exec(f[2] || ''); var mt = '';
+        if (m && !(+m[1] === 0 && +m[2] === 0 && +m[3] === 0 && +m[4] === 0)) mt = pad2(+m[1] * 60 + +m[2]) + ':' + m[3] + ',' + m[4];
+        out.starts.push({ e: +f[1], n: sw2.nn, s: sw2.s, j: sw2.j, m: mt });
+      }
+    });
+    if (!out.starts.length) out.warnings.push('Keine Meldungen in der Datei gefunden.');
+    out.swimmerCount = out.swimmers.length;
+    return out;
+  }
+
+  // Ausschreibung (PDF-Text in Zeilen)
+  function parseAusschreibung(lines) {
+    var out = { title: '', veranstalter: '', date: '', date2: '', ort: '', halle: '', meldeschluss: '', meldeschlussUhr: '', meldegeld: '', meldeanschrift: '', kr: [], abschnitte: [], events: [], warnings: [] };
+    var L = lines.map(function (l) { return l.replace(/\s{3,}/g, '   ').trim(); }).filter(Boolean);
+    var head = L.slice(0, 14); var m, i;
+    out.title = (head[0] || '').replace(/^Ausschreibung\s*(zum|des|der)?\s*/i, '').trim();
+    for (i = 1; i < 4; i++) { var h = head[i] || ''; if (/^(der|des|vom|vom)\s+/i.test(h) || /Schwimm|Verein|SG |SV |SC /i.test(h)) { if (!/^(am|im|datum|ort)\b/i.test(h)) { out.veranstalter = h.replace(/^(der|des)\s+/i, ''); break; } } }
+    // Datum
+    for (i = 0; i < Math.min(L.length, 30); i++) {
+      if (/Meldeschluss/i.test(L[i])) continue;
+      var d = dateDe(L[i]); if (d && /(Datum|am\s|vom\s|\d{1,2}\.\s*(\/|bis)?)/i.test(L[i])) { out.date = d; var m2 = /(\d{1,2})\.\s*\/\s*(\d{1,2})\.\s*(\w+)\s+(\d{4})/.exec(L[i]); if (m2) out.date2 = dateDe(m2[2] + '. ' + m2[3] + ' ' + m2[4]); break; }
+    }
+    // Ort / Halle
+    for (i = 0; i < Math.min(L.length, 30); i++) {
+      if ((m = /^(?:Ort:?|im|in der|in)\s+(.+)$/i.exec(L[i])) && /\d{5}|bad|halle|schwimm/i.test(L[i])) { out.halle = m[1].replace(/^Ort:\s*/i, '').trim(); var c = /\b\d{5}\s+([A-ZÄÖÜ][^,]+)$/.exec(out.halle); out.ort = c ? c[1].trim() : out.halle.split(',')[0].replace(/^(Hallenbad|Freibad|Schwimmhalle|Wiehe-Bad)\s+/i, '').trim(); break; }
+    }
+    // Meldeschluss (erste Stelle, an der ein Datum dahinter steht)
+    for (i = 0; i < L.length; i++) {
+      if (/Meldeschluss/i.test(L[i])) {
+        var seg = L[i] + ' ' + (L[i + 1] || ''); var dm = dateDe(seg);
+        if (dm) { out.meldeschluss = dm; var um = /(?:um|bis|\d{4})\s+(\d{1,2}[.:]\d{2})\s*Uhr/i.exec(seg.split(/Einlass/i)[0]); if (!um) for (var q = 0; q < L.length && !um; q++) if (/Meldeschluss/i.test(L[q])) um = /(?:um|bis|\d{4})\s+(\d{1,2}[.:]\d{2})\s*Uhr/i.exec(L[q]); out.meldeschlussUhr = um ? clock(um[1]) : ''; break; }
+      }
+    }
+    var joined = L.join(' \n ');
+    if ((m = /Das Meldegeld beträgt[^.]*?(?:EUR|Euro|€)[^.]*?(?:EUR|Euro|€)[^.]*\./i.exec(joined))) out.meldegeld = m[0].replace(/\s+/g, ' ').trim().slice(0, 240);
+    else if ((m = /Einzel\w*:?\s*([\d,.]+)\s*(?:EUR|Euro|€)\s+Staffel\w*:?\s*([\d,.]+)\s*(?:EUR|Euro|€)/i.exec(joined))) out.meldegeld = 'Einzelstart ' + m[1] + ' €, Staffelstart ' + m[2] + ' €';
+    else if ((m = /Meldegeld[^.]{0,160}(?:EUR|Euro|€)[^.]{0,80}\./i.exec(joined))) out.meldegeld = m[0].replace(/\s+/g, ' ').trim().slice(0, 240);
+    for (i = 0; i < L.length; i++) if (/^Meldeanschrift:/i.test(L[i])) { var a = [L[i].replace(/^Meldeanschrift:\s*/i, '')]; for (var k = 1; k <= 2; k++) { var nx = L[i + k] || ''; if (!/^(E-?Mail|Tel|Fax|www|\S+@\S+|\d{5})/i.test(nx)) break; a.push(nx); } out.meldeanschrift = a.join(', ').replace(/\s{2,}/g, ' ').slice(0, 240); break; }
+    // Kampfrichter-Tabelle: "bis 15 Meldungen 2 Kampfrichter 16 bis 25 Meldungen 3 Kampfrichter ..."
+    var kj = joined.replace(/\s+/g, ' '); var re = /(?:bis\s+(\d+)|(\d+)\s+bis\s+(\d+)|ab\s+(\d+))\s+Meldungen\s+(\d+)\s+Kampfrichter/gi;
+    while ((m = re.exec(kj))) { out.kr.push({ von: m[2] ? +m[2] : (m[4] ? +m[4] : 0), bis: m[1] ? +m[1] : (m[3] ? +m[3] : 9999), n: +m[5] }); }
+    out.kr.sort(function (a, b) { return a.von - b.von; });
+    // Abschnitte und Wettkampffolge
+    var curAb = 0;
+    L.forEach(function (l) {
+      var s = /^(\d+)\.\s*Abschnitt\s+(.+?)(?:\s+Einschwimmen:\s*([\d.:]+)\s*Uhr)?(?:,?\s*Kampfrichtersitzung:\s*([\d.:]+)\s*Uhr)?(?:,?\s*Beginn:\s*([\d.:]+)\s*Uhr)?\s*$/i.exec(l);
+      if (s) { curAb = +s[1]; out.abschnitte.push({ no: curAb, tag: dateDe(s[2]), einschwimmen: clock(s[3]), kr: clock(s[4]), beginn: clock(s[5]) }); return; }
+      var s2 = /Einlass und Einschwimmen:\s*([\d.:]+)\s*Uhr.*Kampfrichtersitzung:\s*([\d.:]+)\s*Uhr.*Beginn:\s*([\d.:]+)\s*Uhr/i.exec(l);
+      if (s2) { curAb = 1; out.abschnitte.push({ no: 1, tag: out.date, einschwimmen: clock(s2[1]), kr: clock(s2[2]), beginn: clock(s2[3]) }); return; }
+      // BV-Format: "1   200 m   Freistil   Weiblich   2017 und älter"
+      var e = /^(\d+)\s+((?:\d+\s*x\s*)?\d+\s*m)\s+(\S+(?:\s\([^)]*\))?)\s+(Weiblich|Männlich|mixed|Mixed)\s+(.+)$/i.exec(l);
+      if (e) { out.events.push({ no: +e[1], ab: curAb || 1, name: e[2].replace(/\s+/g, ' ') + ' ' + e[3] + ' ' + ({ weiblich: 'weiblich', männlich: 'männlich', mixed: 'mixed' }[e[4].toLowerCase()]), jg: e[5].trim() }); return; }
+      // Kids-Cup-Format: "WK 1/2   50 m   Rücken   w/m   Jahrgang 2013 bis 2018"
+      var k2 = /^WK\s+(\d+)(?:\/(\d+))?\s+((?:\d+\s*x\s*)?\d+\s*m)\s+(\S+)\s+(w\/m|mixed|w|m)\s+(.+)$/i.exec(l);
+      if (k2) {
+        var base = k2[3].replace(/\s+/g, ' ') + ' ' + k2[4]; var jg = k2[6].trim();
+        if (k2[2]) { out.events.push({ no: +k2[1], ab: curAb || 1, name: base + ' weiblich', jg: jg }); out.events.push({ no: +k2[2], ab: curAb || 1, name: base + ' männlich', jg: jg }); }
+        else out.events.push({ no: +k2[1], ab: curAb || 1, name: base + (/mixed/i.test(k2[5]) ? ' mixed' : ''), jg: jg });
+      }
+    });
+    out.events.sort(function (a, b) { return a.no - b.no; });
+    if (!out.title) out.warnings.push('Titel nicht gefunden.');
+    if (!out.date) out.warnings.push('Datum nicht gefunden.');
+    if (!out.meldeschluss) out.warnings.push('Meldeschluss nicht gefunden.');
+    return out;
+  }
+  // Anzahl Kampfrichter laut Ausschreibung zu einer Zahl von Meldungen
+  function krFor(kr, n) { for (var i = 0; i < (kr || []).length; i++) if (n >= kr[i].von && n <= kr[i].bis) return kr[i].n; return null; }
+
+  // Protokoll (Ergebnisliste): Zeiten der eigenen Schwimmer den Starts zuordnen
+  function parseProtokoll(lines, starts) {
+    var out = { found: [], used: 0, warnings: [] }; var curE = null;
+    var names = {}; starts.forEach(function (s) { names[(s.n || '').toLowerCase()] = 1; });
+    var nameList = Object.keys(names);
+    function match(line) {
+      var l = line.toLowerCase();
+      for (var i = 0; i < nameList.length; i++) {
+        var n = nameList[i]; var p = n.split(',').map(function (x) { return x.trim(); });
+        if (l.indexOf(n) >= 0) return n;
+        if (p.length === 2 && (l.indexOf(p[1] + ' ' + p[0]) >= 0)) return n;
+      }
+      return null;
+    }
+    lines.forEach(function (l) {
+      var t = l.trim(); var m = /^Wettkampf\s+(\d+)\b/i.exec(t) || /^WK\s*(\d+)\b/i.exec(t);
+      if (m) { curE = +m[1]; return; }
+      if (curE === null) return;
+      var nm = match(t); if (!nm) return;
+      var times = (t.match(/\b\d{1,2}:\d{2},\d{2}\b|\b\d{1,3},\d{2}\b/g) || []).map(fmtTime).filter(Boolean);
+      var st = /\b(DQ|disq|disqualifiziert)/i.test(t) ? 'DQ' : /nicht angetreten|n\.a\./i.test(t) ? 'nicht angetreten' : /abgemeldet/i.test(t) ? 'abgemeldet' : '';
+      if (!times.length && !st) return;
+      out.found.push({ e: curE, nn: nm, t: st ? '' : times[0] || '', sp: st ? [] : times.slice(1), st: st });
+    });
+    if (!out.found.length) out.warnings.push('Keine Zeiten Ihrer Schwimmer gefunden. Ist das ein Protokoll mit Namen und Zeiten?');
+    return out;
+  }
+
+  // Anwesenheitsliste (WebClub-PDF): Spalten = Termine, Zeilen = Personen
+  function parseAnwesenheit(pages) {
+    var out = { from: '', to: '', title: '', sessions: [], people: [], warnings: [] };
+    var allText = []; pages.forEach(function (p) { p.forEach(function (it) { allText.push(it.str); }); });
+    var tj = allText.join(' ');
+    var mr = /(\d{2}\.\d{2}\.\d{4})\s+bis\s+(\d{2}\.\d{2}\.\d{4})/.exec(tj); if (mr) { out.from = dateDe(mr[1]); out.to = dateDe(mr[2]); }
+    var mt = /Anwesenheitsliste\s+(.+?),\s*\d{2}\.\d{2}\.\d{4}\s+bis/.exec(tj); if (mt) out.title = mt[1].trim();
+    function yearFor(dd, mm) {
+      var y = out.from ? +out.from.slice(0, 4) : (new Date()).getFullYear();
+      if (out.from && out.to) { var fy = +out.from.slice(0, 4), ty = +out.to.slice(0, 4); var fm = +out.from.slice(5, 7); y = (fy === ty || mm >= fm) ? fy : ty; }
+      return y;
+    }
+    var peopleBy = {}; var sessionsAll = [];
+    pages.forEach(function (items) {
+      var dates = items.filter(function (it) { return /^\d{2}\.\d{2}\.?$/.test(it.str.trim()); });
+      if (!dates.length) return;
+      var cols = dates.map(function (d) {
+        var cx = d.x + (d.w || 0) / 2; var dm = /^(\d{2})\.(\d{2})/.exec(d.str.trim());
+        var tm = items.filter(function (it) { return /^\d{1,2}:\d{2}$/.test(it.str.trim()) && Math.abs(it.x + (it.w || 0) / 2 - cx) < 14 && it.y < d.y; }).sort(function (a, b) { return b.y - a.y; })[0];
+        return { cx: cx, date: yearFor(+dm[1], +dm[2]) + '-' + dm[2] + '-' + dm[1], time: tm ? tm.str.trim() : '', yBottom: tm ? tm.y : d.y };
+      }).sort(function (a, b) { return a.cx - b.cx; });
+      var minCx = cols[0].cx; var headBottom = Math.min.apply(null, cols.map(function (c) { return c.yBottom; }));
+      // Zeilen unterhalb des Kopfes
+      var rows = []; var byY = {};
+      items.forEach(function (it) {
+        if (!it.str.trim() || it.y >= headBottom - 2) return;
+        if (it.y < 70) return;                                   // Fusszeile
+        var ky = Math.round(it.y), r = null; [0, -1, 1, -2, 2].forEach(function (d) { if (!r && byY[ky + d]) r = byY[ky + d]; });
+        if (!r) { r = { y: it.y, its: [] }; rows.push(r); byY[ky] = r; }
+        r.its.push(it);
+      });
+      rows.sort(function (a, b) { return b.y - a.y; });
+      var sessIdx = cols.map(function (c) { var key = c.date + ' ' + c.time; var f = -1; sessionsAll.forEach(function (s, i) { if (s.key === key) f = i; }); if (f < 0) { sessionsAll.push({ key: key, date: c.date, time: c.time }); f = sessionsAll.length - 1; } return f; });
+      rows.forEach(function (r) {
+        r.its.sort(function (a, b) { return a.x - b.x; });
+        var nameIts = r.its.filter(function (it) { return it.x + (it.w || 0) < minCx - 20; });
+        if (!nameIts.length) return;
+        var name = nameIts.map(function (i) { return i.str.trim(); }).join(' ').replace(/\s+/g, ' ').trim();
+        if (!name || /^Schwimmer$/i.test(name)) return;
+        var trainer = false; if (/^Trainer\s+/i.test(name)) { trainer = true; name = name.replace(/^Trainer\s+/i, ''); }
+        var pk = (trainer ? 't:' : 's:') + name.toLowerCase();
+        var p = peopleBy[pk] || (peopleBy[pk] = { name: name, trainer: trainer, st: {} });
+        r.its.forEach(function (it) {
+          if (it.x + (it.w || 0) < minCx - 20) return;
+          var c = it.x + (it.w || 0) / 2; var bi = 0, bd = 1e9; cols.forEach(function (cc, i) { var dd = Math.abs(cc.cx - c); if (dd < bd) { bd = dd; bi = i; } });
+          var s = it.str.trim().toLowerCase(); var code = /^unentschuldigt|^fehlt/.test(s) ? 'f' : /^entschuldigt/.test(s) ? 'e' : /^anwesend/.test(s) ? 'a' : '';
+          if (code) p.st[sessIdx[bi]] = code;
+        });
+      });
+    });
+    out.sessions = sessionsAll.map(function (s) { return { date: s.date, time: s.time }; });
+    out.people = Object.keys(peopleBy).map(function (k) { var p = peopleBy[k]; return { name: p.name, trainer: p.trainer, st: out.sessions.map(function (s, i) { return p.st[i] || ''; }) }; });
+    if (!out.sessions.length) out.warnings.push('Keine Termine gefunden. Ist das eine Anwesenheitsliste aus WebClub?');
+    if (!out.people.length) out.warnings.push('Keine Personen gefunden.');
+    return out;
+  }
+
+  return { parse: parse, parseDsv7: parseDsv7, parseAusschreibung: parseAusschreibung, parseProtokoll: parseProtokoll, parseAnwesenheit: parseAnwesenheit, krFor: krFor, dateDe: dateDe, linesFromItems: linesFromItems, fmtTime: fmtTime, timeMs: timeMs, diffStr: diffStr, isoDate: isoDate, toMin: toMin };
+})();
+
+/* Gemeinsamer PDF-Leser (pdf.js wird erst bei Bedarf geladen) und Dateihilfen für Wettkämpfe und Wettkampfgruppe. */
+(function () {
+  'use strict';
+  var PDFJS = ['https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js', 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js'];
+  var WORKER = ['https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js', 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js'];
+  function loadScript(src) {
+    return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = function () { rej(new Error('Laden fehlgeschlagen: ' + src)); }; document.head.appendChild(s); });
+  }
+  function ensure() {
+    if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+    var i = 0;
+    function next() {
+      if (i >= PDFJS.length) return Promise.reject(new Error('Der PDF-Leser konnte nicht geladen werden. Bitte Internetverbindung prüfen.'));
+      var k = i++;
+      return loadScript(PDFJS[k]).then(function () {
+        var lib = window.pdfjsLib; if (!lib) throw new Error('pdf.js fehlt');
+        return fetch(WORKER[k]).then(function (r) { return r.text(); }).then(function (t) { lib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([t], { type: 'text/javascript' })); }, function () { lib.GlobalWorkerOptions.workerSrc = WORKER[k]; }).then(function () { return lib; });
+      }, next);
+    }
+    return next();
+  }
+  function buf(file) {
+    return new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(r.result); }; r.onerror = function () { rej(new Error('Datei konnte nicht gelesen werden.')); }; r.readAsArrayBuffer(file); });
+  }
+  // liefert { pages: [[{str,x,y,w}]], lines: [..] }
+  function read(file) {
+    return Promise.all([ensure(), buf(file)]).then(function (a) {
+      return a[0].getDocument({ data: new Uint8Array(a[1]) }).promise.then(function (doc) {
+        var pages = []; var chain = Promise.resolve();
+        for (var n = 1; n <= doc.numPages; n++) (function (n) { chain = chain.then(function () { return doc.getPage(n).then(function (pg) { return pg.getTextContent().then(function (tc) { pages.push(tc.items.map(function (i) { return { str: i.str, x: i.transform[4], y: i.transform[5], w: i.width }; })); }); }); }); })(n);
+        return chain.then(function () { return { pages: pages, lines: WKParse.linesFromItems(pages) }; });
+      });
+    });
+  }
+  // Textdatei (DSV7): erst UTF-8, bei Zeichenfehlern Windows-1252
+  function text(file) {
+    return buf(file).then(function (b) {
+      var u8 = new Uint8Array(b); var s;
+      try { s = new TextDecoder('utf-8', { fatal: true }).decode(u8); } catch (e) { s = new TextDecoder('windows-1252').decode(u8); }
+      return s;
+    });
+  }
+  window.HubPdf = { read: read, text: text, ensure: ensure };
+})();

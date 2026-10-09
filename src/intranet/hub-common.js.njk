@@ -100,22 +100,29 @@ window.HubShell = (function () {
   }
 
   // ---------- Kopfzeile, Menü, Dialoge ----------
+  function initials(n) { var p = String(n || '?').trim().split(/\s+/); return ((p[0] || '?').charAt(0) + (p.length > 1 ? p[p.length - 1].charAt(0) : '')).toUpperCase(); }
   function menuHtml() {
     if (!S.menu) return '';
-    var items = (S.menuExtra && S.menuExtra.length ? '<div class="hub-mlabel">Verwaltung</div>' + S.menuExtra.map(function (x) { return '<button type="button" class="hub-mi' + (x.on ? ' hub-on' : '') + '" data-shx="' + esc(x.key) + '"><span class="hub-mic">' + esc(x.icon || '•') + '</span>' + esc(x.label) + '</button>'; }).join('') + '<div class="hub-msep"></div>' : '') + '<div class="hub-mlabel">Systeme</div><a class="hub-mi" href="' + HUB_URL + '"><span class="hub-mic">🏠</span>Alle Systeme</a>' +
-      S.systems.map(function (s) { return '<a class="hub-mi" href="' + esc(s.url) + '"><span class="hub-mic">' + esc(s.icon || '•') + '</span>' + esc(s.name) + '</a>'; }).join('') + '<div class="hub-msep"></div><div class="hub-mlabel">Konto</div>';
-    if (!S.me) items += '<button type="button" class="hub-mi" data-sh="login"><span class="hub-mic">🔑</span>Anmelden</button>';
-    else {
-      if (S.me.user) items += '<button type="button" class="hub-mi" data-sh="password"><span class="hub-mic">🔑</span>Passwort ändern</button>';
-      if (canAdmin()) items += '<a class="hub-mi" href="' + HUB_URL + 'verwaltung/"><span class="hub-mic">🛡️</span>Verwaltung</a>';
-      items += '<button type="button" class="hub-mi" data-sh="logout"><span class="hub-mic">🚪</span>Abmelden</button>';
+    var items = '';
+    if (S.menu === 'acc') {
+      if (!S.me) items += '<button type="button" class="hub-mi" data-sh="login"><span class="hub-mic">🔑</span>Anmelden</button>';
+      else {
+        items += '<div class="hub-mlabel">' + esc(S.me.user || (S.me.role && S.me.role.name) || '') + (S.me.user && S.me.role ? ' · ' + esc(S.me.role.name) : '') + '</div>';
+        if (S.me.user) items += '<a class="hub-mi" href="' + HUB_URL + 'profil/"><span class="hub-mic">👤</span>Mein Profil</a><button type="button" class="hub-mi" data-sh="password"><span class="hub-mic">🔑</span>Passwort ändern</button>';
+        if (canAdmin()) items += '<a class="hub-mi" href="' + HUB_URL + 'verwaltung/"><span class="hub-mic">🛡️</span>Verwaltung</a>';
+        items += '<button type="button" class="hub-mi" data-sh="login"><span class="hub-mic">🔁</span>Konto wechseln</button><button type="button" class="hub-mi" data-sh="logout"><span class="hub-mic">🚪</span>Abmelden</button>';
+      }
+      return '<div class="hub-menu-bg" data-sh="menuclose"></div><nav class="hub-menu acc" aria-label="Konto">' + items + '</nav>';
     }
+    items = (S.menuExtra && S.menuExtra.length ? '<div class="hub-mlabel">Verwaltung</div>' + S.menuExtra.map(function (x) { return '<button type="button" class="hub-mi' + (x.on ? ' hub-on' : '') + '" data-shx="' + esc(x.key) + '"><span class="hub-mic">' + esc(x.icon || '•') + '</span>' + esc(x.label) + '</button>'; }).join('') + '<div class="hub-msep"></div>' : '') + '<div class="hub-mlabel">Systeme</div><a class="hub-mi" href="' + HUB_URL + '"><span class="hub-mic">🏠</span>Alle Systeme</a>' +
+      S.systems.map(function (s) { return '<a class="hub-mi" href="' + esc(s.url) + '"><span class="hub-mic">' + esc(s.icon || '•') + '</span>' + esc(s.name) + '</a>'; }).join('');
     return '<div class="hub-menu-bg" data-sh="menuclose"></div><nav class="hub-menu" aria-label="Menü">' + items + '</nav>';
   }
   function header(title) {
-    var acc = S.me ? '<button type="button" class="hub-pill" data-sh="login" title="Rolle / Anmeldung">' + (S.me.user ? '👤 ' : '🔑 ') + esc(S.me.user || (S.me.role && S.me.role.name) || '') + (S.me.user && S.me.role ? ' · ' + esc(S.me.role.name) : '') + '</button>' : '<button type="button" class="hub-btn hub-gold" data-sh="login">🔑 Anmelden</button>';
+    var nm = S.me ? (S.me.user || (S.me.role && S.me.role.name) || '') : '';
+    var acc = S.me ? '<button type="button" class="hub-avatar" data-sh="accmenu" title="Konto" aria-expanded="' + (S.menu === 'acc' ? 'true' : 'false') + '"><span class="hub-av">' + (S.me.user ? esc(initials(S.me.user)) : '🔑') + '</span><span class="hub-avn">' + esc(nm) + (S.me.user && S.me.role ? '<span class="hub-avr">' + esc(S.me.role.name) + '</span>' : '') + '</span></button>' : '<button type="button" class="hub-btn hub-gold" data-sh="login">🔑 Anmelden</button>';
     return '<header class="hub-head"><a class="hub-logo" href="' + HUB_URL + '" aria-label="Zum Hub"><img src="/assets/weihnachtsmarkt/sharks-logo.png" alt=""></a><h1>' + esc(title) + '</h1><div class="hub-user">' + acc +
-      '<button type="button" class="hub-btn hub-ghost" data-sh="theme">' + esc(window.HubTheme.label()) + '</button><button type="button" class="hub-burger" data-sh="menu" aria-label="Menü" aria-expanded="' + (S.menu ? 'true' : 'false') + '">☰</button></div>' + menuHtml() + '</header>';
+      '<button type="button" class="hub-btn hub-ghost" data-sh="theme">' + esc(window.HubTheme.label()) + '</button><button type="button" class="hub-burger" data-sh="menu" aria-label="Menü" aria-expanded="' + (S.menu === 'sys' ? 'true' : 'false') + '">☰</button></div>' + menuHtml() + '</header>';
   }
   function dialogHtml() {
     var d = S.dialog; if (!d) return '';
@@ -150,7 +157,8 @@ window.HubShell = (function () {
     if (m) { S.mode = m; S.error = ''; rerender(); return true; }
     var a = t.getAttribute('data-sh');
     if (a === 'cancelbg') { if (ev.target !== t) return false; a = 'cancel'; }
-    if (a === 'menu') { S.menu = !S.menu; rerender(); return true; }
+    if (a === 'menu') { S.menu = S.menu === 'sys' ? false : 'sys'; rerender(); return true; }
+    if (a === 'accmenu') { S.menu = S.menu === 'acc' ? false : 'acc'; rerender(); return true; }
     if (a === 'menuclose') { S.menu = false; rerender(); return true; }
     if (a === 'theme') { window.HubTheme.cycle(); rerender(); return true; }
     if (a === 'login') { S.menu = false; S.dialog = 'login'; S.error = ''; rerender(); return true; }
@@ -198,5 +206,5 @@ window.HubShell = (function () {
     }
     return false;
   }
-  return { S: S, API: API, DIAG: DIAG, esc: esc, lsGet: lsGet, lsSet: lsSet, token: token, has: has, canAdmin: canAdmin, get: get, post: post, loadAccount: loadAccount, restore: restore, header: header, overlay: overlay, click: click, submit: submit, HUB_URL: HUB_URL };
+  return { S: S, API: API, DIAG: DIAG, esc: esc, initials: initials, lsGet: lsGet, lsSet: lsSet, token: token, has: has, canAdmin: canAdmin, get: get, post: post, loadAccount: loadAccount, restore: restore, header: header, overlay: overlay, click: click, submit: submit, HUB_URL: HUB_URL };
 })();
