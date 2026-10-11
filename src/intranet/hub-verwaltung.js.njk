@@ -165,12 +165,12 @@ templateEngineOverride: false
       { key: 'name', label: 'Name', type: 'text', value: role ? role.name : (src ? 'Kopie von ' + src.name : ''), maxlength: 40 },
       { key: 'desc', label: 'Beschreibung', type: 'text', value: src ? src.desc : '', maxlength: 120 }
     ];
-    if (!role || role.id !== 'gast') fields.push({ key: 'password', label: role ? 'Neues Passwort (leer lassen = unverändert)' : 'Passwort', type: 'text', value: '', hint: role ? 'Mindestens 4 Zeichen.' : 'Mindestens 4 Zeichen. Ohne Passwort ist keine Anmeldung mit dieser Rolle möglich.' });
+    if (false) fields.push({ key: 'password', label: role ? 'Neues Passwort (leer lassen = unverändert)' : 'Passwort', type: 'text', value: '', hint: role ? 'Mindestens 4 Zeichen.' : 'Mindestens 4 Zeichen. Ohne Passwort ist keine Anmeldung mit dieser Rolle möglich.' });
     fields.push({ key: 'perms', label: 'Rechte', type: 'permissions', value: src ? src.perms : [], locked: locked, forced: isAdmin ? S.catalog.core : [], note: isAdmin ? 'Die Rechte zur Verwaltung von Rollen, Benutzern und Passwörtern bleiben beim Administrator immer an.' : '' });
     var extra = [];
     if (role && !role.builtin && has('system.roles')) extra.push({ text: 'Rolle löschen', value: 'delete', danger: true });
     if (role && role.id !== 'gast' && has('system.roles')) extra.push({ text: 'Überall abmelden', value: 'logoutAll' });
-    if (role && role.id !== 'gast' && role.id !== 'admin' && role.hasPw && has('system.passwords')) extra.push({ text: 'Rollen-Anmeldung abschalten', value: 'clearPw' });
+    if (false) extra.push({ text: 'Rollen-Anmeldung abschalten', value: 'clearPw' });
     openDialog({ title: role ? 'Rolle bearbeiten: ' + role.name : (src ? 'Rolle kopieren: ' + src.name : 'Neue Rolle'), fields: fields, extra: extra, wide: true, submit: function (v) {
       var name = String(v.name || '').trim(); if (!name) return 'Bitte einen Namen eingeben.';
       var pw = String(v.password || '').trim(); if (pw && pw.length < 4) return 'Das Passwort braucht mindestens 4 Zeichen.';
@@ -227,7 +227,7 @@ templateEngineOverride: false
   function when(t) { if (!t) return 'noch nie angemeldet'; var m = Math.round((Date.now() - Number(t)) / 60000); return m < 2 ? 'zuletzt angemeldet gerade eben' : m < 120 ? 'zuletzt angemeldet vor ' + m + ' Min.' : m < 2880 ? 'zuletzt angemeldet vor ' + Math.round(m / 60) + ' Std.' : 'zuletzt angemeldet vor ' + Math.round(m / 1440) + ' Tagen'; }
   function roleIcon(id) { return { admin: '👑', orga: '🧭', helfer: '🙋', gast: '👁️' }[id] || '🛡️'; }
   function usersHtml() {
-    if (!S.users.length) return '<p class="wm-note">Noch keine Benutzer. Ohne Benutzer meldet man sich mit dem Passwort der Rolle an.</p>';
+    if (!S.users.length) return '<p class="wm-note">Noch keine Benutzer.</p>';
     return S.users.map(function (u) {
       var ex = (u.extras || []).map(function (id) { var x = S.extras.filter(function (e) { return e.id === id; })[0]; return x ? x.name : null; }).filter(Boolean);
       return '<div class="wm-row' + (u.disabled ? ' off' : '') + '"><span class="wm-ic">' + (u.disabled ? '🚫' : '👤') + '</span><div class="wm-main"><div class="wm-name">' + esc(u.name) + (u.disabled ? ' <span class="wm-lock">gesperrt</span>' : '') + '</div><div class="wm-sub">' + esc((u.roles || []).map(roleName).join(' + ') || 'keine Rolle') + (ex.length ? ' · ✨ ' + esc(ex.join(', ')) : '') + ' · ' + esc(when(u.last)) + '</div></div>' +
@@ -240,7 +240,7 @@ templateEngineOverride: false
       var n = (r.perms || []).filter(function (k) { return allPermKeys().indexOf(k) >= 0; }).length;
       var mv = has('system.roles') ? '<span class="wm-nowrap"><button type="button" class="wm-btn" data-mv="-1" data-id="' + esc(r.id) + '" title="Höher einstufen"' + (i === 0 ? ' disabled' : '') + '>▲</button> <button type="button" class="wm-btn" data-mv="1" data-id="' + esc(r.id) + '" title="Niedriger einstufen"' + (i === all.length - 1 ? ' disabled' : '') + '>▼</button></span>' : '';
       return '<div class="wm-row"><span class="wm-num">' + (i + 1) + '</span><span class="wm-ic">' + roleIcon(r.id) + '</span><div class="wm-main"><div class="wm-name">' + esc(r.name) + (r.builtin ? ' <span class="wm-fest">(fest)</span>' : '') + '</div><div class="wm-sub">' + esc(r.desc || 'ohne Beschreibung') + (r.last ? ' · ' + esc(when(r.last)) : '') + '</div></div>' +
-        '<span class="wm-meta">Rechte ' + n + ' von ' + total + '</span><span class="wm-meta ' + (r.hasPw ? 'ok' : 'dim') + '">' + (r.id === 'gast' ? 'ohne Passwort' : (r.hasPw ? '🔑 Passwort' : 'Rollen-Anmeldung aus')) + '</span>' + mv +
+        '<span class="wm-meta">Rechte ' + n + ' von ' + total + '</span>' + mv +
         (has('system.roles') && has('system.rechte') ? '<button type="button" class="wm-btn" data-ed="copy" data-id="' + esc(r.id) + '" title="Als Vorlage für eine neue Rolle kopieren">⧉ Kopieren</button>' : '') +
         (canAny(['system.roles', 'system.rechte', 'system.passwords']) ? '<button type="button" class="wm-btn" data-ed="role" data-id="' + esc(r.id) + '">✏️ Bearbeiten</button>' : '') + '</div>';
     }).join('');

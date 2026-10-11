@@ -303,6 +303,61 @@ permalink: /intranet/jugend/
   #hubRoot .hub-nrow b { font-weight: 800; }
   #hubRoot .hub-nmeta { display: block; font-size: 12px; color: var(--soft); margin-top: 2px; }
   #hubRoot .hub-over { color: var(--bad); font-weight: 800; }
+
+  /* ===== Ruhiges Design (gilt für alle Hub-Seiten) ===== */
+  #hubRoot { --navy: #12395c; --navy2: #1c4f7c; --gold: #d6a23a; --line: #e2e8f0; --soft: #64748b; --bg: #f1f5f9; background: var(--bg); }
+  .dark #hubRoot { --navy: #2b5f93; --navy2: #3a73ad; --line: #1f2a3d; --soft: #94a3b8; --bg: #0b1220; }
+  /* Kopfzeile wie im Weihnachtsmarkt (dort Tannengrün, hier Vereinsblau) */
+  #hubRoot .hub-head, .dark #hubRoot .hub-head { position: sticky; top: 0; z-index: 40; display: block; padding: 0; color: #fff; background: linear-gradient(135deg, #0a1f36, #12395c 55%, #0d2b47); border-bottom: 4px solid #d6a23a; box-shadow: 0 8px 20px rgba(0,0,0,.30); }
+  #hubRoot .hub-hin { max-width: 80rem; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  #hubRoot .hub-hl { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  #hubRoot .hub-hr { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+  #hubRoot .hub-head .hub-logo { flex: 0 0 auto; width: 50px; height: 50px; border-radius: 15px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.24); }
+  #hubRoot .hub-head .hub-logo img { height: 32px; }
+  #hubRoot .hub-head h1 { flex: 0 1 auto; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 900 18px/1.1 ui-rounded, 'SF Pro Rounded', system-ui, sans-serif; letter-spacing: .2px; color: #fff; }
+  #hubRoot .hub-head .hub-pill { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.24); background: rgba(255,255,255,.14); color: #fff; font: 800 12px -apple-system, system-ui, sans-serif; cursor: pointer; }
+  #hubRoot .hub-head .hub-pill:hover { background: rgba(255,255,255,.22); }
+  #hubRoot .hub-head .hub-burger { width: 44px; justify-content: center; padding: 0; font-size: 20px; }
+  #hubRoot .hub-pl { max-width: 9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (max-width: 560px) { #hubRoot .hub-pl { display: none; } #hubRoot .hub-hin { padding: 10px 12px; } #hubRoot .hub-head h1 { font-size: 16px; } #hubRoot .hub-head .hub-logo { width: 44px; height: 44px; } }
+  /* Menü von rechts */
+  #hubRoot .hub-drawer-bg { position: fixed; inset: 0; z-index: 80; display: flex; justify-content: flex-end; background: rgba(2,8,23,.6); }
+  #hubRoot .hub-drawer { width: min(22rem, 100%); height: 100%; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 16px 12px calc(16px + env(safe-area-inset-bottom)); color: #0f172a; background: #fff; box-shadow: -12px 0 40px rgba(0,0,0,.35); }
+  .dark #hubRoot .hub-drawer { color: #e2e8f0; background: #0e1626; }
+  #hubRoot .hub-dtop { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 4px 12px; border-bottom: 1px solid var(--line); }
+  #hubRoot .hub-dwho { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  #hubRoot .hub-drawer .hub-av { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: var(--gold); color: #0a1f36; font: 900 16px ui-rounded, system-ui, sans-serif; }
+  #hubRoot .hub-dn { font: 900 17px/1.2 ui-rounded, 'SF Pro Rounded', system-ui, sans-serif; overflow: hidden; text-overflow: ellipsis; }
+  #hubRoot .hub-dr { font-size: 12px; font-weight: 600; color: var(--soft); }
+  #hubRoot .hub-x { flex: 0 0 auto; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: transparent; color: inherit; font-size: 20px; cursor: pointer; }
+  #hubRoot .hub-dnav { flex: 1; padding-top: 4px; }
+  #hubRoot .hub-dfoot { padding-top: 8px; border-top: 1px solid var(--line); }
+  /* Karten, Knöpfe, Reiter: überall gleich */
+  #hubRoot .hub-card, #hubRoot .wm-card { border-radius: 16px; padding: 18px; margin-bottom: 14px; border: 1px solid var(--line); box-shadow: none; }
+  #hubRoot .wm-amber, #hubRoot .hub-gold, #hubRoot .ha-dialog .hub-gold { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 18px; border: 0; border-radius: 12px; background: var(--navy); color: #fff; font: 800 14px -apple-system, system-ui, sans-serif; box-shadow: none; }
+  #hubRoot .wm-amber:hover, #hubRoot .hub-gold:hover, #hubRoot .ha-dialog .hub-gold:hover { background: var(--navy2); }
+  #hubRoot .wm-amber[disabled], #hubRoot .hub-gold[disabled] { opacity: .5; }
+  #hubRoot .wm-btn { min-height: 40px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line); background: transparent; color: inherit; font: 700 13px -apple-system, system-ui, sans-serif; display: inline-flex; align-items: center; justify-content: center; }
+  .dark #hubRoot .wm-btn { background: transparent; border-color: #334155; }
+  #hubRoot .wm-bar h3, #hubRoot .wm-card > h3 { font-size: 16px; }
+  #hubRoot .wm-tabs { display: flex; flex-wrap: nowrap; gap: 4px; padding: 4px; margin: 0 0 16px; overflow-x: auto; border-radius: 14px; background: rgba(148,163,184,.20); -webkit-overflow-scrolling: touch; }
+  #hubRoot .wm-tab { flex: 1 0 auto; padding: 10px 16px; border: 0; border-radius: 10px; background: transparent; color: inherit; font: 700 14px -apple-system, system-ui, sans-serif; white-space: nowrap; box-shadow: none; }
+  #hubRoot .wm-tab.on, .dark #hubRoot .wm-tab.on { background: #fff; color: var(--navy); border: 0; font-weight: 900; box-shadow: 0 1px 4px rgba(15,23,42,.18); }
+  .dark #hubRoot .wm-tab.on { background: #1e3a5f; color: #fff; }
+  #hubRoot .m-chip.on { background: var(--navy); border-color: var(--navy); color: #fff; }
+  #hubRoot .m-pagehead { margin: 0 0 4px; min-height: 0; }
+  #hubRoot .m-pagehead:empty { display: none; }
+  #hubRoot .hub-main { max-width: 1180px; margin: 0 auto; padding: 20px 16px 8px; }
+  /* Startseite */
+  #hubRoot .hub-t2 { gap: 10px; min-height: 0; padding: 20px; border-radius: 18px; box-shadow: none; }
+  #hubRoot .hub-t2::before { display: none; }
+  #hubRoot .hub-t2:hover { box-shadow: 0 4px 14px rgba(15,23,42,.10); }
+  #hubRoot .hub-t2ic { width: 48px; height: 48px; border-radius: 14px; font-size: 26px; background: color-mix(in srgb, var(--acc) 13%, transparent); }
+  #hubRoot .hub-t2n { font-size: 18px; }
+  #hubRoot .hub-sech { margin: 0 0 10px; }
+  #hubRoot .hub-sec { margin-bottom: 26px; }
+  #hubRoot .hub-warn { border-left: 5px solid var(--warn); }
+  #hubRoot .hub-warn.bad { border-left-color: var(--bad); }
 </style>
 <div id="hubRoot" data-modul="jugend"><noscript><p style="padding:24px">Dafür wird JavaScript gebraucht.</p></noscript></div>
 <script src="/intranet/js/hub-config.js" defer></script>

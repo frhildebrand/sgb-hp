@@ -101,42 +101,55 @@ window.HubShell = (function () {
 
   // ---------- Kopfzeile, Menü, Dialoge ----------
   function initials(n) { var p = String(n || '?').trim().split(/\s+/); return ((p[0] || '?').charAt(0) + (p.length > 1 ? p[p.length - 1].charAt(0) : '')).toUpperCase(); }
+  // Kopfzeile wie im Weihnachtsmarkt: Logo (Start), Titel, Rollen-Anzeige (öffnet Anmelden), Design-Schalter und Menü (rechts).
+  function roleBadge() {
+    var m = S.me; var logged = !!m;
+    var nm = logged ? String(m.user || (m.role && m.role.name) || '') : 'Gast';
+    return '<button type="button" class="hub-pill" data-sh="login" title="Anmelden / Konto"><span class="hub-pi">' + (logged ? '🔓' : '👁️') + '</span><span class="hub-pl">' + esc(nm.toUpperCase()) + '</span></button>';
+  }
+  function groupsOf(systems) {
+    var order = ['Meine Arbeit', 'Verein', 'Weihnachtsmarkt']; var by = {};
+    systems.forEach(function (s) { var g = s.group || 'Verein'; (by[g] = by[g] || []).push(s); });
+    return order.filter(function (g) { return by[g]; }).concat(Object.keys(by).filter(function (g) { return order.indexOf(g) < 0; })).map(function (g) { return { name: g, items: by[g] }; });
+  }
+  function link(href, icon, label, on) { return '<a class="hub-mi' + (on ? ' hub-on' : '') + '" href="' + href + '"><span class="hub-mic">' + icon + '</span>' + esc(label) + '</a>'; }
+  function btn(act, icon, label) { return '<button type="button" class="hub-mi" data-sh="' + act + '"><span class="hub-mic">' + icon + '</span>' + esc(label) + '</button>'; }
   function menuHtml() {
     if (!S.menu) return '';
-    var items = '';
-    if (S.menu === 'acc') {
-      if (!S.me) items += '<button type="button" class="hub-mi" data-sh="login"><span class="hub-mic">🔑</span>Anmelden</button>';
-      else {
-        items += '<div class="hub-mlabel">' + esc(S.me.user || (S.me.role && S.me.role.name) || '') + (S.me.user && S.me.role ? ' · ' + esc(S.me.role.name) : '') + '</div>';
-        if (S.me.user) items += '<a class="hub-mi" href="' + HUB_URL + 'profil/"><span class="hub-mic">👤</span>Mein Profil</a><button type="button" class="hub-mi" data-sh="password"><span class="hub-mic">🔑</span>Passwort ändern</button>';
-        if (canAdmin()) items += '<a class="hub-mi" href="' + HUB_URL + 'verwaltung/"><span class="hub-mic">🛡️</span>Verwaltung</a>';
-        items += '<button type="button" class="hub-mi" data-sh="login"><span class="hub-mic">🔁</span>Konto wechseln</button><button type="button" class="hub-mi" data-sh="logout"><span class="hub-mic">🚪</span>Abmelden</button>';
-      }
-      return '<div class="hub-menu-bg" data-sh="menuclose"></div><nav class="hub-menu acc" aria-label="Konto">' + items + '</nav>';
-    }
-    items = (S.menuExtra && S.menuExtra.length ? '<div class="hub-mlabel">Verwaltung</div>' + S.menuExtra.map(function (x) { return '<button type="button" class="hub-mi' + (x.on ? ' hub-on' : '') + '" data-shx="' + esc(x.key) + '"><span class="hub-mic">' + esc(x.icon || '•') + '</span>' + esc(x.label) + '</button>'; }).join('') + '<div class="hub-msep"></div>' : '') + '<div class="hub-mlabel">Systeme</div><a class="hub-mi" href="' + HUB_URL + '"><span class="hub-mic">🏠</span>Alle Systeme</a>' +
-      S.systems.map(function (s) { return '<a class="hub-mi" href="' + esc(s.url) + '"><span class="hub-mic">' + esc(s.icon || '•') + '</span>' + esc(s.name) + '</a>'; }).join('');
-    return '<div class="hub-menu-bg" data-sh="menuclose"></div><nav class="hub-menu" aria-label="Menü">' + items + '</nav>';
+    var m = S.me; var here = (location.pathname || '').replace(/\/?$/, '/');
+    var who = m ? '<div class="hub-dn">' + esc(m.user || (m.role && m.role.name) || '') + '</div><div class="hub-dr">' + (m.user && m.role ? esc(m.role.name) : (m.user ? '' : 'Rollen-Anmeldung')) + '</div>' : '<div class="hub-dn">Gast</div><div class="hub-dr">nicht angemeldet</div>';
+    var nav = '';
+    if (S.menuExtra && S.menuExtra.length) nav += '<div class="hub-mlabel">Verwaltung</div>' + S.menuExtra.map(function (x) { return '<button type="button" class="hub-mi' + (x.on ? ' hub-on' : '') + '" data-shx="' + esc(x.key) + '"><span class="hub-mic">' + esc(x.icon || '•') + '</span>' + esc(x.label) + '</button>'; }).join('') + '<div class="hub-msep"></div>';
+    nav += link(HUB_URL, '🏠', 'Startseite', here === HUB_URL);
+    groupsOf(S.systems).forEach(function (g) { nav += '<div class="hub-mlabel">' + esc(g.name) + '</div>' + g.items.map(function (s) { return link(esc(s.url), esc(s.icon || '•'), s.name, here === String(s.url).replace(/\/?$/, '/')); }).join(''); });
+    var foot = '';
+    if (m && m.user) foot += link(HUB_URL + 'profil/', '👤', 'Mein Profil', here === HUB_URL + 'profil/') + btn('password', '🔑', 'Passwort ändern');
+    if (canAdmin()) foot += link(HUB_URL + 'verwaltung/', '🛡️', 'Verwaltung', here === HUB_URL + 'verwaltung/');
+    foot += m ? btn('login', '🔁', 'Konto wechseln') + btn('logout', '🚪', 'Abmelden') : btn('login', '🔑', 'Anmelden');
+    return '<div class="hub-drawer-bg" data-sh="menuclose"><aside class="hub-drawer" aria-label="Menü"><div class="hub-dtop"><div class="hub-dwho"><span class="hub-av">' + (m && m.user ? esc(initials(m.user)) : '👁️') + '</span><div>' + who + '</div></div><button type="button" class="hub-x" data-sh="menuclose" aria-label="Menü schließen">✕</button></div><nav class="hub-dnav">' + nav + '</nav><div class="hub-dfoot">' + foot + '</div></aside></div>';
   }
   function header(title) {
-    var nm = S.me ? (S.me.user || (S.me.role && S.me.role.name) || '') : '';
-    var acc = S.me ? '<button type="button" class="hub-avatar" data-sh="accmenu" title="Konto" aria-expanded="' + (S.menu === 'acc' ? 'true' : 'false') + '"><span class="hub-av">' + (S.me.user ? esc(initials(S.me.user)) : '🔑') + '</span><span class="hub-avn">' + esc(nm) + (S.me.user && S.me.role ? '<span class="hub-avr">' + esc(S.me.role.name) + '</span>' : '') + '</span></button>' : '<button type="button" class="hub-btn hub-gold" data-sh="login">🔑 Anmelden</button>';
-    return '<header class="hub-head"><a class="hub-logo" href="' + HUB_URL + '" aria-label="Zum Hub"><img src="/assets/weihnachtsmarkt/sharks-logo.png" alt=""></a><h1>' + esc(title) + '</h1><div class="hub-user">' + acc +
-      '<button type="button" class="hub-btn hub-ghost" data-sh="theme">' + esc(window.HubTheme.label()) + '</button><button type="button" class="hub-burger" data-sh="menu" aria-label="Menü" aria-expanded="' + (S.menu === 'sys' ? 'true' : 'false') + '">☰</button></div>' + menuHtml() + '</header>';
+    return '<header class="hub-head"><div class="hub-hin"><div class="hub-hl"><a class="hub-logo" href="' + HUB_URL + '" aria-label="Zur Startseite" title="Zur Startseite"><img src="/assets/weihnachtsmarkt/sharks-logo.png" alt=""></a><h1>' + esc(title) + '</h1></div>' +
+      '<div class="hub-hr">' + roleBadge() + '<button type="button" class="hub-pill hub-theme" data-sh="theme" title="Design wechseln">' + esc(window.HubTheme.label()) + '</button><button type="button" class="hub-pill hub-burger" data-sh="menu" aria-label="Menü" aria-expanded="' + (S.menu ? 'true' : 'false') + '">☰</button></div></div>' + menuHtml() + '</header>';
   }
   function dialogHtml() {
-    var d = S.dialog; if (!d) return '';
+    var d = S.dialog || (S.me && S.me.mustChange ? 'force' : null); if (!d) return '';
     if (d === 'login') {
       var who = S.me ? '<div class="hub-status"><span>' + (S.me.user ? '👤 ' : '🔑 ') + 'Angemeldet: <b>' + esc(S.me.user || (S.me.role && S.me.role.name) || '') + '</b>' + (S.me.user && S.me.role ? ' · ' + esc(S.me.role.name) : '') + '</span><span class="hub-status-btns">' + (S.me.user ? '<button type="button" class="hub-btn hub-ghost" data-sh="password">Passwort ändern</button>' : '') + '<button type="button" class="hub-btn hub-ghost" data-sh="logout">Abmelden</button></span></div>' : '';
       var cards = S.loginRoles.map(function (r) {
         return '<form class="hub-rcard" data-shform="login" autocomplete="off"><input type="hidden" name="kind" value="role"><input type="hidden" name="role" value="' + esc(r.id) + '"><b>' + esc(r.name) + '</b>' + (r.desc ? '<span class="hub-rdesc">' + esc(r.desc) + '</span>' : '') + '<input name="password" type="password" placeholder="Passwort" autocomplete="off" required><button type="submit" class="hub-btn hub-gold"' + (S.busy ? ' disabled' : '') + '>Anmelden</button></form>';
       }).join('');
       return '<div class="ha-overlay" data-sh="cancelbg"><div class="ha-dialog"><div class="hub-dhead"><h3>🔐 Anmelden</h3><button type="button" class="hub-btn hub-ghost" data-sh="cancel" aria-label="Schließen">✕</button></div>' +
-        '<p class="hub-sub">Mit dem Passwort einer Rolle oder persönlich mit Benutzername. Die Anmeldung bleibt auf diesem Gerät gespeichert.</p>' + who +
+        '<p class="hub-sub">Anmeldung mit deinem Benutzernamen (Vorname) und Passwort. Sie bleibt auf diesem Gerät gespeichert.</p>' + who +
         (S.error ? '<div class="hub-err">' + esc(S.error) + '</div>' : '') +
         (cards ? '<div class="hub-rgrid">' + cards + '</div>' : '') +
         '<form class="hub-login hub-rcard hub-ruser" data-shform="login" autocomplete="on"><input type="hidden" name="kind" value="user"><b>👤 Persönlich anmelden</b>' +
         '<div class="hub-urow"><input name="name" type="text" placeholder="Benutzername" autocomplete="username" autocapitalize="off" required><input name="password" type="password" placeholder="Passwort" autocomplete="current-password" required><button type="submit" class="hub-btn hub-gold"' + (S.busy ? ' disabled' : '') + '>' + (S.busy ? 'Moment …' : 'Anmelden') + '</button></div></form></div></div>';
+    }
+    if (d === 'force') {
+      return '<div class="ha-overlay"><div class="ha-dialog small"><h3>Willkommen! Eigenes Passwort wählen</h3><p class="hub-sub">Dein Startpasswort ist nur zum ersten Anmelden gedacht. Bitte wähle jetzt ein eigenes Passwort. Danach siehst du deine Bereiche.</p><form class="hub-login" data-shform="password" data-force="1">' +
+        '<label>Neues Passwort (mindestens 6 Zeichen)<input name="neu" type="password" autocomplete="new-password" required></label><label>Neues Passwort wiederholen<input name="neu2" type="password" autocomplete="new-password" required></label>' +
+        (S.error ? '<div class="hub-err">' + esc(S.error) + '</div>' : '') + '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-sh="logout">Abmelden</button><button type="submit" class="hub-btn hub-gold"' + (S.busy ? ' disabled' : '') + '>Speichern</button></div></form></div></div>';
     }
     if (d === 'password') {
       return '<div class="ha-overlay"><div class="ha-dialog small"><h3>Passwort ändern</h3><form class="hub-login" data-shform="password">' +
@@ -158,8 +171,7 @@ window.HubShell = (function () {
     var a = t.getAttribute('data-sh');
     if (a === 'cancelbg') { if (ev.target !== t) return false; a = 'cancel'; }
     if (a === 'menu') { S.menu = S.menu === 'sys' ? false : 'sys'; rerender(); return true; }
-    if (a === 'accmenu') { S.menu = S.menu === 'acc' ? false : 'acc'; rerender(); return true; }
-    if (a === 'menuclose') { S.menu = false; rerender(); return true; }
+    if (a === 'menuclose') { if (t.classList.contains('hub-drawer-bg') && ev.target !== t) return false; S.menu = false; rerender(); return true; }
     if (a === 'theme') { window.HubTheme.cycle(); rerender(); return true; }
     if (a === 'login') { S.menu = false; S.dialog = 'login'; S.error = ''; rerender(); return true; }
     if (a === 'password') { S.menu = false; S.dialog = 'password'; S.error = ''; rerender(); return true; }
@@ -192,7 +204,7 @@ window.HubShell = (function () {
       return true;
     }
     if (kind === 'password') {
-      var o = f.elements.old.value, n = f.elements.neu.value, n2 = f.elements.neu2.value;
+      var forced = f.getAttribute('data-force') === '1'; var o = forced ? '' : f.elements.old.value, n = f.elements.neu.value, n2 = f.elements.neu2.value;
       if (n.length < 6) { S.error = 'Das neue Passwort braucht mindestens 6 Zeichen.'; rerender(); return true; }
       if (n !== n2) { S.error = 'Die beiden neuen Passwörter sind nicht gleich.'; rerender(); return true; }
       S.busy = true; S.error = ''; rerender();
@@ -200,6 +212,7 @@ window.HubShell = (function () {
         S.busy = false;
         if (!res) { S.error = 'Keine Verbindung. Zum Ändern wird Internet gebraucht.'; rerender(); return; }
         if (res.status !== 'success') { S.error = res.message || 'Das hat nicht geklappt.'; rerender(); return; }
+        if (forced) { S.info = 'Dein Passwort wurde geändert. Jetzt geht es los.'; S.dialog = null; S.me = null; S.restored = false; lsSet('hubcache', null); reload(); return; }
         S.dialog = 'info'; S.info = 'Dein Passwort wurde geändert.'; rerender();
       });
       return true;

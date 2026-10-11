@@ -4,7 +4,7 @@ layout: false
 eleventyExcludeFromCollections: true
 templateEngineOverride: false
 ---
-/* Wettkampfgruppe: Mitglieder, Trainingstage mit Anwesenheit, Statistik, Einheiten, Beobachtungen, Wettkämpfe, Jahresrückblick. */
+/* Wettkampfgruppe: Übersicht (mit Statistik und Jahresrückblick), Training (Trainingstage mit Anwesenheit) und Mitglieder. */
 (function () {
   'use strict';
   var M = window.HubMod; if (!M) return;
@@ -18,7 +18,14 @@ templateEngineOverride: false
   function ym(iso) { return String(iso || '').slice(0, 7); }
   function canTage() { return M.can('training.tage.edit'); }
   function members() { return M.items('wgMitglieder').sort(function (a, b) { return String(a.name || '').localeCompare(String(b.name || ''), 'de'); }); }
-  function inGroup(m, date) { if (m.status === 'ausgetreten' && !m.austritt) return false; if (m.eintritt && date < m.eintritt) return false; if (m.austritt && date > m.austritt) return false; return true; }
+  var firstSeenCache = { n: -1, map: {} };
+  // Ohne Eintrittsdatum gilt: dabei ab dem ersten Termin, an dem jemand eine Anwesenheit für die Person eingetragen hat (neue Mitglieder zählen also nicht rückwirkend)
+  function firstSeen() {
+    var tage = M.items('trainingTage'); if (firstSeenCache.n === tage.length && firstSeenCache.k === M.S.loaded) return firstSeenCache.map;
+    var map = {}; tage.forEach(function (d) { Object.keys(d.anw || {}).forEach(function (id) { if (!map[id] || d.date < map[id]) map[id] = d.date; }); });
+    firstSeenCache = { n: tage.length, k: M.S.loaded, map: map }; return map;
+  }
+  function inGroup(m, date) { if (m.status === 'ausgetreten' && !m.austritt) return false; var e = m.eintritt || firstSeen()[m.id]; if (e && date < e) return false; if (m.austritt && date > m.austritt) return false; return true; }
   function isActive(m) { return m.status !== 'ausgetreten' && m.status !== 'pausiert' && (!m.austritt || m.austritt >= M.today()); }
   function age(m) { return m.jg ? new Date().getFullYear() - Number(m.jg) : ''; }
   function sessions() { return M.items('trainingTage').sort(function (a, b) { return (a.date + (a.time || '')) < (b.date + (b.time || '')) ? 1 : -1; }); }
@@ -41,14 +48,14 @@ templateEngineOverride: false
     var pct = tot ? Math.round(a * 100 / tot) + ' %' : '–';
     var nextT = tage.filter(function (x) { return x.date >= t; }).slice(-1)[0];
     var wks = M.items('wettkaempfe').filter(function (w) { return (w.date || '') >= t; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
-    var out = '<div class="m-stats">' + M.stat(act.length, 'Aktive Mitglieder', '', 'data-ma="wgtab" data-v="mitglieder"') + M.stat(tage.length, 'Trainingstage', '', 'data-ma="wgtab" data-v="tage"') + M.stat(pct, 'Anwesenheit (letzte 8)', pct === '–' ? '' : 'ok', 'data-ma="wgtab" data-v="statistik"') + M.stat(wks.length ? M.daysTo(wks[0].date) : '–', wks.length ? 'Tage bis ' + wks[0].title.slice(0, 22) : 'Kein Wettkampf geplant', wks.length && M.daysTo(wks[0].date) <= 7 ? 'warn' : 'info', 'data-ma="wgtab" data-v="wk"') + '</div>';
+    var out = '<div class="m-stats">' + M.stat(act.length, 'Mitglieder', '', 'data-ma="wgtab" data-v="mitglieder"') + M.stat(tage.length, 'Trainingstage', '', 'data-ma="wgtab" data-v="tage"') + M.stat(pct, 'Anwesenheit (letzte 8)', pct === '–' ? '' : 'ok') + M.stat(wks.length ? M.daysTo(wks[0].date) : '–', wks.length ? 'Tage bis ' + wks[0].title.slice(0, 22) : 'Kein Wettkampf geplant', wks.length && M.daysTo(wks[0].date) <= 7 ? 'warn' : 'info', 'data-ma="wgtab" data-v="wk"') + '</div>';
     out += '<section class="wm-card"><div class="m-sec" style="margin-top:0">Zuletzt</div>';
     if (!tage.length) out += '<p class="wm-note">Noch keine Trainingstage. Lege einen an oder importiere die Anwesenheitsliste aus WebClub.</p>';
     tage.filter(function (x) { return x.date <= t; }).slice(0, 4).forEach(function (x) { var c = counts(x); out += '<div class="m-chk"><b>' + fd(x.date) + '</b><span class="wm-sub" style="flex:1"> ' + esc(x.time || '') + (x.fokus ? ' · ' + esc(x.fokus) : '') + '</span><span class="wm-sub">✓ ' + c.a + ' · E ' + c.e + ' · ✗ ' + c.f + '</span></div>'; });
     if (nextT && nextT.date > t) out += '<div class="m-sec">Als Nächstes</div><div class="m-chk"><b>' + fd(nextT.date) + '</b><span class="wm-sub"> ' + esc(nextT.time || '') + '</span></div>';
     out += '</section>';
-    var neu = ms.filter(function (m) { return m.eintritt && M.daysTo(m.eintritt) !== null && M.daysTo(m.eintritt) > -60 && M.daysTo(m.eintritt) <= 0; });
-    if (neu.length) out += '<section class="wm-card"><div class="m-sec" style="margin-top:0">Neu dabei (60 Tage)</div>' + neu.map(function (m) { return '<div class="m-chk">' + M.avatar(m.name) + '<span style="margin-left:12px">' + esc(m.name) + ' <span class="wm-sub">seit ' + fd(m.eintritt) + '</span></span></div>'; }).join('') + '</section>';
+    if (M.anyCan(['training.tage.view'])) out += statistikTab();
+    if (M.can('training.rueckblick')) out += rueckblickCard();
     return out;
   }
 
@@ -57,34 +64,30 @@ templateEngineOverride: false
     { k: 'name', t: 'text', label: 'Name', req: true, ph: 'Vorname Nachname' },
     { k: 'jg', t: 'num', label: 'Jahrgang' },
     { k: 'sex', t: 'sel', label: 'Geschlecht', opts: [['', '–'], ['w', 'weiblich'], ['m', 'männlich'], ['d', 'divers']] },
-    { k: 'eintritt', t: 'date', label: 'Eintritt' },
-    { k: 'austritt', t: 'date', label: 'Austritt' },
-    { k: 'status', t: 'sel', label: 'Status', opts: [['aktiv', 'Aktiv'], ['pausiert', 'Pausiert'], ['ausgetreten', 'Ausgetreten']] },
     { k: 'dsv', t: 'text', label: 'DSV-ID' },
-    { k: 'kontakt', t: 'area', label: 'Kontakt (Eltern, Telefon, E-Mail)', rows: 3 },
     { k: 'notiz', t: 'area', label: 'Notiz', rows: 3 }
   ];
   function formularHtml(m) {
     m = m || {};
     var line = function (l, v) { return '<tr><td style="width:32%"><b>' + l + '</b></td><td style="height:26px">' + esc(v || '') + '</td></tr>'; };
     return '<h1>Anmeldung Wettkampfgruppe</h1><div class="sub">SG Barnstorf · Schwimmen</div><p>Hiermit melde ich mich / mein Kind verbindlich zur Wettkampfgruppe der SG Barnstorf an.</p><table>' +
-      line('Name, Vorname', m.name) + line('Geburtsdatum / Jahrgang', m.jg) + line('Anschrift', '') + line('Telefon', '') + line('E-Mail', '') + line('Eltern / Erziehungsberechtigte', '') + line('DSV-ID (falls vorhanden)', m.dsv) + line('Eintritt zum', m.eintritt ? M.fmtDate(m.eintritt) : '') + '</table>' +
+      line('Name, Vorname', m.name) + line('Geburtsdatum / Jahrgang', m.jg) + line('Anschrift', '') + line('Telefon', '') + line('E-Mail', '') + line('Eltern / Erziehungsberechtigte', '') + line('DSV-ID (falls vorhanden)', m.dsv) + line('Eintritt zum', '') + '</table>' +
       '<p>Mit der Teilnahme am Training und an Wettkämpfen nach Absprache mit den Trainern bin ich einverstanden. Meldungen zu Wettkämpfen erfolgen unter Angabe von Name, Jahrgang und Vereinszugehörigkeit; Meldeergebnisse und Ergebnisse können im Rahmen der Vereinsarbeit (z. B. Homepage) veröffentlicht werden.</p>' +
       '<p style="margin-top:44px">Ort, Datum: ______________________ &nbsp;&nbsp; Unterschrift: ________________________________</p><div class="sub">(bei Minderjährigen: Unterschrift eines Erziehungsberechtigten)</div>';
   }
   var memberTab = {
     id: 'mitglieder', label: 'Mitglieder', coll: 'wgMitglieder', view: ['training.mitglieder.view'], edit: ['training.mitglieder.edit'], print: ['training.print'], addLabel: 'Neues Mitglied', search: ['name', 'kontakt'], fields: MFIELDS,
-    hint: 'Wer trainiert in der Wettkampfgruppe? Im Drucken-Menü der Karte gibt es den Anmeldebogen zum Unterschreiben.',
-    newItem: function () { return { status: 'aktiv', eintritt: M.today() }; },
-    summary: function (all) { var a = all.filter(isActive).length; return '<p class="wm-note"><b>' + a + '</b> aktiv · ' + all.filter(function (m) { return m.status === 'pausiert'; }).length + ' pausiert · ' + all.filter(function (m) { return m.status === 'ausgetreten'; }).length + ' ausgetreten</p><p><button type="button" class="wm-btn" data-ma="wgblank">🖨️ Leerer Anmeldebogen</button></p>'; },
+    hint: 'Wer trainiert in der Wettkampfgruppe? Am einfachsten über „Gruppenliste (PDF)“ aus WebClub einlesen. Über das Drucken-Menü einer Karte gibt es den Anmeldebogen.',
+    newItem: function () { return {}; },
+    summary: function (all) { return '<p class="wm-note"><b>' + all.length + '</b> ' + (all.length === 1 ? 'Mitglied' : 'Mitglieder') + '</p><p class="m-actions"><button type="button" class="wm-btn" data-ma="wgglist">📄 Gruppenliste (PDF)</button><button type="button" class="wm-btn" data-ma="wgblank">🖨️ Leerer Anmeldebogen</button></p>'; },
     card: function (m) {
-      return { title: m.name, dim: m.status === 'ausgetreten', badges: m.status && m.status !== 'aktiv' ? M.badge(m.status === 'pausiert' ? 'pausiert' : 'ausgetreten', m.status === 'pausiert' ? 'amber' : 'gray') : '',
-        sub: [m.jg ? 'Jg. ' + m.jg + ' (' + age(m) + ')' : '', m.sex === 'w' ? 'weiblich' : m.sex === 'm' ? 'männlich' : m.sex === 'd' ? 'divers' : '', m.eintritt ? 'seit ' + fs(m.eintritt) : ''].filter(Boolean).join(' · '),
-        body: [m.dsv ? '<div><b>DSV-ID:</b> ' + esc(m.dsv) + '</div>' : '', m.austritt ? '<div><b>Austritt:</b> ' + fd(m.austritt) + '</div>' : '', m.kontakt ? '<div><b>Kontakt:</b><pre>' + esc(m.kontakt) + '</pre></div>' : '', m.notiz ? '<div><b>Notiz:</b><pre>' + esc(m.notiz) + '</pre></div>' : ''].join('') };
+      return { title: m.name,
+        sub: [m.jg ? 'Jg. ' + m.jg + ' (' + age(m) + ')' : '', m.sex === 'w' ? 'weiblich' : m.sex === 'm' ? 'männlich' : m.sex === 'd' ? 'divers' : ''].filter(Boolean).join(' · '),
+        body: [m.dsv && m.dsv !== '0' ? '<div><b>DSV-ID:</b> ' + esc(m.dsv) + '</div>' : '', m.notiz ? '<div><b>Notiz:</b><pre>' + esc(m.notiz) + '</pre></div>' : ''].join('') };
     },
     printItem: function (m) { return { title: 'Anmeldung ' + m.name, body: formularHtml(m) }; },
     printAll: function (all) {
-      return { title: 'Mitglieder Wettkampfgruppe', body: '<h1>Wettkampfgruppe: Mitglieder</h1><div class="sub">Stand ' + M.fmtDate(M.today()) + '</div><table><tr><th>Name</th><th>Jg.</th><th></th><th>Eintritt</th><th>Status</th><th>DSV-ID</th><th>Kontakt</th></tr>' + all.filter(function (m) { return m.status !== 'ausgetreten'; }).map(function (m) { return '<tr><td>' + esc(m.name) + '</td><td>' + esc(m.jg || '') + '</td><td>' + esc(m.sex || '') + '</td><td class="nowrap">' + fs(m.eintritt) + '</td><td>' + esc(m.status || 'aktiv') + '</td><td>' + esc(m.dsv || '') + '</td><td><pre>' + esc(m.kontakt || '') + '</pre></td></tr>'; }).join('') + '</table>' };
+      return { title: 'Mitglieder Wettkampfgruppe', body: '<h1>Wettkampfgruppe: Mitglieder</h1><div class="sub">Stand ' + M.fmtDate(M.today()) + '</div><table><tr><th>Name</th><th>Jg.</th><th></th><th>DSV-ID</th></tr>' + all.map(function (m) { return '<tr><td>' + esc(m.name) + '</td><td>' + esc(m.jg || '') + '</td><td>' + esc(m.sex || '') + '</td><td>' + esc(m.dsv && m.dsv !== '0' ? m.dsv : '') + '</td></tr>'; }).join('') + '</table>' };
     }
   };
 
@@ -104,7 +107,7 @@ templateEngineOverride: false
     var ymv = curMonth(); var all = sessions();
     var list = all.filter(function (x) { return ym(x.date) === ymv; });
     var can = canTage();
-    var out = '<section class="wm-card"><div class="wm-bar"><h3>Trainingstage</h3><span class="m-actions">' +
+    var out = '<section class="wm-card"><div class="wm-bar"><h3>Training</h3><span class="m-actions">' +
       '<button type="button" class="wm-btn" data-ma="wgprintm">🖨️ Anwesenheitsliste</button>' + (can ? '<button type="button" class="wm-btn" data-ma="wgimport">📄 Import (PDF)</button><button type="button" class="wm-amber" data-ma="wgtnew">+ Trainingstag</button>' : '') + '</span></div>' +
       '<div class="m-chips" style="align-items:center"><button type="button" class="m-chip" data-ma="wgmon" data-d="-1">‹</button><b>' + esc(M.monthLabel(ymv)) + '</b><button type="button" class="m-chip" data-ma="wgmon" data-d="1">›</button><span class="wm-sub">' + list.length + ' Termine</span></div>';
     if (!list.length) out += '<p class="wm-note">In diesem Monat gibt es keinen Trainingstag.</p>';
@@ -147,33 +150,6 @@ templateEngineOverride: false
     return out;
   }
 
-  /* ---------- Einheiten / Beobachtung (Standardlisten) ---------- */
-  var einheitenTab = {
-    id: 'einheiten', label: 'Einheiten', coll: 'trainingEinheiten', view: ['training.view'], edit: ['training.edit'], print: ['training.print'], printItem: true, addLabel: 'Neue Einheit', search: ['title', 'text', 'schwerpunkt'],
-    hint: 'Sammlung bewährter Trainingseinheiten zum Wiederverwenden.',
-    fields: [{ k: 'title', t: 'text', label: 'Name', req: true }, { k: 'schwerpunkt', t: 'text', label: 'Schwerpunkt' }, { k: 'dauer', t: 'num', label: 'Dauer (Min.)' }, { k: 'text', t: 'area', label: 'Ablauf', rows: 8 }],
-    card: function (it) { return { title: it.title || it.name || 'Einheit', sub: [it.schwerpunkt ? esc(it.schwerpunkt) : '', it.dauer ? it.dauer + ' Min.' : ''].filter(Boolean).join(' · '), body: it.text || it.inhalt ? '<pre>' + esc(it.text || it.inhalt) + '</pre>' : '' }; },
-    printItem: function (it) { return { title: it.title || 'Einheit', body: '<h1>' + esc(it.title || 'Einheit') + '</h1><div class="sub">' + esc([it.schwerpunkt, it.dauer ? it.dauer + ' Min.' : ''].filter(Boolean).join(' · ')) + '</div><pre>' + esc(it.text || it.inhalt || '') + '</pre>' }; }
-  };
-  var beobTab = {
-    id: 'beob', label: 'Beobachtung', coll: 'trainingBeob', view: ['training.beobachtung'], edit: ['training.beobachtung'], addLabel: 'Neue Beobachtung', search: ['title', 'wer', 'text'], sortBy: { k: 'date', dir: -1 },
-    hint: 'Notizen zu einzelnen Schwimmern: was fällt auf, woran arbeiten wir.',
-    fields: [{ k: 'wer', t: 'text', label: 'Wer', req: true, list: 'mPeople' }, { k: 'date', t: 'date', label: 'Datum' }, { k: 'text', t: 'area', label: 'Beobachtung', rows: 6 }],
-    newItem: function () { return { date: M.today() }; },
-    beforeSave: function (it) { it.title = it.wer; it.by = it.by || M.userName(); },
-    card: function (it) { return { title: it.wer || it.title || 'Beobachtung', sub: fd(it.date) + (it.by ? ' · ' + esc(it.by) : ''), body: it.text ? '<pre>' + esc(it.text) + '</pre>' : '' }; }
-  };
-
-  /* ---------- Wettkämpfe ---------- */
-  function wkTab() {
-    var all = M.items('wettkaempfe').sort(function (a, b) { return a.date < b.date ? 1 : -1; });
-    var out = '<section class="wm-card"><div class="wm-bar"><h3>Wettkämpfe</h3><a class="wm-amber" href="/intranet/wettkaempfe/" style="text-decoration:none">Zu den Wettkämpfen →</a></div>';
-    if (M.S.denied && false) return out;
-    if (!all.length) return out + '<p class="wm-note">Noch keine Wettkämpfe angelegt (oder keine Berechtigung).</p></section>';
-    all.slice(0, 15).forEach(function (w) { out += '<div class="m-chk"><b style="min-width:5.5em">' + fs(w.date) + '</b><span style="flex:1">' + esc(w.title) + '</span><span class="wm-sub">' + (w.starts || []).length + ' Starts</span></div>'; });
-    return out + '</section>';
-  }
-
   /* ---------- Jahresrückblick ---------- */
   function bestzeiten(w) {
     var n = 0; (w.starts || []).forEach(function (s) { var r = (w.res || {})[s.e + '-' + s.l + '-' + s.b]; if (!r || !r.t || !s.m || !P) return; var a = P.timeMs(r.t), m = P.timeMs(s.m); if (a !== null && m !== null && a < m) n++; });
@@ -192,38 +168,37 @@ templateEngineOverride: false
     d.top = top;
     return d;
   }
-  function rueckblickTab() {
+  function rueckblickCard() {
     var y = M.S.sub.ry || String(new Date().getFullYear()); var d = rueckblickData(y);
-    var years = []; for (var i = 0; i < 5; i++) years.push([String(new Date().getFullYear() - i), String(new Date().getFullYear() - i)]);
-    var out = '<section class="wm-card"><div class="wm-bar"><h3>Jahresrückblick ' + esc(y) + '</h3><span class="m-actions">' + M.seg(years, y, 'wgyear') + '<button type="button" class="wm-btn" data-ma="wgprintr">🖨️ Drucken</button></span></div>' +
+    var years = []; for (var i = 0; i < 4; i++) years.push([String(new Date().getFullYear() - i), String(new Date().getFullYear() - i)]);
+    return '<section class="wm-card"><div class="wm-bar"><h3>Jahresrückblick ' + esc(y) + '</h3><span class="m-actions">' + M.seg(years, y, 'wgyear') + '<button type="button" class="wm-btn" data-ma="wgprintr">🖨️ Drucken</button></span></div>' +
       '<div class="m-stats">' + M.stat(d.tage, 'Trainingstage') + M.stat(d.pct === null ? '–' : d.pct + ' %', 'Ø Anwesenheit', 'ok') + M.stat(d.wks.length, 'Wettkämpfe') + M.stat(d.best, 'Bestzeiten', 'info') + '</div>' +
-      '<p>' + d.aktiv + ' aktive Mitglieder heute · ' + d.zug.length + ' Eintritte' + (d.zug.length ? ' (' + d.zug.map(function (m) { return esc(m.name); }).join(', ') + ')' : '') + ' · ' + d.abg.length + ' Austritte' + (d.abg.length ? ' (' + d.abg.map(function (m) { return esc(m.name); }).join(', ') + ')' : '') + '</p>' +
-      '<p>' + Object.keys(d.sw).length + ' Schwimmer waren bei Wettkämpfen am Start (' + d.starts + ' Starts).</p>';
-    if (d.wks.length) out += '<div class="m-sec">Wettkämpfe</div>' + d.wks.map(function (w) { return '<div class="m-chk"><b style="min-width:5.5em">' + fs(w.date) + '</b><span style="flex:1">' + esc(w.title) + '</span><span class="wm-sub">' + (w.starts || []).length + ' Starts</span></div>'; }).join('');
-    if (d.abz.length) out += '<div class="m-sec">Abzeichen</div><p>' + d.abz.length + ' Abzeichen abgelegt.</p>';
-    if (d.top.length) out += '<div class="m-sec">Fleißigste (mind. 5 Termine)</div>' + d.top.map(function (r) { return '<div class="m-chk"><span style="flex:1">' + esc(r.n) + '</span><b>' + r.p + '/' + r.t + '</b></div>'; }).join('');
-    return out + '</section>';
+      '<p class="wm-sub">' + Object.keys(d.sw).length + ' Schwimmer waren bei Wettkämpfen am Start (' + d.starts + ' Starts)' + (d.abz.length ? ' · ' + d.abz.length + ' Abzeichen' : '') + '.</p></section>';
   }
   function printRueck() {
     var y = M.S.sub.ry || String(new Date().getFullYear()); var d = rueckblickData(y);
-    M.print('Jahresrückblick ' + y, '<h1>Wettkampfgruppe: Jahresrückblick ' + esc(y) + '</h1><div class="sub">SG Barnstorf · Schwimmen</div><table><tr><th>Trainingstage</th><td>' + d.tage + '</td></tr><tr><th>Ø Anwesenheit</th><td>' + (d.pct === null ? '–' : d.pct + ' %') + '</td></tr><tr><th>Aktive Mitglieder</th><td>' + d.aktiv + '</td></tr><tr><th>Eintritte / Austritte</th><td>' + d.zug.length + ' / ' + d.abg.length + '</td></tr><tr><th>Wettkämpfe</th><td>' + d.wks.length + '</td></tr><tr><th>Starts / Schwimmer</th><td>' + d.starts + ' / ' + Object.keys(d.sw).length + '</td></tr><tr><th>Bestzeiten</th><td>' + d.best + '</td></tr><tr><th>Abzeichen</th><td>' + d.abz.length + '</td></tr></table>' +
+    M.print('Jahresrückblick ' + y, '<h1>Wettkampfgruppe: Jahresrückblick ' + esc(y) + '</h1><div class="sub">SG Barnstorf · Schwimmen</div><table><tr><th>Trainingstage</th><td>' + d.tage + '</td></tr><tr><th>Ø Anwesenheit</th><td>' + (d.pct === null ? '–' : d.pct + ' %') + '</td></tr><tr><th>Aktive Mitglieder</th><td>' + d.aktiv + '</td></tr><tr><th>Wettkämpfe</th><td>' + d.wks.length + '</td></tr><tr><th>Starts / Schwimmer</th><td>' + d.starts + ' / ' + Object.keys(d.sw).length + '</td></tr><tr><th>Bestzeiten</th><td>' + d.best + '</td></tr><tr><th>Abzeichen</th><td>' + d.abz.length + '</td></tr></table>' +
       (d.wks.length ? '<h2>Wettkämpfe</h2><table><tr><th>Datum</th><th>Wettkampf</th><th>Ort</th><th>Starts</th></tr>' + d.wks.map(function (w) { return '<tr><td>' + fs(w.date) + '</td><td>' + esc(w.title) + '</td><td>' + esc(w.ort || '') + '</td><td>' + (w.starts || []).length + '</td></tr>'; }).join('') + '</table>' : ''));
   }
 
   /* ---------- Import Anwesenheitsliste (PDF aus WebClub) ---------- */
+  // Eine Datei füllt Trainingstage, Anwesenheit UND die Trainerstunden: Trainer (mit „Trainer“ vor dem Namen) werden den Tagen zugeordnet,
+  // aus denen die Abrechnung später die Stunden holt. Trainer sind keine Mitglieder; wer als Trainer in der Liste steht, wird aus der Mitgliederliste entfernt.
   var imp = null;
   function matchMember(name, ms) {
     var n = lower(name); var rev = n.indexOf(',') > 0 ? lower(n.split(',').slice(1).join(' ') + ' ' + n.split(',')[0]) : n;
     return ms.filter(function (m) { var mn = lower(m.name); return mn === n || mn === rev; })[0] || null;
   }
+  function defaultDauer() { var s = M.find('saetze', 'main'); return s && s.dauer ? M.num(s.dauer) : 60; }
   function importDialog() {
-    M.openDlg('<div class="hub-dhead"><h3>Anwesenheitsliste importieren</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div><p class="wm-note">PDF „Anwesenheitsliste“ aus WebClub. Trainer und Schwimmer werden getrennt erkannt. Bereits vorhandene Trainingstage werden ergänzt.</p><div class="m-fgrid"><label class="m-f wide"><span>PDF-Datei</span><input type="file" id="wgfile" accept="application/pdf,.pdf"></label></div><div id="wgmsg" class="wm-note"></div><div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="wgread">Auslesen</button></div>');
+    M.openDlg('<div class="hub-dhead"><h3>Anwesenheitsliste importieren</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div><p class="wm-note">PDF „Anwesenheitsliste“ aus WebClub. Trainer und Schwimmer werden getrennt erkannt. Die Trainer bekommen die Stunden automatisch in ihre Abrechnung. Vorhandene Trainingstage werden ergänzt.</p><div class="m-fgrid"><label class="m-f wide"><span>PDF-Datei</span><input type="file" id="wgfile" accept="application/pdf,.pdf"></label><label class="m-f"><span>Dauer eines Trainings (Minuten)</span><input type="number" id="wgdauer" inputmode="numeric" value="' + defaultDauer() + '"></label></div><p class="wm-sub">In der Liste steht nur die Startzeit. Mit der Dauer werden Ende und Stundenzahl berechnet.</p><p id="wgmsg" class="wm-note"></p><div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="wgread">Einlesen</button></div>');
   }
   function doRead() {
     var f = document.getElementById('wgfile').files[0]; var msg = document.getElementById('wgmsg');
+    var dm = M.num(document.getElementById('wgdauer').value) || 60;
     if (!f) { msg.textContent = 'Bitte zuerst eine PDF-Datei auswählen.'; return; }
     msg.textContent = 'Wird gelesen … (beim ersten Mal wird der PDF-Leser geladen)';
-    HubPdf.read(f).then(function (r) { imp = P.parseAnwesenheit(r.pages); imp.file = f.name; preview(); }, function (e) { msg.innerHTML = '<span class="m-over">' + esc(e.message || String(e)) + '</span>'; });
+    HubPdf.read(f).then(function (r) { imp = P.parseAnwesenheit(r.pages); imp.file = f.name; imp.dauer = dm; preview(); }, function (e) { msg.innerHTML = '<span class="m-over">' + esc(e.message || String(e)) + '</span>'; });
   }
   function preview() {
     var p = imp; var ms = members();
@@ -232,53 +207,101 @@ templateEngineOverride: false
     imp.sw = sw; imp.trainers = trainers;
     var unknown = sw.filter(function (x) { return !matchMember(x.name, ms); });
     imp.unknown = unknown;
+    var drop = ms.filter(function (m) { return tn.indexOf(lower(m.name)) >= 0; }); imp.drop = drop;
+    var hours = {}; trainers.forEach(function (x) { hours[x.name] = p.sessions.filter(function (s, i) { return x.st[i] === 'a'; }).length; });
     M.openDlg('<div class="hub-dhead"><h3>Das wurde gefunden</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div>' + (p.warnings.length ? '<div class="hub-err">' + p.warnings.map(esc).join('<br>') + '</div>' : '') +
-      '<p class="wm-note"><b>' + p.sessions.length + '</b> ' + (p.sessions.length === 1 ? 'Termin' : 'Termine') + ' (' + fs(p.sessions[0] && p.sessions[0].date) + ' – ' + fs(p.sessions.length && p.sessions[p.sessions.length - 1].date) + ') · Trainer: <b>' + esc(trainers.map(function (x) { return x.name; }).join(', ') || '–') + '</b> · <b>' + sw.length + '</b> Schwimmer</p>' +
+      '<p class="wm-note"><b>' + p.sessions.length + '</b> ' + (p.sessions.length === 1 ? 'Termin' : 'Termine') + ' (' + fs(p.sessions[0] && p.sessions[0].date) + ' – ' + fs(p.sessions.length && p.sessions[p.sessions.length - 1].date) + ') · <b>' + sw.length + '</b> Schwimmer</p>' +
+      '<p class="wm-note">Trainer: ' + (trainers.length ? trainers.map(function (x) { return '<b>' + esc(x.name) + '</b> (' + hours[x.name] + (hours[x.name] === 1 ? ' Termin' : ' Termine') + ' anwesend, je ' + imp.dauer + ' Min.)'; }).join(', ') : '<b>keiner erkannt</b>') + '</p>' +
+      (drop.length ? '<p class="wm-note">Aus der Mitgliederliste entfernt (sind Trainer): <b>' + drop.map(function (m) { return esc(m.name); }).join(', ') + '</b></p>' : '') +
       (unknown.length ? '<div class="m-sec">Noch nicht in der Mitgliederliste</div><div style="max-height:26vh;overflow:auto">' + unknown.map(function (x, i) { return '<label class="m-f m-fchk" style="padding:4px 0"><input type="checkbox" data-wgnew="' + i + '" checked><span>' + esc(x.name) + ' anlegen</span></label>'; }).join('') + '</div>' : '<p class="wm-note">Alle Schwimmer sind bereits Mitglieder.</p>') +
       '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="wgsave"' + (p.sessions.length ? '' : ' disabled') + '>Übernehmen</button></div>');
   }
   function doImport() {
     var p = imp; var list = []; var ms = members(); var byName = {};
     ms.forEach(function (m) { byName[lower(m.name)] = m; });
+    (p.drop || []).forEach(function (m) { list.push({ op: 'del', coll: 'wgMitglieder', id: m.id }); });
     (p.unknown || []).forEach(function (x, i) {
       var cb = document.querySelector('[data-wgnew="' + i + '"]'); if (cb && !cb.checked) return;
-      var first = (p.sessions[0] || {}).date || M.today();
-      var m = { id: M.uid(), name: x.name, status: 'aktiv', eintritt: first };
+      var m = { id: M.uid(), name: x.name };
       list.push({ op: 'set', coll: 'wgMitglieder', item: m }); byName[lower(x.name)] = m;
     });
     var existing = {}; M.items('trainingTage').forEach(function (t) { existing[t.date + '|' + (t.time || '')] = t; });
-    var trainerNames = (p.trainers || []).map(function (x) { return x.name; });
     p.sessions.forEach(function (s, i) {
       var anw = {};
       (p.sw || []).forEach(function (x) { var m = matchMember(x.name, ms) || byName[lower(x.name)]; var c = x.st[i]; if (m && c) anw[m.id] = c; });
-      var trAtt = (p.trainers || []).filter(function (x) { return x.st[i] === 'a'; }).map(function (x) { return x.name; });
-      var tr = trAtt.length ? trAtt : trainerNames.slice(0, 1);
+      var tr = (p.trainers || []).filter(function (x) { return x.st[i] === 'a'; }).map(function (x) { return x.name; });
       var ex = existing[s.date + '|' + (s.time || '')];
-      if (ex) { var fields = { anw: anw }; if (!(ex.trainer || []).length && tr.length) fields.trainer = tr; list.push({ op: 'patch', coll: 'trainingTage', id: ex.id, merge: true, fields: fields }); }
-      else list.push({ op: 'set', coll: 'trainingTage', item: { id: 'tt-' + s.date.replace(/-/g, '') + '-' + String(s.time || '0000').replace(':', ''), date: s.date, time: s.time || '', trainer: tr, anw: anw, ort: '' } });
+      if (ex) { var fields = { anw: anw }; if (tr.length) fields.trainer = tr; if (!ex.dauer) fields.dauer = p.dauer; list.push({ op: 'patch', coll: 'trainingTage', id: ex.id, merge: true, fields: fields }); }
+      else list.push({ op: 'set', coll: 'trainingTage', item: { id: 'tt-' + s.date.replace(/-/g, '') + '-' + String(s.time || '0000').replace(':', ''), date: s.date, time: s.time || '', dauer: p.dauer, trainer: tr, anw: anw, ort: '' } });
     });
-    M.closeDlg(); M.ops(list); M.toast(p.sessions.length + (p.sessions.length === 1 ? ' Termin' : ' Termine') + ' übernommen.');
+    M.closeDlg(); M.ops(list); M.toast(p.sessions.length + (p.sessions.length === 1 ? ' Termin' : ' Termine') + ' übernommen. Die Trainerstunden stehen jetzt in der Abrechnung bereit.');
     if (p.sessions[0]) M.S.sub.gm = ym(p.sessions[0].date);
+  }
+
+  /* ---------- Import Gruppenliste (PDF aus WebClub): Mitglieder ---------- */
+  // Zwei Listen möglich: „Schwimmer in der Gruppe“ (Name, Jg., DSV-ID, Aktiv) und „Trainer in der Gruppe“ (Name, Jg., Aktiv).
+  function parseGruppenliste(lines) {
+    var out = { kind: '', rows: [] };
+    lines.forEach(function (ln) {
+      var s = String(ln).replace(/\s+/g, ' ').trim();
+      if (/^Trainer in der Gruppe/i.test(s)) { out.kind = 'trainer'; return; }
+      if (/^Schwimmer in der Gruppe/i.test(s)) { out.kind = 'schwimmer'; return; }
+      var m = /^(.+?) (\d{4}) (\d+) (Ja|Nein)$/.exec(s);
+      if (m) { out.rows.push({ name: m[1].trim(), jg: m[2], dsv: m[3], aktiv: m[4] === 'Ja' }); return; }
+      m = /^(.+?) (\d{4}) (Ja|Nein)$/.exec(s);
+      if (m) out.rows.push({ name: m[1].trim(), jg: m[2], dsv: '', aktiv: m[3] === 'Ja' });
+    });
+    if (!out.kind) out.kind = out.rows.some(function (r) { return r.dsv; }) ? 'schwimmer' : 'trainer';
+    return out;
+  }
+  var gl = null;
+  function glistDialog() {
+    M.openDlg('<div class="hub-dhead"><h3>Gruppenliste importieren</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div><p class="wm-note">PDF „Gruppenliste“ aus WebClub (Schwimmer, und wenn du willst auch die Liste der Trainer). Du kannst beide Dateien zusammen auswählen. Trainer werden nicht als Mitglieder angelegt. Übernommen werden nur Name, Jahrgang und DSV-ID.</p><div class="m-fgrid"><label class="m-f wide"><span>PDF-Datei(en)</span><input type="file" id="glfile" accept="application/pdf,.pdf" multiple></label></div><p id="glmsg" class="wm-note"></p><div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="wgglread">Einlesen</button></div>');
+  }
+  function glistRead() {
+    var fl = document.getElementById('glfile').files; var msg = document.getElementById('glmsg');
+    if (!fl.length) { msg.textContent = 'Bitte zuerst eine oder zwei PDF-Dateien auswählen.'; return; }
+    msg.textContent = 'Wird gelesen … (beim ersten Mal wird der PDF-Leser geladen)';
+    Promise.all(Array.prototype.map.call(fl, function (f) { return HubPdf.read(f).then(function (r) { return parseGruppenliste(r.lines); }); })).then(function (res) {
+      var sw = [], tr = []; res.forEach(function (g) { (g.kind === 'trainer' ? tr : sw).push.apply(g.kind === 'trainer' ? tr : sw, g.rows); });
+      var tn = tr.map(function (x) { return lower(x.name); });
+      var ms = members(); var rows = sw.filter(function (x) { return x.aktiv && tn.indexOf(lower(x.name)) < 0; });
+      var drop = ms.filter(function (m) { return tn.indexOf(lower(m.name)) >= 0; });
+      gl = { rows: rows, drop: drop, tr: tr, skipped: sw.filter(function (x) { return !x.aktiv; }).length, same: sw.filter(function (x) { return x.aktiv && tn.indexOf(lower(x.name)) >= 0; }).map(function (x) { return x.name; }) };
+      var neu = rows.filter(function (x) { return !matchMember(x.name, ms); }); var upd = rows.length - neu.length;
+      if (!rows.length && !drop.length) { msg.innerHTML = '<span class="m-over">Keine Schwimmer in der Datei gefunden. Ist das die „Gruppenliste“ aus WebClub?</span>'; return; }
+      M.openDlg('<div class="hub-dhead"><h3>Das wurde gefunden</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div><p class="wm-note"><b>' + neu.length + '</b> neue Mitglieder, <b>' + upd + '</b> schon vorhanden (Jahrgang und DSV-ID werden aktualisiert)' + (gl.skipped ? ', ' + gl.skipped + ' inaktive übersprungen' : '') + '.</p>' +
+        (tr.length ? '<p class="wm-note">Trainer in der Liste: <b>' + tr.map(function (x) { return esc(x.name); }).join(', ') + '</b>' + (gl.same.length ? ' (werden nicht als Schwimmer angelegt)' : '') + '</p>' : (sw.length ? '<p class="wm-sub">Tipp: Wähle auch die Trainerliste mit aus, dann werden Trainer nicht als Schwimmer angelegt.</p>' : '')) +
+        (drop.length ? '<p class="wm-note">Aus der Mitgliederliste entfernt (Trainer): <b>' + drop.map(function (m) { return esc(m.name); }).join(', ') + '</b></p>' : '') +
+        (neu.length ? '<div style="max-height:26vh;overflow:auto">' + neu.map(function (x) { return '<div class="m-chk"><span style="flex:1">' + esc(x.name) + '</span><span class="wm-sub">Jg. ' + esc(x.jg) + '</span></div>'; }).join('') + '</div>' : '') +
+        '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="wgglsave">Übernehmen</button></div>');
+    }, function (e) { msg.innerHTML = '<span class="m-over">' + esc(e.message || String(e)) + '</span>'; });
+  }
+  function glistSave() {
+    var ms = members(); var list = [];
+    gl.drop.forEach(function (m) { list.push({ op: 'del', coll: 'wgMitglieder', id: m.id }); });
+    gl.rows.forEach(function (x) {
+      var m = matchMember(x.name, ms); var dsv = x.dsv && x.dsv !== '0' ? x.dsv : '';
+      if (m) { var f = {}; if (x.jg && String(m.jg) !== x.jg) f.jg = Number(x.jg); if (dsv && m.dsv !== dsv) f.dsv = dsv; if (Object.keys(f).length) list.push({ op: 'patch', coll: 'wgMitglieder', id: m.id, fields: f }); }
+      else list.push({ op: 'set', coll: 'wgMitglieder', item: { id: M.uid(), name: x.name, jg: Number(x.jg), dsv: dsv } });
+    });
+    M.closeDlg(); M.ops(list); M.toast('Mitglieder übernommen.');
   }
 
   /* ---------- Modul ---------- */
   function mk(id, label, view, render, extra) { return Object.assign({ id: id, label: label, view: view, render: render }, extra || {}); }
   M.register('training', {
-    title: 'Wettkampfgruppe', icon: '🦈', colls: ['wgMitglieder', 'trainingTage', 'trainingEinheiten', 'trainingBeob', 'wettkaempfe', 'abzeichen'],
+    title: 'Wettkampfgruppe', icon: '🦈', colls: ['wgMitglieder', 'trainingTage', 'saetze', 'wettkaempfe', 'abzeichen'],
     tabs: [
       mk('uebersicht', 'Übersicht', ['training.view', 'training.tage.view', 'training.mitglieder.view'], function () { return uebersicht(); }),
-      memberTab,
-      mk('tage', 'Trainingstage', ['training.tage.view'], function () { return tageTab(); }, { coll: 'trainingTage' }),
-      mk('statistik', 'Statistik', ['training.tage.view'], function () { return statistikTab(); }),
-      einheitenTab, beobTab,
-      mk('wk', 'Wettkämpfe', ['training.view', 'training.tage.view'], function () { return wkTab(); }),
-      mk('rueckblick', 'Jahresrückblick', ['training.rueckblick'], function () { return rueckblickTab(); })
+      mk('tage', 'Training', ['training.tage.view'], function () { return tageTab(); }, { coll: 'trainingTage' }),
+      memberTab
     ],
     actions: {
       wgtab: function (it, el) { M.S.tab = el.getAttribute('data-v'); M.lsSet('modtab_training', M.S.tab); M.render(true); },
       wgblank: function () { M.print('Anmeldebogen', formularHtml(null)); },
       wgmon: function (it, el) { M.S.sub.gm = monthShift(curMonth(), +el.getAttribute('data-d')); M.render(true); },
-      wgtnew: function () { M.openForm({ title: 'Neuer Trainingstag', fields: TFIELDS, item: { date: M.today(), dauer: 90, trainer: M.userName() ? [M.userName()] : [] }, onSave: function (v) { var t = Object.assign({ id: M.uid(), anw: {} }, v); M.S.sub.gm = ym(v.date); M.S.open[t.id] = true; M.op({ op: 'set', coll: 'trainingTage', item: t }); } }); },
+      wgtnew: function () { M.openForm({ title: 'Neuer Trainingstag', fields: TFIELDS, item: { date: M.today(), dauer: 60, trainer: M.userName() ? [M.userName()] : [] }, onSave: function (v) { var t = Object.assign({ id: M.uid(), anw: {} }, v); M.S.sub.gm = ym(v.date); M.S.open[t.id] = true; M.op({ op: 'set', coll: 'trainingTage', item: t }); } }); },
       wgtedit: function (it, el, ev, c) { var t = M.find('trainingTage', c.id); if (!t) return; M.openForm({ title: 'Trainingstag bearbeiten', fields: TFIELDS, item: t, onSave: function (v) { M.op({ op: 'patch', coll: 'trainingTage', id: t.id, fields: v }); } }); },
       wgtdel: function (it, el, ev, c) { var t = M.find('trainingTage', c.id); if (!t) return; M.confirm('Trainingstag vom ' + fd(t.date) + ' samt Anwesenheit löschen?', 'Löschen', function () { M.op({ op: 'del', coll: 'trainingTage', id: t.id }); }); },
       wgtap: function (it, el, ev, c) {
@@ -292,6 +315,9 @@ templateEngineOverride: false
       wgimport: function () { importDialog(); },
       wgread: function () { doRead(); },
       wgsave: function () { doImport(); },
+      wgglist: function () { glistDialog(); },
+      wgglread: function () { glistRead(); },
+      wgglsave: function () { glistSave(); },
       wgper: function (it, el) { M.S.sub.sp = el.getAttribute('data-v'); M.render(true); },
       wgyear: function (it, el) { M.S.sub.ry = el.getAttribute('data-v'); M.render(true); },
       wgprintr: function () { printRueck(); }

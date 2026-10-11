@@ -148,7 +148,7 @@ templateEngineOverride: false
     var tabs = tabsOf();
     if (!def.custom && !tabs.length) return noAccess();
     if (def.custom && def.access && !anyCan(def.access)) return noAccess();
-    var out = '<div class="m-pagehead"><h2 class="m-h2">' + esc(def.icon || '') + ' ' + esc(def.title) + '</h2>' + (Q.length ? '<span class="m-sync">⏳ speichert …</span>' : '') + '</div>';
+    var out = Q.length ? '<div class="m-pagehead"><span class="m-sync">⏳ speichert …</span></div>' : '';
     if (S.error) out += '<div class="hub-err">' + esc(S.error) + '</div>';
     if (def.custom) return out + def.render(api);
     var t = curTab();
@@ -376,7 +376,7 @@ templateEngineOverride: false
     '@media (max-width:640px){#hubRoot .hub-main{padding:14px 12px 8px}#hubRoot .wm-card{padding:14px}}';
 
   var api = { euro: euro, num: num, initials: initials, avatar: avatar, prog: prog, stat: stat, seg: seg, monthLabel: monthLabel, slug: slug, MON: MON, S: S, D: D, esc: esc, uid: uid, clone: clone, today: today, addDays: addDays, daysTo: daysTo, fmtDate: fmtDate, userName: userName, can: can, anyCan: anyCan, items: items, find: find, op: op, ops: ops, reload: reload, flush: flush, render: renderMain, chrome: renderChrome,
-    openForm: openForm, openDlg: openDlg, closeDlg: closeDlg, confirm: confirmBox, print: printDoc, toast: toast, badge: badge, colors: COLORS, loadScript: loadScript, lsGet: lsGet, lsSet: lsSet, SH: SH, register: function (id, d) { d.id = id; MODULES[id] = d; }, editItem: editItem, typing: typing, person: function () { return userName(); } };
+    openForm: openForm, openDlg: openDlg, closeDlg: closeDlg, confirm: confirmBox, print: printDoc, toast: toast, badge: badge, colors: COLORS, loadScript: loadScript, lsGet: lsGet, lsSet: lsSet, SH: SH, register: function (id, d) { d.id = id; MODULES[id] = d; }, mod: function (id) { return MODULES[id]; }, editItem: editItem, typing: typing, person: function () { return userName(); } };
   window.HubMod = api;
   window.HubModBoot = boot;
 })();

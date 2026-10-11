@@ -1058,6 +1058,7 @@ async function loginWith(payload, errorId) {
   if (!window.roleById(res.role.id)) window.rolesData.push({ id: res.role.id, name: res.role.name, desc: '', perms: res.perms, hasPw: true, builtin: false });
   window.setRole(res.role.id, { user: res.user || '', perms: res.perms });
   window.refreshRoles();
+  if (res.mustChange) { window.location.href = '/intranet/'; return true; }
   return true;
 }
 window.tryLogin = async function (role, inputId) {
@@ -1153,7 +1154,7 @@ function renderLogin() {
   if (!box) return;
   const cardBase = 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-sm flex flex-col gap-2 text-center';
   const inputCls = 'w-full px-2 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500';
-  box.innerHTML = window.rolesData.map((r) => {
+  box.innerHTML = [].map((r) => {
     const head = `<div class="text-2xl leading-none">${roleIcon(r.id)}</div><div><h3 class="font-bold text-xs text-slate-800 dark:text-slate-100">${escapeHtml(r.name)}</h3><p class="text-[10px] text-slate-500 dark:text-slate-400 leading-snug">${escapeHtml(r.desc || '')}</p></div>`;
     if (r.id === 'gast') return `<div class="${cardBase}">${head}<div class="mt-auto"><button type="button" onclick="setRole('gast')" class="w-full py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg">Als Gast ansehen</button></div></div>`;
     if (!r.hasPw) return '';

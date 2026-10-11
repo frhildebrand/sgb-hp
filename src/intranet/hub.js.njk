@@ -19,6 +19,7 @@ templateEngineOverride: false
   function todayIso() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function daysTo(iso) { if (!iso) return null; return Math.round((new Date(iso + 'T12:00:00') - new Date(todayIso() + 'T12:00:00')) / 86400000); }
   function fmtD(iso) { if (!iso) return ''; var d = new Date(iso + 'T12:00:00'); return ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][d.getDay()] + ', ' + ('0' + d.getDate()).slice(-2) + '.' + ('0' + (d.getMonth() + 1)).slice(-2) + '.'; }
+  function fmtDMY(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '')); return m ? m[3] + '.' + m[2] + '.' + m[1] : String(iso || ''); }
   function inDays(n) { return n === 0 ? 'heute' : n === 1 ? 'morgen' : 'in ' + n + ' Tagen'; }
 
   function hintOf(s) {
@@ -47,8 +48,11 @@ templateEngineOverride: false
   }
   // „Als Nächstes“: nächste Wettkämpfe (mit Fortschritt), nächste Veranstaltung und offene Aufgaben
   function nextHtml() {
-    var n = state.next; if (!n || n.token !== SH.token() || (!n.wk.length && !n.tasks.length && !(n.ev || []).length)) return '';
-    var out = '<h3 class="hub-sech" style="margin-top:8px">Als Nächstes</h3><section class="hub-nextgrid">';
+    var n = state.next; if (!n || n.token !== SH.token() || (!n.wk.length && !n.tasks.length && !(n.ev || []).length && !(n.warn || []).length)) return '';
+    var out = '';
+    if ((n.warn || []).length) out += '<section class="hub-card hub-warn' + (n.warn.some(function (w) { return w.days < 0; }) ? ' bad' : '') + '"><h3>⚠️ Läuft bald ab</h3>' + n.warn.map(function (w) { return '<a class="hub-nrow" href="/intranet/profil/"><b>' + esc(w.label) + '</b><span class="hub-nmeta' + (w.days < 0 ? ' hub-over' : '') + '">' + (w.days < 0 ? 'abgelaufen seit ' + fmtDMY(w.iso) : 'läuft ' + (w.days === 0 ? 'heute' : 'in ' + w.days + (w.days === 1 ? ' Tag' : ' Tagen')) + ' ab (' + fmtDMY(w.iso) + ')') + '</span></a>'; }).join('') + '</section>';
+    if (!n.wk.length && !n.tasks.length && !(n.ev || []).length) return out;
+    out += '<h3 class="hub-sech" style="margin-top:8px">Als Nächstes</h3><section class="hub-nextgrid">';
     if (n.wk.length) out += '<div class="hub-card"><h3>🏁 Wettkämpfe</h3>' + n.wk.map(function (w) {
       var d = daysTo(w.date);
       var meta = [d !== null ? inDays(d) : '', w.ort || '', w.prog || '', w.ms ? 'Meldeschluss ' + fmtD(w.ms) + (daysTo(w.ms) !== null && daysTo(w.ms) >= 0 && daysTo(w.ms) <= 7 ? ' (' + inDays(daysTo(w.ms)) + ')' : '') : ''].filter(Boolean);
@@ -73,6 +77,7 @@ templateEngineOverride: false
     if (SH.has('abrechnung.eigene') || SH.has('abrechnung.alle')) want.push('abrechnungen');
     if (SH.has('fahrten.eigene') || SH.has('fahrten.alle')) want.push('fahrten');
     if (SH.has('training.tage.view')) want.push('trainingTage');
+    if (SH.S.me && SH.S.me.user) want.push('profile');
     if (!want.length) { if (state.next) { state.next = null; SH.lsSet('hubnext', null); render(); } return; }
     SH.get('data', { colls: want.join(',') }).then(function (r) {
       if (!r || r.status !== 'success') return;
@@ -95,10 +100,12 @@ templateEngineOverride: false
       if (d.material) { var out = d.material.filter(function (x) { return (x.loans || []).some(function (l) { return !l.back; }); }).length; hints.material = { t: out ? out + ' verliehen' : 'Nichts verliehen', c: out ? 'info' : 'none' }; }
       if (d.veranstaltungen) hints.veranstaltungen = evs.length ? (function () { var dd = daysTo(evs[0].date); return { t: 'Nächste ' + inDays(dd), c: 'info' }; })() : { t: 'Nichts geplant', c: 'none' };
       if (d.vorstandAntraege) { var oa = d.vorstandAntraege.filter(function (x) { return x.status === 'Eingereicht'; }).length; hints.vorstand = oa ? { t: oa + (oa > 1 ? ' Anträge' : ' Antrag') + ' offen', c: 'warn' } : { t: 'Keine offenen Anträge', c: 'none' }; }
-      if (d.abrechnungen) { var ent = d.abrechnungen.filter(function (x) { return x.status === 'entwurf' || x.status === 'eingereicht'; }).length; hints.abrechnung = ent ? { t: ent + ' in Arbeit', c: 'warn' } : { t: 'Alles abgerechnet', c: 'none' }; }
-      if (d.fahrten) { var fo = d.fahrten.filter(function (x) { return x.status !== 'abgerechnet'; }).length; hints.fahrten = fo ? { t: fo + ' Fahrt' + (fo > 1 ? 'en' : '') + ' offen', c: 'warn' } : { t: 'Nichts offen', c: 'none' }; }
+      if (d.abrechnungen || d.fahrten) { var ent = (d.abrechnungen || []).filter(function (x) { return x.status === 'entwurf' || x.status === 'eingereicht'; }).length; var fo = (d.fahrten || []).filter(function (x) { return x.status !== 'abgerechnet'; }).length; var parts = []; if (ent) parts.push(ent + ' in Arbeit'); if (fo) parts.push(fo + (fo === 1 ? ' Fahrt' : ' Fahrten') + ' offen'); hints.abrechnung = parts.length ? { t: parts.join(', '), c: 'warn' } : { t: 'Alles abgerechnet', c: 'none' }; }
       if (d.trainingTage) { var last = d.trainingTage.slice().sort(function (a, b) { return String(b.date) < String(a.date) ? -1 : 1; }).filter(function (x) { return (x.date || '') <= t; })[0]; if (last) { var an = Object.keys(last.anw || {}).filter(function (k) { return last.anw[k] === 'a'; }).length; hints.training = { t: 'Zuletzt ' + fmtD(last.date) + ', ' + an + ' da', c: 'none' }; } }
-      state.next = { token: SH.token(), wk: wk, tasks: tasks, ev: ev, mine: mine, hints: hints }; SH.lsSet('hubnext', state.next); render();
+      var warn = []; var pf = (d.profile || [])[0];
+      if (pf) [['lizBis', 'Trainerlizenz'], ['ersteHilfeBis', 'Erste Hilfe'], ['rettungBis', 'Rettungsnachweis'], ['kariBis', 'Kampfrichter-Lizenz']].forEach(function (x) { var iso = pf[x[0]]; if (/^\d{4}-\d{2}-\d{2}$/.test(iso || '')) { var dd = daysTo(iso); if (dd !== null && dd <= 60) warn.push({ label: x[1], iso: iso, days: dd }); } });
+      warn.sort(function (a, b) { return a.days - b.days; });
+      state.next = { token: SH.token(), wk: wk, tasks: tasks, ev: ev, mine: mine, hints: hints, warn: warn }; SH.lsSet('hubnext', state.next); render();
     });
   }
   function render() { root.innerHTML = SH.header('SG Barnstorf · Intranet') + '<main class="hub-main">' + body() + '</main>' + SH.overlay(); }

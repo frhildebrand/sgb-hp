@@ -164,7 +164,8 @@ templateEngineOverride: false
   /* ---------- Detail ---------- */
   function detail(wk) {
     var s = sub();
-    var views = [['check', 'Checkliste'], ['uebersicht', 'Übersicht'], ['ablauf', 'Ablauf'], ['zeiten', 'Zeiten'], ['gericht', 'Kampfgericht'], ['docs', 'Unterlagen']];
+    if (s.v === 'ablauf' || s.v === 'zeiten') s.v = 'uebersicht';
+    var views = [['check', 'Checkliste'], ['uebersicht', 'Starts'], ['gericht', 'Kampfgericht'], ['docs', 'Unterlagen']];
     var canPrint = M.can('wettkaempfe.print'); var canImp = M.can('wettkaempfe.import');
     var out = '<section class="wm-card"><div class="wm-bar"><button type="button" class="wm-btn" data-ma="wkback">← Alle Wettkämpfe</button><span class="m-actions">' +
       (canPrint ? '<button type="button" class="wm-btn" data-ma="wkprint">🖨️ Drucken</button>' : '') +
@@ -179,9 +180,7 @@ templateEngineOverride: false
       if (s.v === 'uebersicht' && wk.meld && (wk.meld.starts || []).length) return out + viewGemeldet(wk);
       return out + '<section class="wm-card"><p class="wm-note">Für diesen Termin gibt es noch kein Meldeergebnis.' + (canImp ? ' Unter „Unterlagen“ kannst du es hochladen.' : '') + '</p></section>';
     }
-    if (s.v === 'uebersicht') return out + viewUebersicht(wk);
-    if (s.v === 'ablauf') return out + viewAblauf(wk);
-    return out + viewZeiten(wk);
+    return out + viewUebersicht(wk) + '<div class="m-sec">Ablauf</div>' + viewAblauf(wk) + '<div class="m-sec">Zeiten und Ergebnisse</div>' + viewZeiten(wk);
   }
   function whoAt(c) { return c ? '<span class="wm-sub"> · ' + esc(c.by || '') + (c.at ? ', ' + fs(c.at) : '') + '</span>' : ''; }
   function viewCheck(wk) {

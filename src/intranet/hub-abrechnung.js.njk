@@ -4,7 +4,7 @@ layout: false
 eleventyExcludeFromCollections: true
 templateEngineOverride: false
 ---
-/* Trainerabrechnung, Fahrtenformular und Profil. Jede Person sieht nur ihre eigenen Einträge; mit Recht „alle“ auch die anderen. */
+/* Abrechnung (Trainerstunden und Fahrten zum Wettkampftraining) und Profil. Jede Person sieht nur ihre eigenen Einträge; mit Recht „alle“ auch die anderen. */
 (function () {
   'use strict';
   var M = window.HubMod; if (!M) return;
@@ -16,7 +16,7 @@ templateEngineOverride: false
   function me() { return M.userName(); }
   function personal() { var m = M.SH.S.me; return !!(m && m.user); }
   function profile() { return M.find('profile', pid(me())) || {}; }
-  function rates() { var s = M.find('saetze', 'main') || {}; return { std: s.std === undefined || s.std === '' ? 5 : num(s.std), km: s.km === undefined || s.km === '' ? 0.2 : num(s.km), fahrt: s.fahrt === undefined || s.fahrt === '' ? 5 : num(s.fahrt), liz: Array.isArray(s.liz) ? s.liz : [], kassenwartin: s.kassenwartin || '' }; }
+  function rates() { var s = M.find('saetze', 'main') || {}; return { std: s.std === undefined || s.std === '' ? 5 : num(s.std), km: s.km === undefined || s.km === '' ? 0.2 : num(s.km), fahrt: s.fahrt === undefined || s.fahrt === '' ? 5 : num(s.fahrt), liz: Array.isArray(s.liz) ? s.liz : [], kassenwartin: s.kassenwartin || '', stdWK: s.stdWK === undefined || s.stdWK === '' ? 2 : num(s.stdWK), dauer: s.dauer === undefined || s.dauer === '' ? 60 : num(s.dauer) }; }
   function satzFor(lizArt) {
     var r = rates(); var l = lower(lizArt);
     if (l) for (var i = 0; i < r.liz.length; i++) if (r.liz[i].art && l.indexOf(lower(r.liz[i].art)) >= 0) return num(r.liz[i].satz);
@@ -26,6 +26,30 @@ templateEngineOverride: false
     return '<section class="wm-card"><h2 class="m-h2">Persönliches Konto nötig</h2><p class="wm-note">Dieser Bereich gehört zu einer Person. Bitte melde dich mit deinem eigenen Benutzernamen an (nicht mit einem Rollen-Passwort).</p><button type="button" class="wm-amber" data-sh="login">Anmelden</button></section>';
   }
   function deniedNote(c) { return M.D && M.D.denied && M.D.denied[c]; }
+  function dIso(s) { var m = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(String(s || '').trim()); return m ? m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2) : String(s || '').trim(); }
+  function isoOk(s) { return /^\d{4}-\d{2}-\d{2}$/.test(String(s || '')); }
+  function dShow(s) { return isoOk(s) ? M.fmtDate(s, true) : String(s || ''); }
+  // Passt ein Name aus der WebClub-Liste („Jan Kettler“ oder „Kettler, Jan“) zu diesem Konto? Konten nur mit Vorname passen auf den Vornamen.
+  function nameMatches(n) {
+    var a = lower(n).replace(/\s+/g, ' ').trim(), m = lower(me()).replace(/\s+/g, ' ').trim(); if (!a || !m) return false;
+    if (a === m) return true;
+    if (a.indexOf(',') > 0) { var q = a.split(','); if ((q.slice(1).join(' ').trim() + ' ' + q[0].trim()) === m) return true; }
+    return m.indexOf(' ') < 0 && a.split(' ')[0] === m;
+  }
+  function zeitOf(time, dauerMin) {
+    if (!time) return ''; var p = time.split(':'); var e = +p[0] * 60 + +p[1] + num(dauerMin);
+    return time + '–' + ('0' + Math.floor(e / 60) % 24).slice(-2) + ':' + ('0' + e % 60).slice(-2);
+  }
+  function stdFor() { return rates().stdWK; }
+  function rowKey(r) { return r.d + '|' + (r.zeit || ''); }
+  function tageRows(tage, from, to) {
+    var dm = rates().dauer;
+    return tage.filter(function (t) { return t.date >= (from || '0000') && t.date <= (to || '9999') && (t.trainer || []).some(nameMatches); }).sort(function (x, y) { return x.date < y.date ? -1 : 1; }).map(function (t) {
+      var d = t.dauer ? num(t.dauer) : dm;
+      return { d: t.date, zeit: zeitOf(t.time || '', d), std: stdFor(), gruppe: 'Wettkampfgruppe', ort: t.ort || '' };
+    });
+  }
+  function billedKeys() { var k = {}; ownList().forEach(function (a) { (a.zeilen || []).forEach(function (z) { k[rowKey(z)] = 1; }); }); return k; }
   function statusBadge(s) { return s === 'bezahlt' || s === 'abgerechnet' ? M.badge(s, 'green') : s === 'eingereicht' ? M.badge(s, 'blue') : M.badge(s || 'entwurf', 'amber'); }
 
   /* ================= Trainerabrechnung ================= */
@@ -52,11 +76,22 @@ templateEngineOverride: false
     return out + list.map(function (a) { return abRow(a, true); }).join('') + '</section>';
   }
   function newAb() {
-    var p = profile(); var now = new Date();
-    var title = M.MON[now.getMonth()] + ' ' + now.getFullYear();
-    var first = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-01';
-    var a = { id: M.uid(), title: title, status: 'entwurf', von: first, bis: M.today(), name: me(), edv: p.edvNr || '', lizArt: p.lizArt || '', lizNr: p.lizNr || '', lizBis: p.lizBis || '', iban: p.iban || '', bic: p.bic || '', satz: satzFor(p.lizArt), kmSatz: rates().km, km: 0, zeilen: [], summe: 0 };
+    var p = profile(); var now = new Date(); var zeilen = [];
+    var cm = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2);
+    var von = cm + '-01', bis = M.today(), title = M.MON[now.getMonth()] + ' ' + now.getFullYear();
+    // Der früheste Monat mit noch nicht abgerechneten Trainingstagen, an denen du Trainer bist, wird gleich übernommen
+    if (!deniedNote('trainingTage')) {
+      var billed = billedKeys(); var open = tageRows(M.items('trainingTage')).filter(function (r) { return !billed[rowKey(r)]; });
+      if (open.length) {
+        var m0 = open.map(function (r) { return r.d.slice(0, 7); }).sort()[0]; var y = +m0.slice(0, 4), mo = +m0.slice(5, 7);
+        zeilen = open.filter(function (r) { return r.d.slice(0, 7) === m0; });
+        von = m0 + '-01'; bis = m0 + '-' + ('0' + new Date(y, mo, 0).getDate()).slice(-2); title = M.MON[mo - 1] + ' ' + y;
+      }
+    }
+    var a = { id: M.uid(), title: title, status: 'entwurf', von: von, bis: bis, name: me(), edv: p.edvNr || '', lizArt: p.lizArt || '', lizNr: p.lizNr || '', lizBis: p.lizBis || '', iban: p.iban || '', bic: p.bic || '', kontoinhaber: p.kontoinhaber || '', satz: satzFor(p.lizArt), kmSatz: rates().km, km: 0, zeilen: zeilen, summe: 0 };
+    a.summe = calc(a).total;
     M.op({ op: 'set', coll: 'abrechnungen', item: a }); sub().ae = a.id; window.scrollTo(0, 0);
+    if (zeilen.length) M.toast(zeilen.length + (zeilen.length === 1 ? ' Trainingstag' : ' Trainingstage') + ' aus ' + title + ' übernommen.');
   }
   function lock(a) { return a.status === 'bezahlt' || (a.status === 'eingereicht' && !sub().force); }
   function inp(label, f, val, type, extra) { return '<label class="m-f"><span>' + label + '</span><input type="' + (type || 'text') + '" data-abf="' + f + '" value="' + esc(val === undefined || val === null ? '' : val) + '"' + (type === 'number' ? ' inputmode="decimal" step="any"' : ' autocomplete="off"') + (extra || '') + '></label>'; }
@@ -70,15 +105,15 @@ templateEngineOverride: false
       (readOnly && M.can('abrechnung.alle') && a.status === 'bezahlt' ? '<button type="button" class="wm-btn" data-ma="abstat" data-s="eingereicht">Wieder öffnen</button>' : '') + '</span></div>' +
       '<h3 class="m-h2" style="margin:6px 0">' + esc(a.title || 'Abrechnung') + ' ' + statusBadge(a.status) + '</h3>' + (readOnly ? '<div class="wm-sub">von ' + esc(a.owner || '') + '</div>' : '') +
       (ro && !readOnly ? '<p class="wm-note">Eingereichte Abrechnungen sind gesperrt. Mit „Zurück zum Entwurf“ kannst du sie wieder ändern.</p>' : '') + '</section>';
-    out += '<section class="wm-card"><div class="m-sec" style="margin-top:0">Angaben</div><div class="m-fgrid">' + inp('Zeitraum / Bezeichnung', 'title', a.title, 'text', dis) + inp('Name', 'name', a.name, 'text', dis) + inp('Von', 'von', a.von, 'date', dis) + inp('Bis', 'bis', a.bis, 'date', dis) + inp('ÜL-EDV-Nr.', 'edv', a.edv, 'text', dis) + inp('Lizenz', 'lizArt', a.lizArt, 'text', dis) + inp('Lizenz-Nr.', 'lizNr', a.lizNr, 'text', dis) + inp('Gültig bis', 'lizBis', a.lizBis, 'text', dis) + '</div></section>';
-    out += '<section class="wm-card"><div class="wm-bar"><h3>Stunden</h3>' + (ro ? '' : '<span class="m-actions"><button type="button" class="wm-btn" data-ma="abtage">⬇️ Aus Trainingstagen</button><button type="button" class="wm-amber" data-ma="abzadd">+ Zeile</button></span>') + '</div>';
-    if (!(a.zeilen || []).length) out += '<p class="wm-note">Noch keine Stunden. Mit „Aus Trainingstagen“ werden deine Trainingstage im Zeitraum übernommen.</p>';
+    out += '<section class="wm-card"><div class="m-sec" style="margin-top:0">Angaben</div><div class="m-fgrid">' + inp('Zeitraum / Bezeichnung', 'title', a.title, 'text', dis) + inp('Name', 'name', a.name, 'text', dis) + inp('Von', 'von', a.von, 'date', dis) + inp('Bis', 'bis', a.bis, 'date', dis) + inp('ÜL-EDV-Nr.', 'edv', a.edv, 'text', dis) + inp('Lizenz', 'lizArt', a.lizArt, 'text', dis) + inp('Lizenz-Nr.', 'lizNr', a.lizNr, 'text', dis) + inp('Gültig bis', 'lizBis', dShow(a.lizBis), 'text', dis) + '</div></section>';
+    out += '<section class="wm-card"><div class="wm-bar"><h3>Stunden</h3>' + (ro ? '' : '<span class="m-actions"><button type="button" class="wm-btn" data-ma="abtage">⬇️ Aus Trainingstagen</button><button type="button" class="wm-btn" data-ma="abpdf">📄 Aus WebClub-Liste</button><button type="button" class="wm-btn" data-ma="abzadd">+ Zeile</button></span>') + '</div>';
+    if (!(a.zeilen || []).length) out += '<p class="wm-note">Noch keine Stunden. „Aus Trainingstagen“ übernimmt deine Tage im Zeitraum, „Aus WebClub-Liste“ liest die Anwesenheitsliste (PDF) direkt ein.</p>';
     (a.zeilen || []).forEach(function (z, i) {
-      out += '<div class="ab-row" data-i="' + i + '"><div class="m-fgrid"><label class="m-f"><span>Datum</span><input type="date" data-abz="d" value="' + esc(z.d || '') + '"' + dis + '></label><label class="m-f"><span>Zeit</span><input type="text" data-abz="zeit" value="' + esc(z.zeit || '') + '" placeholder="18:00–19:30"' + dis + '></label><label class="m-f"><span>Std.</span><input type="number" inputmode="decimal" step="any" data-abz="std" value="' + esc(z.std === undefined ? '' : z.std) + '"' + dis + '></label><label class="m-f"><span>Gruppe</span><input type="text" data-abz="gruppe" value="' + esc(z.gruppe || '') + '"' + dis + '></label><label class="m-f"><span>Ort</span><input type="text" data-abz="ort" value="' + esc(z.ort || '') + '"' + dis + '></label></div>' + (ro ? '' : '<button type="button" class="wm-btn m-danger" data-ma="abzdel" style="margin-top:6px">Zeile löschen</button>') + '</div>';
+      out += '<div class="ab-row" data-i="' + i + '"><div class="m-fgrid"><label class="m-f"><span>Datum</span><input type="date" data-abz="d" value="' + esc(z.d || '') + '"' + dis + '></label><label class="m-f"><span>Zeit</span><input type="text" data-abz="zeit" value="' + esc(z.zeit || '') + '" placeholder="17:00–18:00"' + dis + '></label><label class="m-f"><span>Std.</span><input type="number" inputmode="decimal" step="any" data-abz="std" value="' + esc(z.std === undefined ? '' : z.std) + '"' + dis + '></label><label class="m-f"><span>Gruppe</span><input type="text" data-abz="gruppe" value="' + esc(z.gruppe || '') + '"' + dis + '></label><label class="m-f"><span>Ort</span><input type="text" data-abz="ort" value="' + esc(z.ort || '') + '"' + dis + '></label></div>' + (ro ? '' : '<button type="button" class="wm-btn m-danger" data-ma="abzdel" style="margin-top:6px">Zeile löschen</button>') + '</div>';
     });
     out += '<p class="wm-note"><b>' + c.std + ' Std.</b> × ' + euro(a.satz) + ' = <b>' + euro(c.hours) + '</b></p><div class="m-fgrid">' + inp('Satz pro Stunde (€)', 'satz', a.satz, 'number', dis) + '</div><p class="wm-sub">Standard laut Sätzen: ' + euro(satzFor(a.lizArt)) + (a.lizArt ? ' (Lizenz: ' + esc(a.lizArt) + ')' : '') + '. Du kannst den Satz hier für diese Abrechnung ändern.</p></section>';
     out += '<section class="wm-card"><div class="m-sec" style="margin-top:0">Fahrtkosten und Auslagen</div><div class="m-fgrid">' + inp('Gefahrene km', 'km', a.km, 'number', dis) + inp('€ pro km', 'kmSatz', a.kmSatz, 'number', dis) + inp('Telefon (€)', 'telefon', a.telefon, 'number', dis) + inp('Porto (€)', 'porto', a.porto, 'number', dis) + inp('Kopien (€)', 'kopien', a.kopien, 'number', dis) + inp('Sonstiges (€)', 'sonst', a.sonst, 'number', dis) + inp('Wofür Sonstiges?', 'sonstText', a.sonstText, 'text', dis) + '</div><p class="wm-note">Fahrtkosten: <b>' + euro(c.km) + '</b> · Auslagen: <b>' + euro(c.extra) + '</b></p></section>';
-    out += '<section class="wm-card"><div class="m-sec" style="margin-top:0">Auszahlung</div><div class="m-fgrid">' + inp('IBAN', 'iban', a.iban, 'text', dis) + inp('BIC', 'bic', a.bic, 'text', dis) + '</div><div class="ab-total">Gesamtbetrag <b>' + euro(c.total) + '</b></div></section>';
+    out += '<section class="wm-card"><div class="m-sec" style="margin-top:0">Auszahlung</div><div class="m-fgrid">' + inp('Kontoinhaber', 'kontoinhaber', a.kontoinhaber, 'text', dis) + inp('IBAN', 'iban', a.iban, 'text', dis) + inp('BIC', 'bic', a.bic, 'text', dis) + '</div><div class="ab-total">Gesamtbetrag <b>' + euro(c.total) + '</b></div></section>';
     return out;
   }
   // now = true bei Knopfdruck (sofort neu zeichnen); beim Verlassen eines Feldes nur still speichern und kurz danach neu zeichnen,
@@ -93,10 +128,10 @@ templateEngineOverride: false
     var c = calc(a); var kw = rates().kassenwartin;
     var rows = (a.zeilen || []).slice().sort(function (x, y) { return (x.d || '') < (y.d || '') ? -1 : 1; }).map(function (z) { return '<tr><td class="nowrap">' + esc(M.fmtDate(z.d, true)) + '</td><td>' + esc(z.zeit || '') + '</td><td style="text-align:right">' + esc(String(z.std === undefined ? '' : z.std).replace('.', ',')) + '</td><td>' + esc(z.gruppe || '') + '</td><td>' + esc(z.ort || '') + '</td></tr>'; }).join('');
     M.print('Abrechnung ' + (a.title || ''), '<h1>Abrechnung Übungsleiter / Trainer</h1><div class="sub">SG Barnstorf · Abteilung Schwimmen</div>' +
-      '<table><tr><th style="width:26%">Name</th><td>' + esc(a.name || a.owner || '') + '</td><th style="width:20%">ÜL-EDV-Nr.</th><td>' + esc(a.edv || '') + '</td></tr><tr><th>Zeitraum</th><td>' + esc(a.title || '') + (a.von ? ' (' + esc(M.fmtDate(a.von, true)) + ' – ' + esc(M.fmtDate(a.bis, true)) + ')' : '') + '</td><th>Lizenz</th><td>' + esc([a.lizArt, a.lizNr, a.lizBis ? 'gültig bis ' + a.lizBis : ''].filter(Boolean).join(', ')) + '</td></tr></table>' +
+      '<table><tr><th style="width:26%">Name</th><td>' + esc(a.name || a.owner || '') + '</td><th style="width:20%">ÜL-EDV-Nr.</th><td>' + esc(a.edv || '') + '</td></tr><tr><th>Zeitraum</th><td>' + esc(a.title || '') + (a.von ? ' (' + esc(M.fmtDate(a.von, true)) + ' – ' + esc(M.fmtDate(a.bis, true)) + ')' : '') + '</td><th>Lizenz</th><td>' + esc([a.lizArt, a.lizNr, a.lizBis ? 'gültig bis ' + dShow(a.lizBis) : ''].filter(Boolean).join(', ')) + '</td></tr></table>' +
       '<table><tr><th>Datum</th><th>Zeit</th><th>Anz. Std.</th><th>Gruppe</th><th>Ort</th></tr>' + rows + '<tr><td colspan="2"><b>Summe Stunden</b></td><td style="text-align:right"><b>' + String(c.std).replace('.', ',') + '</b></td><td colspan="2">á ' + euro(a.satz) + ' = <b>' + euro(c.hours) + '</b></td></tr></table>' +
       '<table><tr><td>Fahrtkosten: ' + esc(String(num(a.km)).replace('.', ',')) + ' km á ' + euro(a.kmSatz === undefined || a.kmSatz === '' ? rates().km : a.kmSatz) + '</td><td style="text-align:right">' + euro(c.km) + '</td></tr><tr><td>Telefon</td><td style="text-align:right">' + euro(a.telefon) + '</td></tr><tr><td>Porto</td><td style="text-align:right">' + euro(a.porto) + '</td></tr><tr><td>Kopien</td><td style="text-align:right">' + euro(a.kopien) + '</td></tr><tr><td>Sonstiges' + (a.sonstText ? ' (' + esc(a.sonstText) + ')' : '') + '</td><td style="text-align:right">' + euro(a.sonst) + '</td></tr><tr><td class="big"><b>Gesamtbetrag</b></td><td class="big" style="text-align:right"><b>' + euro(c.total) + '</b></td></tr></table>' +
-      '<p>Bankverbindung: IBAN <b>' + esc(a.iban || '________________________') + '</b> &nbsp; BIC <b>' + esc(a.bic || '____________') + '</b></p>' +
+      '<p>Bankverbindung' + (a.kontoinhaber ? ' (Kontoinhaber: <b>' + esc(a.kontoinhaber) + '</b>)' : '') + ': IBAN <b>' + esc(a.iban || '________________________') + '</b> &nbsp; BIC <b>' + esc(a.bic || '____________') + '</b></p>' +
       '<p style="margin-top:46px">Ort, Datum: ____________________ &nbsp;&nbsp;&nbsp; Unterschrift: ______________________________</p><p style="margin-top:34px">Sachlich richtig' + (kw ? ' (' + esc(kw) + ', Kassenwartin)' : ' (Kassenwartin)') + ': ______________________________</p>');
   }
   function alleTab() {
@@ -113,44 +148,73 @@ templateEngineOverride: false
   function saetzeTab() {
     var r = rates(); var raw = M.find('saetze', 'main') || {};
     var out = '<section class="wm-card"><div class="wm-bar"><h3>Sätze</h3><button type="button" class="wm-amber" data-ma="saetzeedit">✏️ Bearbeiten</button></div><p class="wm-note">Diese Werte werden bei jeder neuen Abrechnung und Fahrt vorgeschlagen. Jeder kann sie in seiner eigenen Abrechnung ändern.</p>' +
-      '<div class="m-chk"><span style="flex:1">Standard-Stundensatz</span><b>' + euro(r.std) + '</b></div><div class="m-chk"><span style="flex:1">Kilometer</span><b>' + euro(r.km) + ' / km</b></div><div class="m-chk"><span style="flex:1">Fahrer-Pauschale (Wettkampfgruppe)</span><b>' + euro(r.fahrt) + '</b></div><div class="m-chk"><span style="flex:1">Kassenwartin (für den Ausdruck)</span><b>' + esc(r.kassenwartin || '–') + '</b></div>';
+      '<div class="m-chk"><span style="flex:1">Standard-Stundensatz</span><b>' + euro(r.std) + '</b></div><div class="m-chk"><span style="flex:1">Stunden pro Wettkampftraining (Import aus WebClub / Trainingstage)</span><b>' + r.stdWK + ' Std.</b></div><div class="m-chk"><span style="flex:1">Dauer eines Trainings (aus der WebClub-Liste)</span><b>' + r.dauer + ' Min.</b></div><div class="m-chk"><span style="flex:1">Kilometer</span><b>' + euro(r.km) + ' / km</b></div><div class="m-chk"><span style="flex:1">Fahrer-Pauschale (Wettkampftraining)</span><b>' + euro(r.fahrt) + '</b></div><div class="m-chk"><span style="flex:1">Kassenwartin (für den Ausdruck)</span><b>' + esc(r.kassenwartin || '–') + '</b></div>';
     out += '<div class="m-sec">Satz nach Lizenz</div>' + (r.liz.length ? r.liz.map(function (l) { return '<div class="m-chk"><span style="flex:1">' + esc(l.art) + '</span><b>' + euro(l.satz) + '</b></div>'; }).join('') : '<p class="wm-note">Keine Lizenz-Sätze. Es gilt der Standard-Stundensatz.</p>');
     return out + '</section>';
   }
   function saetzeEdit() {
     var r = rates();
-    M.openForm({ title: 'Sätze', fields: [{ k: 'std', t: 'num', label: 'Standard-Stundensatz (€)' }, { k: 'km', t: 'num', label: 'Kilometergeld (€ pro km)' }, { k: 'fahrt', t: 'num', label: 'Fahrer-Pauschale (€)' }, { k: 'kassenwartin', t: 'text', label: 'Kassenwartin', list: 'mPeople' }, { k: 'liz', t: 'lines', label: 'Satz nach Lizenz', rows: 5, hint: 'Pro Zeile: Lizenz | Satz, z. B. „Trainer C | 12“. Es genügt ein Teil des Namens, wie er im Profil steht.' }], item: { std: r.std, km: r.km, fahrt: r.fahrt, kassenwartin: r.kassenwartin, liz: r.liz.map(function (l) { return l.art + ' | ' + l.satz; }) }, onSave: function (v) {
+    M.openForm({ title: 'Sätze', fields: [{ k: 'std', t: 'num', label: 'Standard-Stundensatz (€)' }, { k: 'stdWK', t: 'num', label: 'Stunden pro Wettkampftraining', hint: 'Abgerechnet wird pro 60 Minuten. Für jedes Training der Wettkampfgruppe aus WebClub oder den Trainingstagen werden so viele Stunden eingetragen (Training plus Vor- und Nachbereitung). Andere Gruppen trägst du von Hand mit Uhrzeit ein, die Stunden werden daraus berechnet.' }, { k: 'dauer', t: 'num', label: 'Dauer eines Trainings (Minuten)', hint: 'Nur für die angezeigte Zeit „von–bis“. Die Stunden pro Wettkampftraining stehen oben.' }, { k: 'km', t: 'num', label: 'Kilometergeld (€ pro km)' }, { k: 'fahrt', t: 'num', label: 'Fahrer-Pauschale (€)' }, { k: 'kassenwartin', t: 'text', label: 'Kassenwartin', list: 'mPeople' }, { k: 'liz', t: 'lines', label: 'Satz nach Lizenz', rows: 5, hint: 'Pro Zeile: Lizenz | Satz, z. B. „Trainer C | 12“. Es genügt ein Teil des Namens, wie er im Profil steht.' }], item: { std: r.std, dauer: r.dauer, km: r.km, fahrt: r.fahrt, kassenwartin: r.kassenwartin, liz: r.liz.map(function (l) { return l.art + ' | ' + l.satz; }) }, onSave: function (v) {
       var liz = v.liz.map(function (x) { var p = x.split('|'); return { art: (p[0] || '').trim(), satz: num(p[1]) }; }).filter(function (x) { return x.art; });
-      M.op({ op: 'set', coll: 'saetze', item: { id: 'main', std: num(v.std), km: num(v.km), fahrt: num(v.fahrt), kassenwartin: v.kassenwartin, liz: liz } });
+      M.op({ op: 'set', coll: 'saetze', item: { id: 'main', std: num(v.std), stdWK: v.stdWK === '' ? 2 : num(v.stdWK), dauer: num(v.dauer) || 60, km: num(v.km), fahrt: num(v.fahrt), kassenwartin: v.kassenwartin, liz: liz } });
     } });
   }
   function tageImport(a) {
-    if (deniedNote('trainingTage')) { M.toast('Für die Trainingstage fehlt dir die Berechtigung.'); return; }
-    var n = lower(me()); var have = {}; (a.zeilen || []).forEach(function (z) { have[z.d + '|' + (z.zeit || '')] = 1; });
-    var add = M.items('trainingTage').filter(function (t) { return t.date >= (a.von || '0000') && t.date <= (a.bis || '9999') && (t.trainer || []).some(function (x) { return lower(x) === n; }); }).sort(function (x, y) { return x.date < y.date ? -1 : 1; }).map(function (t) {
-      var std = t.dauer ? Math.round(num(t.dauer) / 60 * 100) / 100 : 1.5; var zeit = t.time || '';
-      if (t.time && t.dauer) { var p = t.time.split(':'); var e = +p[0] * 60 + +p[1] + num(t.dauer); zeit = t.time + '–' + ('0' + Math.floor(e / 60) % 24).slice(-2) + ':' + ('0' + e % 60).slice(-2); }
-      return { d: t.date, zeit: zeit, std: std, gruppe: 'Wettkampfgruppe', ort: t.ort || '' };
-    }).filter(function (z) { return !have[z.d + '|' + z.zeit]; });
-    if (!add.length) { M.toast('Keine (neuen) Trainingstage mit dir als Trainer im Zeitraum.'); return; }
-    patchAb(a, { zeilen: (a.zeilen || []).concat(add) }, true); M.toast(add.length + ' Zeilen übernommen.');
+    if (deniedNote('trainingTage')) { M.toast('Für die Trainingstage fehlt dir die Berechtigung. Nutze „Aus WebClub-Liste“.'); return; }
+    var have = {}; (a.zeilen || []).forEach(function (z) { have[rowKey(z)] = 1; });
+    var add = tageRows(M.items('trainingTage'), a.von, a.bis).filter(function (z) { return !have[rowKey(z)]; });
+    if (!add.length) {
+      var all = tageRows(M.items('trainingTage'));
+      M.toast(all.length ? 'Im Zeitraum gibt es nichts Neues. Deine Trainingstage liegen zwischen ' + fs(all[0].d) + ' und ' + fs(all[all.length - 1].d) + ': passe „Von“ und „Bis“ an.' : 'Es sind noch keine Trainingstage mit dir als Trainer gespeichert. Lies die Anwesenheitsliste über „Aus WebClub-Liste“ ein.');
+      return;
+    }
+    patchAb(a, { zeilen: (a.zeilen || []).concat(add) }, true); M.toast(add.length + (add.length === 1 ? ' Zeile' : ' Zeilen') + ' übernommen.');
+  }
+  // Direkt aus der Anwesenheitsliste (PDF aus WebClub): nur Termine, an denen du als Trainer „anwesend“ bist
+  function pdfDialog() {
+    M.openDlg('<div class="hub-dhead"><h3>Aus WebClub-Liste</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div><p class="wm-note">Wähle die „Anwesenheitsliste“ (PDF) aus WebClub. Übernommen werden nur Termine im Zeitraum der Abrechnung, bei denen du als Trainer eingetragen und anwesend bist.</p><div class="m-fgrid"><label class="m-f wide"><span>PDF-Datei</span><input type="file" id="abfile" accept="application/pdf,.pdf"></</label><label class="m-f"><span>Dauer pro Termin (Min.)</span><input type="number" inputmode="numeric" id="abdauer" value="60"></label></div><p class="wm-sub">Bei der Wettkampfgruppe zählen immer ' + rates().stdWK + ' Std. pro Termin. Bei anderen Gruppen wird die Dauer hier verwendet, weil die Liste nur die Startzeit enthält.</p><p id="abmsg" class="wm-note"></p><div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="abpdfread">Einlesen</button></div>');
+  }
+  function pdfRead() {
+    var a = curAb(); var f = document.getElementById('abfile') && document.getElementById('abfile').files[0]; var msg = document.getElementById('abmsg');
+    if (!a) return; if (!f) { msg.textContent = 'Bitte zuerst eine PDF-Datei auswählen.'; return; }
+    if (!window.HubPdf) { msg.textContent = 'Der PDF-Leser fehlt auf dieser Seite.'; return; }
+    msg.textContent = 'Wird gelesen … (beim ersten Mal wird der PDF-Leser geladen)';
+    HubPdf.read(f).then(function (r) {
+      var p = WKParse.parseAnwesenheit(r.pages); var isWK = /wettkampf/i.test(p.title || ''); var dm = isWK ? rates().dauer : (num(document.getElementById('abdauer') && document.getElementById('abdauer').value) || 60); var gname = isWK ? 'Wettkampfgruppe' : (String(p.title || '').replace(/^Anwesenheitsliste\s*/i, '').trim() || 'Gruppe'); var mineP = p.people.filter(function (x) { return x.trainer && nameMatches(x.name); });
+      if (!mineP.length) { msg.innerHTML = '<span class="m-over">Du stehst in dieser Liste nicht als Trainer (gesucht: „' + esc(me()) + '“). Trainer sind dort mit „Trainer“ vor dem Namen markiert.</span>'; return; }
+      var rows = []; var have = {}; (a.zeilen || []).forEach(function (z) { have[rowKey(z)] = 1; });
+      var inRange = 0;
+      p.sessions.forEach(function (s, i) {
+        if (!mineP.some(function (x) { return x.st[i] === 'a'; })) return;
+        if (s.date < (a.von || '0000') || s.date > (a.bis || '9999')) return;
+        inRange++;
+        var z = { d: s.date, zeit: zeitOf(s.time || '', dm), std: isWK ? stdFor() : Math.round(dm / 60 * 100) / 100, gruppe: gname, ort: '' };
+        if (!have[rowKey(z)]) rows.push(z);
+      });
+      if (!rows.length) { msg.innerHTML = '<span class="m-over">' + (inRange ? 'Alle ' + inRange + ' Termine im Zeitraum sind schon in der Abrechnung.' : 'Im Zeitraum ' + fs(a.von) + ' – ' + fs(a.bis) + ' gibt es keinen Termin, bei dem du als Trainer anwesend bist. Passe „Von“ und „Bis“ an.') + '</span>'; return; }
+      M.closeDlg(); patchAb(a, { zeilen: (a.zeilen || []).concat(rows) }, true); M.toast(rows.length + (rows.length === 1 ? ' Zeile' : ' Zeilen') + ' übernommen.');
+    }, function (e) { msg.innerHTML = '<span class="m-over">' + esc(e.message || String(e)) + '</span>'; });
   }
 
   M.register('abrechnung', {
-    title: 'Trainerabrechnung', icon: '🧾', colls: ['abrechnungen', 'saetze', 'profile', 'trainingTage'],
+    title: 'Abrechnung', icon: '🧾', colls: ['abrechnungen', 'saetze', 'profile', 'trainingTage', 'fahrten'],
     tabs: [
-      { id: 'meine', label: 'Meine Abrechnungen', view: ['abrechnung.eigene'], render: meineTab },
-      { id: 'alle', label: 'Alle', view: ['abrechnung.alle'], render: alleTab },
+      { id: 'meine', label: 'Stunden', view: ['abrechnung.eigene'], render: meineTab },
+      { id: 'fmeine', label: 'Fahrten', view: ['fahrten.eigene'], render: function () { return fMeine(); } },
+      { id: 'alle', label: 'Alle Stunden', view: ['abrechnung.alle'], render: alleTab },
+      { id: 'falle', label: 'Alle Fahrten', view: ['fahrten.alle'], render: function () { return fAlle(); } },
       { id: 'saetze', label: 'Sätze', view: ['abrechnung.saetze'], render: saetzeTab }
     ],
     onChange: function (ev) {
       var t = ev.target; if (!t || !t.getAttribute) return; var a = curAb(); if (!a) return;
       var f = t.getAttribute('data-abf');
-      if (f) { var v = t.type === 'number' ? (t.value === '' ? '' : num(t.value)) : t.value.trim(); var o = {}; o[f] = v; patchAb(a, o); return; }
+      if (f) { var v = t.type === 'number' ? (t.value === '' ? '' : num(t.value)) : t.value.trim(); if (f === 'lizBis') v = dIso(v); var o = {}; o[f] = v; patchAb(a, o); return; }
       var z = t.getAttribute('data-abz');
       if (z) {
         var row = t.closest('.ab-row'); var i = +row.getAttribute('data-i'); var l = M.clone(a.zeilen || []); if (!l[i]) return;
-        l[i][z] = z === 'std' ? (t.value === '' ? '' : num(t.value)) : t.value.trim(); patchAb(a, { zeilen: l });
+        l[i][z] = z === 'std' ? (t.value === '' ? '' : num(t.value)) : t.value.trim();
+        if (z === 'zeit') { var m = /^(\d{1,2})[:.](\d{2})\s*[–-]\s*(\d{1,2})[:.](\d{2})$/.exec(l[i].zeit); if (m) { var mins = (+m[3] * 60 + +m[4]) - (+m[1] * 60 + +m[2]); if (mins > 0) { l[i].std = Math.round(mins / 60 * 100) / 100; patchAb(a, { zeilen: l }, true); return; } } }
+        patchAb(a, { zeilen: l });
       }
     },
     actions: {
@@ -158,9 +222,11 @@ templateEngineOverride: false
       abopen: function (it, el, ev, c) { sub().ae = c.id; sub().aeAll = M.S.tab === 'alle'; window.scrollTo(0, 0); M.render(true); },
       abback: function () { sub().ae = ''; sub().aeAll = false; M.render(true); },
       abfilter: function (it, el) { sub().af = el.getAttribute('data-v'); M.render(true); },
-      abzadd: function () { var a = curAb(); if (!a) return; var l = (a.zeilen || []).concat([{ d: M.today(), zeit: '', std: '', gruppe: 'Wettkampfgruppe', ort: '' }]); patchAb(a, { zeilen: l }, true); },
+      abzadd: function () { var a = curAb(); if (!a) return; var l = (a.zeilen || []).concat([{ d: M.today(), zeit: '', std: '', gruppe: '', ort: '' }]); patchAb(a, { zeilen: l }, true); },
       abzdel: function (it, el) { var a = curAb(); if (!a) return; var i = +el.closest('.ab-row').getAttribute('data-i'); var l = M.clone(a.zeilen || []); l.splice(i, 1); patchAb(a, { zeilen: l }, true); },
       abtage: function () { var a = curAb(); if (a) tageImport(a); },
+      abpdf: function () { pdfDialog(); },
+      abpdfread: function () { pdfRead(); },
       abprint: function () { var a = curAb(); if (a) printAb(a); },
       abstat: function (it, el) {
         var a = curAb(); if (!a) return; var s = el.getAttribute('data-s');
@@ -173,31 +239,30 @@ templateEngineOverride: false
     }
   });
 
-  /* ================= Fahrtenformular ================= */
+  /* ================= Fahrten zum Wettkampftraining (Reiter der Abrechnung) ================= */
   function fownList() { return M.items('fahrten').filter(function (f) { return lower(f.owner) === lower(me()); }).sort(function (a, b) { return (b.datum || '') < (a.datum || '') ? -1 : 1; }); }
   function fRow(f, showOwner) {
-    return '<article class="m-card" data-id="' + esc(f.id) + '"><div class="m-head"><div class="m-main"><div class="m-title">' + esc(f.ziel || 'Fahrt') + statusBadge(f.status || 'offen') + '</div><div class="wm-sub">' + [fs(f.datum), showOwner ? esc(f.owner || '') : '', (f.mitfahrer || []).length ? 'Mit: ' + esc(f.mitfahrer.join(', ')) : ''].filter(Boolean).join(' · ') + '</div></div><b style="white-space:nowrap">' + euro(f.betrag) + '</b></div>' +
-      (!showOwner && (f.status || 'offen') === 'offen' ? '<div class="m-body" style="padding-top:8px"><div class="m-btns" style="margin-top:0"><button type="button" class="wm-btn" data-ma="fedit">✏️</button><button type="button" class="wm-btn m-danger" data-ma="fdel">🗑️</button></div></div>' : '') + '</article>';
+    return '<article class="m-card" data-id="' + esc(f.id) + '"><div class="m-head"><div class="m-main"><div class="m-title">' + fs(f.datum) + statusBadge(f.status || 'offen') + '</div><div class="wm-sub">' + [showOwner ? esc(f.owner || '') : '', esc(f.notiz || '')].filter(Boolean).join(' · ') + '</div></div><b style="white-space:nowrap">' + euro(f.betrag) + '</b></div>' +
+      (!showOwner && (f.status || 'offen') === 'offen' ? '<div class="m-body" style="padding-top:8px"><div class="m-btns" style="margin-top:0"><button type="button" class="wm-btn" data-ma="fedit">✏️ Ändern</button><button type="button" class="wm-btn m-danger" data-ma="fdel">🗑️</button></div></div>' : '') + '</article>';
   }
-  function fFields() { return [{ k: 'datum', t: 'date', label: 'Datum', req: true }, { k: 'ziel', t: 'text', label: 'Ziel / Anlass', req: true, ph: 'z. B. Schwimmfest Bruchhausen-Vilsen' }, { k: 'mitfahrer', t: 'tags', label: 'Mitgefahrene Kinder', hint: 'Namen mit Komma trennen.' }, { k: 'betrag', t: 'num', label: 'Pauschale (€)' }]; }
+  function fFields() { return [{ k: 'datum', t: 'date', label: 'Datum', req: true }, { k: 'notiz', t: 'text', label: 'Bemerkung (optional)', ph: 'z. B. Training in Diepholz' }]; }
   function fForm(item, isNew) {
     M.openForm({ title: isNew ? 'Fahrt eintragen' : 'Fahrt ändern', fields: fFields(), item: item, onSave: function (v) {
-      v.betrag = v.betrag === '' ? rates().fahrt : num(v.betrag);
-      if (isNew) M.op({ op: 'set', coll: 'fahrten', item: Object.assign({ id: M.uid(), status: 'offen' }, v) }); else M.op({ op: 'patch', coll: 'fahrten', id: item.id, fields: v });
+      if (isNew) M.op({ op: 'set', coll: 'fahrten', item: Object.assign({ id: M.uid(), status: 'offen', betrag: rates().fahrt }, v) }); else M.op({ op: 'patch', coll: 'fahrten', id: item.id, fields: v });
     } });
   }
-  function fPrint(list, name, iban, bic) {
+  function fPrint(list, name, iban, bic, inh) {
     var sum = 0; list.forEach(function (f) { sum += num(f.betrag); });
     var kw = rates().kassenwartin;
-    M.print('Fahrtenformular ' + name, '<h1>Fahrtenformular Wettkampfgruppe</h1><div class="sub">SG Barnstorf · Fahrten zu Wettkämpfen · Pauschale pro Fahrt</div><table><tr><th style="width:24%">Name</th><td>' + esc(name) + '</td></tr><tr><th>IBAN / BIC</th><td>' + esc(iban || '') + (bic ? ' / ' + esc(bic) : '') + (iban ? '' : '______________________________') + '</td></tr></table>' +
-      '<table><tr><th>Datum</th><th>Ziel / Anlass</th><th>Mitgefahrene Kinder</th><th>Pauschale</th></tr>' + list.slice().sort(function (a, b) { return a.datum < b.datum ? -1 : 1; }).map(function (f) { return '<tr><td class="nowrap">' + esc(M.fmtDate(f.datum, true)) + '</td><td>' + esc(f.ziel || '') + '</td><td>' + esc((f.mitfahrer || []).join(', ')) + '</td><td style="text-align:right">' + euro(f.betrag) + '</td></tr>'; }).join('') + '<tr><td colspan="3"><b>Summe (' + list.length + ' Fahrten)</b></td><td style="text-align:right" class="big"><b>' + euro(sum) + '</b></td></tr></table>' +
-      '<p style="margin-top:46px">Ort, Datum: ____________________ &nbsp;&nbsp;&nbsp; Unterschrift Fahrer/in: ______________________________</p><p style="margin-top:34px">Sachlich richtig' + (kw ? ' (' + esc(kw) + ', Kassenwartin)' : ' (Kassenwartin)') + ': ______________________________</p>');
+    M.print('Fahrtenformular ' + name, '<h1>Fahrtenformular Wettkampftraining</h1><div class="sub">SG Barnstorf · Fahrten zum Wettkampftraining · feste Pauschale pro Fahrt</div><table><tr><th style="width:24%">Name</th><td>' + esc(name) + '</td></tr><tr><th>Kontoinhaber</th><td>' + esc(inh || '') + (inh ? '' : '______________________________') + '</td></tr><tr><th>IBAN / BIC</th><td>' + esc(iban || '') + (bic ? ' / ' + esc(bic) : '') + (iban ? '' : '______________________________') + '</td></tr></table>' +
+      '<table><tr><th>Datum</th><th>Bemerkung</th><th>Pauschale</th></tr>' + list.slice().sort(function (a, b) { return a.datum < b.datum ? -1 : 1; }).map(function (f) { return '<tr><td class="nowrap">' + esc(M.fmtDate(f.datum, true)) + '</td><td>' + esc(f.notiz || '') + '</td><td style="text-align:right">' + euro(f.betrag) + '</td></tr>'; }).join('') + '<tr><td colspan="2"><b>Summe (' + list.length + (list.length === 1 ? ' Fahrt' : ' Fahrten') + ')</b></td><td style="text-align:right" class="big"><b>' + euro(sum) + '</b></td></tr></table>' +
+      '<p style="margin-top:46px">Ort, Datum: ____________________ &nbsp;&nbsp;&nbsp; Unterschrift: ______________________________</p><p style="margin-top:34px">Sachlich richtig' + (kw ? ' (' + esc(kw) + ', Kassenwartin)' : ' (Kassenwartin)') + ': ______________________________</p>');
   }
   function fMeine() {
     if (!personal()) return needPersonal();
     var list = fownList(); var open = list.filter(function (f) { return (f.status || 'offen') === 'offen'; }); var sum = 0; open.forEach(function (f) { sum += num(f.betrag); });
     var out = '<section class="wm-card"><div class="wm-bar"><h3>Meine Fahrten</h3><span class="m-actions"><button type="button" class="wm-btn" data-ma="fprint"' + (open.length ? '' : ' disabled') + '>🖨️ Formular drucken</button><button type="button" class="wm-amber" data-ma="fnew">+ Fahrt</button></span></div>' +
-      '<p class="wm-note">Pro Fahrt zu einem Wettkampf gibt es ' + euro(rates().fahrt) + '. Offen: <b>' + open.length + (open.length === 1 ? ' Fahrt' : ' Fahrten') + ' = ' + euro(sum) + '</b>. Zum Abrechnen das Formular drucken, unterschreiben und abgeben.</p>';
+      '<p class="wm-note">Für jede Fahrt zum Wettkampftraining gibt es ' + euro(rates().fahrt) + '. Für Fahrten zu Wettkämpfen wird nichts gezahlt. Offen: <b>' + open.length + (open.length === 1 ? ' Fahrt' : ' Fahrten') + ' = ' + euro(sum) + '</b>. Zum Abrechnen das Formular drucken, unterschreiben und abgeben.</p>';
     if (!list.length) out += '<p class="wm-note">Noch keine Fahrt eingetragen.</p>';
     return out + list.map(function (f) { return fRow(f, false); }).join('') + '</section>';
   }
@@ -210,48 +275,91 @@ templateEngineOverride: false
     names.forEach(function (n) {
       var l = by[n]; var op = l.filter(function (f) { return (f.status || 'offen') === 'offen'; }); var sum = 0; op.forEach(function (f) { sum += num(f.betrag); });
       out += '<article class="m-card" data-own="' + esc(n) + '"><div class="m-head" data-ma="ftoggle"><div class="m-main"><div class="m-title">' + esc(n) + '</div><div class="wm-sub">' + op.length + ' offen (' + euro(sum) + ') · ' + (l.length - op.length) + ' abgerechnet</div></div><span class="m-chev">' + (M.S.open['f' + n] ? '▾' : '▸') + '</span></div>' +
-        (M.S.open['f' + n] ? '<div class="m-body">' + l.sort(function (a, b) { return a.datum < b.datum ? 1 : -1; }).map(function (f) { return '<div class="m-chk"><span style="flex:1">' + fs(f.datum) + ' · ' + esc(f.ziel || '') + '</span><b>' + euro(f.betrag) + '</b> ' + statusBadge(f.status || 'offen') + '</div>'; }).join('') + '<div class="m-btns"><button type="button" class="wm-btn" data-ma="fprintall"' + (op.length ? '' : ' disabled') + '>🖨️ Offene drucken</button><button type="button" class="wm-amber" data-ma="fpaid"' + (op.length ? '' : ' disabled') + '>Als abgerechnet markieren</button></div></div>' : '') + '</article>';
+        (M.S.open['f' + n] ? '<div class="m-body">' + l.sort(function (a, b) { return a.datum < b.datum ? 1 : -1; }).map(function (f) { return '<div class="m-chk"><span style="flex:1">' + fs(f.datum) + (f.notiz ? ' · ' + esc(f.notiz) : '') + '</span><b>' + euro(f.betrag) + '</b> ' + statusBadge(f.status || 'offen') + '</div>'; }).join('') + '<div class="m-btns"><button type="button" class="wm-btn" data-ma="fprintall"' + (op.length ? '' : ' disabled') + '>🖨️ Offene drucken</button><button type="button" class="wm-amber" data-ma="fpaid"' + (op.length ? '' : ' disabled') + '>Als abgerechnet markieren</button></div></div>' : '') + '</article>';
     });
     return out + '</section>';
   }
-  M.register('fahrten', {
-    title: 'Fahrtenformular', icon: '🚗', colls: ['fahrten', 'saetze', 'profile'],
-    tabs: [{ id: 'meine', label: 'Meine Fahrten', view: ['fahrten.eigene'], render: fMeine }, { id: 'alle', label: 'Alle (Kasse)', view: ['fahrten.alle'], render: fAlle }],
-    actions: {
-      fnew: function () { fForm({ datum: M.today(), betrag: rates().fahrt, mitfahrer: [] }, true); },
-      fedit: function (it, el, ev, c) { var f = M.find('fahrten', c.id); if (f) fForm(f, false); },
-      fdel: function (it, el, ev, c) { M.confirm('Fahrt löschen?', 'Löschen', function () { M.op({ op: 'del', coll: 'fahrten', id: c.id }); }); },
-      fprint: function () { var p = profile(); fPrint(fownList().filter(function (f) { return (f.status || 'offen') === 'offen'; }), me(), p.iban, p.bic); },
-      ftoggle: function (it, el, ev, c) { var n = el.closest('[data-own]').getAttribute('data-own'); M.S.open['f' + n] = !M.S.open['f' + n]; M.render(true); },
-      fprintall: function (it, el) { var n = el.closest('[data-own]').getAttribute('data-own'); fPrint(M.items('fahrten').filter(function (f) { return f.owner === n && (f.status || 'offen') === 'offen'; }), n, '', ''); },
-      fpaid: function (it, el) { var n = el.closest('[data-own]').getAttribute('data-own'); var l = M.items('fahrten').filter(function (f) { return f.owner === n && (f.status || 'offen') === 'offen'; }); M.confirm(l.length + ' Fahrten von ' + n + ' als abgerechnet markieren?', 'Markieren', function () { M.ops(l.map(function (f) { return { op: 'patch', coll: 'fahrten', id: f.id, fields: { status: 'abgerechnet', paidAt: M.today() } }; })); }); }
-    }
-  });
+  var FACT = {
+    fnew: function () { fForm({ datum: M.today() }, true); },
+    fedit: function (it, el, ev, c) { var f = M.find('fahrten', c.id); if (f) fForm(f, false); },
+    fdel: function (it, el, ev, c) { M.confirm('Fahrt löschen?', 'Löschen', function () { M.op({ op: 'del', coll: 'fahrten', id: c.id }); }); },
+    fprint: function () { var p = profile(); fPrint(fownList().filter(function (f) { return (f.status || 'offen') === 'offen'; }), me(), p.iban, p.bic, p.kontoinhaber); },
+    ftoggle: function (it, el, ev, c) { var n = el.closest('[data-own]').getAttribute('data-own'); M.S.open['f' + n] = !M.S.open['f' + n]; M.render(true); },
+    fprintall: function (it, el) { var n = el.closest('[data-own]').getAttribute('data-own'); fPrint(M.items('fahrten').filter(function (f) { return f.owner === n && (f.status || 'offen') === 'offen'; }), n, '', '', ''); },
+    fpaid: function (it, el) { var n = el.closest('[data-own]').getAttribute('data-own'); var l = M.items('fahrten').filter(function (f) { return f.owner === n && (f.status || 'offen') === 'offen'; }); M.confirm(l.length + ' Fahrten von ' + n + ' als abgerechnet markieren?', 'Markieren', function () { M.ops(l.map(function (f) { return { op: 'patch', coll: 'fahrten', id: f.id, fields: { status: 'abgerechnet', paidAt: M.today() } }; })); }); }
+  };
+  Object.keys(FACT).forEach(function (k) { M.mod('abrechnung').actions[k] = FACT[k]; });
 
   /* ================= Profil ================= */
-  var PF = [['tel', 'Telefon', 'tel'], ['mail', 'E-Mail', 'email'], ['lizArt', 'Lizenz (Art)', 'text'], ['lizNr', 'Lizenz-Nr.', 'text'], ['lizBis', 'Lizenz gültig bis', 'text'], ['edvNr', 'ÜL-EDV-Nr.', 'text'], ['iban', 'IBAN', 'text'], ['bic', 'BIC', 'text']];
+  // Felder: [Schlüssel, Beschriftung, Eingabeart]. Daten, die in WebClub stehen, lassen sich aus der Stammdaten-Datei übernehmen.
+  var PF = [['tel', 'Telefon', 'tel'], ['mail', 'E-Mail', 'email'], ['lizArt', 'Lizenz (Art)', 'text'], ['lizNr', 'Trainerlizenz-Nr.', 'text'], ['lizBis', 'Lizenz gültig bis', 'date'], ['edvNr', 'ÜL-EDV-Nr.', 'text'],
+    ['ersteHilfeBis', 'Erste Hilfe gültig bis', 'date'], ['rettungBis', 'Rettungsnachweis gültig bis', 'date'], ['fuehrungszeugnis', 'Führungszeugnis vom', 'date'], ['kariNr', 'Kampfrichter-Lizenz-Nr.', 'text'], ['kariBis', 'Kampfrichter gültig bis', 'date'],
+    ['kontoinhaber', 'Kontoinhaber', 'text'], ['iban', 'IBAN', 'text'], ['bic', 'BIC', 'text']];
+  var PDATES = ['lizBis', 'ersteHilfeBis', 'rettungBis', 'fuehrungszeugnis', 'kariBis'];
+  var EXPIRES = [['lizBis', 'Trainerlizenz'], ['ersteHilfeBis', 'Erste Hilfe'], ['rettungBis', 'Rettungsnachweis'], ['kariBis', 'Kampfrichter']];
+  function chip(iso) {
+    if (!isoOk(iso)) return iso ? M.badge(iso, 'gray') : '<span class="wm-sub">–</span>';
+    var d = M.daysTo(iso);
+    return d < 0 ? M.badge('abgelaufen seit ' + fs(iso), 'red') : d <= 60 ? M.badge('läuft in ' + d + (d === 1 ? ' Tag' : ' Tagen') + ' ab (' + fs(iso) + ')', 'amber') : M.badge('gültig bis ' + fs(iso), 'green');
+  }
+  function prow(label, val) { return '<div class="m-chk"><span style="flex:1">' + label + '</span><b style="text-align:right;overflow-wrap:anywhere">' + (val === '' || val === undefined ? '<span class="wm-sub">–</span>' : val) + '</b></div>'; }
   M.register('profil', {
     title: 'Mein Profil', icon: '👤', colls: ['profile'], custom: true,
     render: function () {
       var m = M.SH.S.me;
       if (!m) return '<section class="wm-card"><p class="wm-note">Bitte melde dich an.</p><button type="button" class="wm-amber" data-sh="login">Anmelden</button></section>';
       if (!m.user) return '<section class="wm-card"><h3>Kein persönliches Konto</h3><p class="wm-note">Du bist mit einem Rollen-Passwort („' + esc((m.role && m.role.name) || '') + '“) angemeldet. Ein Profil, Abrechnungen und Fahrten gibt es nur mit persönlichem Konto. Bitte frage in der Verwaltung nach einem Benutzernamen.</p></section>';
-      var p = profile();
-      var out = '<section class="wm-card"><div style="display:flex;gap:14px;align-items:center">' + M.avatar(m.user, 'gold') + '<div><h3 style="margin:0">' + esc(m.user) + '</h3><div class="wm-sub">' + esc((m.role && m.role.name) || '') + '</div></div></div></section>';
-      out += '<section class="wm-card"><div class="m-sec" style="margin-top:0">Kontakt</div><div class="m-fgrid">' + PF.slice(0, 2).map(function (f) { return pfield(f, p); }).join('') + '</div>' +
-        '<div class="m-sec">Lizenz und Abrechnung</div><div class="m-fgrid">' + PF.slice(2, 6).map(function (f) { return pfield(f, p); }).join('') + '</div>' +
-        '<div class="m-sec">Bankverbindung (optional)</div><div class="m-fgrid">' + PF.slice(6).map(function (f) { return pfield(f, p); }).join('') + '</div><p class="wm-sub">Nur du siehst diese Angaben. Sie füllen deine Abrechnungen automatisch aus.</p>' +
-        '<div class="ha-actions"><button type="button" class="hub-btn hub-gold" data-ma="pfsave">Speichern</button></div></section>';
+      var p = profile(); var v = function (k) { return esc(p[k] || ''); };
+      var out = '<section class="wm-card"><div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">' + M.avatar(m.user, 'gold') + '<div style="flex:1;min-width:10em"><h3 style="margin:0">' + esc(m.user) + '</h3><div class="wm-sub">' + esc((m.role && m.role.name) || '') + '</div></div><span class="m-actions"><button type="button" class="wm-btn" data-ma="pfimport">📥 Aus WebClub-Datei</button><button type="button" class="wm-amber" data-ma="pfedit">✏️ Bearbeiten</button></span></div></section>';
+      out += '<section class="wm-card"><div class="m-sec" style="margin-top:0">Kontakt</div>' + prow('Telefon', v('tel')) + prow('E-Mail', v('mail')) +
+        '<div class="m-sec">Lizenzen und Nachweise</div>' + prow('Trainerlizenz', (p.lizArt ? esc(p.lizArt) + ' · ' : '') + (p.lizNr ? 'Nr. ' + esc(p.lizNr) : '') + (p.lizArt || p.lizNr ? '' : '')) + prow('Lizenz gültig', chip(p.lizBis)) + prow('ÜL-EDV-Nr.', v('edvNr')) +
+        prow('Erste Hilfe', chip(p.ersteHilfeBis)) + prow('Rettungsnachweis', chip(p.rettungBis)) + prow('Führungszeugnis', p.fuehrungszeugnis ? 'vom ' + esc(dShow(p.fuehrungszeugnis)) : '') + prow('Kampfrichter', (p.kariNr ? 'Nr. ' + esc(p.kariNr) + ' · ' : '') + (p.kariBis ? chip(p.kariBis) : '')) +
+        '<div class="m-sec">Bankverbindung</div>' + prow('Kontoinhaber', v('kontoinhaber')) + prow('IBAN', v('iban')) + prow('BIC', v('bic')) + '<p class="wm-sub" style="margin-top:12px">Nur du siehst diese Angaben. Sie füllen deine Abrechnungen automatisch aus.</p></section>';
       return out;
     },
     actions: {
-      pfsave: function () {
-        var v = {}; PF.forEach(function (f) { var e = document.querySelector('[data-pf="' + f[0] + '"]'); v[f[0]] = e ? e.value.trim() : ''; });
-        M.op({ op: 'set', coll: 'profile', item: Object.assign({ id: pid(me()) }, v) }); M.toast('Profil gespeichert.');
+      pfedit: function () {
+        var p = profile(); var item = {}; PF.forEach(function (f) { item[f[0]] = p[f[0]] || ''; });
+        var fields = PF.map(function (f) { return { k: f[0], t: f[2] === 'date' ? 'date' : 'text', label: f[1] }; });
+        M.openForm({ title: 'Profil bearbeiten', fields: fields, item: item, onSave: function (vv) { M.op({ op: 'set', coll: 'profile', item: Object.assign({}, p, { id: pid(me()) }, vv) }); M.toast('Profil gespeichert.'); } });
+      },
+      pfimport: function () {
+        M.openDlg('<div class="hub-dhead"><h3>Aus WebClub-Datei</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div><p class="wm-note">In WebClub deine Stammdaten als CSV exportieren („stammdaten.csv“) und hier auswählen. Es wird nur deine eigene Zeile gelesen. Übernommen werden Telefon, E-Mail, Lizenzen, Nachweise und Bankverbindung. Die Datei selbst wird nicht gespeichert.</p><div class="m-fgrid"><label class="m-f wide"><span>CSV-Datei</span><input type="file" id="pffile" accept=".csv,text/csv,text/plain"></label></div><p id="pfmsg" class="wm-note"></p><div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="pfread">Einlesen</button></div>');
+      },
+      pfread: function () {
+        var f = document.getElementById('pffile') && document.getElementById('pffile').files[0]; var msg = document.getElementById('pfmsg');
+        if (!f) { msg.textContent = 'Bitte zuerst eine Datei auswählen.'; return; }
+        HubPdf.text(f).then(function (txt) {
+          var rows = parseCsv(txt); if (rows.length < 2) { msg.innerHTML = '<span class="m-over">Die Datei enthält keine Daten.</span>'; return; }
+          var head = rows[0].map(function (h) { return lower(h).replace(/\s+/g, ''); });
+          var col = function (r, names) { for (var i = 0; i < names.length; i++) { var j = head.indexOf(names[i]); if (j >= 0 && (r[j] || '').trim()) return r[j].trim(); } return ''; };
+          var mine = rows.slice(1).filter(function (r) { return r.length > 3; }).filter(function (r) { return nameMatches(col(r, ['vorname']) + ' ' + col(r, ['name'])); });
+          if (!mine.length) { msg.innerHTML = '<span class="m-over">Keine Zeile für „' + esc(me()) + '“ gefunden. (Gelesen: ' + (rows.length - 1) + ' Zeile(n).)</span>'; return; }
+          if (mine.length > 1) { msg.innerHTML = '<span class="m-over">Der Name kommt mehrfach vor. Bitte exportiere nur deine eigenen Stammdaten.</span>'; return; }
+          var r = mine[0];
+          var v = { tel: col(r, ['mobil', 'telefon1']), mail: col(r, ['mail1']), lizNr: col(r, ['trainerlizenznr']), lizBis: dIso(col(r, ['trainerlizenzgueltig', 'trainerlizenzgültig'])), ersteHilfeBis: dIso(col(r, ['erstehilfebis'])), rettungBis: dIso(col(r, ['rettungsnachweisbis'])), fuehrungszeugnis: dIso(col(r, ['führungszeugnisvom', 'fuehrungszeugnisvom'])), kariNr: col(r, ['karilizenznr']), kariBis: dIso(col(r, ['wettkampfrichterbis'])), kontoinhaber: col(r, ['kontoinhaber']), iban: col(r, ['iban']), bic: col(r, ['bic']) };
+          var set = {}; Object.keys(v).forEach(function (k) { if (v[k]) set[k] = v[k]; });
+          var names = PF.filter(function (f) { return set[f[0]]; }).map(function (f) { return f[1]; });
+          M.closeDlg(); M.op({ op: 'set', coll: 'profile', item: Object.assign({}, profile(), { id: pid(me()) }, set) }); M.toast('Übernommen: ' + names.join(', ') + '.');
+        }, function (e) { msg.innerHTML = '<span class="m-over">' + esc(e.message || String(e)) + '</span>'; });
       }
     }
   });
-  function pfield(f, p) { return '<label class="m-f"><span>' + f[1] + '</span><input type="' + f[2] + '" data-pf="' + f[0] + '" value="' + esc(p[f[0]] || '') + '" autocomplete="off"></label>'; }
+  // CSV mit Semikolon (WebClub), Anführungszeichen erlaubt
+  function parseCsv(txt) {
+    var rows = [], row = [], cur = '', q = false; txt = String(txt).replace(/^﻿/, '');
+    for (var i = 0; i < txt.length; i++) {
+      var c = txt[i];
+      if (q) { if (c === '"') { if (txt[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+      else if (c === '"') q = true;
+      else if (c === ';') { row.push(cur); cur = ''; }
+      else if (c === '\n' || c === '\r') { if (c === '\r' && txt[i + 1] === '\n') i++; row.push(cur); cur = ''; if (row.some(function (x) { return x !== ''; })) rows.push(row); row = []; }
+      else cur += c;
+    }
+    row.push(cur); if (row.some(function (x) { return x !== ''; })) rows.push(row);
+    return rows;
+  }
+  window.HubProfil = { expiring: function (p) { var o = []; EXPIRES.forEach(function (x) { var iso = p && p[x[0]]; if (isoOk(iso)) { var d = M.daysTo(iso); if (d <= 60) o.push({ label: x[1], iso: iso, days: d }); } }); return o; } };
   var st = document.createElement('style'); st.textContent = '#hubRoot .ab-row{padding:10px 0;border-bottom:1px solid rgba(148,163,184,.25)}#hubRoot .ab-total{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding:14px;border-radius:14px;background:var(--navy);color:#fff;font-size:15px}#hubRoot .ab-total b{font:900 24px ui-rounded,system-ui,sans-serif;color:var(--gold)}';
   document.head.appendChild(st);
 })();

@@ -214,6 +214,19 @@ permalink: /intranet/weihnachtsmarkt/
 
 <div id="appBody" class="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-200 pb-16">
   
+<style>
+/* Kopfzeile wie im Intranet-Hub (Marineblau mit goldener Kante) */
+#portalHeader, .dark #portalHeader { background: linear-gradient(135deg, #0a1f36, #12395c 55%, #0d2b47) !important; border-bottom: 4px solid #d6a23a !important; box-shadow: 0 8px 20px rgba(0,0,0,.30); backdrop-filter: none; }
+#portalHeader > div { padding-top: 12px !important; padding-bottom: 12px !important; }
+#portalHeader #headerTitle { color: #fff !important; font: 900 18px/1.1 ui-rounded, 'SF Pro Rounded', system-ui, sans-serif !important; letter-spacing: .2px; }
+#portalHeader #homeBtn { width: 50px !important; height: 50px !important; border-radius: 15px !important; background: rgba(255,255,255,.14) !important; border: 1px solid rgba(255,255,255,.24); }
+#portalHeader #homeBtn img { height: 32px; }
+#portalHeader #roleBadge, #portalHeader #themeToggleBtn, #portalHeader #burgerMenuBtn { min-height: 44px; border-radius: 12px !important; background: rgba(255,255,255,.14) !important; border: 1px solid rgba(255,255,255,.24); color: #fff !important; }
+#portalHeader #roleBadge:hover, #portalHeader #themeToggleBtn:hover, #portalHeader #burgerMenuBtn:hover { background: rgba(255,255,255,.22) !important; }
+#portalHeader #themeToggleLabel { color: #fff !important; }
+#portalHeader #burgerMenuBtn { width: 44px; padding: 0; }
+@media (max-width: 560px) { #portalHeader #headerTitle { font-size: 16px; } #portalHeader #homeBtn { width: 44px !important; height: 44px !important; } }
+</style>
   <header id="portalHeader" class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200 dark:border-slate-800">
   <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 
