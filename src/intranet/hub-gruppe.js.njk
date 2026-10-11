@@ -68,7 +68,7 @@ templateEngineOverride: false
     { k: 'notiz', t: 'area', label: 'Notiz', rows: 3 }
   ];
   var memberTab = {
-    id: 'mitglieder', label: 'Mitglieder', coll: 'wgMitglieder', view: ['training.mitglieder.view'], edit: ['training.mitglieder.edit'], print: ['training.print'], addLabel: 'Neues Mitglied', search: ['name', 'kontakt'], fields: MFIELDS,
+    id: 'mitglieder', label: 'Mitglieder', coll: 'wgMitglieder', view: ['training.mitglieder.view'], edit: ['training.mitglieder.edit'], add: ['training.mitglieder.edit', 'training.mitglieder.anlegen'], del: ['training.mitglieder.edit', 'training.mitglieder.loeschen'], print: ['training.print'], addLabel: 'Neues Mitglied', search: ['name', 'kontakt'], fields: MFIELDS,
     hint: 'Wer trainiert in der Wettkampfgruppe? Am einfachsten über „Gruppenliste (PDF)“ aus WebClub einlesen.',
     newItem: function () { return {}; },
     summary: function (all) { return '<p class="wm-note"><b>' + all.length + '</b> ' + (all.length === 1 ? 'Mitglied' : 'Mitglieder') + '</p><p class="m-actions"><button type="button" class="wm-btn" data-ma="wgglist">📄 Gruppenliste (PDF)</button></p>'; },
@@ -99,7 +99,7 @@ templateEngineOverride: false
     var list = all.filter(function (x) { return ym(x.date) === ymv; });
     var can = canTage();
     var out = '<section class="wm-card"><div class="wm-bar"><h3>Training</h3><span class="m-actions">' +
-      '<button type="button" class="wm-btn" data-ma="wgprintm">🖨️ Anwesenheitsliste</button>' + (can ? '<button type="button" class="wm-btn" data-ma="wgimport">📄 Import (PDF)</button><button type="button" class="wm-amber" data-ma="wgtnew">+ Trainingstag</button>' : '') + '</span></div>' +
+      '<button type="button" class="wm-btn" data-ma="wgprintm">🖨️ Anwesenheitsliste</button>' + (M.anyCan(['training.tage.edit', 'training.tage.anlegen']) ? '<button type="button" class="wm-btn" data-ma="wgimport">📄 Import (PDF)</button><button type="button" class="wm-amber" data-ma="wgtnew">+ Trainingstag</button>' : '') + '</span></div>' +
       '<div class="m-chips" style="align-items:center"><button type="button" class="m-chip" data-ma="wgmon" data-d="-1">‹</button><b>' + esc(M.monthLabel(ymv)) + '</b><button type="button" class="m-chip" data-ma="wgmon" data-d="1">›</button><span class="wm-sub">' + list.length + ' Termine</span></div>';
     if (!list.length) out += '<p class="wm-note">In diesem Monat gibt es keinen Trainingstag.</p>';
     list.forEach(function (t) {
@@ -110,7 +110,7 @@ templateEngineOverride: false
         out += '<div class="m-body">' + (t.inhalt ? '<div><b>Einheit:</b><pre>' + esc(t.inhalt) + '</pre></div>' : '') + (t.beob ? '<div><b>Beobachtungen:</b><pre>' + esc(t.beob) + '</pre></div>' : '') + (t.notiz ? '<div><b>Notiz:</b><pre>' + esc(t.notiz) + '</pre></div>' : '') +
           '<div class="m-sec">Anwesenheit' + (can ? ' – zum Ändern antippen' : '') + '</div><div class="wg-grid">' + (ro.length ? ro.map(function (m) { var cd = (t.anw || {})[m.id] || (t.date < M.today() || t.date === M.today() ? 'f' : ''); return '<button type="button" class="wg-p c-' + (cd || 'o') + '" data-ma="wgtap" data-m="' + esc(m.id) + '"' + (can ? '' : ' disabled') + '><i>' + CODE_TXT[cd] + '</i><span>' + esc(m.name) + '</span></button>'; }).join('') : '<p class="wm-note">Noch keine Mitglieder angelegt.</p>') + '</div>' +
           '<p class="wm-sub">✓ anwesend · E entschuldigt · ✗ fehlt · · offen</p>' +
-          '<div class="m-btns">' + (can ? '<button type="button" class="wm-btn" data-ma="wgall">Alle anwesend</button><button type="button" class="wm-btn" data-ma="wgtedit">✏️ Bearbeiten</button><button type="button" class="wm-btn m-danger" data-ma="wgtdel">🗑️ Löschen</button>' : '') + '<button type="button" class="wm-btn" data-ma="wgprintd">🖨️ Liste</button></div></div>';
+          '<div class="m-btns">' + (can ? '<button type="button" class="wm-btn" data-ma="wgall">Alle anwesend</button><button type="button" class="wm-btn" data-ma="wgtedit">✏️ Bearbeiten</button>' : '') + (M.anyCan(['training.tage.edit', 'training.tage.loeschen']) ? '<button type="button" class="wm-btn m-danger" data-ma="wgtdel">🗑️ Löschen</button>' : '') + '<button type="button" class="wm-btn" data-ma="wgprintd">🖨️ Liste</button></div></div>';
       }
       out += '</article>';
     });

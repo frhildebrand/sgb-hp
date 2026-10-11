@@ -19,7 +19,7 @@ templateEngineOverride: false
   /* ================= Abzeichen ================= */
   function abzList() { var d = M.find('abzListe', 'main'); var l = d && Array.isArray(d.list) && d.list.length ? d.list : DEF_ABZ; return l; }
   var abzTab = {
-    id: 'abz', label: 'Abzeichen', coll: 'abzeichen', view: ['jugend.abzeichen.view'], edit: ['jugend.abzeichen.edit'], addLabel: 'Abzeichen eintragen', search: ['name', 'abz', 'notiz'], sortBy: { k: 'date', dir: -1 },
+    id: 'abz', label: 'Abzeichen', coll: 'abzeichen', view: ['jugend.abzeichen.view'], edit: ['jugend.abzeichen.edit'], add: ['jugend.abzeichen.edit', 'jugend.abzeichen.anlegen'], del: ['jugend.abzeichen.edit', 'jugend.abzeichen.loeschen'], addLabel: 'Abzeichen eintragen', search: ['name', 'abz', 'notiz'], sortBy: { k: 'date', dir: -1 },
     hint: 'Wer hat wann welches Abzeichen abgelegt?',
     get fields() { return [{ k: 'name', t: 'text', label: 'Name', req: true, list: 'mPeople' }, { k: 'abz', t: 'sel', label: 'Abzeichen', opts: abzList() }, { k: 'date', t: 'date', label: 'Abgelegt am' }, { k: 'notiz', t: 'area', label: 'Notiz', rows: 2 }]; },
     newItem: function () { return { date: M.today(), abz: abzList()[0] }; },
@@ -183,10 +183,12 @@ templateEngineOverride: false
     var s = start; var ein = 0, aus = 0;
     var rows = buchungen().filter(function (b) { return b.status === 'bestaetigt' && String(b.datum).slice(0, 4) === y; }).map(function (b) {
       s += signed(b); if (b.typ === 'aus') aus += M.num(b.betrag); else ein += M.num(b.betrag);
-      return '<tr><td class="nowrap">' + esc(M.fmtDate(b.datum, true)) + '</td><td>' + esc(b.beleg || '') + '</td><td>' + esc(b.text || '') + '</td><td>' + esc(b.kat || '') + '</td><td style="text-align:right">' + (b.typ === 'aus' ? '' : M.euro(b.betrag)) + '</td><td style="text-align:right">' + (b.typ === 'aus' ? M.euro(b.betrag) : '') + '</td><td style="text-align:right">' + M.euro(s) + '</td></tr>';
+      return '<tr><td class="nowrap">' + esc(String(b.datum || '').split('-').reverse().join('.')) + '</td><td>' + esc(b.beleg || '') + '</td><td>' + esc(b.text || '') + '</td><td>' + esc(b.kat || '') + '</td><td class="r">' + (b.typ === 'aus' ? '' : M.euro(b.betrag)) + '</td><td class="r">' + (b.typ === 'aus' ? M.euro(b.betrag) : '') + '</td><td class="r">' + M.euro(s) + '</td></tr>';
     }).join('');
-    M.print('Kassenbuch Jugendkasse ' + y, '<h1>Kassenbuch Jugendkasse ' + esc(y) + '</h1><div class="sub">SG Barnstorf · nur bestätigte Buchungen · gedruckt am ' + M.fmtDate(M.today()) + '</div><table><tr><th>Datum</th><th>Beleg</th><th>Text</th><th>Kategorie</th><th>Einnahme</th><th>Ausgabe</th><th>Bestand</th></tr><tr><td colspan="6"><i>Anfangsbestand ' + esc(y) + '</i></td><td style="text-align:right">' + M.euro(start) + '</td></tr>' + rows + '<tr><td colspan="4"><b>Summe</b></td><td style="text-align:right"><b>' + M.euro(ein) + '</b></td><td style="text-align:right"><b>' + M.euro(aus) + '</b></td><td style="text-align:right"><b>' + M.euro(s) + '</b></td></tr></table>' +
-      '<p style="margin-top:50px">Kassenführung: ________________________ &nbsp;&nbsp;&nbsp; Kassenprüfung: ________________________</p>');
+    var df = function (i) { return /^\d{4}-\d{2}-\d{2}$/.test(String(i)) ? String(i).split('-').reverse().join('.') : String(i || ''); };
+    rows = rows.replace(/<td class="nowrap">[^<]*<\/td>/g, function (m) { return m; });
+    M.print('Kassenbuch Jugendkasse ' + y, '<table class="kb"><thead><tr><th style="width:11%">Datum</th><th style="width:8%">Beleg</th><th>Text</th><th style="width:14%">Kategorie</th><th class="r">Einnahme</th><th class="r">Ausgabe</th><th class="r">Bestand</th></tr></thead><tbody><tr><td colspan="6"><i>Anfangsbestand ' + esc(y) + '</i></td><td class="r">' + M.euro(start) + '</td></tr>' + rows + '<tr class="sum"><td colspan="4"><b>Summe</b></td><td class="r"><b>' + M.euro(ein) + '</b></td><td class="r"><b>' + M.euro(aus) + '</b></td><td class="r"><b>' + M.euro(s) + '</b></td></tr></tbody></table>' +
+      '<div class="sigrow"><div>Kassenführung: ________________________</div><div>Kassenprüfung: ________________________</div></div>', { t2: 'Kassenbuch Jugendkasse ' + y, t3: 'nur bestätigte Buchungen · Stand ' + df(M.today()), css: '@page{size:A4;margin:12mm}.kb thead{display:table-header-group}.kb tr{page-break-inside:avoid}.kb th.r,.kb td.r{text-align:right;white-space:nowrap;width:13%}.kb td{font-size:11px}.kb tr.sum td{border-top:2px solid #333}.sigrow{display:flex;justify-content:space-between;gap:30px;margin-top:46px;page-break-inside:avoid}' });
   }
 
   M.register('jugend', {

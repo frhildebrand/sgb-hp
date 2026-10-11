@@ -178,10 +178,10 @@ templateEngineOverride: false
     var all = items(t.coll);
     if (t.sortBy) { var k = t.sortBy.k, dir = t.sortBy.dir || 1; all.sort(function (a, b) { return String(a[k] || '') < String(b[k] || '') ? -dir : String(a[k] || '') > String(b[k] || '') ? dir : 0; }); }
     var list = all.filter(function (it) { return matchQ(it, t) && (!t.filter || t.filter(it, S.filter)); });
-    var canEdit = anyCan(t.edit); var canPrint = anyCan(t.print);
+    var canEdit = anyCan(t.edit); var canAdd = anyCan(t.add || t.edit); var canDel = anyCan(t.del || t.edit); var canPrint = anyCan(t.print);
     var out = '<section class="wm-card"><div class="wm-bar"><h3>' + esc(t.label) + ' <span class="wm-sub">(' + list.length + (list.length !== all.length ? ' von ' + all.length : '') + ')</span></h3><span class="m-actions">' +
       (canPrint && t.printAll ? '<button type="button" class="wm-btn" data-ma="printall">🖨️ Drucken</button>' : '') +
-      (canEdit ? '<button type="button" class="wm-amber" data-ma="add">+ ' + esc(t.addLabel || 'Neu') + '</button>' : '') + '</span></div>' +
+      (canAdd ? '<button type="button" class="wm-amber" data-ma="add">+ ' + esc(t.addLabel || 'Neu') + '</button>' : '') + '</span></div>' +
       (t.hint ? '<p class="wm-note">' + t.hint + '</p>' : '') +
       '<input type="search" class="m-search" data-mq="1" placeholder="🔎 Suchen …" value="' + esc(S.q) + '" autocomplete="off">' +
       (t.summary ? t.summary(all, api) : '');
@@ -193,7 +193,7 @@ templateEngineOverride: false
           (t.manual && canEdit ? '<button type="button" class="wm-btn" data-ma="up"' + (i === 0 || S.q ? ' disabled' : '') + '>⬆️</button><button type="button" class="wm-btn" data-ma="down"' + (i === list.length - 1 || S.q ? ' disabled' : '') + '>⬇️</button>' : '') +
           (canPrint && t.printItem ? '<button type="button" class="wm-btn" data-ma="print">🖨️ Drucken</button>' : '') +
           (c.buttons || '') +
-          (canEdit ? '<button type="button" class="wm-btn" data-ma="edit">✏️ Bearbeiten</button><button type="button" class="wm-btn m-danger" data-ma="del">🗑️ Löschen</button>' : '') + '</div></div>' : '') + '</article>';
+          (canEdit ? '<button type="button" class="wm-btn" data-ma="edit">✏️ Bearbeiten</button>' : '') + (canDel ? '<button type="button" class="wm-btn m-danger" data-ma="del">🗑️ Löschen</button>' : '') + '</div></div>' : '') + '</article>';
     });
     return out + '</section>';
   }

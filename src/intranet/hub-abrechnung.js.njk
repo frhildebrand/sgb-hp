@@ -96,13 +96,13 @@ templateEngineOverride: false
     return out;
   }
   function editor(a, readOnly) {
-    var ro = readOnly || a.status === 'bezahlt' || (a.status === 'eingereicht' && !M.can('abrechnung.alle'));
+    var ro = readOnly || a.status === 'bezahlt' || (a.status === 'eingereicht' && !M.anyCan(['abrechnung.alle', 'abrechnung.bezahlen']));
     var dis = ro ? ' disabled' : ''; var c = calc(a);
     var out = '<section class="wm-card"><div class="wm-bar"><button type="button" class="wm-btn" data-ma="abback">← Zurück</button><span class="m-actions"><button type="button" class="wm-btn" data-ma="abprint">🖨️ Drucken</button>' +
       (!readOnly && a.status === 'entwurf' ? '<button type="button" class="wm-amber" data-ma="abstat" data-s="eingereicht">Einreichen</button><button type="button" class="wm-btn m-danger" data-ma="abdel">🗑️</button>' : '') +
       (!readOnly && a.status === 'eingereicht' ? '<button type="button" class="wm-btn" data-ma="abstat" data-s="entwurf">Zurück zum Entwurf</button>' : '') +
-      (readOnly && M.can('abrechnung.alle') && a.status === 'eingereicht' ? '<button type="button" class="wm-amber" data-ma="abstat" data-s="bezahlt">Als bezahlt markieren</button>' : '') +
-      (readOnly && M.can('abrechnung.alle') && a.status === 'bezahlt' ? '<button type="button" class="wm-btn" data-ma="abstat" data-s="eingereicht">Wieder öffnen</button>' : '') + '</span></div>' +
+      (readOnly && M.anyCan(['abrechnung.alle', 'abrechnung.bezahlen']) && a.status === 'eingereicht' ? '<button type="button" class="wm-amber" data-ma="abstat" data-s="bezahlt">Als bezahlt markieren</button>' : '') +
+      (readOnly && M.anyCan(['abrechnung.alle', 'abrechnung.bezahlen']) && a.status === 'bezahlt' ? '<button type="button" class="wm-btn" data-ma="abstat" data-s="eingereicht">Wieder öffnen</button>' : '') + '</span></div>' +
       '<h3 class="m-h2" style="margin:6px 0">' + esc(a.title || 'Abrechnung') + ' ' + statusBadge(a.status) + '</h3>' + (readOnly ? '<div class="wm-sub">von ' + esc(a.owner || '') + '</div>' : '') +
       (ro && !readOnly ? '<p class="wm-note">Eingereichte Abrechnungen sind gesperrt. Mit „Zurück zum Entwurf“ kannst du sie wieder ändern.</p>' : '') + '</section>';
     var chips = ro ? '' : '<div class="m-chips" style="margin:2px 0 8px">' + PERIODS.map(function (p) { return '<button type="button" class="m-chip" data-ma="abperiod" data-v="' + p + '">' + p + '</button>'; }).join('') + '</div>';
@@ -132,18 +132,22 @@ templateEngineOverride: false
   function curAb() { var s = sub(); return s.ae ? M.find('abrechnungen', s.ae) : null; }
   function printAb(a) {
     var c = calc(a); var sig = a.sig || (lower(a.owner) === lower(me()) ? profile().sig : '');
-    var rows = (a.zeilen || []).slice().sort(function (x, y) { return (x.d || '') < (y.d || '') ? -1 : 1; }).map(function (z) { return '<tr><td class="nowrap">' + esc(dfull(z.d)) + '</td><td>' + esc(String(z.zeit || '').replace(/[–-].*$/, '')) + '</td><td style="text-align:right">' + fnum(stdOf(z)) + '</td><td>' + esc(z.gruppe || '') + '</td><td>' + esc(z.ort || '') + '</td></tr>'; }).join('');
+    var zl = (a.zeilen || []).slice().sort(function (x, y) { return (x.d || '') < (y.d || '') ? -1 : 1; });
+    var rows = zl.map(function (z) { return '<tr class="dr"><td class="nowrap">' + esc(dfull(z.d)) + '</td><td>' + esc(String(z.zeit || '').replace(/[–-].*$/, '')) + '</td><td style="text-align:right">' + fnum(stdOf(z)) + '</td><td>' + esc(z.gruppe || '') + '</td><td>' + esc(z.ort || '') + '</td></tr>'; }).join('');
+    for (var pad = zl.length; pad < 15; pad++) rows += '<tr class="dr"><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>';
     var kmS = a.kmSatz === undefined || a.kmSatz === '' ? rates().km : num(a.kmSatz);
-    var desc = function (t) { return t ? '<tr class="desc"><td colspan="3">' + esc(t) + '</td></tr>' : ''; };
+    var dots = '. . . . . . . . . . .';
+    var line = function (lab, mid, val, txt) { return '<tr><td class="lb">' + lab + '</td><td>' + (mid || dots) + (txt ? ' <span class="tx">' + esc(txt) + '</span>' : '') + '</td><td class="r">' + (val || dots) + '</td></tr>'; };
     var inh = a.kontoinhaber && lower(a.kontoinhaber) !== lower(a.name || a.owner) ? ' (Kontoinhaber: ' + esc(a.kontoinhaber) + ')' : '';
-    M.print('Trainerabrechnung ' + (a.title || ''), '<p class="ab-meta"><b>Name:</b> ' + esc(a.name || a.owner || '') + (a.edv ? ' &nbsp;&nbsp; <b>ÜL-EDV-Nr.:</b> ' + esc(a.edv) : '') + '</p><p>An folgenden Tagen wurden von mir folgende Übungseinheiten geleistet:</p>' +
-      '<table><tr><th style="width:17%">Datum</th><th style="width:12%">Zeit</th><th style="width:12%">Anz. Std.</th><th style="width:22%">Gruppe</th><th>Ort</th></tr>' + rows + '</table>' +
-      '<table class="sums"><tr><td style="width:46%"><b>Training gesamt:</b> ' + fnum(c.std) + ' Std.</td><td>á ' + fnum(num(a.satz)) + ' €</td><td class="r"><b>' + euro(c.hours) + '</b></td></tr>' +
-      (num(a.km) ? '<tr><td><b>PKW</b></td><td>' + fnum(num(a.km)) + ' km á ' + euro(kmS) + '</td><td class="r">' + euro(c.km) + '</td></tr>' + desc(a.pkwText) : '') +
-      (num(a.sonst) ? '<tr><td><b>Sonstiges</b></td><td></td><td class="r">' + euro(c.extra) + '</td></tr>' + desc(a.sonstText) : '') +
-      '<tr><td colspan="2" class="big"><b>Gesamtbetrag:</b></td><td class="r big"><b>' + euro(c.total) + '</b></td></tr></table>' +
-      '<p style="margin-top:22px">Ich bitte um Überweisung auf mein Konto.</p><p>IBAN: <b>' + esc(a.iban || '______________________') + '</b> ; BIC: <b>' + esc(a.bic || '____________') + '</b>' + inh + '</p>' +
-      '<div class="sigrow"><div>Barnstorf, ' + (sig ? esc(dfull(M.today())) : '. . . . . . . . . . .') + '<br><span class="sub">(Datum)</span></div><div class="sigbox">' + sigImg(sig) + '<div class="line"></div><span class="sub">(Unterschrift)</span></div></div>', { t2: 'Trainerabrechnung', t3: a.title || '', css: '.ab-meta{font-size:13px;margin:0 0 10px}.sums td{font-size:12.5px}.sums td.r{text-align:right;white-space:nowrap}.sums tr.desc td{font-size:11px;color:#444;border-top:0;padding-top:0}.sigrow{display:flex;justify-content:space-between;align-items:flex-end;margin-top:34px;gap:30px}.sigbox{min-width:260px;text-align:center}.sigbox .line{border-top:1px solid #333;margin-top:2px}.sigbox img.sig{margin:0 auto;height:58px}' });
+    M.print('Trainerabrechnung ' + (a.title || ''), '<p class="ab-meta"><b>Name:</b> ' + esc(a.name || a.owner || '') + (a.edv ? ' &nbsp;&nbsp; <b>ÜL-EDV-Nr.:</b> ' + esc(a.edv) : '') + '</p><p class="ab-intro">An folgenden Tagen wurden von mir folgende Übungseinheiten geleistet:</p>' +
+      '<table class="ab-t"><thead><tr><th style="width:17%">Datum</th><th style="width:12%">Zeit</th><th style="width:12%">Anz. Std.</th><th style="width:22%">Gruppe</th><th>Ort</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<table class="sums"><tr class="top"><td class="lb"><b>Training gesamt:</b> ' + fnum(c.std) + ' Std.</td><td>á ' + fnum(num(a.satz)) + ' €</td><td class="r"><b>' + euro(c.hours) + '</b></td></tr>' +
+      line('PKW', num(a.km) ? fnum(num(a.km)) + ' km á ' + euro(kmS) : 'km á ' + euro(kmS) + ' . . . . . .', num(a.km) ? euro(c.km) : '', a.pkwText) +
+      line('Telefon', '', '', '') + line('Porto', '', '', '') + line('Kopien', '', '', '') +
+      line('Sonstiges', '', num(a.sonst) ? euro(c.extra) : '', a.sonstText) +
+      '<tr class="tot"><td colspan="2" class="big"><b>Gesamtbetrag:</b></td><td class="r big"><b>' + euro(c.total) + '</b></td></tr></table>' +
+      '<p style="margin-top:12px">Ich bitte um Überweisung auf mein Konto.</p><p>IBAN: <b>' + esc(a.iban || '______________________') + '</b> ; BIC: <b>' + esc(a.bic || '____________') + '</b>' + inh + '</p>' +
+      '<div class="sigrow"><div>Barnstorf, ' + (sig ? esc(dfull(M.today())) : '. . . . . . . . . . .') + '<br><span class="sub">(Datum)</span></div><div class="sigbox">' + sigImg(sig) + '<div class="line"></div><span class="sub">(Unterschrift)</span></div></div>', { t2: 'Trainerabrechnung', t3: a.title || '', css: '@page{size:A4;margin:12mm}.kopf{margin-bottom:12px}.ab-meta{font-size:13px;margin:0 0 4px}.ab-intro{margin:0 0 6px}.ab-t thead{display:table-header-group}.ab-t tr{page-break-inside:avoid}tr.dr td{height:7mm;padding:0 6px;vertical-align:middle}.sums{margin-top:8px}.sums td{font-size:12.5px;border:0;padding:3px 6px}.sums tr.top td{border:1px solid #888;border-bottom:0}.sums tr.top td.lb,.sums td.lb{width:34%}.sums td.r{text-align:right;white-space:nowrap;width:22%}.sums .tx{font-size:11px;color:#333}.sums tr.tot td{border-top:1px solid #333;padding-top:6px}.sigrow{display:flex;justify-content:space-between;align-items:flex-end;margin-top:22px;gap:30px;page-break-inside:avoid}.sigbox{min-width:260px;text-align:center}.sigbox .line{border-top:1px solid #333;margin-top:2px}.sigbox img.sig{margin:0 auto;height:52px}' });
   }
   function alleTab() {
     var s = sub();
@@ -231,7 +235,7 @@ templateEngineOverride: false
     var a = curAb(); if (!a || !PD) return; var ortEl = document.getElementById('abpdort'); var ort = ortEl ? ortEl.value.trim() : '';
     var sel = PD.rows.filter(function (x) { return x.on; }); if (!sel.length) { M.toast('Kein Termin ausgewählt.'); return; }
     var zeilen = sel.map(function (x) { return Object.assign({}, x.z, { ort: ort || x.z.ort }); });
-    var ops = []; var fcount = 0, skipped = 0; var admin = M.can('fahrten.alle'); var haveF = {};
+    var ops = []; var fcount = 0, skipped = 0; var admin = M.anyCan(['fahrten.alle', 'fahrten.abrechnen']); var haveF = {};
     M.items('fahrten').forEach(function (f) { haveF[lower(f.owner) + '|' + f.datum] = 1; });
     sel.forEach(function (x) {
       x.drv.forEach(function (n) {
@@ -252,8 +256,8 @@ templateEngineOverride: false
     tabs: [
       { id: 'meine', label: 'Stunden', view: ['abrechnung.eigene'], render: meineTab },
       { id: 'fmeine', label: 'Fahrten', view: ['fahrten.eigene'], render: function () { return fMeine(); } },
-      { id: 'alle', label: 'Alle Stunden', view: ['abrechnung.alle'], render: alleTab },
-      { id: 'falle', label: 'Alle Fahrten', view: ['fahrten.alle'], render: function () { return fAlle(); } },
+      { id: 'alle', label: 'Alle Stunden', view: ['abrechnung.alle', 'abrechnung.ansehen', 'abrechnung.bezahlen'], render: alleTab },
+      { id: 'falle', label: 'Alle Fahrten', view: ['fahrten.alle', 'fahrten.ansehen', 'fahrten.abrechnen'], render: function () { return fAlle(); } },
       { id: 'saetze', label: 'Sätze', view: ['abrechnung.saetze'], render: saetzeTab }
     ],
     onChange: function (ev) {
@@ -342,13 +346,14 @@ templateEngineOverride: false
   function fAlle() {
     var all = M.items('fahrten'); var by = {};
     all.forEach(function (f) { (by[f.owner] = by[f.owner] || []).push(f); });
-    var out = '<section class="wm-card"><div class="wm-bar"><h3>Alle Fahrten</h3><span class="m-actions"><button type="button" class="wm-amber" data-ma="fnewall">+ Fahrt eintragen</button></span></div>';
+    var canA = M.anyCan(['fahrten.alle', 'fahrten.abrechnen']);
+    var out = '<section class="wm-card"><div class="wm-bar"><h3>Alle Fahrten</h3><span class="m-actions">' + (canA ? '<button type="button" class="wm-amber" data-ma="fnewall">+ Fahrt eintragen</button>' : '') + '</span></div>';
     var names = Object.keys(by).sort();
     if (!names.length) out += '<p class="wm-note">Noch keine Fahrten.</p>';
     names.forEach(function (n) {
       var l = by[n]; var op = l.filter(function (f) { return (f.status || 'offen') === 'offen'; }); var sum = 0; op.forEach(function (f) { sum += num(f.betrag); });
       out += '<article class="m-card" data-own="' + esc(n) + '"><div class="m-head" data-ma="ftoggle"><div class="m-main"><div class="m-title">' + esc(n) + '</div><div class="wm-sub">' + op.length + ' offen (' + euro(sum) + ') · ' + (l.length - op.length) + ' abgerechnet</div></div><span class="m-chev">' + (M.S.open['f' + n] ? '▾' : '▸') + '</span></div>' +
-        (M.S.open['f' + n] ? '<div class="m-body">' + l.sort(function (a, b) { return a.datum < b.datum ? 1 : -1; }).map(function (f) { return '<div class="m-chk" data-id="' + esc(f.id) + '"><span style="flex:1">' + fs(f.datum) + (f.notiz ? ' · ' + esc(f.notiz) : '') + '</span><b>' + euro(f.betrag) + '</b> ' + statusBadge(f.status || 'offen') + ((f.status || 'offen') === 'offen' ? ' <button type="button" class="wm-btn m-danger" data-ma="fdel" style="padding:2px 8px">🗑️</button>' : '') + '</div>'; }).join('') + '<div class="m-btns"><button type="button" class="wm-btn" data-ma="fprintall"' + (op.length ? '' : ' disabled') + '>🖨️ Formular drucken</button><button type="button" class="wm-amber" data-ma="fpaid"' + (op.length ? '' : ' disabled') + '>Als abgerechnet markieren</button></div></div>' : '') + '</article>';
+        (M.S.open['f' + n] ? '<div class="m-body">' + l.sort(function (a, b) { return a.datum < b.datum ? 1 : -1; }).map(function (f) { return '<div class="m-chk" data-id="' + esc(f.id) + '"><span style="flex:1">' + fs(f.datum) + (f.notiz ? ' · ' + esc(f.notiz) : '') + '</span><b>' + euro(f.betrag) + '</b> ' + statusBadge(f.status || 'offen') + ((f.status || 'offen') === 'offen' && canA ? ' <button type="button" class="wm-btn m-danger" data-ma="fdel" style="padding:2px 8px">🗑️</button>' : '') + '</div>'; }).join('') + '<div class="m-btns"><button type="button" class="wm-btn" data-ma="fprintall"' + (op.length ? '' : ' disabled') + '>🖨️ Formular drucken</button>' + (canA ? '<button type="button" class="wm-amber" data-ma="fpaid"' + (op.length ? '' : ' disabled') + '>Als abgerechnet markieren</button>' : '') + '</div></div>' : '') + '</article>';
     });
     return out + '</section>';
   }

@@ -96,7 +96,7 @@ templateEngineOverride: false
     var all = sortedAll(); var t = M.today(); var lv = M.S.sub.lv || 'karten';
     var up = all.filter(function (w) { return (w.date || '9999') >= t; });
     var past = all.filter(function (w) { return (w.date || '9999') < t; }).reverse();
-    var canImp = M.can('wettkaempfe.import');
+    var canImp = M.anyCan(['wettkaempfe.import', 'wettkaempfe.anlegen']);
     var out = '<section class="wm-card"><div class="wm-bar"><h3>Wettkämpfe</h3><span class="m-actions">' + viewSwitch(lv) + (canImp ? '<button type="button" class="wm-btn" data-ma="wkneu">➕ Termin</button><button type="button" class="wm-amber" data-ma="wkaus">📄 Neu aus Ausschreibung</button>' : '') + '</span></div>';
     if (lv === 'tabelle') {
       var rows = M.S.sub.allRows ? all : up.concat(past.filter(function (w) { return M.daysTo(w.date) >= -45; }).reverse());
@@ -127,7 +127,7 @@ templateEngineOverride: false
   /* ---------- Tabelle wie im Sheet ---------- */
   function tableHtml(rows) {
     if (!rows.length) return '<p class="wm-note">Keine Wettkämpfe.</p>';
-    var can = canCheck();
+    var can = canCheck(); var canT = canCheck() || M.can('wettkaempfe.teilnahme'); var canK = canCheck() || M.can('wettkaempfe.krzahl');
     var h1 = '<tr class="ph"><th></th>' + PHASES.map(function (p) { return '<th colspan="' + p.items.length + '">' + esc(p.label) + '</th>'; }).join('') + '<th></th></tr>';
     var h2 = '<tr><th>Wettkampf</th>' + PHASES.map(function (p) { return p.items.map(function (i) { return '<th title="' + esc(i[1]) + '">' + esc(shortLabel(i)) + '</th>'; }).join(''); }).join('') + '<th>Fertig</th></tr>';
     var body = rows.map(function (w) {
@@ -136,8 +136,8 @@ templateEngineOverride: false
           var k = i[0];
           if (k === '@intMs') return '<td><button type="button" class="m-chip wk-tc" data-ma="wkcell" data-w="' + esc(w.id) + '" data-k="intMs"' + (can ? '' : ' disabled') + '>' + (w.intMs ? esc(fs(w.intMs).replace(/^\S+\s/, '')) : '–') + '</button></td>';
           if (k === '@meldegeld') return '<td><button type="button" class="m-chip wk-tc" data-ma="wkcell" data-w="' + esc(w.id) + '" data-k="meldegeld"' + (can ? '' : ' disabled') + '>' + (w.meldegeldStatus === 'bezahlt' ? '✓ bezahlt' : w.meldegeldStatus === 'mail' ? '✉ Mail' : '–') + '</button></td>';
-          if (k === '@teilnahme') return '<td><button type="button" class="m-chip wk-tc" data-ma="wkcell" data-w="' + esc(w.id) + '" data-k="teilnahme"' + (can ? '' : ' disabled') + '>' + (w.teilnahme === 'pos' ? '✓ ja' : w.teilnahme === 'neg' ? '✗ nein' : '–') + '</button></td>';
-          if (k === '@kr1' || k === '@kr2') { var f = k.slice(1); return '<td><button type="button" class="m-chip wk-tc" data-ma="wkcell" data-w="' + esc(w.id) + '" data-k="' + f + '"' + (can ? '' : ' disabled') + '>' + (w[f] === undefined || w[f] === '' || w[f] === null ? '–' : esc(w[f])) + '</button></td>'; }
+          if (k === '@teilnahme') return '<td><button type="button" class="m-chip wk-tc" data-ma="wkcell" data-w="' + esc(w.id) + '" data-k="teilnahme"' + (canT ? '' : ' disabled') + '>' + (w.teilnahme === 'pos' ? '✓ ja' : w.teilnahme === 'neg' ? '✗ nein' : '–') + '</button></td>';
+          if (k === '@kr1' || k === '@kr2') { var f = k.slice(1); return '<td><button type="button" class="m-chip wk-tc" data-ma="wkcell" data-w="' + esc(w.id) + '" data-k="' + f + '"' + (canK ? '' : ' disabled') + '>' + (w[f] === undefined || w[f] === '' || w[f] === null ? '–' : esc(w[f])) + '</button></td>'; }
           var on = isOn(w, k);
           return '<td><button type="button" class="m-cell' + (on ? ' on' : '') + '" data-ma="wkcell" data-w="' + esc(w.id) + '" data-k="' + k + '"' + (can ? '' : ' disabled') + '>' + (on ? '✓' : '') + '</button></td>';
         }).join('');
@@ -167,10 +167,10 @@ templateEngineOverride: false
     var s = sub();
     if (s.v === 'ablauf' || s.v === 'zeiten') s.v = 'uebersicht';
     var views = [['check', 'Checkliste'], ['uebersicht', 'Starts'], ['gericht', 'Kampfgericht'], ['docs', 'Unterlagen']]; if (M.anyCan(['wettkaempfe.zeiten', 'wettkaempfe.vorort'])) views.splice(2, 0, ['vorort', 'Vor Ort']); if (Object.keys(wk.res || {}).length && M.anyCan(['wettkaempfe.artikel', 'wettkaempfe.import', 'wettkaempfe.zeiten'])) views.push(['artikel', 'Artikel']);
-    var canPrint = M.can('wettkaempfe.print'); var canImp = M.can('wettkaempfe.import');
+    var canPrint = M.can('wettkaempfe.print'); var canImp = M.anyCan(['wettkaempfe.import', 'wettkaempfe.anlegen']);
     var out = '<section class="wm-card"><div class="wm-bar"><button type="button" class="wm-btn" data-ma="wkback">← Alle Wettkämpfe</button><span class="m-actions">' +
       (canPrint ? '<button type="button" class="wm-btn" data-ma="wkprint">🖨️ Drucken</button>' : '') +
-      (canImp ? '<button type="button" class="wm-btn" data-ma="wkedit">✏️</button><button type="button" class="wm-btn m-danger" data-ma="wkdel">🗑️</button>' : '') + '</span></div>' +
+      (canImp ? '<button type="button" class="wm-btn" data-ma="wkedit">✏️</button>' : '') + (M.anyCan(['wettkaempfe.import', 'wettkaempfe.loeschen']) ? '<button type="button" class="wm-btn m-danger" data-ma="wkdel">🗑️</button>' : '') + '</span></div>' +
       '<h3 class="m-h2" style="margin:6px 0 2px">' + esc(wk.title) + '</h3><div class="wm-sub">' + [fd(wk.date), esc(wk.ort || ''), esc(wk.veranstalter ? 'Veranstalter: ' + wk.veranstalter : ''), esc(wk.becken || ''), esc(wk.temp ? 'Wasser ' + wk.temp : '')].filter(Boolean).join(' · ') + '</div>' +
       (wk.stand ? '<div class="wm-sub">Stand des Meldeergebnisses: ' + esc(wk.stand.replace(/^(\d{4})-(\d{2})-(\d{2})/, '$3.$2.$1')) + '</div>' : '') + '<div class="wk-prog" style="margin-top:8px">' + M.prog(done(wk), STEPS) + ' <span class="wm-sub">erledigt</span></div>' + warnHtml(wk) + '</section>';
     out += '<div class="wm-tabs">' + views.map(function (v) { return '<button type="button" class="wm-tab' + (s.v === v[0] ? ' on' : '') + '" data-ma="wkview" data-v="' + v[0] + '">' + v[1] + '</button>'; }).join('') + '</div>';
@@ -187,7 +187,7 @@ templateEngineOverride: false
   }
   function whoAt(c) { return c ? '<span class="wm-sub"> · ' + esc(c.by || '') + (c.at ? ', ' + fs(c.at) : '') + '</span>' : ''; }
   function viewCheck(wk) {
-    var can = canCheck();
+    var can = canCheck(); var canT = canCheck() || M.can('wettkaempfe.teilnahme'); var canK = canCheck() || M.can('wettkaempfe.krzahl');
     var out = '';
     if (wk.meldeschluss || wk.meldegeld || wk.meldeanschrift) {
       out += '<section class="wm-card"><div class="wm-sub" style="font-weight:800;text-transform:uppercase">Aus der Ausschreibung</div>' +
@@ -202,13 +202,13 @@ templateEngineOverride: false
         }
         if (k === '@meldegeld') { out += '<div class="m-chk" style="flex-wrap:wrap"><span style="flex:1;min-width:6em">Meldegeld' + (wk.meldegeld ? '<div class="wm-sub">' + esc(wk.meldegeld) + '</div>' : '') + '</span>' + M.seg([['', 'Offen'], ['mail', 'Mail versendet'], ['bezahlt', 'Bezahlt']], wk.meldegeldStatus || '', can || M.can('wettkaempfe.meldegeld') ? 'wkgeld' : 'wknop') + '</div>'; return; }
         if (k === '@teilnahme') {
-          out += '<div class="m-chk"><span style="flex:1">Teilnahme</span>' + M.seg([['', 'Offen'], ['pos', 'Positiv'], ['neg', 'Negativ']], wk.teilnahme || '', can ? 'wkteil' : 'wknop') + '</div>'; return;
+          out += '<div class="m-chk"><span style="flex:1">Teilnahme</span>' + M.seg([['', 'Offen'], ['pos', 'Positiv'], ['neg', 'Negativ']], wk.teilnahme || '', canT ? 'wkteil' : 'wknop') + '</div>'; return;
         }
         if (k === '@kr1' || k === '@kr2') {
           var f = k.slice(1); var ab = f === 'kr1' ? 1 : 2;
           if (ab === 2 && abList(wk).length < 2 && (wk[f] === undefined || wk[f] === '')) return;
           var sg = krSuggest(wk, ab); var gm = ((wk.meld && wk.meld.kari) || []).filter(function (x) { return (x.ab || []).indexOf(ab) >= 0; }).map(function (x) { return x.name; });
-          out += '<div class="m-chk"><span style="flex:1">' + esc(i[1]) + (gm.length ? '<div class="wm-sub">Gemeldet: ' + esc(gm.join(', ')) + '</div>' : '') + (sg ? '<div class="wm-sub">Vorschlag ' + sg.n + ' · ' + esc(sg.src) + '</div>' : '') + '</span><input type="number" inputmode="numeric" min="0" class="m-time" style="width:5em" data-wkkr="' + f + '" value="' + esc(wk[f] === undefined || wk[f] === null ? '' : wk[f]) + '" placeholder="' + (sg ? sg.n : '') + '"' + (can ? '' : ' disabled') + '>' + (sg && can && (wk[f] === undefined || wk[f] === '') ? '<button type="button" class="wm-btn" data-ma="wkkrtake" data-k="' + f + '" data-n="' + sg.n + '">übernehmen</button>' : '') + '</div>'; return;
+          out += '<div class="m-chk"><span style="flex:1">' + esc(i[1]) + (gm.length ? '<div class="wm-sub">Gemeldet: ' + esc(gm.join(', ')) + '</div>' : '') + (sg ? '<div class="wm-sub">Vorschlag ' + sg.n + ' · ' + esc(sg.src) + '</div>' : '') + '</span><input type="number" inputmode="numeric" min="0" class="m-time" style="width:5em" data-wkkr="' + f + '" value="' + esc(wk[f] === undefined || wk[f] === null ? '' : wk[f]) + '" placeholder="' + (sg ? sg.n : '') + '"' + (canK ? '' : ' disabled') + '>' + (sg && canK && (wk[f] === undefined || wk[f] === '') ? '<button type="button" class="wm-btn" data-ma="wkkrtake" data-k="' + f + '" data-n="' + sg.n + '">übernehmen</button>' : '') + '</div>'; return;
         }
         var c = wk.chk && wk.chk[k]; var on = !!c;
         out += '<div class="m-chk"><button type="button" class="m-box' + (on ? ' on' : '') + '" data-ma="wkchk" data-k="' + k + '"' + (can ? '' : ' disabled') + '>' + (on ? '✓' : '') + '</button><span style="flex:1' + (on ? ';opacity:.7' : '') + '">' + esc(i[1]) + whoAt(c) + '</span></div>';
@@ -248,10 +248,10 @@ templateEngineOverride: false
     ['prot', 'Ergebnisse', 'DSV7-Ergebnisdatei (am genauesten, mit Plätzen und Zwischenzeiten) oder Protokoll als PDF. Trägt die Zeiten deiner Schwimmer ein (bitte Vorschau prüfen).']
   ];
   function viewDocs(wk) {
-    var canImp = M.can('wettkaempfe.import') || M.can('wettkaempfe.zeiten');
+    var canImp = M.anyCan(['wettkaempfe.import', 'wettkaempfe.anlegen', 'wettkaempfe.zeiten']);
     var out = '<section class="wm-card"><div class="wm-bar"><h3>Unterlagen in dieser Reihenfolge</h3></div>';
     DOCS.forEach(function (d, n) {
-      var x = wk.docs && wk.docs[d[0]]; var ok = d[0] === 'prot' ? M.can('wettkaempfe.zeiten') : M.can('wettkaempfe.import');
+      var x = wk.docs && wk.docs[d[0]]; var ok = d[0] === 'prot' ? M.can('wettkaempfe.zeiten') : M.anyCan(['wettkaempfe.import', 'wettkaempfe.anlegen']);
       out += '<div class="wk-doc"><div class="wk-dn">' + (n + 1) + '</div><div style="flex:1;min-width:0"><b>' + d[1] + '</b> ' + (x ? '<span class="m-ok">✓ ' + esc(x.name || '') + '</span> <span class="wm-sub">' + fs(x.at) + '</span>' : '<span class="wm-sub">noch nicht hochgeladen</span>') + '<div class="wm-sub">' + esc(d[2]) + '</div>' +
         (d[0] === 'meld' && wk.meld ? '<div class="wm-sub">' + (wk.meld.n || 0) + ' Schwimmer · ' + (wk.meld.starts || []).length + ' Starts' + diffMeld(wk) + '</div>' : '') + '</div>' +
         (ok ? '<button type="button" class="wm-btn" data-ma="wkdoc" data-kind="' + d[0] + '">' + (x ? 'Neu hochladen' : 'Hochladen') + '</button>' : '') + '</div>';
@@ -361,7 +361,7 @@ templateEngineOverride: false
     var af = {}; if (imp.p.kr && imp.p.kr.length && !(tgt.art && tgt.art.kr)) af.kr = P.krText(imp.p.kr);
     if (imp.p.relays && imp.p.relays.length) { af.staffeln = imp.p.relays.map(function (r) { return { e: r.e, evn: r.evn, pl: r.pl, t: r.t, st: r.st }; }); if (!(tgt.art && tgt.art.staffel)) af.staffel = P.relayText(imp.p.relays); var w0 = ((tgt.art && tgt.art.w) || []).slice(); if (w0.indexOf('staffel') < 0) { w0.push('staffel'); af.w = w0; } }
     if (Object.keys(af).length) list.push({ op: 'patch', coll: 'wettkaempfe', id: tgt.id, merge: true, fields: { art: af } });
-    if (M.can('wettkaempfe.import')) list.push({ op: 'patch', coll: 'wettkaempfe', id: tgt.id, fields: { docs: docs } });
+    if (M.anyCan(['wettkaempfe.import', 'wettkaempfe.anlegen'])) list.push({ op: 'patch', coll: 'wettkaempfe', id: tgt.id, fields: { docs: docs } });
     M.closeDlg(); M.ops(list); M.toast(n + ' Zeiten eingetragen.');
   }
 
@@ -477,20 +477,24 @@ templateEngineOverride: false
   }
 
   /* ---------- Artikel-Entwurf ---------- */
+  function wkOpt(attr, val, on, text, mr) {
+    return '<label class="wk-opt' + (on ? ' on' : '') + '" style="margin:0 ' + (mr === undefined ? 8 : mr) + 'px 8px 0"><input type="checkbox" ' + attr + '="' + val + '"' + (on ? ' checked' : '') + '><span class="wk-box">' + (on ? '✓' : '') + '</span><span>' + text + '</span></label>';
+  }
+  var ART_CSS = '<style>.wk-opt{display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border:2px solid #cbd5e1;border-radius:10px;background:#fff;color:#334155;font-size:14px;cursor:pointer;line-height:1.25}.wk-opt input{position:absolute;opacity:0;width:0;height:0}.wk-opt .wk-box{width:20px;height:20px;border:2px solid #94a3b8;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:none;color:#fff}.wk-opt.on{border-color:#059669;background:#d1fae5;color:#064e3b;font-weight:600}.wk-opt.on .wk-box{background:#059669;border-color:#059669}</style>';
   function artFields(wk) {
     var A = wk.art || {}; var W = A.w || [];
     function inp(k, label, ph, area) { return '<label class="m-f wide"><span>' + label + '</span>' + (area ? '<textarea rows="3" data-wkart="' + k + '" placeholder="' + esc(ph || '') + '">' + esc(A[k] || '') + '</textarea>' : '<input type="text" data-wkart="' + k + '" value="' + esc(A[k] || '') + '" placeholder="' + esc(ph || '') + '" autocomplete="off">') + '</label>'; }
     var wl = [['einzel', 'Einzel (Jahrgänge/Altersklassen)'], ['offen', 'Offene Wertung'], ['staffel', 'Staffeln'], ['teamg', 'Mannschaft gesamt'], ['teamw', 'Mannschaft weiblich'], ['teamm', 'Mannschaft männlich']]; if (W.indexOf('team') >= 0 && W.indexOf('teamg') < 0) W = W.concat('teamg');
-    return '<div class="m-sec" style="margin-top:0">Was wurde gewertet und geehrt?</div><div class="m-btns" style="flex-wrap:wrap">' + wl.map(function (x) { return '<label class="m-f m-fchk" style="margin:0 14px 6px 0"><input type="checkbox" data-wkartw="' + x[0] + '"' + (W.indexOf(x[0]) >= 0 ? ' checked' : '') + '><span>' + x[1] + '</span></label>'; }).join('') + '</div>' +
-      '<div class="m-sec">Stimmung: Bausteine (antippen)</div><div class="m-btns" style="flex-wrap:wrap">' + P.STIMM.map(function (x) { return '<label class="m-f m-fchk" style="margin:0 14px 6px 0"><input type="checkbox" data-wkartb="' + x[0] + '"' + ((A.sb || []).indexOf(x[0]) >= 0 ? ' checked' : '') + '><span>' + esc(x[1]) + '</span></label>'; }).join('') + '</div>' +
-      '<div class="m-fgrid">' + inp('trainer', 'Trainer/Betreuer', 'z. B. Nele, Jan und Luna als Trainer') + inp('debuet', 'Erster Wettkampf für', 'z. B. Matilda und Nela') + inp('stimmung', 'Stimmung, Wetter, Halle (eigene Worte)', 'z. B. Die Stimmung in der Halle war toll, trotz der Hitze.', true) +
+    return '<div class="m-sec" style="margin-top:0">Was wurde gewertet und geehrt?</div><div class="m-btns" style="flex-wrap:wrap">' + wl.map(function (x) { return wkOpt('data-wkartw', x[0], W.indexOf(x[0]) >= 0, x[1]); }).join('') + '</div>' +
+      '<div class="m-sec">Stimmung: Bausteine (antippen)</div><div class="m-btns" style="flex-wrap:wrap">' + P.STIMM.map(function (x) { return wkOpt('data-wkartb', x[0], (A.sb || []).indexOf(x[0]) >= 0, esc(x[1])); }).join('') + '</div>' +
+      '<div class="m-fgrid">' + inp('trainer', 'Trainer/Betreuer (nur Namen)', 'z. B. Nele, Jan und Luna') + inp('debuet', 'Erster Wettkampf für', 'z. B. Matilda und Nela') + inp('stimmung', 'Stimmung, Wetter, Halle (eigene Worte)', 'z. B. Die Stimmung in der Halle war toll, trotz der Hitze.', true) +
       (W.indexOf('staffel') >= 0 ? inp('staffel', 'Staffelergebnisse (aus der DSV7-Datei, änderbar)', 'z. B. Die 4x50 m Lagen-Staffel wurde Dritte in 2:13,45.') : '') + (W.indexOf('teamg') >= 0 ? inp('team', 'Mannschaft gesamt: Platz', 'z. B. Platz 4 mit 21 Punkten') : '') + (W.indexOf('teamw') >= 0 ? inp('teamw', 'Mannschaft weiblich: Platz', 'z. B. Platz 3 mit 18 Punkten') : '') + (W.indexOf('teamm') >= 0 ? inp('teamm', 'Mannschaft männlich: Platz', 'z. B. Platz 5 mit 9 Punkten') : '') +
-      inp('highlights', 'Weitere Highlights in eigenen Worten', 'z. B. Jan schwamm über 200 m Brust mehr als 26 Sekunden schneller als seine alte Meldezeit.', true) + inp('kr', 'Kampfrichter (aus dem Protokoll)', 'wird beim Import der Ergebnisdatei gefüllt', true) + inp('link', 'Link zu den Ergebnissen', 'https://live.sgbarnstorf.de/archiv/…') + '</div>';
+      inp('highlights', 'Weitere Highlights in eigenen Worten', 'z. B. Jan schwamm über 200 m Brust mehr als 26 Sekunden schneller als seine alte Meldezeit.', true) + inp('kr', 'Kampfrichter', 'kommt aus der DSV7-Ergebnisdatei (Knopf unten)', true) + inp('link', 'Link zu den Ergebnissen', 'https://live.sgbarnstorf.de/archiv/…') + '</div>';
   }
   function viewArtikel(wk) {
     var ar = P.articleText(wk, club()); var hints = P.articleHints(wk);
-    return '<section class="wm-card"><div class="wm-bar"><h3>Artikel</h3></div><p class="wm-note">Erst die Felder ausfüllen, der Entwurf darunter baut sich daraus auf. Leere Felder fehlen im Text. Platz und Altersklasse kommen nur mit der DSV7-Ergebnisdatei.</p>' + artFields(wk) +
-      (hints.length ? '<div class="m-sec">Vorschläge für Highlights (antippen zum Übernehmen)</div>' + hints.map(function (x) { return '<label class="m-f m-fchk" style="margin:0 0 6px"><input type="checkbox" data-wkarth="' + esc(x.id) + '"' + ((wk.art && wk.art.hl || []).indexOf(x.id) >= 0 ? ' checked' : '') + '><span>' + esc(x.label) + '</span></label>'; }).join('') : '') +
+    return ART_CSS + '<section class="wm-card"><div class="wm-bar"><h3>Artikel</h3></div><p class="wm-note">Erst die Felder ausfüllen, der Entwurf darunter baut sich daraus auf. Leere Felder fehlen im Text. Platz, Altersklasse, Kampfrichter und Staffeln kommen aus der DSV7-Ergebnisdatei, ein PDF-Protokoll ist nicht nötig.</p><div class="m-btns" style="margin-bottom:10px"><button type="button" class="wm-amber" data-ma="artdsv">📥 Kampfrichter &amp; Staffeln aus DSV7 einlesen</button><input type="file" id="wkartfile" accept=".dsv7,.DSV7,.txt" style="display:none"></div>' + artFields(wk) +
+      (hints.length ? '<div class="m-sec">Vorschläge für Highlights (antippen zum Übernehmen)</div>' + hints.map(function (x) { return wkOpt('data-wkarth', esc(x.id), (wk.art && wk.art.hl || []).indexOf(x.id) >= 0, esc(x.label), 0); }).join('') : '') +
       '</section><section class="wm-card"><div class="wm-bar"><h3>Entwurf</h3><span><button type="button" class="wm-amber" data-ma="artcopy">📋 Kopieren</button> <button type="button" class="wm-amber" data-ma="artdl">⬇️ Als ' + esc(ar.filename) + '</button></span></div><p class="wm-note">Fertige News-Datei. Bilder im CMS hochladen und die Zeilen mit „#“ im Kopf aktivieren. Dann im CMS einen neuen Eintrag anlegen oder die Datei unter src/news/ ins Repo hochladen. Eigene Änderungen im Entwurf gehen verloren, wenn danach ein Feld oben geändert wird.</p><label class="m-f wide"><span>Inhalt</span><textarea id="wkart" rows="22" style="font-size:13px;font-family:monospace">' + esc(ar.text) + '</textarea></label></section>';
   }
 
@@ -543,12 +547,24 @@ templateEngineOverride: false
       var t = ev.target; if (!t || !t.getAttribute) return;
       var wk = curWk(); if (!wk) return;
       if (t.getAttribute('data-wkswf')) { M.S.sub.swf = t.value; M.render(true); return; }
+      if (t.id === 'wkartfile') {
+        var f0 = t.files && t.files[0]; if (!f0) return; var wk0 = curWk(); if (!wk0) return; M.toast('Wird gelesen …');
+        HubPdf.text(f0).then(function (txt) {
+          var p0 = P.parseErgDsv7(txt, club()); var af = {}; var A1 = wk0.art || {};
+          if (p0.kr && p0.kr.length) af.kr = P.krText(p0.kr);
+          if (p0.relays && p0.relays.length) { af.staffeln = p0.relays.map(function (r) { return { e: r.e, evn: r.evn, pl: r.pl, t: r.t, st: r.st }; }); af.staffel = P.relayText(p0.relays); var w1 = (A1.w || []).slice(); if (w1.indexOf('staffel') < 0) { w1.push('staffel'); af.w = w1; } }
+          if (!Object.keys(af).length) { M.toast('In der Datei wurden keine Kampfrichter oder Staffeln für ' + club() + ' gefunden.'); return; }
+          M.S.dirty = false; M.op({ op: 'patch', coll: 'wettkaempfe', id: wk0.id, merge: true, fields: { art: af } }); M.toast((p0.kr ? p0.kr.length : 0) + ' Kampfrichter, ' + (p0.relays ? p0.relays.length : 0) + ' Staffeln übernommen.');
+        }, function (e) { M.toast('Nicht lesbar: ' + (e.message || e)); });
+        return;
+      }
       if (t.getAttribute('data-wkart') || t.getAttribute('data-wkartw') || t.getAttribute('data-wkarth') || t.getAttribute('data-wkartb')) {
         var fa = {}, A0 = wk.art || {};
         if (t.getAttribute('data-wkart')) fa[t.getAttribute('data-wkart')] = t.value;
         else if (t.getAttribute('data-wkartb')) { var sb = (A0.sb || []).slice(), b0 = t.getAttribute('data-wkartb'), bx = sb.indexOf(b0); if (t.checked && bx < 0) sb.push(b0); if (!t.checked && bx >= 0) sb.splice(bx, 1); fa.sb = sb; }
         else if (t.getAttribute('data-wkarth')) { var hl = (A0.hl || []).slice(), h0 = t.getAttribute('data-wkarth'), hx = hl.indexOf(h0); if (t.checked && hx < 0) hl.push(h0); if (!t.checked && hx >= 0) hl.splice(hx, 1); fa.hl = hl; }
         else { var w = (A0.w || []).slice(), k0 = t.getAttribute('data-wkartw'), ix = w.indexOf(k0); if (t.checked && ix < 0) w.push(k0); if (!t.checked && ix >= 0) w.splice(ix, 1); fa.w = w; }
+        var lb0 = t.closest && t.closest('.wk-opt'); if (lb0) { lb0.classList.toggle('on', t.checked); var bx0 = lb0.querySelector('.wk-box'); if (bx0) bx0.textContent = t.checked ? '✓' : ''; }
         M.op({ op: 'patch', coll: 'wettkaempfe', id: wk.id, merge: true, fields: { art: fa } }, true);
         var wk2 = Object.assign({}, wk, { art: Object.assign({}, A0, fa) }); var ta = document.getElementById('wkart'); if (ta) ta.value = P.articleText(wk2, club()).text;
         if (t.getAttribute('data-wkartw')) { M.S.dirty = false; M.render(true); } else M.S.dirty = true; return;
@@ -614,6 +630,7 @@ templateEngineOverride: false
       swreset: function () { if (!SW) return; SW.run = false; SW.laps = []; delete SW.end; M.openDlg(swHtml()); },
       swsave: function () { swSave(); },
       artdl: function () { var t = document.getElementById('wkart'); if (!t) return; var fn = 'news-entwurf'; var m2 = /# preview: \/images\/news\/(.+)-team\.jpeg/.exec(t.value); fn = (m2 ? m2[1] : 'news-entwurf') + '.md'; try { var bl = new Blob([t.value], { type: 'text/markdown' }); var a = document.createElement('a'); a.href = URL.createObjectURL(bl); a.download = fn; document.body.appendChild(a); a.click(); setTimeout(function () { a.remove(); }, 500); M.toast('Datei ' + fn + ' erstellt.'); } catch (e) { M.toast('Download nicht möglich – bitte kopieren.'); } },
+      artdsv: function () { var i = document.getElementById('wkartfile'); if (i) { i.value = ''; i.click(); } },
       artcopy: function () { var t = document.getElementById('wkart'); if (!t) return; t.select(); var ok = false; try { if (navigator.clipboard) { navigator.clipboard.writeText(t.value); ok = true; } else ok = document.execCommand('copy'); } catch (e) { try { ok = document.execCommand('copy'); } catch (e2) { } } M.toast(ok ? 'Text kopiert.' : 'Bitte den Text markieren und kopieren.'); },
       sw: function () { }
     }

@@ -84,7 +84,7 @@ templateEngineOverride: false
       if (sub.length) out += '<h4 class="wm-sub" style="margin:10px 0 4px">Unteraufgaben</h4>' + sub.map(function (s, i) { return '<div class="m-chk"><button type="button" class="m-box' + (s.d ? ' on' : '') + '" data-ma="subtick" data-i="' + i + '"' + (canTick ? '' : ' disabled') + '>' + (s.d ? '✓' : '') + '</button><span' + (s.d ? ' style="text-decoration:line-through;opacity:.6"' : '') + '>' + esc(s.t) + '</span></div>'; }).join('');
       var com = it.com || [];
       if (com.length) out += '<h4 class="wm-sub" style="margin:10px 0 4px">Kommentare</h4>' + com.map(function (c) { return '<div class="wm-sub" style="margin:2px 0"><b style="color:inherit">' + esc(c.t) + '</b> (' + esc(c.n) + (c.at ? ', ' + fmtShort(new Date(c.at).toISOString().slice(0, 10)) : '') + ')</div>'; }).join('');
-      out += '<div class="m-btns">' + (canTick && !done ? '<button type="button" class="wm-btn" data-ma="arbeit">' + (it.status === 'arbeit' ? '↩︎ Wieder offen' : '▶︎ In Arbeit') + '</button>' : '') + (canCom ? '<button type="button" class="wm-btn" data-ma="comment">💬 Kommentar</button>' : '') + (canEdit ? '<button type="button" class="wm-btn" data-ma="edit">✏️ Bearbeiten</button><button type="button" class="wm-btn m-danger" data-ma="del">🗑️ Löschen</button>' : '') + '</div></div>';
+      out += '<div class="m-btns">' + (canTick && !done ? '<button type="button" class="wm-btn" data-ma="arbeit">' + (it.status === 'arbeit' ? '↩︎ Wieder offen' : '▶︎ In Arbeit') + '</button>' : '') + (canCom ? '<button type="button" class="wm-btn" data-ma="comment">💬 Kommentar</button>' : '') + (canEdit ? '<button type="button" class="wm-btn" data-ma="edit">✏️ Bearbeiten</button>' : '') + (M.anyCan(['aufgaben.edit', 'aufgaben.loeschen']) ? '<button type="button" class="wm-btn m-danger" data-ma="del">🗑️ Löschen</button>' : '') + '</div></div>';
     }
     return out + '</article>';
   }
@@ -131,7 +131,7 @@ templateEngineOverride: false
       if (f === 'erledigt') list.sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
       var chips = [['offen', 'Offen', open.length], ['meine', 'Meine', all.filter(function (x) { return x.status !== 'erledigt' && isMine(x); }).length], ['erledigt', 'Erledigt', doneAll.length], ['alle', 'Alle', all.length]].filter(function (c) { return M.can('aufgaben.view') || c[0] === 'meine' || c[0] === 'erledigt'; });
       var out = '<section class="wm-card"><div class="m-stats">' + M.stat(cOver, 'überfällig', cOver ? 'bad' : '', 'data-ma="filt" data-f="over"') + M.stat(cToday, 'heute fällig', cToday ? 'warn' : '', 'data-ma="filt" data-f="today"') + M.stat(cWeek, 'diese Woche', 'info', 'data-ma="filt" data-f="week"') + M.stat(cDone, 'erledigt (14 Tage)', 'ok', 'data-ma="filt" data-f="erledigt"') + '</div>' +
-        '<div class="wm-bar"><span class="m-actions">' + M.seg([['liste', '☰ Liste'], ['spalten', '▥ Spalten']], S.sub.lay || 'liste', 'lay') + (canEdit ? M.seg([['liste', 'Aufgaben'], ['pakete', 'Pakete']], 'liste', 'av') : '') + '</span><span class="m-actions"><button type="button" class="wm-btn" data-ma="printtasks">🖨️ Drucken</button>' + (canEdit ? '<button type="button" class="wm-amber" data-ma="addtask">+ Neue Aufgabe</button>' : '') + '</span></div>' +
+        '<div class="wm-bar"><span class="m-actions">' + M.seg([['liste', '☰ Liste'], ['spalten', '▥ Spalten']], S.sub.lay || 'liste', 'lay') + (canEdit ? M.seg([['liste', 'Aufgaben'], ['pakete', 'Pakete']], 'liste', 'av') : '') + '</span><span class="m-actions"><button type="button" class="wm-btn" data-ma="printtasks">🖨️ Drucken</button>' + (M.anyCan(['aufgaben.edit', 'aufgaben.anlegen']) ? '<button type="button" class="wm-amber" data-ma="addtask">+ Neue Aufgabe</button>' : '') + '</span></div>' +
         '<div class="m-chips">' + chips.map(function (c) { return '<button type="button" class="m-chip' + (c[0] === f ? ' on' : '') + '" data-ma="filt" data-f="' + c[0] + '">' + c[1] + ' (' + c[2] + ')</button>'; }).join('') + (['over', 'today', 'week'].indexOf(f) >= 0 ? '<button type="button" class="m-chip on" data-ma="filt" data-f="offen">Filter: ' + ({ over: 'überfällig', today: 'heute', week: 'Woche' }[f]) + ' ✕</button>' : '') + '</div>' +
         '<input type="search" class="m-search" data-mq="1" placeholder="🔎 Aufgabe oder Person suchen …" value="' + esc(S.q) + '" autocomplete="off">';
       if (!list.length) out += '<p class="wm-note">' + (all.length ? 'Hier ist nichts offen. 🎉' : 'Noch keine Aufgaben.') + '</p>';
@@ -266,10 +266,10 @@ templateEngineOverride: false
   }
   M.register('veranstaltungen', {
     title: 'Veranstaltungen', icon: '🎪', colls: ['veranstaltungen', 'aufgaben', 'vorlagen'],
-    tabs: [{ id: 'ev', label: 'Veranstaltungen', coll: 'veranstaltungen', view: ['veranstaltungen.view'], edit: ['veranstaltungen.edit'], print: ['veranstaltungen.print'], sortBy: { k: 'date', dir: 1 }, printItem: true, addLabel: 'Neue Veranstaltung', search: ['title', 'ort', 'beschreibung'],
+    tabs: [{ id: 'ev', label: 'Veranstaltungen', coll: 'veranstaltungen', view: ['veranstaltungen.view'], edit: ['veranstaltungen.edit'], add: ['veranstaltungen.edit', 'veranstaltungen.anlegen'], del: ['veranstaltungen.edit', 'veranstaltungen.loeschen'], print: ['veranstaltungen.print'], sortBy: { k: 'date', dir: 1 }, printItem: true, addLabel: 'Neue Veranstaltung', search: ['title', 'ort', 'beschreibung'],
       hint: 'Eigene Events mit Checkliste (Zuständig, Frist, Phase) und Helfern. Die Checkliste kann jeder mit Recht abhaken.',
       get fields() { return evFields(); },
-      summary: function () { return M.anyCan(['veranstaltungen.edit']) ? '<div class="m-chips"><button type="button" class="m-chip" data-ma="cpnew">📄 Neue Veranstaltung aus PDF</button></div>' : ''; },
+      summary: function () { return M.anyCan(['veranstaltungen.edit', 'veranstaltungen.anlegen']) ? '<div class="m-chips"><button type="button" class="m-chip" data-ma="cpnew">📄 Neue Veranstaltung aus PDF</button></div>' : ''; },
       newItem: function () { return { status: 'Geplant', date: M.today(), vorlageId: '' }; },
       beforeSave: function (it) {
         if (it.vorlageId) { var v = M.find('vorlagen', it.vorlageId); if (v) it.check = (it.check || []).concat(applyVorlage(v, it.date)); }
@@ -352,18 +352,67 @@ templateEngineOverride: false
   /* ================= VORSTAND ================= */
   /* ---------- Antrag: Druck im Briefkopf-Layout und PDF-Import ---------- */
   function pidOf(name) { return 'p-' + String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 36); }
+  // Tabellen im PDF erkennen (Spalten mit grossem Abstand) und als Markdown-Tabelle ausgeben
+  function tableize(pages) {
+    var blocks = [];
+    var out = pages.map(function (items) {
+      var rows = [];
+      items.forEach(function (it) { if (!it.str || !it.str.trim()) return; var r = null; for (var k = 0; k < rows.length; k++) if (Math.abs(rows[k].y - it.y) <= 2.5) { r = rows[k]; break; } if (!r) { r = { y: it.y, its: [] }; rows.push(r); } r.its.push(it); });
+      rows.sort(function (a, b) { return b.y - a.y; });
+      rows.forEach(function (r) {
+        r.its.sort(function (a, b) { return a.x - b.x; }); r.cells = []; var cur = null;
+        r.its.forEach(function (it) { if (cur && it.x - (cur.x + cur.w) <= 24) { cur.str += (/\s$/.test(cur.str) || /^\s/.test(it.str) ? '' : ' ') + it.str; cur.w = it.x + (it.w || 0) - cur.x; } else { cur = { str: it.str, x: it.x, w: it.w || 0 }; r.cells.push(cur); } });
+      });
+      var res = [], i = 0;
+      while (i < rows.length) {
+        var r0 = rows[i];
+        if (r0.cells.length >= 2 && rows[i + 1] && rows[i + 1].cells.length >= 2) {
+          var tb = [r0.cells.map(function (c) { return c.str.trim(); })], fx = r0.cells[0].x, j = i + 1, lastY = r0.y;
+          while (j < rows.length) {
+            var rj = rows[j];
+            if (rj.cells.length >= 2) { tb.push(rj.cells.map(function (c) { return c.str.trim(); })); fx = Math.min(fx, rj.cells[0].x); }
+            else if (rj.cells.length === 1 && Math.abs(rj.cells[0].x - fx) <= 4 && lastY - rj.y < 22) { var lr = tb[tb.length - 1]; lr[0] = (lr[0] + ' ' + rj.cells[0].str.trim()).trim(); }
+            else if (rj.cells.length === 1 && rj.cells[0].x > fx + 100 && lastY - rj.y < 40) { tb.push([rj.cells[0].str.trim()]); j++; lastY = rj.y; break; }
+            else break;
+            lastY = rj.y; j++;
+          }
+          var nc = 0; tb.forEach(function (c) { if (c.length > nc) nc = c.length; });
+          var md = tb.map(function (c, k) { var a = c.slice(), one = c.length === 1; while (a.length < nc) { if (k === 0 || one) a.unshift(''); else a.push(''); } return '| ' + a.join(' | ') + ' |'; });
+          md.splice(1, 0, '| ' + new Array(nc + 1).join('--- | ').trim());
+          blocks.push(md.join('\n')); res.push({ str: '\u0001T' + (blocks.length - 1), x: r0.cells[0].x, y: r0.y, w: 1 }); i = j;
+        } else { r0.its.forEach(function (it) { res.push(it); }); i++; }
+      }
+      return res;
+    });
+    return { pages: out, blocks: blocks };
+  }
+  function linesWithTables(pages) {
+    var t = tableize(pages);
+    return WKParse.linesFromItems(t.pages).map(function (l) { var m = /^\u0001T(\d+)$/.exec(l.trim()); return m ? t.blocks[+m[1]] : l; });
+  }
+  // Text mit Tabellen (Zeilen mit |) in HTML wandeln
+  function richText(txt, cls) {
+    return String(txt || '').split(/\n\s*\n/).map(function (b) {
+      var ls = b.trim().split('\n');
+      if (ls.length > 1 && ls.every(function (l) { return /^\s*\|/.test(l); })) {
+        var rows = ls.filter(function (l) { return !/^\s*\|[\s|:-]+\|\s*$/.test(l); }).map(function (l) { return l.trim().replace(/^\||\|$/g, '').split('|').map(function (c) { return c.trim(); }); });
+        return '<table class="' + (cls || 'atab') + '">' + rows.map(function (r, k) { return '<tr>' + r.map(function (c) { return (k === 0 ? '<th>' : '<td>') + esc(c) + (k === 0 ? '</th>' : '</td>'); }).join('') + '</tr>'; }).join('') + '</table>';
+      }
+      return '<p>' + esc(b.trim()) + '</p>';
+    }).join('');
+  }
   function antragPrint(it) {
     var txt = String(it.begruendung || '').trim();
     if (!/^Sehr geehrte/i.test(txt)) txt = 'Sehr geehrter Vorstand,\n\n' + txt;
     if (!/(Gruß|Grüße|Gruss)/i.test(txt.slice(-220))) txt += '\n\nMit sportlichem Gruß';
-    var paras = txt.split(/\n\s*\n/).map(function (x) { return '<p>' + esc(x.trim()) + '</p>'; }).join('');
+    var paras = richText(txt);
     var pr = lower(it.von) === lower(me()) ? M.find('profile', pidOf(me())) : null; var sig = pr && pr.sig;
     var d = /^\d{4}-\d{2}-\d{2}$/.test(it.datum || '') ? it.datum.split('-').reverse().join('.') : (it.datum || '');
     var body = '<div class="atitle">' + esc(it.ueberschrift || it.title || '').replace(/\n/g, '<br>') + '</div><div class="atext">' + paras + '</div><div class="asig">' + (sig ? '<img class="sig" src="' + esc(sig) + '" alt="">' : '<div style="height:44px"></div>') + '<div>' + esc(it.von || '') + '</div><div>Barnstorf' + (d ? ', ' + d : '') + '</div></div>';
-    return { title: it.title, body: body, opts: { t2: it.title || 'Antrag', t3: it.untertitel || '', css: '.atitle{font-size:18px;font-weight:700;text-align:center;margin:8px 0 18px;line-height:1.35}.atext p{margin:0 0 10px;white-space:pre-line;font-size:12.5px;line-height:1.55}.asig{margin-top:6px;font-size:12.5px}.asig img.sig{height:52px}' } };
+    return { title: it.title, body: body, opts: { t2: it.title || 'Antrag', t3: it.untertitel || '', css: '.atitle{font-size:18px;font-weight:700;text-align:center;margin:8px 0 18px;line-height:1.35}.atext p{margin:0 0 10px;white-space:pre-line;font-size:12.5px;line-height:1.55}.atab{width:auto;min-width:60%;margin:2px 0 12px 24px}.atab th,.atab td{font-size:12.5px;padding:4px 10px}.atab td:not(:first-child),.atab th:not(:first-child){text-align:right;white-space:nowrap}.asig{margin-top:6px;font-size:12.5px}.asig img.sig{height:52px}' } };
   }
   function parseAntragPdf(lines) {
-    var L = lines.map(function (l) { return String(l).replace(/\s{2,}/g, ' ').trim(); }).filter(Boolean);
+    var L = lines.map(function (l) { return String(l).charAt(0) === '|' ? String(l) : String(l).replace(/\s{2,}/g, ' ').trim(); }).filter(Boolean);
     var out = { title: '', untertitel: '', ueberschrift: '', text: '', von: '', datum: '' };
     var iS = -1; for (var i = 0; i < L.length; i++) if (/^Sehr geehrte/i.test(L[i])) { iS = i; break; }
     if (iS < 0) { out.text = L.join('\n'); return out; }
@@ -372,12 +421,13 @@ templateEngineOverride: false
     else if (head.length === 3) { out.title = head[0]; out.ueberschrift = head.slice(1).join(' '); }
     else out.title = head.join(' ');
     var iE = L.length - 1; for (var j = iS; j < L.length; j++) if (/^Mit (sportlichem|freundlichem|besten)|^Mit .*Gr(uß|üß)/i.test(L[j])) { iE = j; break; }
-    var body = L.slice(iS, iE + 1); var maxLen = 0; body.forEach(function (l) { if (l.length > maxLen) maxLen = l.length; });
+    var body = L.slice(iS, iE + 1); var maxLen = 0; body.forEach(function (l) { if (l.charAt(0) !== '|' && l.length > maxLen) maxLen = l.length; });
     var paras = []; var cur = '';
     body.forEach(function (l, k) {
       var prev = k ? body[k - 1] : ''; var listy = /^(\d{1,2}[.)]|[-•*])\s/.test(l);
+      if (l.charAt(0) === '|') { if (cur) paras.push(cur); paras.push(l); cur = ''; return; }
       if (!cur) { cur = l; return; }
-      if (listy || /^Mit (sportlichem|freundlichem|besten)/i.test(l) || (/[.!?:]$/.test(prev) && prev.length < maxLen * 0.82) || /^Sehr geehrte/i.test(prev)) { paras.push(cur); cur = l; } else cur += ' ' + l;
+      if (listy || /^Mit (sportlichem|freundlichem|besten)/i.test(l) || (/[.!?:]$/.test(prev) && prev.length < maxLen * 0.82) || (prev.length < maxLen * 0.5 && /^[A-ZÄÖÜ]/.test(l)) || /^Sehr geehrte/i.test(prev)) { paras.push(cur); cur = l; } else cur += ' ' + l;
     });
     if (cur) paras.push(cur);
     out.text = paras.join('\n\n');
@@ -394,15 +444,16 @@ templateEngineOverride: false
     if (!f) { msg.textContent = 'Bitte zuerst eine PDF-Datei auswählen.'; return; }
     msg.textContent = 'Wird gelesen … (beim ersten Mal wird der PDF-Leser geladen)';
     HubPdf.read(f).then(function (r) {
-      var p = parseAntragPdf(r.lines); var box = document.getElementById('apbox'); if (!box) return;
+      var p = parseAntragPdf(linesWithTables(r.pages)); var box = document.getElementById('apbox'); if (!box) return;
       var fl = function (id, lab, v, t, wide) { return '<label class="m-f' + (wide ? ' wide' : '') + '"><span>' + lab + '</span><input type="' + (t || 'text') + '" id="' + id + '" value="' + esc(v || '') + '"></label>'; };
       box.innerHTML = '<div class="m-fgrid">' + fl('ap_t', 'Antrag (Zeile 2 im Briefkopf)', p.title, 'text', true) + fl('ap_u', 'Zeile 3 im Briefkopf', p.untertitel, 'text', true) + fl('ap_h', 'Überschrift im Text', p.ueberschrift, 'text', true) + fl('ap_v', 'Gestellt von', p.von || me()) + fl('ap_d', 'Datum', p.datum || M.today(), 'date') + '<label class="m-f wide"><span>Antragstext</span><textarea id="ap_x" rows="12">' + esc(p.text) + '</textarea></label></div><div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="apsave">Als Antrag anlegen</button></div>';
     }, function (e) { msg.innerHTML = '<span class="m-over">' + esc(e.message || String(e)) + '</span>'; });
   }
   function apSave() {
     var g = function (id) { var e = document.getElementById(id); return e ? e.value.trim() : ''; };
-    if (!g('ap_t')) { M.toast('Bitte einen Titel eintragen.'); return; }
-    M.closeDlg(); M.op({ op: 'set', coll: 'vorstandAntraege', item: { id: M.uid(), title: g('ap_t'), untertitel: g('ap_u'), ueberschrift: g('ap_h'), von: g('ap_v'), datum: g('ap_d'), status: 'Entwurf', begruendung: g('ap_x') } }); M.toast('Antrag angelegt.');
+    var item = { id: M.uid(), title: g('ap_t'), untertitel: g('ap_u'), ueberschrift: g('ap_h'), von: g('ap_v'), datum: g('ap_d'), status: 'Entwurf', begruendung: g('ap_x') };
+    if (!item.title) { M.toast('Bitte einen Titel eintragen.'); return; }
+    M.closeDlg(); M.op({ op: 'set', coll: 'vorstandAntraege', item: item }); M.toast('Antrag angelegt.');
   }
 
   var ASTAT = { 'Entwurf': 'gray', 'Eingereicht': 'blue', 'Beschlossen': 'green', 'Abgelehnt': 'red', 'Zurückgestellt': 'amber' };
@@ -415,9 +466,9 @@ templateEngineOverride: false
         hint: 'Anträge an den Vorstand. Du siehst unter „Meine“ alles, was du gestellt hast.',
         filter: function (it, f) { return !f.mine || lower(it.von) === lower(me()) || lower(it.owner) === lower(me()); },
         summary: function (all) { return '<div class="m-chips">' + (M.can('vorstand.view') ? '<button type="button" class="m-chip' + (M.S.filter.mine ? ' on' : '') + '" data-ma="minef">Meine Anträge</button>' : '') + '<button type="button" class="m-chip" data-ma="apdf">📄 Antrag aus PDF</button></div>'; },
-        get fields() { return [{ k: 'title', t: 'text', label: 'Antrag (Zeile 2 im Briefkopf)', req: true, ph: 'z. B. Antrag Kostenübernahme Wettkampftraining' }, { k: 'untertitel', t: 'text', label: 'Zeile 3 im Briefkopf (optional)', ph: 'z. B. Hallenbad Delfin' }, { k: 'ueberschrift', t: 'area', label: 'Überschrift im Text (optional)', rows: 2 }, { k: 'datum', t: 'date', label: 'Datum' }, { k: 'von', t: 'text', label: 'Gestellt von' }, { k: 'status', t: 'sel', label: 'Stand', opts: antragOpts() }, { k: 'begruendung', t: 'area', label: 'Antragstext', rows: 14, hint: 'Der Text wird beim Drucken im Antrag-Layout gesetzt. Anrede und Gruß werden ergänzt, wenn sie fehlen. Leere Zeile = neuer Absatz.' }].concat(M.anyCan(['vorstand.edit', 'vorstand.antraege.edit']) ? [{ k: 'beschluss', t: 'area', label: 'Beschluss / Ergebnis', rows: 3 }] : []); },
+        get fields() { return [{ k: 'title', t: 'text', label: 'Antrag (Zeile 2 im Briefkopf)', req: true, ph: 'z. B. Antrag Kostenübernahme Wettkampftraining' }, { k: 'untertitel', t: 'text', label: 'Zeile 3 im Briefkopf (optional)', ph: 'z. B. Hallenbad Delfin' }, { k: 'ueberschrift', t: 'area', label: 'Überschrift im Text (optional)', rows: 2 }, { k: 'datum', t: 'date', label: 'Datum' }, { k: 'von', t: 'text', label: 'Gestellt von' }, { k: 'status', t: 'sel', label: 'Stand', opts: antragOpts() }, { k: 'begruendung', t: 'area', label: 'Antragstext', rows: 14, hint: 'Der Text wird beim Drucken im Antrag-Layout gesetzt. Anrede und Gruß werden ergänzt, wenn sie fehlen. Leere Zeile = neuer Absatz. Tabelle: Zeilen mit | trennen, z. B. | Kinder | 3,50 € | 24,50 € |, die erste Zeile ist die Überschrift.' }].concat(M.anyCan(['vorstand.edit', 'vorstand.antraege.edit']) ? [{ k: 'beschluss', t: 'area', label: 'Beschluss / Ergebnis', rows: 3 }] : []); },
         newItem: function () { return { datum: M.today(), status: 'Entwurf', von: me() }; },
-        card: function (it) { return { title: it.title, badges: M.badge(it.status || 'Entwurf', ASTAT[it.status] || 'gray'), sub: [fmtShort(it.datum), it.von ? 'von ' + esc(it.von) : ''].filter(Boolean).join(' · '), body: (it.begruendung ? '<h4 class="wm-sub">Antragstext</h4>' + pre(it.begruendung) : '') + (it.beschluss ? '<h4 class="wm-sub">Beschluss</h4>' + pre(it.beschluss) : ''), buttons: M.anyCan(['vorstand.edit', 'vorstand.antraege.edit']) && it.status === 'Beschlossen' ? '<button type="button" class="wm-btn" data-ma="toBeschl">→ Beschluss anlegen</button>' : '' }; },
+        card: function (it) { return { title: it.title, badges: M.badge(it.status || 'Entwurf', ASTAT[it.status] || 'gray'), sub: [fmtShort(it.datum), it.von ? 'von ' + esc(it.von) : ''].filter(Boolean).join(' · '), body: (it.begruendung ? '<h4 class="wm-sub">Antragstext</h4><div class="m-rich">' + richText(it.begruendung, 'm-table') + '</div>' : '') + (it.beschluss ? '<h4 class="wm-sub">Beschluss</h4>' + pre(it.beschluss) : ''), buttons: M.anyCan(['vorstand.edit', 'vorstand.antraege.edit']) && it.status === 'Beschlossen' ? '<button type="button" class="wm-btn" data-ma="toBeschl">→ Beschluss anlegen</button>' : '' }; },
         actions: {
           minef: function () { M.S.filter.mine = !M.S.filter.mine; M.render(true); },
           toBeschl: function (it) { if (!it) return; var id = M.uid(); M.op({ op: 'set', coll: 'vorstandBeschluesse', item: { id: id, title: it.title, date: M.today(), text: it.beschluss || it.begruendung || '', who: [], due: '', status: 'offen', antrag: it.id } }); M.toast('Beschluss angelegt (Reiter „Beschlüsse“).'); }
@@ -496,7 +547,7 @@ templateEngineOverride: false
   M.register('material', {
     title: 'Material', icon: '📦', colls: ['material'],
     tabs: [
-      { id: 'geg', label: 'Gegenstände', coll: 'material', view: ['material.view'], edit: ['material.edit'], print: ['material.print'], printAll: true, addLabel: 'Neuer Gegenstand', search: ['title', 'kategorie', 'ort', 'notiz'],
+      { id: 'geg', label: 'Gegenstände', coll: 'material', view: ['material.view'], edit: ['material.edit'], add: ['material.edit', 'material.anlegen'], del: ['material.edit', 'material.loeschen'], print: ['material.print'], printAll: true, addLabel: 'Neuer Gegenstand', search: ['title', 'kategorie', 'ort', 'notiz'],
         filter: function (it, f) { return (!f.low || low(it) || it.kaufen) && (!f.out || openLoans(it).length); },
         summary: function (all) { var n = needList(all).length, out = all.filter(function (x) { return openLoans(x).length; }).length, ov = all.reduce(function (s, x) { return s + (x.loans || []).filter(overdueLoan).length; }, 0); return '<div class="m-chips"><button type="button" class="m-chip' + (M.S.filter.low ? ' on' : '') + '" data-ma="lowf">⚠️ Nachkaufen (' + n + ')</button><button type="button" class="m-chip' + (M.S.filter.out ? ' on' : '') + '" data-ma="outf">Verliehen (' + out + ')</button>' + (ov ? '<span class="m-over" style="align-self:center">⏰ ' + ov + ' überfällig</span>' : '') + '</div>'; },
         fields: [{ k: 'title', t: 'text', label: 'Name', req: true }, { k: 'kategorie', t: 'text', label: 'Kategorie', ph: 'z. B. Training, Wettkampf, Küche' }, { k: 'ort', t: 'text', label: 'Lagerort', ph: 'z. B. Halle, Schrank 2' }, { k: 'bestand', t: 'num', label: 'Bestand (gesamt)' }, { k: 'min', t: 'num', label: 'Mindestbestand' }, { k: 'einheit', t: 'text', label: 'Einheit', ph: 'Stück' },

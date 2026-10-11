@@ -236,8 +236,8 @@ var WKParse = (function () {
 
   // Artikel-Entwurf aus den Ergebnissen. wk: {title,date,ort,starts:[{e,l,b,n,j,m}],res:{key:{t,sp,st,pl,ak}},events:[{no,name}]}
   function showT(t) { var m = /^(\d{2}):(\d{2}),(\d{2})$/.exec(t || ''); if (!m) return t || ''; return (+m[1] ? (+m[1]) + ':' : '') + (+m[1] ? m[2] : String(+m[2])) + ',' + m[3]; }
-  function krText(kr) { // [{name, rollen}] -> "Finja (Zielrichter:in, Wenderichter:in) und Max (Starter:in)"
-    var l = (kr || []).map(function (x) { return x.name.split(/\s+/)[0] + ' (' + x.rollen.join(', ') + ')'; });
+  function krText(kr) { // [{name, rollen}] -> "Finja als Zielrichter:in und Wenderichter:in"
+    var l = (kr || []).map(function (x) { var r = x.rollen; return x.name.split(/\s+/)[0] + ' als ' + (r.length < 2 ? r.join('') : r.slice(0, -1).join(', ') + ' und ' + r[r.length - 1]); });
     return l.length < 2 ? l.join('') : l.slice(0, -1).join(', ') + ' und ' + l[l.length - 1];
   }
   function artRows(wk) {
@@ -289,11 +289,11 @@ var WKParse = (function () {
       var nm = function (cap) { if (!used) { used = 1; return N; } return gen === 'w' ? (cap ? 'Sie' : 'sie') : gen === 'm' ? (cap ? 'Er' : 'er') : N; };
       var meds = l.filter(function (h) { return h.type === 'med'; }), multi = l.filter(function (h) { return h.type === 'multi'; })[0];
       if (meds.length) {
-        var gr = {}; meds.forEach(function (h) { (gr[h.r.pl] = gr[h.r.pl] || []).push(h.r.ev + ' in ' + showT(h.r.t)); });
-        var parts = [1, 2, 3].filter(function (p) { return gr[p]; }).map(function (p) { return GM[p - 1] + ' (' + (gr[p].length < 2 ? gr[p][0] : gr[p].slice(0, -1).join(', ') + ' und ' + gr[p][gr[p].length - 1]) + ')'; });
-        var X = parts.length < 2 ? parts[0] : parts.slice(0, -1).join(', ') + ' und ' + parts[parts.length - 1];
-        if (multi) out.push(nm(true) + ' stand gleich ' + numw(multi.k) + 'mal auf dem Treppchen: ' + X + '.');
-        else out.push([function () { return nm(true) + ' holte ' + X + '.'; }, function () { return 'Auch ' + nm(false) + ' stand auf dem Treppchen: ' + X + '.'; }, function () { return 'Edelmetall gab es ebenfalls für ' + nm(false) + ': ' + X + '.'; }, function () { return nm(true) + ' komplettierte die Medaillenausbeute mit ' + X + '.'; }][Math.min(pi, 3) % 4]());
+        var GN = ['', 'Gold', 'Silber', 'Bronze'];
+        var items = meds.map(function (h) { return GN[h.r.pl] + ' über ' + h.r.ev + ' (' + showT(h.r.t) + ')'; });
+        var X = items.length < 2 ? items[0] : items.slice(0, -1).join(', ') + ' und ' + items[items.length - 1];
+        if (meds.length > 1 || multi) out.push(nm(true) + ' stieg ' + numw(meds.length) + 'mal aufs Treppchen: ' + X + '.');
+        else { var m0 = meds[0].r; out.push([function () { return nm(true) + ' holte über ' + m0.ev + ' in ' + showT(m0.t) + ' ' + GN[m0.pl] + '.'; }, function () { return 'Auch ' + nm(false) + ' stand auf dem Treppchen: ' + GN[m0.pl] + ' über ' + m0.ev + ' in ' + showT(m0.t) + '.'; }, function () { return 'Edelmetall gab es ebenfalls für ' + nm(false) + ': ' + GN[m0.pl] + ' über ' + m0.ev + ' (' + showT(m0.t) + ').'; }][Math.min(pi, 2) % 3]()); }
       } else if (multi) out.push(nm(true) + ' stand gleich ' + numw(multi.k) + 'mal auf dem Treppchen.');
       var zs = l.filter(function (h) { return h.type === 'zeit'; }), vs = l.filter(function (h) { return h.type === 'vier'; });
       var vierW = gen === 'm' ? 'als Vierter' : gen === 'w' ? 'als Vierte' : 'auf Platz 4';
@@ -301,10 +301,10 @@ var WKParse = (function () {
       if (zs.length === 1) {
         var vm = vs.filter(function (v) { return v.r.e === zs[0].r.e; })[0];
         if (vm) vMerged.push(vm);
-        out.push('Über ' + zs[0].r.ev + ' blieb ' + nm(false) + ' mit ' + showT(zs[0].r.t) + ' gleich ' + secs(zs[0].r.diff) + ' unter der Meldezeit' + (vm ? ' und verpasste ' + vierW + ' nur knapp das Treppchen.' : '.'));
+        out.push('Über ' + zs[0].r.ev + ' schwamm ' + nm(false) + ' ' + showT(zs[0].r.t) + ' und war damit ' + secs(zs[0].r.diff) + ' schneller als gemeldet' + (vm ? ', verpasste ' + vierW + ' aber nur knapp das Treppchen.' : '.'));
       } else if (zs.length > 1) {
         var vm2 = vs.filter(function (v) { return zs.some(function (z) { return z.r.e === v.r.e; }); }); vm2.forEach(function (v) { vMerged.push(v); });
-        out.push(nm(true) + ' unterbot die Meldezeit über ' + zs.map(function (h) { return h.r.ev + ' um ' + secs(h.r.diff); }).reduce(function (a, c, i, arr) { return i === 0 ? c : (i === arr.length - 1 ? a + ' und über ' + c : a + ', über ' + c); }, '') + (vm2.length ? '. Über ' + vm2.map(function (v) { return v.r.ev; }).join(' und ') + ' belegte ' + nm(false) + ' Platz 4 und verpasste das Treppchen nur knapp.' : '.'));
+        out.push(nm(true) + ' war über ' + zs.map(function (h) { return h.r.ev + ' ' + secs(h.r.diff); }).reduce(function (a, c, i, arr) { return i === 0 ? c : (i === arr.length - 1 ? a + ' und über ' + c : a + ', über ' + c); }, '') + ' schneller als gemeldet' + (vm2.length ? '. Über ' + vm2.map(function (v) { return v.r.ev; }).join(' und ') + ' belegte ' + nm(false) + ' Platz 4 und verpasste das Treppchen nur knapp.' : '.'));
       }
       vs.filter(function (v) { return vMerged.indexOf(v) < 0; }).forEach(function (h) { out.push(nm(true) + ' verpasste über ' + h.r.ev + ' ' + vierW + ' nur knapp das Treppchen.'); });
       l.filter(function (h) { return h.type === 'alle'; }).forEach(function (h) { out.push(nm(true) + ' blieb in allen ' + numw(h.k) + ' Starts mit Meldezeit unter dieser Zeit.'); });
@@ -339,35 +339,42 @@ var WKParse = (function () {
     L.push('# preview: ' + img, '# heroImage: ' + img, '# images:', '#   - src: ' + img, '#     alt: Das Team', '#   - src: /images/news/' + base + '-2.jpeg', '#     alt: Bildunterschrift');
     if (A.link) L.push('links:', '  - text: ' + q('Alle Ergebnisse vom ' + wk.title), '    url: ' + A.link);
     L.push('---', '');
+    // Hilfen: Satzende bereinigen, Einzahl/Mehrzahl erkennen
+    var fix = function (x) { return String(x || '').trim().replace(/[.\s]+$/, ''); };
+    var many = function (x) { return /,| und | & |\+/.test(String(x || '')); };
+    var titleS = String(wk.title || '').replace(/^(Das|Der|Die)\s+/i, '');
+    var tag = dd ? dd.getDate() + '. ' + MON[dd.getMonth()] : '';
     // Absatz 1: Einstieg
-    var p1 = (datum ? 'Am ' + datum + ' ging es' : 'Es ging') + ' für uns zum ' + wk.title + (wk.ort ? ' nach ' + wk.ort : '') + '.';
-    if (wk.veranstalter) p1 += ' Ausgerichtet wurde der Wettkampf von ' + wk.veranstalter + '.';
-    p1 += nS === 1 ? ' Einer unserer Aktiven ging dort an den Start.' : ' Insgesamt ' + nS + ' unserer Aktiven gingen dort an den Start.';
+    var cnt = nS === 1 ? 'Einer' : (nS <= 12 ? numw(nS, true) : String(nS));
+    var p1 = cnt + ' von uns ' + (nS === 1 ? 'ging' : 'gingen') + (tag ? ' am ' + tag : '') + ' beim ' + titleS + (wk.ort ? ' in ' + wk.ort : '') + ' an den Start.';
+    if (wk.veranstalter && !/^(mit|und)\b/i.test(wk.veranstalter)) p1 += ' Ausgerichtet wurde der Wettkampf von ' + fix(wk.veranstalter) + '.';
     L.push(p1, '');
     // Absatz 2: Team
     var p2 = [];
-    if (A.trainer) p2.push('Betreut wurden wir von ' + A.trainer + '.');
-    if (A.debuet) p2.push('Für ' + A.debuet + ' war es der erste Wettkampf überhaupt, entsprechend groß war die Aufregung vor den ersten Starts.');
-    if (A.stimmung) p2.push(A.stimmung);
+    if (A.trainer) { var tr0 = String(A.trainer).replace(/\s*(als|,)?\s*(Trainer(:?innen|:in)?|Betreuer(:?innen|:in)?)\s*\.?\s*$/i, '').replace(/^\s*(Trainer|Betreuer)[:\s]+/i, '').trim() || A.trainer; p2.push('Als Trainer ' + (many(tr0) ? 'waren ' : 'war ') + fix(tr0) + ' dabei.'); }
+    if (A.debuet) p2.push('Für ' + fix(A.debuet) + ' war es der allererste Wettkampf, da war die Aufregung natürlich groß.');
+    if (A.stimmung) p2.push(fix(A.stimmung) + '.');
     STIMM.forEach(function (x) { if ((A.sb || []).indexOf(x[0]) >= 0) p2.push(x[2]); });
     if (p2.length) L.push(p2.join(' '), '');
     // Absatz 3: Ergebnisse
-    var p3 = ['Auf dem Programm standen für uns ' + rows.length + (rows.length === 1 ? ' Einzelstart' : ' Einzelstarts') + (nRel ? ' und ' + nRel + (nRel === 1 ? ' Staffelstart' : ' Staffelstarts') : '') + '.'];
-    if (timed && imp / timed >= 0.5) p3.push('Bei ' + imp + ' von ' + timed + ' Starts mit Meldezeit blieben wir unter der gemeldeten Zeit.');
+    var p3 = ['Zusammen kamen wir auf ' + rows.length + (rows.length === 1 ? ' Einzelstart' : ' Einzelstarts') + (nRel ? ' und ' + nRel + (nRel === 1 ? ' Staffelstart' : ' Staffelstarts') : '') + '.'];
+    if (timed && imp / timed >= 0.5) p3.push(imp + ' Mal blieben wir dabei unter der Meldezeit.');
     if (showMedals) {
-      p3.push('Am Ende durften wir uns über ' + totAll + (totAll === 1 ? ' Medaille' : ' Medaillen') + (has('offen') && !has('einzel') ? ' in der offenen Wertung' : '') + ' freuen: ' + medalWords(tot) + '.');
+      p3.push((totAll === 1 ? 'Eine Medaille konnten wir' : 'Insgesamt ' + totAll + ' Medaillen konnten wir') + (has('offen') && !has('einzel') ? ' in der offenen Wertung' : '') + ' mit nach Barnstorf nehmen: ' + medalWords(tot) + '.');
       if (mn.length > 1 && (medal[mn[0]][0] + medal[mn[0]][1] + medal[mn[0]][2]) > (medal[mn[1]][0] + medal[mn[1]][1] + medal[mn[1]][2])) p3.push(firstName(mn[0]) + ' war mit ' + numw(medal[mn[0]][0] + medal[mn[0]][1] + medal[mn[0]][2]) + ' Medaillen am erfolgreichsten.');
-    } else if (has('einzel') || has('offen')) p3.push('Zu einer Medaille hat es diesmal leider nicht gereicht, dafür gab es einige gute Zeiten zu sehen.');
-    if (has('staffel') && A.staffel) p3.push(A.staffel);
-    if ((has('teamg') || has('team')) && A.team) p3.push('In der Mannschaftswertung belegte die ' + club + ' ' + A.team + '.');
-    if (has('teamw') && A.teamw) p3.push('In der Mannschaftswertung der Mädchen und Frauen ' + (/^platz|^\d/i.test(A.teamw) ? 'belegten wir ' : '') + A.teamw + '.');
-    if (has('teamm') && A.teamm) p3.push('In der Mannschaftswertung der Jungen und Männer ' + (/^platz|^\d/i.test(A.teamm) ? 'belegten wir ' : '') + A.teamm + '.');
+    } else if (has('einzel') || has('offen')) p3.push('Zu einer Medaille hat es diesmal nicht gereicht.');
+    if (has('staffel') && A.staffel) p3.push(fix(A.staffel) + '.');
+    var tw = has('teamw') && A.teamw ? fix(A.teamw) : '', tm = has('teamm') && A.teamm ? fix(A.teamm) : '', tg = (has('teamg') || has('team')) && A.team ? fix(A.team) : '';
+    var plat = function (x) { return /^(platz|\d)/i.test(x) ? 'belegte' : ''; };
+    if (tg) p3.push('In der Mannschaftswertung ' + (plat(tg) ? 'belegte die ' + club + ' ' : 'kam die ' + club + ' auf ') + tg + '.');
+    if (tw && tm) p3.push('Bei den Mädchen und Frauen ' + (plat(tw) ? 'wurde es ' : 'gab es ') + tw + ', bei den Jungen und Männern ' + (plat(tm) ? '' : 'gab es ') + tm + ' in der Mannschaftswertung.');
+    else if (tw) p3.push('In der Mannschaftswertung der Mädchen und Frauen ' + (plat(tw) ? 'belegten wir ' : 'kamen wir auf ') + tw + '.');
+    else if (tm) p3.push('In der Mannschaftswertung der Jungen und Männer ' + (plat(tm) ? 'belegten wir ' : 'kamen wir auf ') + tm + '.');
     L.push(p3.join(' '), '');
     // Absatz 4: Highlights
     var hs = articleHints(wk).filter(function (h) { return (A.hl || []).indexOf(h.id) >= 0; });
-    var ht = highlightText(hs); if (ht || A.highlights) L.push([ht, A.highlights || ''].filter(Boolean).join(' '), '');
-    if (A.kr) L.push('Auch im Kampfgericht waren wir vertreten: ' + A.kr + '.', '');
-    L.push('Wir gratulieren allen Aktiven zu ihren Leistungen und freuen uns auf den nächsten Wettkampf!', '');
+    var ht = highlightText(hs); if (ht || A.highlights) L.push([ht, fix(A.highlights) ? fix(A.highlights) + '.' : ''].filter(Boolean).join(' '), '');
+    if (A.kr) L.push('Im Kampfgericht ' + ((A.kr.match(/ als /g) || []).length > 1 ? 'waren ' : 'war ') + fix(A.kr) + ' für uns im Einsatz.', '');
     if (showMedals) {
       L.push('| Name | Gold (🥇) | Silber (🥈) | Bronze (🥉) | Gesamt |', '| --- | --- | --- | --- | --- |');
       mn.forEach(function (n) { var m = medal[n]; L.push('| ' + sw[n][0].name + ' | ' + m[0] + ' | ' + m[1] + ' | ' + m[2] + ' | ' + (m[0] + m[1] + m[2]) + ' |'); });

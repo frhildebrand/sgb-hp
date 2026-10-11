@@ -86,8 +86,8 @@ templateEngineOverride: false
     if (SH.has('material.view')) want.push('material');
     if (SH.has('veranstaltungen.view')) want.push('veranstaltungen');
     if (SH.has('vorstand.view') || SH.has('vorstand.antrag')) want.push('vorstandAntraege');
-    if (SH.has('abrechnung.eigene') || SH.has('abrechnung.alle')) want.push('abrechnungen');
-    if (SH.has('fahrten.eigene') || SH.has('fahrten.alle')) want.push('fahrten');
+    if (['abrechnung.eigene', 'abrechnung.alle', 'abrechnung.ansehen', 'abrechnung.bezahlen'].some(function (k) { return SH.has(k); })) want.push('abrechnungen');
+    if (['fahrten.eigene', 'fahrten.alle', 'fahrten.ansehen', 'fahrten.abrechnen'].some(function (k) { return SH.has(k); })) want.push('fahrten');
     if (SH.has('training.tage.view')) want.push('trainingTage');
     if (SH.S.me && SH.S.me.user) want.push('profile');
     if (!want.length) { if (state.next) { state.next = null; SH.lsSet('hubnext', null); render(); } return; }
