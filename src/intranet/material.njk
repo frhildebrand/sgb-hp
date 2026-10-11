@@ -358,6 +358,111 @@ permalink: /intranet/material/
   #hubRoot .hub-sec { margin-bottom: 26px; }
   #hubRoot .hub-warn { border-left: 5px solid var(--warn); }
   #hubRoot .hub-warn.bad { border-left-color: var(--bad); }
+  /* ===== Design 3: Kategorie-Farben, Konto-Knopf, Menü, Startseite, mehr Tiefe ===== */
+  #hubRoot { --bg: #eef2f7; --card: #ffffff; --line: #dfe6ef; --soft: #5f6b7d; --ink: #0f172a; --ring: rgba(214,162,58,.35); background: radial-gradient(1200px 500px at 85% -10%, rgba(18,57,92,.07), transparent 60%), var(--bg); }
+  .dark #hubRoot { --bg: #0a1222; --card: #111d33; --line: #213049; --soft: #9fb0c8; --ink: #f1f5f9; background: radial-gradient(1000px 500px at 85% -10%, rgba(43,95,147,.28), transparent 60%), radial-gradient(800px 400px at 0% 100%, rgba(214,162,58,.06), transparent 60%), var(--bg); }
+  html:not(.dark) body, html:not(.dark) { background-color: #eef2f7 !important; }
+  html.dark, html.dark body { background-color: #0a1222 !important; }
+  #hubRoot .hub-card, #hubRoot .wm-card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 6px 18px rgba(15,23,42,.05); }
+  .dark #hubRoot .hub-card, .dark #hubRoot .wm-card { background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,0)) , var(--card); box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 8px 24px rgba(0,0,0,.28); }
+  #hubRoot .hub-main > * { animation: hubIn .35s ease both; }
+  @keyframes hubIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  #hubRoot .m-stat b, #hubRoot .m-stat .m-sv, #hubRoot table td, #hubRoot table th { font-variant-numeric: tabular-nums; }
+  #hubRoot button:not([disabled]):active, #hubRoot .wm-btn:active, #hubRoot .wm-amber:active { transform: scale(.97); }
+  @media (prefers-reduced-motion: reduce) { #hubRoot *, #hubRoot .hub-main > * { animation: none !important; transition: none !important; } }
+
+  /* Konto-Knopf */
+  #hubRoot .hub-head .hub-acct { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 12px 0 5px; border-radius: 999px; border: 1px solid rgba(255,255,255,.28); background: rgba(255,255,255,.12); color: #fff; font: 800 13px -apple-system, system-ui, sans-serif; cursor: pointer; transition: background .15s; }
+  #hubRoot .hub-head .hub-acct:hover { background: rgba(255,255,255,.22); }
+  #hubRoot .hub-head .hub-avc { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #e8b54d, #c98f1f); color: #0a1f36; font: 900 13px ui-rounded, system-ui, sans-serif; }
+  #hubRoot .hub-dot { position: absolute; right: -1px; bottom: -1px; width: 11px; height: 11px; border-radius: 50%; background: #22c55e; border: 2px solid #12395c; }
+  #hubRoot .hub-head .hub-guest { padding: 0 16px; background: linear-gradient(135deg, #e8b54d, #c98f1f); border-color: transparent; color: #0a1f36; }
+  #hubRoot .hub-head .hub-guest:hover { background: linear-gradient(135deg, #f0c062, #d6a23a); }
+  @media (max-width: 560px) { #hubRoot .hub-acn { display: none; } #hubRoot .hub-head .hub-acct { padding: 0 5px; } #hubRoot .hub-head .hub-guest { padding: 0 12px; } }
+
+  /* Burgermenü */
+  #hubRoot .hub-drawer-bg { background: rgba(3,9,22,.62); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); animation: hubFade .2s ease; }
+  @keyframes hubFade { from { opacity: 0; } to { opacity: 1; } }
+  #hubRoot .hub-drawer { width: min(23rem, 100%); gap: 0; padding: 14px 12px calc(18px + env(safe-area-inset-bottom)); background: linear-gradient(180deg, #fbfcfe, #f1f5fa); animation: hubSlide .25s cubic-bezier(.2,.8,.2,1); box-shadow: -18px 0 50px rgba(2,8,23,.45); }
+  .dark #hubRoot .hub-drawer { background: linear-gradient(180deg, #0f1c36, #0a1426 60%); color: #e8eef7; }
+  @keyframes hubSlide { from { transform: translateX(30px); opacity: .4; } to { transform: none; opacity: 1; } }
+  #hubRoot .hub-dtop { padding: 2px 6px 10px; border: 0; }
+  #hubRoot .hub-dtitle { font: 800 12px -apple-system, system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--soft); }
+  #hubRoot .hub-x { width: 36px; height: 36px; border-radius: 50%; border: 0; background: rgba(148,163,184,.18); color: inherit; font-size: 15px; cursor: pointer; }
+  #hubRoot .hub-prof { margin: 0 0 12px; padding: 14px; border-radius: 18px; color: #fff; background: linear-gradient(135deg, #0a1f36, #164a77 60%, #1b5c92); border: 1px solid rgba(255,255,255,.10); box-shadow: 0 8px 22px rgba(10,31,54,.35), inset 0 1px 0 rgba(255,255,255,.12); }
+  #hubRoot .hub-prow { display: flex; align-items: center; gap: 12px; width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+  #hubRoot .hub-avb { position: relative; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #e8b54d, #c98f1f); color: #0a1f36; font: 900 18px ui-rounded, system-ui, sans-serif; box-shadow: 0 0 0 3px rgba(255,255,255,.18); }
+  #hubRoot .hub-avb .hub-dot { width: 13px; height: 13px; border-color: #164a77; }
+  #hubRoot .hub-pmain { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  #hubRoot .hub-prof .hub-dn { font: 800 17px ui-rounded, system-ui, sans-serif; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #hubRoot .hub-prof .hub-dr { font-size: 12px; color: rgba(255,255,255,.7); }
+  #hubRoot .hub-car { color: inherit; opacity: .7; font-size: 12px; }
+  #hubRoot .hub-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  #hubRoot .hub-chip { padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.2); color: #fff; font: 700 12px -apple-system, system-ui, sans-serif; }
+  #hubRoot .hub-chip-x { background: rgba(214,162,58,.22); border-color: rgba(214,162,58,.55); color: #ffe3a0; }
+  #hubRoot .hub-chip-n { background: transparent; border-style: dashed; color: rgba(255,255,255,.7); }
+  #hubRoot .hub-pact { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.16); display: flex; flex-direction: column; }
+  #hubRoot .hub-prof .hub-mi { color: #fff; padding: 10px 8px; min-height: 0; }
+  #hubRoot .hub-prof .hub-mi:hover { background: rgba(255,255,255,.12); }
+  #hubRoot .hub-prof .hub-mic { background: rgba(255,255,255,.14); }
+  #hubRoot .hub-pbtn { margin-top: 12px; width: 100%; }
+  #hubRoot .hub-dnav { padding-top: 0; display: flex; flex-direction: column; gap: 6px; }
+  #hubRoot .hub-mgrp { border-radius: 16px; background: rgba(148,163,184,.10); border: 1px solid transparent; overflow: hidden; }
+  .dark #hubRoot .hub-mgrp { background: rgba(255,255,255,.04); }
+  #hubRoot .hub-mgrp.hub-gopen { border-color: color-mix(in srgb, var(--mc) 35%, transparent); background: color-mix(in srgb, var(--mc) 7%, transparent); }
+  #hubRoot .hub-mlabel { display: flex; align-items: center; gap: 10px; width: 100%; margin: 0; padding: 11px 12px; border: 0; background: none; color: inherit; font: 800 12px -apple-system, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; text-align: left; cursor: default; }
+  #hubRoot button.hub-mcat { cursor: pointer; }
+  #hubRoot .hub-mcic { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 9px; font-size: 15px; background: color-mix(in srgb, var(--mc) 22%, transparent); }
+  #hubRoot .hub-mcat .hub-mlb { flex: 1; color: color-mix(in srgb, var(--mc) 70%, currentColor); }
+  #hubRoot .hub-mcn { min-width: 22px; padding: 1px 7px; border-radius: 999px; background: color-mix(in srgb, var(--mc) 20%, transparent); font-size: 11px; text-align: center; }
+  #hubRoot .hub-mitems { display: flex; flex-direction: column; gap: 2px; padding: 0 6px 8px; }
+  #hubRoot .hub-drawer .hub-mi { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; padding: 9px 10px; min-height: 46px; border-radius: 12px; border: 0; background: transparent; color: inherit; font: 700 15px -apple-system, system-ui, sans-serif; text-decoration: none; cursor: pointer; text-align: left; }
+  #hubRoot .hub-drawer .hub-mi:hover { background: color-mix(in srgb, var(--mc, #94a3b8) 14%, transparent); }
+  #hubRoot .hub-drawer .hub-mic { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 10px; font-size: 17px; background: color-mix(in srgb, var(--mc, #94a3b8) 20%, transparent); }
+  #hubRoot .hub-drawer .hub-mi.hub-on { background: color-mix(in srgb, var(--gold) 18%, transparent); font-weight: 900; }
+  #hubRoot .hub-drawer .hub-mi.hub-on::before { content: ''; position: absolute; left: -6px; top: 8px; bottom: 8px; width: 4px; border-radius: 4px; background: var(--gold); }
+  #hubRoot .hub-drawer .hub-mi.hub-on .hub-mic { background: var(--gold); }
+  #hubRoot .hub-dnav > .hub-mi { background: rgba(148,163,184,.10); }
+  .dark #hubRoot .hub-dnav > .hub-mi { background: rgba(255,255,255,.04); }
+  #hubRoot .hub-dfoot { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+
+  /* Startseite */
+  #hubRoot .hub-hero { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin: 0 0 14px; padding: 22px 24px; border-radius: 22px; color: #fff; background: radial-gradient(500px 220px at 100% 0, rgba(214,162,58,.35), transparent 60%), linear-gradient(135deg, #0a1f36, #12395c 60%, #1b5c92); box-shadow: 0 12px 30px rgba(10,31,54,.28), inset 0 1px 0 rgba(255,255,255,.14); }
+  #hubRoot .hub-hdate { font: 800 12px -apple-system, system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.72); }
+  #hubRoot .hub-hero .hub-hello { margin: 4px 0 0; font: 900 28px/1.1 ui-rounded, 'SF Pro Rounded', system-ui, sans-serif; color: #fff; }
+  #hubRoot .hub-hnext { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 14px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); color: #fff; text-decoration: none; max-width: 100%; }
+  #hubRoot .hub-hnext > span:first-child { font-size: 22px; }
+  #hubRoot .hub-hnext b { display: block; font-size: 14px; }
+  #hubRoot .hub-hnext i { display: block; font-style: normal; font-size: 12px; color: rgba(255,255,255,.75); }
+  #hubRoot .hub-fr { margin: 0 0 18px; }
+  #hubRoot .hub-frh { margin: 0 0 6px; font: 800 12px -apple-system, system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--soft); }
+  #hubRoot .hub-frl { display: flex; flex-wrap: wrap; gap: 8px; }
+  #hubRoot .hub-fchip { display: inline-flex; flex-direction: column; gap: 1px; padding: 7px 12px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--info); color: inherit; text-decoration: none; font-size: 13px; line-height: 1.25; }
+  #hubRoot .hub-fchip b { font-weight: 800; }
+  #hubRoot .hub-fchip span { color: var(--soft); font-size: 12px; }
+  #hubRoot .hub-fchip.warn { border-left-color: var(--warn); }
+  #hubRoot .hub-fchip.bad { border-left-color: var(--bad); }
+  #hubRoot .hub-sech { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; font: 900 15px ui-rounded, system-ui, sans-serif; letter-spacing: .02em; color: var(--ink); }
+  #hubRoot .hub-sech .hub-sechi { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 9px; font-size: 15px; background: color-mix(in srgb, var(--cat, #94a3b8) 22%, transparent); }
+  #hubRoot .hub-sech::after { content: ''; flex: 1; height: 2px; border-radius: 2px; background: linear-gradient(90deg, color-mix(in srgb, var(--cat, #94a3b8) 55%, transparent), transparent); }
+  #hubRoot .hub-t2 { position: relative; overflow: hidden; background: var(--card); border: 1px solid var(--line); border-radius: 20px; transition: transform .15s, box-shadow .15s, border-color .15s; }
+  #hubRoot .hub-t2::before { display: block; content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; height: auto; background: var(--acc); }
+  #hubRoot .hub-t2:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--acc) 50%, var(--line)); box-shadow: 0 10px 26px color-mix(in srgb, var(--acc) 18%, transparent); }
+  #hubRoot .hub-t2ic { background: linear-gradient(135deg, color-mix(in srgb, var(--acc) 28%, transparent), color-mix(in srgb, var(--acc) 10%, transparent)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--acc) 25%, transparent); }
+  .dark #hubRoot .hub-t2 { background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01)), var(--card); }
+  #hubRoot .hub-t2n { color: var(--ink); }
+  #hubRoot .hub-pagehead, #hubRoot .m-pagehead { color: var(--ink); }
+
+  /* Reiter und Knöpfe: etwas lebendiger */
+  #hubRoot .wm-tabs { background: rgba(100,116,139,.16); border: 1px solid var(--line); }
+  #hubRoot .wm-tab.on, .dark #hubRoot .wm-tab.on { background: linear-gradient(135deg, #12395c, #1b5c92); color: #fff; box-shadow: 0 3px 10px rgba(18,57,92,.35); }
+  #hubRoot .wm-amber, #hubRoot .hub-gold { background: linear-gradient(135deg, #e8b54d, #c98f1f); color: #0a1f36; border: 0; box-shadow: 0 2px 8px rgba(201,143,31,.3); }
+  #hubRoot .wm-amber:hover, #hubRoot .hub-gold:hover { background: linear-gradient(135deg, #f0c062, #d6a23a); }
+  #hubRoot .ha-dialog .hub-gold { background: linear-gradient(135deg, #e8b54d, #c98f1f); color: #0a1f36; }
+  .dark #hubRoot .ha-dialog { background: #0f1b31; border: 1px solid var(--line); }
+  #hubRoot .m-stat { border-radius: 16px; border: 1px solid var(--line); }
+  #hubRoot .hub-note.hub-card h3, #hubRoot .hub-card h3 { color: var(--ink); }
+  @media (max-width: 560px) { #hubRoot .hub-hero { padding: 18px; } #hubRoot .hub-hero .hub-hello { font-size: 23px; } }
 </style>
 <div id="hubRoot" data-modul="material"><noscript><p style="padding:24px">Dafür wird JavaScript gebraucht.</p></noscript></div>
 <script src="/intranet/js/hub-config.js" defer></script>

@@ -67,25 +67,16 @@ templateEngineOverride: false
     { k: 'dsv', t: 'text', label: 'DSV-ID' },
     { k: 'notiz', t: 'area', label: 'Notiz', rows: 3 }
   ];
-  function formularHtml(m) {
-    m = m || {};
-    var line = function (l, v) { return '<tr><td style="width:32%"><b>' + l + '</b></td><td style="height:26px">' + esc(v || '') + '</td></tr>'; };
-    return '<h1>Anmeldung Wettkampfgruppe</h1><div class="sub">SG Barnstorf · Schwimmen</div><p>Hiermit melde ich mich / mein Kind verbindlich zur Wettkampfgruppe der SG Barnstorf an.</p><table>' +
-      line('Name, Vorname', m.name) + line('Geburtsdatum / Jahrgang', m.jg) + line('Anschrift', '') + line('Telefon', '') + line('E-Mail', '') + line('Eltern / Erziehungsberechtigte', '') + line('DSV-ID (falls vorhanden)', m.dsv) + line('Eintritt zum', '') + '</table>' +
-      '<p>Mit der Teilnahme am Training und an Wettkämpfen nach Absprache mit den Trainern bin ich einverstanden. Meldungen zu Wettkämpfen erfolgen unter Angabe von Name, Jahrgang und Vereinszugehörigkeit; Meldeergebnisse und Ergebnisse können im Rahmen der Vereinsarbeit (z. B. Homepage) veröffentlicht werden.</p>' +
-      '<p style="margin-top:44px">Ort, Datum: ______________________ &nbsp;&nbsp; Unterschrift: ________________________________</p><div class="sub">(bei Minderjährigen: Unterschrift eines Erziehungsberechtigten)</div>';
-  }
   var memberTab = {
     id: 'mitglieder', label: 'Mitglieder', coll: 'wgMitglieder', view: ['training.mitglieder.view'], edit: ['training.mitglieder.edit'], print: ['training.print'], addLabel: 'Neues Mitglied', search: ['name', 'kontakt'], fields: MFIELDS,
-    hint: 'Wer trainiert in der Wettkampfgruppe? Am einfachsten über „Gruppenliste (PDF)“ aus WebClub einlesen. Über das Drucken-Menü einer Karte gibt es den Anmeldebogen.',
+    hint: 'Wer trainiert in der Wettkampfgruppe? Am einfachsten über „Gruppenliste (PDF)“ aus WebClub einlesen.',
     newItem: function () { return {}; },
-    summary: function (all) { return '<p class="wm-note"><b>' + all.length + '</b> ' + (all.length === 1 ? 'Mitglied' : 'Mitglieder') + '</p><p class="m-actions"><button type="button" class="wm-btn" data-ma="wgglist">📄 Gruppenliste (PDF)</button><button type="button" class="wm-btn" data-ma="wgblank">🖨️ Leerer Anmeldebogen</button></p>'; },
+    summary: function (all) { return '<p class="wm-note"><b>' + all.length + '</b> ' + (all.length === 1 ? 'Mitglied' : 'Mitglieder') + '</p><p class="m-actions"><button type="button" class="wm-btn" data-ma="wgglist">📄 Gruppenliste (PDF)</button></p>'; },
     card: function (m) {
       return { title: m.name,
         sub: [m.jg ? 'Jg. ' + m.jg + ' (' + age(m) + ')' : '', m.sex === 'w' ? 'weiblich' : m.sex === 'm' ? 'männlich' : m.sex === 'd' ? 'divers' : ''].filter(Boolean).join(' · '),
         body: [m.dsv && m.dsv !== '0' ? '<div><b>DSV-ID:</b> ' + esc(m.dsv) + '</div>' : '', m.notiz ? '<div><b>Notiz:</b><pre>' + esc(m.notiz) + '</pre></div>' : ''].join('') };
     },
-    printItem: function (m) { return { title: 'Anmeldung ' + m.name, body: formularHtml(m) }; },
     printAll: function (all) {
       return { title: 'Mitglieder Wettkampfgruppe', body: '<h1>Wettkampfgruppe: Mitglieder</h1><div class="sub">Stand ' + M.fmtDate(M.today()) + '</div><table><tr><th>Name</th><th>Jg.</th><th></th><th>DSV-ID</th></tr>' + all.map(function (m) { return '<tr><td>' + esc(m.name) + '</td><td>' + esc(m.jg || '') + '</td><td>' + esc(m.sex || '') + '</td><td>' + esc(m.dsv && m.dsv !== '0' ? m.dsv : '') + '</td></tr>'; }).join('') + '</table>' };
     }
@@ -117,7 +108,7 @@ templateEngineOverride: false
       if (open) {
         var ro = rosterFor(t);
         out += '<div class="m-body">' + (t.inhalt ? '<div><b>Einheit:</b><pre>' + esc(t.inhalt) + '</pre></div>' : '') + (t.beob ? '<div><b>Beobachtungen:</b><pre>' + esc(t.beob) + '</pre></div>' : '') + (t.notiz ? '<div><b>Notiz:</b><pre>' + esc(t.notiz) + '</pre></div>' : '') +
-          '<div class="m-sec">Anwesenheit' + (can ? ' – zum Ändern antippen' : '') + '</div><div class="wg-grid">' + (ro.length ? ro.map(function (m) { var cd = (t.anw || {})[m.id] || ''; return '<button type="button" class="wg-p c-' + (cd || 'o') + '" data-ma="wgtap" data-m="' + esc(m.id) + '"' + (can ? '' : ' disabled') + '><i>' + CODE_TXT[cd] + '</i><span>' + esc(m.name) + '</span></button>'; }).join('') : '<p class="wm-note">Noch keine Mitglieder angelegt.</p>') + '</div>' +
+          '<div class="m-sec">Anwesenheit' + (can ? ' – zum Ändern antippen' : '') + '</div><div class="wg-grid">' + (ro.length ? ro.map(function (m) { var cd = (t.anw || {})[m.id] || (t.date < M.today() || t.date === M.today() ? 'f' : ''); return '<button type="button" class="wg-p c-' + (cd || 'o') + '" data-ma="wgtap" data-m="' + esc(m.id) + '"' + (can ? '' : ' disabled') + '><i>' + CODE_TXT[cd] + '</i><span>' + esc(m.name) + '</span></button>'; }).join('') : '<p class="wm-note">Noch keine Mitglieder angelegt.</p>') + '</div>' +
           '<p class="wm-sub">✓ anwesend · E entschuldigt · ✗ fehlt · · offen</p>' +
           '<div class="m-btns">' + (can ? '<button type="button" class="wm-btn" data-ma="wgall">Alle anwesend</button><button type="button" class="wm-btn" data-ma="wgtedit">✏️ Bearbeiten</button><button type="button" class="wm-btn m-danger" data-ma="wgtdel">🗑️ Löschen</button>' : '') + '<button type="button" class="wm-btn" data-ma="wgprintd">🖨️ Liste</button></div></div>';
       }
@@ -299,14 +290,13 @@ templateEngineOverride: false
     ],
     actions: {
       wgtab: function (it, el) { M.S.tab = el.getAttribute('data-v'); M.lsSet('modtab_training', M.S.tab); M.render(true); },
-      wgblank: function () { M.print('Anmeldebogen', formularHtml(null)); },
       wgmon: function (it, el) { M.S.sub.gm = monthShift(curMonth(), +el.getAttribute('data-d')); M.render(true); },
       wgtnew: function () { M.openForm({ title: 'Neuer Trainingstag', fields: TFIELDS, item: { date: M.today(), dauer: 60, trainer: M.userName() ? [M.userName()] : [] }, onSave: function (v) { var t = Object.assign({ id: M.uid(), anw: {} }, v); M.S.sub.gm = ym(v.date); M.S.open[t.id] = true; M.op({ op: 'set', coll: 'trainingTage', item: t }); } }); },
       wgtedit: function (it, el, ev, c) { var t = M.find('trainingTage', c.id); if (!t) return; M.openForm({ title: 'Trainingstag bearbeiten', fields: TFIELDS, item: t, onSave: function (v) { M.op({ op: 'patch', coll: 'trainingTage', id: t.id, fields: v }); } }); },
       wgtdel: function (it, el, ev, c) { var t = M.find('trainingTage', c.id); if (!t) return; M.confirm('Trainingstag vom ' + fd(t.date) + ' samt Anwesenheit löschen?', 'Löschen', function () { M.op({ op: 'del', coll: 'trainingTage', id: t.id }); }); },
       wgtap: function (it, el, ev, c) {
         if (!canTage()) return; var t = M.find('trainingTage', c.id); if (!t) return; var mid = el.getAttribute('data-m');
-        var cur = (t.anw || {})[mid] || ''; var nx = CODES[(CODES.indexOf(cur) + 1) % CODES.length]; var f = {}; f[mid] = nx || null;
+        var past = t.date <= M.today(); var cyc = past ? ['f', 'a', 'e'] : CODES; var cur = (t.anw || {})[mid] || (past ? 'f' : ''); var nx = cyc[(cyc.indexOf(cur) + 1) % cyc.length]; var f = {}; f[mid] = (nx === 'f' && past) ? null : (nx || null);
         M.op({ op: 'patch', coll: 'trainingTage', id: t.id, merge: true, fields: { anw: f } });
       },
       wgall: function (it, el, ev, c) { var t = M.find('trainingTage', c.id); if (!t || !canTage()) return; var f = {}; rosterFor(t).forEach(function (m) { if (!(t.anw || {})[m.id]) f[m.id] = 'a'; }); M.op({ op: 'patch', coll: 'trainingTage', id: t.id, merge: true, fields: { anw: f } }); },

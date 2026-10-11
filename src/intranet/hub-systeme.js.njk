@@ -26,14 +26,16 @@ templateEngineOverride: false
     return String(txt || '').split('\n').map(function (l) { return l.trim(); }).filter(Boolean).map(function (l) {
       var p = l.split('|').map(function (x) { return x.trim(); });
       var o = { t: p[0] };
-      if (withPhase) { var ph = lower(p[1] || ''); o.ph = ph.charAt(0) === 'n' || ph === 'danach' ? 'danach' : (ph.charAt(0) === 't' || ph === 'am tag') ? 'tag' : 'vor'; o.off = parseInt(p[2], 10); if (!isFinite(o.off)) o.off = o.ph === 'vor' ? -7 : o.ph === 'tag' ? 0 : 1; }
+      if (withPhase) { o.cat = p[1] || 'Vorher'; var ph = lower(p[1] || ''); o.ph = ph.charAt(0) === 'n' || ph === 'danach' ? 'danach' : (ph.charAt(0) === 't' || ph === 'am tag') ? 'tag' : 'vor'; o.off = parseInt(p[2], 10); if (!isFinite(o.off)) o.off = o.ph === 'vor' ? -7 : o.ph === 'tag' ? 0 : 1; }
       else { o.off = parseInt(p[1], 10); if (!isFinite(o.off)) o.off = 0; }
       return o;
     });
   }
   function punkteText(list, withPhase) {
-    return (list || []).map(function (p) { return withPhase ? p.t + ' | ' + ({ vor: 'vorher', tag: 'am Tag', danach: 'danach' }[p.ph] || 'vorher') + ' | ' + p.off : p.t + ' | ' + p.off; }).join('\n');
+    return (list || []).map(function (p) { return withPhase ? p.t + ' | ' + catOf(p) + ' | ' + p.off : p.t + ' | ' + p.off; }).join('\n');
   }
+  function catOf(c) { return (c && c.cat) || PHN[(c && c.ph) || 'vor'] || 'Vorher'; }
+  function catsOf(list) { var o = []; (list || []).forEach(function (c) { var k = catOf(c); if (o.indexOf(k) < 0) o.push(k); }); return o; }
   function vorlagen(typ) { return M.items('vorlagen').filter(function (v) { return v.typ === typ; }); }
 
   /* ================= AUFGABEN ================= */
@@ -206,8 +208,52 @@ templateEngineOverride: false
     { title: 'Vereinsfeier / Ausflug', punkte: [['Termin und Ort festlegen', 'vor', -60], ['Einladung verschicken', 'vor', -35], ['Anmeldungen sammeln', 'vor', -14], ['Verpflegung planen', 'vor', -10], ['Fahrdienste klären', 'vor', -7], ['Kosten abrechnen', 'danach', 7]] }
   ];
   function applyVorlage(v, date) {
-    return (v.punkte || []).map(function (p) { return { t: p.t, d: false, ph: p.ph || 'vor', due: date ? M.addDays(date, p.off || 0) : '', who: p.who || [] }; });
+    return (v.punkte || []).map(function (p) { return { t: p.t, d: false, cat: catOf(p), due: date ? M.addDays(date, p.off || 0) : '', who: p.who || [] }; });
   }
+  /* ---------- PDF-Import für Checklisten (Veranstaltungen) ---------- */
+  var BUL = /^\s*(?:[☐□☑☒✓✔▢■•●▪◦·\-–*]|\[\s?[xX ]?\]|\d{1,2}[.)])\s+(.+)$/;
+  function parseCheckPdf(lines) {
+    var L = lines.map(function (l) { return String(l).replace(/\s{2,}/g, ' ').trim(); }).filter(Boolean);
+    var out = { title: L[0] || '', date: '', desc: [], punkte: [] }; var cat = 'Vorher'; var last = null;
+    for (var i = 0; i < L.length; i++) { var d = WKParse.dateDe(L[i]); if (d) { out.date = d; break; } }
+    for (var j = 1; j < L.length; j++) {
+      var l = L[j]; var m = BUL.exec(l);
+      if (m) { last = { t: m[1].trim(), cat: cat }; out.punkte.push(last); continue; }
+      var nextBul = j + 1 < L.length && BUL.test(L[j + 1]);
+      if (l.length <= 60 && (/:$/.test(l) || (!/[.!?]$/.test(l) && nextBul))) { cat = l.replace(/:$/, '').trim(); last = null; continue; }
+      if (last && /^[a-zäöüß(]/.test(l)) { last.t += ' ' + l; continue; }
+      if (!out.punkte.length) out.desc.push(l);
+    }
+    return out;
+  }
+  var CPD = null;
+  function cpdOpen(mode, id) {
+    CPD = { mode: mode, id: id || '' };
+    M.openDlg('<div class="hub-dhead"><h3>Aus PDF übernehmen</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div><div id="cpbox"><p class="wm-note">' + (mode === 'new' ? 'Aus dem PDF wird eine neue Veranstaltung mit Checkliste.' : mode === 'vorlage' ? 'Aus dem PDF wird eine neue Checklisten-Vorlage.' : 'Die Punkte aus dem PDF werden der Checkliste hinzugefügt.') + ' Aufzählungen und Kästchen (☐, -, •, 1.) werden zu Punkten, Zwischenüberschriften zu Kategorien. Du siehst vorher eine Vorschau.</p><div class="m-fgrid"><label class="m-f wide"><span>PDF-Datei</span><input type="file" id="cpfile" accept="application/pdf,.pdf"></label></div><p id="cpmsg" class="wm-note"></p><div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="cpread">Einlesen</button></div></div>');
+  }
+  function cpdRead() {
+    var f = document.getElementById('cpfile') && document.getElementById('cpfile').files[0]; var msg = document.getElementById('cpmsg');
+    if (!f) { msg.textContent = 'Bitte zuerst eine PDF-Datei auswählen.'; return; }
+    msg.textContent = 'Wird gelesen … (beim ersten Mal wird der PDF-Leser geladen)';
+    HubPdf.read(f).then(function (r) {
+      var p = parseCheckPdf(r.lines); CPD.p = p;
+      var src = p.punkte.map(function (x) { return x.t + ' | ' + x.cat + (CPD.mode === 'vorlage' ? ' | -7' : ''); }).join('\n');
+      var box = document.getElementById('cpbox'); if (!box) return;
+      box.innerHTML = '<p class="wm-note"><b>' + p.punkte.length + '</b> Punkte in <b>' + catsOf(p.punkte).length + '</b> Kategorien gefunden. Du kannst hier noch ändern: eine Zeile pro Punkt, „Punkt | Kategorie' + (CPD.mode === 'vorlage' ? ' | Tage zum Datum' : '') + '“.</p><div class="m-fgrid"><label class="m-f wide"><span>Name</span><input type="text" id="cpt" value="' + esc(p.title) + '"></label>' + (CPD.mode === 'new' ? '<label class="m-f"><span>Datum</span><input type="date" id="cpd" value="' + esc(p.date) + '"></label>' : '') + '<label class="m-f wide"><span>Punkte</span><textarea id="cps" rows="12">' + esc(src) + '</textarea></label></div><div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="cpsave">Übernehmen</button></div>';
+    }, function (e) { msg.innerHTML = '<span class="m-over">' + esc(e.message || String(e)) + '</span>'; });
+  }
+  function cpdSave() {
+    if (!CPD || !CPD.p) return; var title = document.getElementById('cpt').value.trim() || 'Neu'; var date = document.getElementById('cpd') ? document.getElementById('cpd').value : '';
+    var rows = document.getElementById('cps').value.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).map(function (l) { var q = l.split('|').map(function (x) { return x.trim(); }); var o = parseInt(q[2], 10); return { t: q[0], cat: q[1] || 'Vorher', off: isFinite(o) ? o : -7 }; });
+    if (!rows.length) { M.toast('Keine Punkte.'); return; }
+    M.closeDlg();
+    if (CPD.mode === 'vorlage') { M.op({ op: 'set', coll: 'vorlagen', item: { id: M.uid(), typ: 'veranstaltung', title: title, punkte: rows.map(function (x) { return { t: x.t, cat: x.cat, off: x.off }; }) } }); M.toast('Vorlage angelegt.'); return; }
+    var chk = rows.map(function (x) { return { t: x.t, d: false, cat: x.cat, who: [], due: '' }; });
+    if (CPD.mode === 'add') { var ev = M.find('veranstaltungen', CPD.id); if (!ev) return; M.op({ op: 'patch', coll: 'veranstaltungen', id: ev.id, fields: { check: (ev.check || []).concat(chk) } }); M.toast(chk.length + ' Punkte ergänzt.'); return; }
+    var it = { id: M.uid(), title: title, date: date, status: 'Geplant', check: chk, beschreibung: (CPD.p.desc || []).join(' ').slice(0, 600) };
+    M.op({ op: 'set', coll: 'veranstaltungen', item: it }); M.S.open[it.id] = true; M.toast('Veranstaltung angelegt.');
+  }
+
   function evFields() {
     var vs = vorlagen('veranstaltung');
     return [{ k: 'title', t: 'text', label: 'Name', req: true }, { k: 'date', t: 'date', label: 'Datum' }, { k: 'time', t: 'time', label: 'Uhrzeit' }, { k: 'ort', t: 'text', label: 'Ort' }, { k: 'status', t: 'sel', label: 'Stand', opts: ['Geplant', 'Läuft', 'Abgeschlossen'] },
@@ -223,6 +269,7 @@ templateEngineOverride: false
     tabs: [{ id: 'ev', label: 'Veranstaltungen', coll: 'veranstaltungen', view: ['veranstaltungen.view'], edit: ['veranstaltungen.edit'], print: ['veranstaltungen.print'], sortBy: { k: 'date', dir: 1 }, printItem: true, addLabel: 'Neue Veranstaltung', search: ['title', 'ort', 'beschreibung'],
       hint: 'Eigene Events mit Checkliste (Zuständig, Frist, Phase) und Helfern. Die Checkliste kann jeder mit Recht abhaken.',
       get fields() { return evFields(); },
+      summary: function () { return M.anyCan(['veranstaltungen.edit']) ? '<div class="m-chips"><button type="button" class="m-chip" data-ma="cpnew">📄 Neue Veranstaltung aus PDF</button></div>' : ''; },
       newItem: function () { return { status: 'Geplant', date: M.today(), vorlageId: '' }; },
       beforeSave: function (it) {
         if (it.vorlageId) { var v = M.find('vorlagen', it.vorlageId); if (v) it.check = (it.check || []).concat(applyVorlage(v, it.date)); }
@@ -235,16 +282,16 @@ templateEngineOverride: false
         var body = (it.beschreibung ? '<pre>' + esc(it.beschreibung) + '</pre>' : '') + (it.material ? '<div class="wm-sub">Material: ' + esc(it.material) + '</div>' : '');
         if (chk.length) {
           body += '<h4 class="wm-sub" style="margin:12px 0 4px">Checkliste</h4>' + M.prog(done, chk.length).replace('class="m-prog"', 'class="m-prog wide"');
-          ['vor', 'tag', 'danach'].forEach(function (ph) {
-            var l = []; chk.forEach(function (c, i) { if ((c.ph || 'vor') === ph) l.push([c, i]); });
+          catsOf(chk).forEach(function (ph) {
+            var l = []; chk.forEach(function (c, i) { if (catOf(c) === ph) l.push([c, i]); });
             if (!l.length) return;
             var pd = l.filter(function (x) { return x[0].d; }).length;
-            body += '<div class="m-sec" style="margin:12px 0 4px">' + PHN[ph] + ' (' + pd + '/' + l.length + ')</div>' + l.map(function (x) { return checkRow(x[0], x[1], canTick, canEdit); }).join('');
+            body += '<div class="m-sec" style="margin:12px 0 4px">' + esc(ph) + ' (' + pd + '/' + l.length + ')</div>' + l.map(function (x) { return checkRow(x[0], x[1], canTick, canEdit); }).join('');
           });
         }
         var h = it.helfer || [];
         body += '<h4 class="wm-sub" style="margin:12px 0 4px">Helfer (' + h.length + ')</h4>' + (h.length ? h.map(function (x, i) { return '<div class="m-chk"><span style="flex:1"><b>' + esc(x.n) + '</b>' + (x.t ? ' · ' + esc(x.t) : '') + '</span>' + (canEdit || isMe(x.n) ? '<button type="button" class="wm-btn" data-ma="hdel" data-i="' + i + '">✕</button>' : '') + '</div>'; }).join('') : '<div class="wm-sub">Noch niemand eingetragen.</div>');
-        var btns = (canTick ? '<button type="button" class="wm-btn" data-ma="helfen">🙋 Ich helfe</button>' : '') + (canEdit ? '<button type="button" class="wm-btn" data-ma="cadd">+ Punkt</button><button type="button" class="wm-btn" data-ma="vapply">📋 Vorlage anwenden</button>' : '') + (M.can('aufgaben.edit') && chk.length ? '<button type="button" class="wm-btn" data-ma="toTasks">✅ Offene Punkte als Aufgaben</button>' : '');
+        var btns = (canEdit ? '<button type="button" class="wm-btn" data-ma="cpadd">📄 Punkte aus PDF</button>' : '') + (canTick ? '<button type="button" class="wm-btn" data-ma="helfen">🙋 Ich helfe</button>' : '') + (canEdit ? '<button type="button" class="wm-btn" data-ma="cadd">+ Punkt</button><button type="button" class="wm-btn" data-ma="vapply">📋 Vorlage anwenden</button>' : '') + (M.can('aufgaben.edit') && chk.length ? '<button type="button" class="wm-btn" data-ma="toTasks">✅ Offene Punkte als Aufgaben</button>' : '');
         return { title: it.title, badges: M.badge(it.status || 'Geplant', it.status === 'Abgeschlossen' ? 'green' : it.status === 'Läuft' ? 'amber' : 'blue') + (chk.length ? M.badge(done + '/' + chk.length, done === chk.length ? 'green' : 'gray') : ''), sub: [when, esc(it.ort || '')].filter(Boolean).join(' · ') + (chk.length ? '<div style="margin-top:6px">' + M.prog(done, chk.length) + '</div>' : ''), body: body, buttons: btns, dim: it.status === 'Abgeschlossen' };
       },
       actions: {
@@ -261,15 +308,15 @@ templateEngineOverride: false
         toTasks: function (it) { if (!it) return; var open = (it.check || []).filter(function (c) { return !c.d; }); if (!open.length) { M.toast('Alle Punkte sind schon erledigt.'); return; }
           M.confirm(open.length + ' offene Punkte als Aufgaben anlegen?', 'Anlegen', function () { M.ops(open.map(function (c) { return { op: 'set', coll: 'aufgaben', item: { id: M.uid(), title: c.t, who: c.who || [], due: c.due || (it.date ? M.addDays(it.date, -1) : ''), status: 'offen', prio: 'normal', ref: 'ev:' + it.id, refLabel: it.title, by: me() } }; })); M.toast('Aufgaben angelegt.'); }); }
       },
-      printItem: function (it) { var chk = it.check || []; return { title: it.title, body: printHead(it.title, esc([fmtShort(it.date) + (it.time ? ', ' + it.time + ' Uhr' : ''), it.ort].filter(Boolean).join(' · '))) + (it.beschreibung ? '<pre>' + esc(it.beschreibung) + '</pre>' : '') + (chk.length ? '<h2>Checkliste</h2><table><tr><th></th><th>Punkt</th><th>Phase</th><th>Zuständig</th><th>Bis</th><th>Erledigt von</th></tr>' + chk.map(function (c) { return '<tr><td class="nowrap">' + (c.d ? '☑' : '☐') + '</td><td>' + esc(c.t) + '</td><td>' + PHN[c.ph || 'vor'] + '</td><td>' + esc((c.who || []).join(', ')) + '</td><td class="nowrap">' + fmtShort(c.due) + '</td><td class="nowrap">' + esc(c.by || '') + '</td></tr>'; }).join('') + '</table>' : '') + ((it.helfer || []).length ? '<h2>Helfer</h2><table><tr><th>Name</th><th>Aufgabe</th></tr>' + it.helfer.map(function (x) { return '<tr><td>' + esc(x.n) + '</td><td>' + esc(x.t || '') + '</td></tr>'; }).join('') + '</table>' : '') + (it.material ? '<h2>Material</h2>' + esc(it.material) : '') }; } },
-    { id: 'vorlagen', label: 'Vorlagen', coll: 'vorlagen', view: ['veranstaltungen.edit'],
+      printItem: function (it) { var chk = it.check || []; return { title: it.title, body: printHead(it.title, esc([fmtShort(it.date) + (it.time ? ', ' + it.time + ' Uhr' : ''), it.ort].filter(Boolean).join(' · '))) + (it.beschreibung ? '<pre>' + esc(it.beschreibung) + '</pre>' : '') + (chk.length ? '<h2>Checkliste</h2><table><tr><th></th><th>Punkt</th><th>Kategorie</th><th>Zuständig</th><th>Bis</th><th>Erledigt von</th></tr>' + chk.map(function (c) { return '<tr><td class="nowrap">' + (c.d ? '☑' : '☐') + '</td><td>' + esc(c.t) + '</td><td>' + esc(catOf(c)) + '</td><td>' + esc((c.who || []).join(', ')) + '</td><td class="nowrap">' + fmtShort(c.due) + '</td><td class="nowrap">' + esc(c.by || '') + '</td></tr>'; }).join('') + '</table>' : '') + ((it.helfer || []).length ? '<h2>Helfer</h2><table><tr><th>Name</th><th>Aufgabe</th></tr>' + it.helfer.map(function (x) { return '<tr><td>' + esc(x.n) + '</td><td>' + esc(x.t || '') + '</td></tr>'; }).join('') + '</table>' : '') + (it.material ? '<h2>Material</h2>' + esc(it.material) : '') }; } },
+    { id: 'vorlagen', label: 'Vorlagen', coll: 'vorlagen', view: ['veranstaltungen.edit', 'veranstaltungen.vorlagen'],
       render: function () {
         var l = vorlagen('veranstaltung');
-        var out = '<section class="wm-card"><div class="wm-bar"><h3>Checklisten-Vorlagen</h3><span class="m-actions"><button type="button" class="wm-amber" data-ma="vnew">+ Neue Vorlage</button></span></div><p class="wm-note">Eine Vorlage ist eine fertige Checkliste. Beim Anwenden werden Fristen automatisch aus dem Datum der Veranstaltung berechnet.</p>';
+        var out = '<section class="wm-card"><div class="wm-bar"><h3>Checklisten-Vorlagen</h3><span class="m-actions"><button type="button" class="wm-btn" data-ma="cpvor">📄 Aus PDF</button><button type="button" class="wm-amber" data-ma="vnew">+ Neue Vorlage</button></span></div><p class="wm-note">Eine Vorlage ist eine fertige Checkliste. Beim Anwenden werden Fristen automatisch aus dem Datum der Veranstaltung berechnet.</p>';
         if (!l.length) out += '<p class="wm-note">Noch keine Vorlagen.</p><button type="button" class="wm-btn" data-ma="vseed">Standard-Vorlagen anlegen (Schwimmfest, Weihnachtsmarkt, Feier)</button>';
         l.forEach(function (v) {
           var open = M.S.open[v.id];
-          out += '<article class="m-card" data-id="' + esc(v.id) + '"><div class="m-head" data-ma="toggle"><div class="m-main"><div class="m-title">📋 ' + esc(v.title) + '</div><div class="wm-sub">' + (v.punkte || []).length + ' Punkte</div></div><span class="m-chev">' + (open ? '▾' : '▸') + '</span></div>' + (open ? '<div class="m-body">' + ['vor', 'tag', 'danach'].map(function (ph) { var x = (v.punkte || []).filter(function (p) { return (p.ph || 'vor') === ph; }); return x.length ? '<div class="m-sec" style="margin:8px 0 2px">' + PHN[ph] + '</div>' + x.map(function (p) { return '<div class="m-chk"><span style="flex:1">' + esc(p.t) + '</span><span class="wm-sub">' + (p.off > 0 ? '+' : '') + p.off + ' Tg.</span></div>'; }).join('') : ''; }).join('') + '<div class="m-btns"><button type="button" class="wm-btn" data-ma="vedit">✏️ Bearbeiten</button><button type="button" class="wm-btn m-danger" data-ma="vdel">🗑️ Löschen</button></div></div>' : '') + '</article>';
+          out += '<article class="m-card" data-id="' + esc(v.id) + '"><div class="m-head" data-ma="toggle"><div class="m-main"><div class="m-title">📋 ' + esc(v.title) + '</div><div class="wm-sub">' + (v.punkte || []).length + ' Punkte</div></div><span class="m-chev">' + (open ? '▾' : '▸') + '</span></div>' + (open ? '<div class="m-body">' + catsOf(v.punkte).map(function (ph) { var x = (v.punkte || []).filter(function (p) { return catOf(p) === ph; }); return x.length ? '<div class="m-sec" style="margin:8px 0 2px">' + esc(ph) + '</div>' + x.map(function (p) { return '<div class="m-chk"><span style="flex:1">' + esc(p.t) + '</span><span class="wm-sub">' + (p.off > 0 ? '+' : '') + p.off + ' Tg.</span></div>'; }).join('') : ''; }).join('') + '<div class="m-btns"><button type="button" class="wm-btn" data-ma="vedit">✏️ Bearbeiten</button><button type="button" class="wm-btn m-danger" data-ma="vdel">🗑️ Löschen</button></div></div>' : '') + '</article>';
         });
         return out + '</section>';
       },
@@ -280,18 +327,19 @@ templateEngineOverride: false
         vseed: function () { M.ops(STD_VORLAGEN.map(function (s) { return { op: 'set', coll: 'vorlagen', item: { id: M.uid(), typ: 'veranstaltung', title: s.title, punkte: s.punkte.map(function (p) { return { t: p[0], ph: p[1], off: p[2] }; }) } }; })); }
       } }]
   });
+  M.mod('veranstaltungen').actions = { cpnew: function () { cpdOpen('new'); }, cpvor: function () { cpdOpen('vorlage'); }, cpadd: function (it, el, ev, c) { cpdOpen('add', c.id); }, cpread: function () { cpdRead(); }, cpsave: function () { cpdSave(); } };
   function vform(it) {
     var base = it ? M.clone(it) : { typ: 'veranstaltung', title: '' };
     base.src = punkteText(base.punkte, true);
-    M.openForm({ title: it ? 'Vorlage bearbeiten' : 'Neue Vorlage', fields: [{ k: 'title', t: 'text', label: 'Name der Vorlage', req: true }, { k: 'src', t: 'area', label: 'Checkliste', rows: 12, hint: 'Pro Zeile: Punkt | Phase | Tage zum Datum. Phase: vorher, am Tag oder danach. Beispiel: „Halle bestätigen | vorher | -90“.' }], item: base, onSave: function (v) {
+    M.openForm({ title: it ? 'Vorlage bearbeiten' : 'Neue Vorlage', fields: [{ k: 'title', t: 'text', label: 'Name der Vorlage', req: true }, { k: 'src', t: 'area', label: 'Checkliste', rows: 12, hint: 'Pro Zeile: Punkt | Kategorie | Tage zum Datum. Die Kategorie ist frei wählbar, z. B. Vorher, Aufbau, Verkauf oder Danach. Beispiel: „Halle bestätigen | vorher | -90“.' }], item: base, onSave: function (v) {
       var n = Object.assign({}, base, { title: v.title, typ: 'veranstaltung', punkte: parsePunkte(v.src, true) }); delete n.src; n.id = base.id || M.uid(); M.op({ op: 'set', coll: 'vorlagen', item: n });
     } });
   }
   function cform(ev, i) {
-    var c = i >= 0 ? M.clone(ev.check[i]) : { t: '', ph: 'vor', who: [], due: '' };
-    var f = [{ k: 't', t: 'text', label: 'Punkt', req: true }, { k: 'who', t: 'tags', label: 'Zuständig' }, { k: 'due', t: 'date', label: 'Frist' }, { k: 'ph', t: 'sel', label: 'Phase', opts: [['vor', 'Vorher'], ['tag', 'Am Tag'], ['danach', 'Danach']] }];
+    var c = i >= 0 ? M.clone(ev.check[i]) : { t: '', cat: (ev.check || []).length ? catOf(ev.check[ev.check.length - 1]) : 'Vorher', who: [], due: '' }; c.cat = catOf(c);
+    var f = [{ k: 't', t: 'text', label: 'Punkt', req: true }, { k: 'who', t: 'tags', label: 'Zuständig' }, { k: 'due', t: 'date', label: 'Frist' }, { k: 'cat', t: 'text', label: 'Kategorie', hint: 'Zum Beispiel: ' + (catsOf(ev.check).concat(['Vorher', 'Am Tag', 'Danach']).filter(function (x, k, a) { return a.indexOf(x) === k; }).join(', ')) }];
     M.openForm({ title: i >= 0 ? 'Punkt bearbeiten' : 'Neuer Punkt', fields: f, item: c, onSave: function (v) {
-      var l = M.clone(ev.check || []); var n = Object.assign({}, c, v);
+      var l = M.clone(ev.check || []); var n = Object.assign({}, c, v); n.cat = (v.cat || '').trim() || 'Vorher'; delete n.ph;
       if (i >= 0) l[i] = n; else l.push(Object.assign({ d: false }, n));
       M.op({ op: 'patch', coll: 'veranstaltungen', id: ev.id, fields: { check: l } });
     } });
@@ -302,32 +350,87 @@ templateEngineOverride: false
   }
 
   /* ================= VORSTAND ================= */
+  /* ---------- Antrag: Druck im Briefkopf-Layout und PDF-Import ---------- */
+  function pidOf(name) { return 'p-' + String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 36); }
+  function antragPrint(it) {
+    var txt = String(it.begruendung || '').trim();
+    if (!/^Sehr geehrte/i.test(txt)) txt = 'Sehr geehrter Vorstand,\n\n' + txt;
+    if (!/(Gruß|Grüße|Gruss)/i.test(txt.slice(-220))) txt += '\n\nMit sportlichem Gruß';
+    var paras = txt.split(/\n\s*\n/).map(function (x) { return '<p>' + esc(x.trim()) + '</p>'; }).join('');
+    var pr = lower(it.von) === lower(me()) ? M.find('profile', pidOf(me())) : null; var sig = pr && pr.sig;
+    var d = /^\d{4}-\d{2}-\d{2}$/.test(it.datum || '') ? it.datum.split('-').reverse().join('.') : (it.datum || '');
+    var body = '<div class="atitle">' + esc(it.ueberschrift || it.title || '').replace(/\n/g, '<br>') + '</div><div class="atext">' + paras + '</div><div class="asig">' + (sig ? '<img class="sig" src="' + esc(sig) + '" alt="">' : '<div style="height:44px"></div>') + '<div>' + esc(it.von || '') + '</div><div>Barnstorf' + (d ? ', ' + d : '') + '</div></div>';
+    return { title: it.title, body: body, opts: { t2: it.title || 'Antrag', t3: it.untertitel || '', css: '.atitle{font-size:18px;font-weight:700;text-align:center;margin:8px 0 18px;line-height:1.35}.atext p{margin:0 0 10px;white-space:pre-line;font-size:12.5px;line-height:1.55}.asig{margin-top:6px;font-size:12.5px}.asig img.sig{height:52px}' } };
+  }
+  function parseAntragPdf(lines) {
+    var L = lines.map(function (l) { return String(l).replace(/\s{2,}/g, ' ').trim(); }).filter(Boolean);
+    var out = { title: '', untertitel: '', ueberschrift: '', text: '', von: '', datum: '' };
+    var iS = -1; for (var i = 0; i < L.length; i++) if (/^Sehr geehrte/i.test(L[i])) { iS = i; break; }
+    if (iS < 0) { out.text = L.join('\n'); return out; }
+    var head = L.slice(0, iS); if (head.length && /Schwimmgemeinschaft/i.test(head[0])) head.shift();
+    if (head.length >= 4) { out.title = head[0]; out.untertitel = head[1]; out.ueberschrift = head.slice(2).join(' '); }
+    else if (head.length === 3) { out.title = head[0]; out.ueberschrift = head.slice(1).join(' '); }
+    else out.title = head.join(' ');
+    var iE = L.length - 1; for (var j = iS; j < L.length; j++) if (/^Mit (sportlichem|freundlichem|besten)|^Mit .*Gr(uß|üß)/i.test(L[j])) { iE = j; break; }
+    var body = L.slice(iS, iE + 1); var maxLen = 0; body.forEach(function (l) { if (l.length > maxLen) maxLen = l.length; });
+    var paras = []; var cur = '';
+    body.forEach(function (l, k) {
+      var prev = k ? body[k - 1] : ''; var listy = /^(\d{1,2}[.)]|[-•*])\s/.test(l);
+      if (!cur) { cur = l; return; }
+      if (listy || /^Mit (sportlichem|freundlichem|besten)/i.test(l) || (/[.!?:]$/.test(prev) && prev.length < maxLen * 0.82) || /^Sehr geehrte/i.test(prev)) { paras.push(cur); cur = l; } else cur += ' ' + l;
+    });
+    if (cur) paras.push(cur);
+    out.text = paras.join('\n\n');
+    var rest = L.slice(iE + 1); rest.forEach(function (l) { var m = /Barnstorf,?\s+(\d{2}\.\d{2}\.\d{4})/.exec(l); if (m) out.datum = WKParse.dateDe(m[1]); else if (!out.von && l.length < 40) out.von = l; });
+    return out;
+  }
+  var APD = null;
+  function apOpen() {
+    APD = null;
+    M.openDlg('<div class="hub-dhead"><h3>Antrag aus PDF</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div><div id="apbox"><p class="wm-note">Wähle ein Antrags-PDF. Briefkopf, Überschrift, Text, Name und Datum werden übernommen. Du siehst vorher eine Vorschau und kannst alles ändern. Gedruckt wird später im gleichen Layout.</p><div class="m-fgrid"><label class="m-f wide"><span>PDF-Datei</span><input type="file" id="apfile" accept="application/pdf,.pdf"></label></div><p id="apmsg" class="wm-note"></p><div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="apread">Einlesen</button></div></div>');
+  }
+  function apRead() {
+    var f = document.getElementById('apfile') && document.getElementById('apfile').files[0]; var msg = document.getElementById('apmsg');
+    if (!f) { msg.textContent = 'Bitte zuerst eine PDF-Datei auswählen.'; return; }
+    msg.textContent = 'Wird gelesen … (beim ersten Mal wird der PDF-Leser geladen)';
+    HubPdf.read(f).then(function (r) {
+      var p = parseAntragPdf(r.lines); var box = document.getElementById('apbox'); if (!box) return;
+      var fl = function (id, lab, v, t, wide) { return '<label class="m-f' + (wide ? ' wide' : '') + '"><span>' + lab + '</span><input type="' + (t || 'text') + '" id="' + id + '" value="' + esc(v || '') + '"></label>'; };
+      box.innerHTML = '<div class="m-fgrid">' + fl('ap_t', 'Antrag (Zeile 2 im Briefkopf)', p.title, 'text', true) + fl('ap_u', 'Zeile 3 im Briefkopf', p.untertitel, 'text', true) + fl('ap_h', 'Überschrift im Text', p.ueberschrift, 'text', true) + fl('ap_v', 'Gestellt von', p.von || me()) + fl('ap_d', 'Datum', p.datum || M.today(), 'date') + '<label class="m-f wide"><span>Antragstext</span><textarea id="ap_x" rows="12">' + esc(p.text) + '</textarea></label></div><div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="apsave">Als Antrag anlegen</button></div>';
+    }, function (e) { msg.innerHTML = '<span class="m-over">' + esc(e.message || String(e)) + '</span>'; });
+  }
+  function apSave() {
+    var g = function (id) { var e = document.getElementById(id); return e ? e.value.trim() : ''; };
+    if (!g('ap_t')) { M.toast('Bitte einen Titel eintragen.'); return; }
+    M.closeDlg(); M.op({ op: 'set', coll: 'vorstandAntraege', item: { id: M.uid(), title: g('ap_t'), untertitel: g('ap_u'), ueberschrift: g('ap_h'), von: g('ap_v'), datum: g('ap_d'), status: 'Entwurf', begruendung: g('ap_x') } }); M.toast('Antrag angelegt.');
+  }
+
   var ASTAT = { 'Entwurf': 'gray', 'Eingereicht': 'blue', 'Beschlossen': 'green', 'Abgelehnt': 'red', 'Zurückgestellt': 'amber' };
   var BSTAT = { offen: ['Offen', 'amber'], arbeit: ['In Arbeit', 'blue'], erledigt: ['Erledigt', 'green'] };
-  function antragOpts() { return M.can('vorstand.edit') ? Object.keys(ASTAT) : ['Entwurf', 'Eingereicht']; }
+  function antragOpts() { return M.anyCan(['vorstand.edit', 'vorstand.antraege.edit']) ? Object.keys(ASTAT) : ['Entwurf', 'Eingereicht']; }
   M.register('vorstand', {
-    title: 'Vorstand', icon: '🏛️', colls: ['vorstandAntraege', 'vorstandProtokolle', 'vorstandBeschluesse', 'vorstandSitzungen', 'vorstandUmlauf', 'aufgaben'],
+    title: 'Vorstand', icon: '🏛️', colls: ['vorstandAntraege', 'vorstandProtokolle', 'vorstandBeschluesse', 'vorstandSitzungen', 'profile', 'aufgaben'],
     tabs: [
-      { id: 'antraege', label: 'Anträge', coll: 'vorstandAntraege', view: ['vorstand.view', 'vorstand.antrag'], edit: ['vorstand.edit', 'vorstand.antrag'], print: ['vorstand.print', 'vorstand.antrag'], sortBy: { k: 'datum', dir: -1 }, printItem: true, addLabel: 'Neuer Antrag', search: ['title', 'von', 'begruendung', 'beschluss'],
+      { id: 'antraege', label: 'Anträge', coll: 'vorstandAntraege', view: ['vorstand.view', 'vorstand.antrag', 'vorstand.antraege.view'], edit: ['vorstand.edit', 'vorstand.antrag', 'vorstand.antraege.edit'], print: ['vorstand.print', 'vorstand.antrag'], sortBy: { k: 'datum', dir: -1 }, printItem: true, addLabel: 'Neuer Antrag', search: ['title', 'von', 'begruendung', 'beschluss'],
         hint: 'Anträge an den Vorstand. Du siehst unter „Meine“ alles, was du gestellt hast.',
         filter: function (it, f) { return !f.mine || lower(it.von) === lower(me()) || lower(it.owner) === lower(me()); },
-        summary: function (all) { return M.can('vorstand.view') ? '<div class="m-chips"><button type="button" class="m-chip' + (M.S.filter.mine ? ' on' : '') + '" data-ma="minef">Meine Anträge</button></div>' : ''; },
-        get fields() { return [{ k: 'title', t: 'text', label: 'Antrag', req: true }, { k: 'datum', t: 'date', label: 'Datum' }, { k: 'von', t: 'text', label: 'Gestellt von' }, { k: 'status', t: 'sel', label: 'Stand', opts: antragOpts() }, { k: 'begruendung', t: 'area', label: 'Begründung', rows: 6 }].concat(M.can('vorstand.edit') ? [{ k: 'beschluss', t: 'area', label: 'Beschluss / Ergebnis', rows: 3 }] : []); },
+        summary: function (all) { return '<div class="m-chips">' + (M.can('vorstand.view') ? '<button type="button" class="m-chip' + (M.S.filter.mine ? ' on' : '') + '" data-ma="minef">Meine Anträge</button>' : '') + '<button type="button" class="m-chip" data-ma="apdf">📄 Antrag aus PDF</button></div>'; },
+        get fields() { return [{ k: 'title', t: 'text', label: 'Antrag (Zeile 2 im Briefkopf)', req: true, ph: 'z. B. Antrag Kostenübernahme Wettkampftraining' }, { k: 'untertitel', t: 'text', label: 'Zeile 3 im Briefkopf (optional)', ph: 'z. B. Hallenbad Delfin' }, { k: 'ueberschrift', t: 'area', label: 'Überschrift im Text (optional)', rows: 2 }, { k: 'datum', t: 'date', label: 'Datum' }, { k: 'von', t: 'text', label: 'Gestellt von' }, { k: 'status', t: 'sel', label: 'Stand', opts: antragOpts() }, { k: 'begruendung', t: 'area', label: 'Antragstext', rows: 14, hint: 'Der Text wird beim Drucken im Antrag-Layout gesetzt. Anrede und Gruß werden ergänzt, wenn sie fehlen. Leere Zeile = neuer Absatz.' }].concat(M.anyCan(['vorstand.edit', 'vorstand.antraege.edit']) ? [{ k: 'beschluss', t: 'area', label: 'Beschluss / Ergebnis', rows: 3 }] : []); },
         newItem: function () { return { datum: M.today(), status: 'Entwurf', von: me() }; },
-        card: function (it) { return { title: it.title, badges: M.badge(it.status || 'Entwurf', ASTAT[it.status] || 'gray'), sub: [fmtShort(it.datum), it.von ? 'von ' + esc(it.von) : ''].filter(Boolean).join(' · '), body: (it.begruendung ? '<h4 class="wm-sub">Begründung</h4>' + pre(it.begruendung) : '') + (it.beschluss ? '<h4 class="wm-sub">Beschluss</h4>' + pre(it.beschluss) : ''), buttons: M.can('vorstand.edit') && it.status === 'Beschlossen' ? '<button type="button" class="wm-btn" data-ma="toBeschl">→ Beschluss anlegen</button>' : '' }; },
+        card: function (it) { return { title: it.title, badges: M.badge(it.status || 'Entwurf', ASTAT[it.status] || 'gray'), sub: [fmtShort(it.datum), it.von ? 'von ' + esc(it.von) : ''].filter(Boolean).join(' · '), body: (it.begruendung ? '<h4 class="wm-sub">Antragstext</h4>' + pre(it.begruendung) : '') + (it.beschluss ? '<h4 class="wm-sub">Beschluss</h4>' + pre(it.beschluss) : ''), buttons: M.anyCan(['vorstand.edit', 'vorstand.antraege.edit']) && it.status === 'Beschlossen' ? '<button type="button" class="wm-btn" data-ma="toBeschl">→ Beschluss anlegen</button>' : '' }; },
         actions: {
           minef: function () { M.S.filter.mine = !M.S.filter.mine; M.render(true); },
           toBeschl: function (it) { if (!it) return; var id = M.uid(); M.op({ op: 'set', coll: 'vorstandBeschluesse', item: { id: id, title: it.title, date: M.today(), text: it.beschluss || it.begruendung || '', who: [], due: '', status: 'offen', antrag: it.id } }); M.toast('Beschluss angelegt (Reiter „Beschlüsse“).'); }
         },
-        printItem: function (it) { return { title: it.title, body: printHead('Antrag: ' + it.title, esc([fmtShort(it.datum), it.von, it.status].filter(Boolean).join(' · '))) + '<h2>Begründung</h2><pre>' + esc(it.begruendung || '') + '</pre>' + (it.beschluss ? '<h2>Beschluss</h2><pre>' + esc(it.beschluss) + '</pre>' : '') }; } },
-      { id: 'sitzungen', label: 'Sitzungen', coll: 'vorstandSitzungen', view: ['vorstand.view'], edit: ['vorstand.edit'], print: ['vorstand.print'], sortBy: { k: 'date', dir: -1 }, printItem: true, addLabel: 'Neue Sitzung', search: ['title', 'ort', 'tops', 'protokoll'],
+        printItem: function (it) { return antragPrint(it); } },
+      { id: 'sitzungen', label: 'Sitzungen', coll: 'vorstandSitzungen', view: ['vorstand.view', 'vorstand.sitzungen.view'], edit: ['vorstand.edit', 'vorstand.sitzungen.edit'], print: ['vorstand.print'], sortBy: { k: 'date', dir: -1 }, printItem: true, addLabel: 'Neue Sitzung', search: ['title', 'ort', 'tops', 'protokoll'],
         hint: 'Erst die Tagesordnung, nach der Sitzung das Protokoll. Mit „Protokoll vorbereiten“ wird aus der Tagesordnung eine Gliederung.',
         fields: [{ k: 'title', t: 'text', label: 'Titel', req: true, ph: 'z. B. Vorstandssitzung November' }, { k: 'date', t: 'date', label: 'Datum' }, { k: 'time', t: 'time', label: 'Uhrzeit' }, { k: 'ort', t: 'text', label: 'Ort' }, { k: 'status', t: 'sel', label: 'Stand', opts: ['Geplant', 'Durchgeführt'] }, { k: 'tops', t: 'lines', label: 'Tagesordnung', rows: 6, hint: 'Pro Zeile ein Punkt.' }, { k: 'teilnehmer', t: 'text', label: 'Teilnehmer' }, { k: 'protokoll', t: 'area', label: 'Protokoll', rows: 12 }],
         newItem: function () { return { date: M.today(), status: 'Geplant', tops: [] }; },
         card: function (it) { var tops = it.tops || []; return { title: it.title, badges: M.badge(it.status || 'Geplant', it.status === 'Durchgeführt' ? 'green' : 'blue'), sub: [fmtShort(it.date) + (it.time ? ', ' + esc(it.time) + ' Uhr' : ''), esc(it.ort || '')].filter(Boolean).join(' · '), body: (tops.length ? '<h4 class="wm-sub">Tagesordnung</h4><ol style="margin:4px 0 8px 18px">' + tops.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol>' : '') + (it.teilnehmer ? '<div class="wm-sub">Teilnehmer: ' + esc(it.teilnehmer) + '</div>' : '') + (it.protokoll ? '<h4 class="wm-sub">Protokoll</h4>' + pre(it.protokoll) : ''), buttons: M.can('vorstand.edit') && tops.length && !it.protokoll ? '<button type="button" class="wm-btn" data-ma="protoVor">📝 Protokoll vorbereiten</button>' : '' }; },
         actions: { protoVor: function (it) { if (!it) return; M.op({ op: 'patch', coll: 'vorstandSitzungen', id: it.id, fields: { protokoll: (it.tops || []).map(function (x, i) { return 'TOP ' + (i + 1) + ': ' + x + '\n\n'; }).join('') } }); } },
         printItem: function (it) { var tops = it.tops || []; return { title: it.title, body: printHead(it.title, esc([fmtShort(it.date) + (it.time ? ', ' + it.time + ' Uhr' : ''), it.ort].filter(Boolean).join(' · '))) + (tops.length ? '<h2>Tagesordnung</h2><ol>' + tops.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol>' : '') + (it.teilnehmer ? '<p>Teilnehmer: ' + esc(it.teilnehmer) + '</p>' : '') + (it.protokoll ? '<h2>Protokoll</h2><pre>' + esc(it.protokoll) + '</pre>' : '') }; } },
-      { id: 'beschluesse', label: 'Beschlüsse', coll: 'vorstandBeschluesse', view: ['vorstand.view'], edit: ['vorstand.edit'], print: ['vorstand.print'], sortBy: { k: 'date', dir: -1 }, printAll: true, addLabel: 'Neuer Beschluss', search: ['title', 'nr', 'text'],
+      { id: 'beschluesse', label: 'Beschlüsse', coll: 'vorstandBeschluesse', view: ['vorstand.view', 'vorstand.beschluesse.view'], edit: ['vorstand.edit', 'vorstand.beschluesse.edit'], print: ['vorstand.print'], sortBy: { k: 'date', dir: -1 }, printAll: true, addLabel: 'Neuer Beschluss', search: ['title', 'nr', 'text'],
         hint: 'Beschlüsse mit Zuständigem und Frist. Offene Beschlüsse tauchen im Reiter „Fristen“ auf.',
         filter: function (it, f) { return !f.open || (it.status || 'offen') !== 'erledigt'; },
         summary: function (all) { var o = all.filter(function (x) { return (x.status || 'offen') !== 'erledigt' && x.due; }); var ov = o.filter(function (x) { return x.due < M.today(); }).length; return '<div class="m-chips"><button type="button" class="m-chip' + (M.S.filter.open ? ' on' : '') + '" data-ma="openf">Nur offene (' + all.filter(function (x) { return (x.status || 'offen') !== 'erledigt'; }).length + ')</button>' + (ov ? '<span class="m-over" style="align-self:center">⚠️ ' + ov + ' überfällig</span>' : '') + '</div>'; },
@@ -340,40 +443,17 @@ templateEngineOverride: false
           bTask: function (it) { if (!it) return; var tid = M.uid(); M.ops([{ op: 'set', coll: 'aufgaben', item: { id: tid, title: 'Beschluss umsetzen: ' + it.title, text: it.text || '', who: it.who || [], due: it.due || '', status: 'offen', prio: 'normal', ref: 'bs:' + it.id, refLabel: 'Beschluss ' + (it.nr || ''), by: me() } }, { op: 'patch', coll: 'vorstandBeschluesse', id: it.id, fields: { taskId: tid } }]); M.toast('Aufgabe angelegt.'); }
         },
         printAll: function (l) { return { title: 'Beschlüsse', body: printHead('Beschlüsse') + '<table><tr><th>Nr.</th><th>Datum</th><th>Beschluss</th><th>Zuständig</th><th>Bis</th><th>Stand</th></tr>' + l.map(function (it) { return '<tr><td class="nowrap">' + esc(it.nr || '') + '</td><td class="nowrap">' + fmtShort(it.date) + '</td><td><b>' + esc(it.title) + '</b>' + (it.text ? '<br>' + lines(it.text) : '') + '</td><td>' + esc((it.who || []).join(', ')) + '</td><td class="nowrap">' + fmtShort(it.due) + '</td><td>' + (BSTAT[it.status || 'offen'][0]) + '</td></tr>'; }).join('') + '</table>' }; } },
-      { id: 'umlauf', label: 'Umlaufbeschlüsse', coll: 'vorstandUmlauf', view: ['vorstand.view'],
-        render: function () {
-          var l = M.items('vorstandUmlauf').sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
-          var canE = M.can('vorstand.edit'), canV = M.can('vorstand.abstimmen');
-          var out = '<section class="wm-card"><div class="wm-bar"><h3>Umlaufbeschlüsse</h3><span class="m-actions">' + (canE ? '<button type="button" class="wm-amber" data-ma="unew">+ Neuer Umlaufbeschluss</button>' : '') + '</span></div><p class="wm-note">Abstimmung ohne Sitzung. Jedes Vorstandsmitglied mit eigenem Konto stimmt selbst ab.</p>';
-          if (!l.length) out += '<p class="wm-note">Noch keine Umlaufbeschlüsse.</p>';
-          l.forEach(function (u) {
-            var s = u.stimmen || {}; var names = Object.keys(s); var ja = names.filter(function (n) { return s[n] === 'ja'; }).length, nein = names.filter(function (n) { return s[n] === 'nein'; }).length, enth = names.length - ja - nein;
-            var mine = s[me()];
-            var late = u.bis && M.daysTo(u.bis) < 0 && !u.ergebnis;
-            out += '<article class="m-card" data-id="' + esc(u.id) + '"><div class="m-head" data-ma="toggle"><div class="m-main"><div class="m-title">' + esc(u.title) + (u.ergebnis ? M.badge(u.ergebnis, u.ergebnis === 'angenommen' ? 'green' : 'red') : M.badge('läuft', 'amber')) + '</div><div class="wm-sub">' + ['✅ ' + ja, '❌ ' + nein, '⚪ ' + enth, u.bis ? (late ? '<span class="m-over">Frist abgelaufen ' : 'bis ') + fmtShort(u.bis) + (late ? '</span>' : '') : ''].filter(Boolean).join(' · ') + '</div></div><span class="m-chev">' + (M.S.open[u.id] ? '▾' : '▸') + '</span></div>' + (M.S.open[u.id] ? '<div class="m-body">' + pre(u.text) + (names.length ? '<h4 class="wm-sub" style="margin:8px 0 4px">Stimmen</h4>' + names.map(function (n) { return '<div class="m-chk"><span style="flex:1">' + esc(n) + '</span><b>' + ({ ja: '✅ Ja', nein: '❌ Nein', enthalten: '⚪ Enthalten' }[s[n]] || esc(s[n])) + '</b></div>'; }).join('') : '') +
-              '<div class="m-btns">' + (canV && !u.ergebnis && me() ? '<button type="button" class="wm-btn" data-ma="vote" data-v="ja">' + (mine === 'ja' ? '✅ ' : '') + 'Ja</button><button type="button" class="wm-btn" data-ma="vote" data-v="nein">' + (mine === 'nein' ? '❌ ' : '') + 'Nein</button><button type="button" class="wm-btn" data-ma="vote" data-v="enthalten">' + (mine === 'enthalten' ? '⚪ ' : '') + 'Enthalten</button>' : '') + (canE && !u.ergebnis ? '<button type="button" class="wm-btn" data-ma="uclose" data-v="angenommen">Abschließen: angenommen</button><button type="button" class="wm-btn" data-ma="uclose" data-v="abgelehnt">abgelehnt</button>' : '') + (canE ? '<button type="button" class="wm-btn" data-ma="uedit">✏️</button><button type="button" class="wm-btn m-danger" data-ma="udel">🗑️</button>' : '') + '</div></div>' : '') + '</article>';
-          });
-          return out + '</section>';
-        },
-        actions: {
-          unew: function () { uform(null); },
-          uedit: function (it) { uform(it); },
-          udel: function (it) { if (it) M.confirm('„' + it.title + '“ löschen?', 'Löschen', function () { M.op({ op: 'del', coll: 'vorstandUmlauf', id: it.id }); }); },
-          vote: function (it, el) { if (!it || !me()) return; var o = {}; o[me()] = el.getAttribute('data-v'); M.op({ op: 'patch', coll: 'vorstandUmlauf', id: it.id, merge: true, fields: { stimmen: o } }); },
-          uclose: function (it, el) { if (!it) return; var r = el.getAttribute('data-v'); var list = [{ op: 'patch', coll: 'vorstandUmlauf', id: it.id, fields: { ergebnis: r } }]; if (r === 'angenommen') list.push({ op: 'set', coll: 'vorstandBeschluesse', item: { id: M.uid(), title: it.title, date: M.today(), text: (it.text || '') + '\n(Umlaufbeschluss)', who: [], due: '', status: 'offen' } }); M.ops(list); if (r === 'angenommen') M.toast('Als Beschluss übernommen.'); }
-        } },
-      { id: 'fristen', label: 'Fristen', view: ['vorstand.view'],
+      { id: 'fristen', label: 'Fristen', view: ['vorstand.view', 'vorstand.beschluesse.view'],
         render: function () {
           var ev = [];
           M.items('vorstandBeschluesse').forEach(function (b) { if ((b.status || 'offen') !== 'erledigt' && b.due) ev.push({ d: b.due, t: 'Beschluss umsetzen: ' + b.title, w: (b.who || []).join(', '), k: '📌' }); });
-          M.items('vorstandUmlauf').forEach(function (u) { if (!u.ergebnis && u.bis) ev.push({ d: u.bis, t: 'Abstimmung: ' + u.title, w: '', k: '🗳️' }); });
           M.items('vorstandSitzungen').forEach(function (s) { if (s.date && s.status !== 'Durchgeführt') ev.push({ d: s.date, t: 'Sitzung: ' + s.title, w: '', k: '🏛️' }); });
           ev.sort(function (a, b) { return a.d < b.d ? -1 : 1; });
           var out = '<section class="wm-card"><div class="wm-bar"><h3>Fristenkalender</h3></div>';
           if (!ev.length) return out + '<p class="wm-note">Keine offenen Fristen.</p></section>';
           return out + ev.map(function (x) { var dd = M.daysTo(x.d); return '<div class="m-chk"><span style="font-size:20px">' + x.k + '</span><div style="flex:1"><div>' + esc(x.t) + '</div><div class="wm-sub">' + esc(x.w) + '</div></div><b class="' + (dd < 0 ? 'm-over' : '') + '">' + fmtShort(x.d) + '<div class="wm-sub ' + (dd < 0 ? 'm-over' : '') + '">' + (dd < 0 ? (-dd) + ' Tg. überfällig' : dd === 0 ? 'heute' : 'in ' + dd + ' Tg.') + '</div></b></div>'; }).join('') + '</section>';
         } },
-      { id: 'protokolle', label: 'Protokolle', coll: 'vorstandProtokolle', view: ['vorstand.view'], edit: ['vorstand.edit'], print: ['vorstand.print'], sortBy: { k: 'date', dir: -1 }, printItem: true, addLabel: 'Neues Protokoll', search: ['title', 'text', 'teilnehmer'],
+      { id: 'protokolle', label: 'Protokolle', coll: 'vorstandProtokolle', view: ['vorstand.view', 'vorstand.protokolle.view'], edit: ['vorstand.edit', 'vorstand.protokolle.edit'], print: ['vorstand.print'], sortBy: { k: 'date', dir: -1 }, printItem: true, addLabel: 'Neues Protokoll', search: ['title', 'text', 'teilnehmer'],
         fields: [{ k: 'title', t: 'text', label: 'Titel', req: true, ph: 'z. B. Vorstandssitzung Oktober' }, { k: 'date', t: 'date', label: 'Datum' }, { k: 'ort', t: 'text', label: 'Ort' }, { k: 'teilnehmer', t: 'text', label: 'Teilnehmer' }, { k: 'text', t: 'area', label: 'Protokoll', rows: 14 }],
         newItem: function () { return { date: M.today() }; },
         card: function (it) { return { title: it.title, sub: [fmtShort(it.date), esc(it.ort || '')].filter(Boolean).join(' · '), body: (it.teilnehmer ? '<div class="wm-sub">Teilnehmer: ' + esc(it.teilnehmer) + '</div>' : '') + pre(it.text) }; },
@@ -384,6 +464,7 @@ templateEngineOverride: false
     M.openForm({ title: it ? 'Umlaufbeschluss bearbeiten' : 'Neuer Umlaufbeschluss', fields: [{ k: 'title', t: 'text', label: 'Worüber wird abgestimmt?', req: true }, { k: 'text', t: 'area', label: 'Text', rows: 6 }, { k: 'bis', t: 'date', label: 'Abstimmen bis' }], item: it || { bis: M.addDays(M.today(), 7) }, onSave: function (v) { var n = Object.assign({}, it || { id: M.uid(), stimmen: {} }, v); M.op({ op: 'set', coll: 'vorstandUmlauf', item: n }); } });
   }
 
+  M.mod('vorstand').actions = { apdf: function () { apOpen(); }, apread: function () { apRead(); }, apsave: function () { apSave(); } };
   /* ================= MATERIAL ================= */
   function openLoans(it) { return (it.loans || []).filter(function (l) { return !l.back; }); }
   function avail(it) {
@@ -399,10 +480,10 @@ templateEngineOverride: false
     var units = it.units || []; var used = {}; openLoans(it).forEach(function (l) { used[l.unit] = 1; });
     var free = units.filter(function (u) { return !used[u]; });
     if (units.length && !free.length) { M.toast('Alle Stücke sind verliehen.'); return; }
-    var fields = [{ k: 'who', t: 'text', label: 'Wer', req: true, list: 'mPeople', ph: 'Name aus der Liste oder frei eintippen' }].concat(units.length ? [{ k: 'unit', t: 'sel', label: 'Welches Stück', opts: free }] : [{ k: 'n', t: 'num', label: 'Anzahl', req: true }]).concat([{ k: 'bis', t: 'date', label: 'Zurück bis' }, { k: 'notiz', t: 'text', label: 'Notiz (optional)' }]);
-    M.openForm({ title: 'Verleihen: ' + it.title, fields: fields, item: { n: 1, bis: M.addDays(M.today(), 14) }, saveLabel: 'Verleihen', onSave: function (v) {
+    var fields = [{ k: 'who', t: 'text', label: 'Wer', req: true, list: 'mPeople', ph: 'Name aus der Liste oder frei eintippen' }].concat(units.length ? [{ k: 'unit', t: 'sel', label: 'Welches Stück', opts: free }] : [{ k: 'n', t: 'num', label: 'Anzahl', req: true }]).concat([{ k: 'notiz', t: 'text', label: 'Notiz (optional)' }]);
+    M.openForm({ title: 'Verleihen: ' + it.title, fields: fields, item: { n: 1 }, saveLabel: 'Verleihen', onSave: function (v) {
       if (!units.length) { if (!(v.n > 0)) { M.toast('Anzahl prüfen.'); return false; } if (v.n > avail(it)) { M.toast('So viele sind nicht verfügbar (' + avail(it) + ').'); return false; } }
-      var loans = M.clone(it.loans || []).filter(function (l) { return !l.back; }); loans.push({ id: M.uid(), who: v.who, n: units.length ? 1 : v.n, unit: units.length ? v.unit : '', at: M.today(), bis: v.bis, notiz: v.notiz || '', back: false, by: me() });
+      var loans = M.clone(it.loans || []).filter(function (l) { return !l.back; }); loans.push({ id: M.uid(), who: v.who, n: units.length ? 1 : v.n, unit: units.length ? v.unit : '', at: M.today(), bis: '', notiz: v.notiz || '', back: false, by: me() });
       M.op({ op: 'patch', coll: 'material', id: it.id, fields: { loans: loans } });
     } });
   }

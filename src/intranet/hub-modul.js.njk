@@ -257,14 +257,24 @@ templateEngineOverride: false
   });
 
   /* ---------- Drucken ---------- */
-  var PRINT_CSS = 'body{font:13px/1.45 -apple-system,Helvetica,Arial,sans-serif;color:#111;margin:16px}h1{font-size:20px;margin:0 0 4px}h2{font-size:15px;margin:16px 0 6px;border-bottom:1px solid #999;padding-bottom:2px}h3{font-size:13px;margin:10px 0 4px}table{border-collapse:collapse;width:100%;margin:4px 0 10px}th,td{border:1px solid #999;padding:4px 6px;text-align:left;vertical-align:top;font-size:12px}th{background:#eee}.sub{color:#555;font-size:12px}.pb{page-break-after:always}.slip{border:1px dashed #666;padding:8px 10px;margin:0 0 10px;page-break-inside:avoid}.big{font-size:15px}.nowrap{white-space:nowrap}.blank{display:inline-block;min-width:90px;border-bottom:1px solid #333;height:16px}pre{white-space:pre-wrap;font:inherit;margin:2px 0}.bar{position:fixed;top:8px;right:8px}@media print{.bar{display:none}body{margin:8px}}';
-  function printDoc(title, body) {
-    var doc = '<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + esc(title) + '</title><style>' + PRINT_CSS + '</style></head><body><div class="bar"><button onclick="window.print()" style="font-size:16px;padding:10px 16px">🖨️ Drucken</button> <button onclick="window.close()" style="font-size:16px;padding:10px 16px">Schließen</button></div>' + body + '</body></html>';
+  var PRINT_CSS = 'body{font:12px/1.5 Helvetica,Arial,sans-serif;color:#111;margin:16px}.kopf{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin:0 0 22px}.kopf img{height:62px;width:auto;display:block}.kopf .r{text-align:right;font-size:12px;line-height:1.7;color:#222}h1{font-size:19px;text-align:center;margin:0 0 14px}h2{font-size:14px;margin:16px 0 6px;border-bottom:1px solid #999;padding-bottom:2px}h3{font-size:12.5px;margin:10px 0 4px}table{border-collapse:collapse;width:100%;margin:4px 0 10px}th,td{border:1px solid #888;padding:4px 6px;text-align:left;vertical-align:top;font-size:11.5px}th{background:#eee}.sub{color:#555;font-size:11.5px}.pb{page-break-after:always}.slip{border:1px dashed #666;padding:8px 10px;margin:0 0 10px;page-break-inside:avoid}.big{font-size:14px}.nowrap{white-space:nowrap}.blank{display:inline-block;min-width:90px;border-bottom:1px solid #333;height:16px}pre{white-space:pre-wrap;font:inherit;margin:2px 0}img.sig{height:48px;display:block}.bar{text-align:right;margin:0 0 10px}@page{size:A4;margin:14mm}@media print{.bar{display:none}body{margin:0}}';
+  function plain(h) { var t = document.createElement('div'); t.innerHTML = String(h || ''); return (t.textContent || '').replace(/\s+/g, ' ').trim(); }
+  // Druck: Kopf wie im Antrag (Logo links, drei Zeilen rechts). Eine führende Überschrift (h1) mit Untertitel wandert in die Kopfzeilen.
+  function printDoc(title, body, opts) {
+    opts = opts || {}; var t2 = opts.t2, t3 = opts.t3;
+    if (t2 === undefined) {
+      var mm = /^\s*<h1>([\s\S]*?)<\/h1>\s*(?:<div class="sub">([\s\S]*?)<\/div>)?/.exec(body);
+      if (mm) { t2 = plain(mm[1]); t3 = plain(mm[2] || ''); body = body.slice(mm[0].length); } else { t2 = title; t3 = ''; }
+    }
+    var kopf = '<div class="kopf"><img src="' + (window.HUB_LOGO_H || '') + '" alt="SG Barnstorf Sharks"><div class="r"><div>Schwimmgemeinschaft Barnstorf e.V.</div>' + (t2 ? '<div>' + esc(t2) + '</div>' : '') + (t3 ? '<div>' + esc(t3) + '</div>' : '') + '</div></div>';
+    var css = PRINT_CSS + (opts.landscape ? '@page{size:A4 landscape;margin:10mm}' : '') + (opts.css || '');
+    var bar = '<div class="bar"><button onclick="window.print()" style="font-size:16px;padding:10px 16px">🖨️ Drucken</button> <button onclick="window.close()" style="font-size:16px;padding:10px 16px">Schließen</button></div>';
+    var doc = '<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + esc(title) + '</title><style>' + css + '</style></head><body>' + bar + kopf + body + '</body></html>';
     var w = null; try { w = window.open('', '_blank'); } catch (e) { w = null; }
     if (w && w.document) { w.document.open(); w.document.write(doc); w.document.close(); return; }
     // Fallback: im selben Fenster als Vollbild-Ansicht
     var ov = document.getElementById('mPrint'); if (!ov) { ov = document.createElement('div'); ov.id = 'mPrint'; document.body.appendChild(ov); }
-    ov.innerHTML = '<style>' + PRINT_CSS + '#mPrint{position:fixed;inset:0;z-index:200;background:#fff;color:#111;overflow:auto;padding:12px}@media print{body>*:not(#mPrint){display:none!important}#mPrint{position:static}}</style><div class="bar"><button onclick="window.print()" style="font-size:16px;padding:10px 16px">🖨️ Drucken</button> <button onclick="document.getElementById(\'mPrint\').remove()" style="font-size:16px;padding:10px 16px">Schließen</button></div>' + body;
+    ov.innerHTML = '<style>' + css + '#mPrint{position:fixed;inset:0;z-index:200;background:#fff;color:#111;overflow:auto;padding:12px}@media print{body>*:not(#mPrint){display:none!important}#mPrint{position:static}}</style><div class="bar"><button onclick="window.print()" style="font-size:16px;padding:10px 16px">🖨️ Drucken</button> <button onclick="document.getElementById(\'mPrint\').remove()" style="font-size:16px;padding:10px 16px">Schließen</button></div>' + kopf + body;
   }
 
   /* ---------- Bedienung ---------- */
@@ -301,8 +311,8 @@ templateEngineOverride: false
     if (t && a === 'edit') { editItem(t, find(t.coll, c.id)); return; }
     if (t && a === 'del') { var it = find(t.coll, c.id); confirmBox('„' + ((it && (it.title || it.name)) || 'Eintrag') + '“ wirklich löschen?', 'Löschen', function () { op({ op: 'del', coll: t.coll, id: c.id }); }); return; }
     if (t && (a === 'up' || a === 'down')) { move(t, c.id, a === 'up' ? -1 : 1); return; }
-    if (t && a === 'print') { var pit = find(t.coll, c.id); if (pit && t.printItem) { var pd = t.printItem(pit, api); printDoc(pd.title, pd.body); } return; }
-    if (t && a === 'printall') { var pa = t.printAll(items(t.coll), api); printDoc(pa.title, pa.body); return; }
+    if (t && a === 'print') { var pit = find(t.coll, c.id); if (pit && t.printItem) { var pd = t.printItem(pit, api); printDoc(pd.title, pd.body, pd.opts); } return; }
+    if (t && a === 'printall') { var pa = t.printAll(items(t.coll), api); printDoc(pa.title, pa.body, pa.opts); return; }
     var handler = (t && t.actions && t.actions[a]) || (def.actions && def.actions[a]);
     if (handler) { handler(c.id ? find(t && t.coll ? t.coll : (def.colls || [])[0], c.id) : null, el, ev, c); return; }
   }
