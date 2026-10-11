@@ -191,7 +191,7 @@ templateEngineOverride: false
     var out = '';
     if (wk.meldeschluss || wk.meldegeld || wk.meldeanschrift) {
       out += '<section class="wm-card"><div class="wm-sub" style="font-weight:800;text-transform:uppercase">Aus der Ausschreibung</div>' +
-        (wk.meldeschluss ? '<div><b>Meldeschluss:</b> ' + fd(wk.meldeschluss) + clock(wk) + '</div>' : '') + (wk.meldegeld ? '<div><b>Meldegeld:</b> ' + esc(wk.meldegeld) + '</div>' : '') + (wk.meldeanschrift ? '<div><b>Meldeanschrift:</b> ' + esc(wk.meldeanschrift) + '</div>' : '') + '</section>';
+        (wk.meldeschluss ? '<div><b>Meldeschluss:</b> ' + fd(wk.meldeschluss) + clock(wk) + '</div>' : '') + (wk.meldegeld ? '<div><b>Meldegeld:</b> ' + esc(P.cleanGeld(wk.meldegeld)) + '</div>' : '') + (wk.meldeanschrift ? '<div><b>Meldeanschrift:</b> ' + esc(wk.meldeanschrift) + '</div>' : '') + '</section>';
     }
     PHASES.forEach(function (p) {
       out += '<section class="wm-card"><div class="m-sec" style="margin-top:0">' + esc(p.label) + '</div>';
@@ -200,7 +200,7 @@ templateEngineOverride: false
         if (k === '@intMs') {
           out += '<div class="m-chk"><span style="flex:1">' + esc(i[1]) + '</span><input type="date" class="m-time" style="width:auto" data-wkims="1" value="' + esc(wk.intMs || '') + '"' + (can ? '' : ' disabled') + '></div>'; return;
         }
-        if (k === '@meldegeld') { out += '<div class="m-chk" style="flex-wrap:wrap"><span style="flex:1;min-width:6em">Meldegeld' + (wk.meldegeld ? '<div class="wm-sub">' + esc(wk.meldegeld) + '</div>' : '') + '</span>' + M.seg([['', 'Offen'], ['mail', 'Mail versendet'], ['bezahlt', 'Bezahlt']], wk.meldegeldStatus || '', can || M.can('wettkaempfe.meldegeld') ? 'wkgeld' : 'wknop') + '</div>'; return; }
+        if (k === '@meldegeld') { out += '<div class="m-chk" style="flex-wrap:wrap"><span style="flex:1;min-width:6em">Meldegeld' + (wk.meldegeld ? '<div class="wm-sub">' + esc(P.cleanGeld(wk.meldegeld)) + '</div>' : '') + '</span>' + M.seg([['', 'Offen'], ['mail', 'Mail versendet'], ['bezahlt', 'Bezahlt']], wk.meldegeldStatus || '', can || M.can('wettkaempfe.meldegeld') ? 'wkgeld' : 'wknop') + '</div>'; return; }
         if (k === '@teilnahme') {
           out += '<div class="m-chk"><span style="flex:1">Teilnahme</span>' + M.seg([['', 'Offen'], ['pos', 'Positiv'], ['neg', 'Negativ']], wk.teilnahme || '', canT ? 'wkteil' : 'wknop') + '</div>'; return;
         }
@@ -347,6 +347,18 @@ templateEngineOverride: false
       '<label class="m-f m-fchk" style="margin-top:10px"><input type="checkbox" id="pr_over"><span>Vorhandene Zeiten überschreiben</span></label>' +
       '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="wksaveprot"' + (ok ? '' : ' disabled') + '>Zeiten eintragen</button></div>');
   }
+  /* Kampfrichter aus dem Protokoll: Anzahl pro Abschnitt und Namen ins Kampfgericht */
+  function krFields(p, tgt) {
+    var l = p.krAb || []; if (!l.length) return null; var f = {}; var abs = {};
+    l.forEach(function (x) { (abs[x.ab] = abs[x.ab] || []).push(x); });
+    var g = (tgt.gericht || []).filter(function (x) { return !abs[x.a]; });
+    Object.keys(abs).sort(function (a, b) { return a - b; }).forEach(function (ab) {
+      var names = {}; abs[ab].forEach(function (x) { names[x.name] = 1; });
+      if (+ab === 1) f.kr1 = Object.keys(names).length; if (+ab === 2) f.kr2 = Object.keys(names).length;
+      abs[ab].forEach(function (x) { g.push({ a: +ab, g: 'laut Protokoll', pos: x.rolle, name: x.name, v: club() }); });
+    });
+    g.sort(function (a, b) { return a.a - b.a; }); f.gericht = g; return f;
+  }
   function saveProt() {
     var tgt = M.find('wettkaempfe', imp.target); if (!tgt) return;
     var over = document.getElementById('pr_over') && document.getElementById('pr_over').checked; var res = {}; var n = 0;
@@ -358,6 +370,7 @@ templateEngineOverride: false
     var docs = Object.assign({}, tgt.docs || {}); docs.prot = { name: imp.file, at: M.today(), by: M.userName() };
     var list = [];
     if (n) list.push({ op: 'patch', coll: 'wettkaempfe', id: tgt.id, merge: true, fields: { res: res } });
+    var kf = krFields(imp.p, tgt); if (kf) list.push({ op: 'patch', coll: 'wettkaempfe', id: tgt.id, fields: kf });
     var af = {}; if (imp.p.kr && imp.p.kr.length && !(tgt.art && tgt.art.kr)) af.kr = P.krText(imp.p.kr);
     if (imp.p.relays && imp.p.relays.length) { af.staffeln = imp.p.relays.map(function (r) { return { e: r.e, evn: r.evn, pl: r.pl, t: r.t, st: r.st }; }); if (!(tgt.art && tgt.art.staffel)) af.staffel = P.relayText(imp.p.relays); var w0 = ((tgt.art && tgt.art.w) || []).slice(); if (w0.indexOf('staffel') < 0) { w0.push('staffel'); af.w = w0; } }
     if (Object.keys(af).length) list.push({ op: 'patch', coll: 'wettkaempfe', id: tgt.id, merge: true, fields: { art: af } });
@@ -480,7 +493,7 @@ templateEngineOverride: false
   function wkOpt(attr, val, on, text, mr) {
     return '<label class="wk-opt' + (on ? ' on' : '') + '" style="margin:0 ' + (mr === undefined ? 8 : mr) + 'px 8px 0"><input type="checkbox" ' + attr + '="' + val + '"' + (on ? ' checked' : '') + '><span class="wk-box">' + (on ? '✓' : '') + '</span><span>' + text + '</span></label>';
   }
-  var ART_CSS = '<style>.wk-opt{display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border:2px solid #cbd5e1;border-radius:10px;background:#fff;color:#334155;font-size:14px;cursor:pointer;line-height:1.25}.wk-opt input{position:absolute;opacity:0;width:0;height:0}.wk-opt .wk-box{width:20px;height:20px;border:2px solid #94a3b8;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:none;color:#fff}.wk-opt.on{border-color:#059669;background:#d1fae5;color:#064e3b;font-weight:600}.wk-opt.on .wk-box{background:#059669;border-color:#059669}</style>';
+  var ART_CSS = '<style>.wk-opt{display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border:2px solid #cbd5e1;border-radius:10px;background:#fff;color:#334155;font-size:14px;cursor:pointer;line-height:1.25}.wk-opt input{position:absolute;opacity:0;width:0;height:0}.wk-opt .wk-box{width:20px;height:20px;border:2px solid #94a3b8;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:none;color:#fff}.wk-opt.on{border-color:#059669;background:#d1fae5;color:#064e3b;font-weight:600}.wk-opt.on .wk-box{background:#059669;border-color:#059669}.dark .wk-opt{background:#131d30;border-color:#334155;color:#e2e8f0}.dark .wk-opt .wk-box{border-color:#64748b}.dark .wk-opt.on{background:#064e3b;border-color:#10b981;color:#d1fae5}.dark .wk-opt.on .wk-box{background:#10b981;border-color:#10b981}</style>';
   function artFields(wk) {
     var A = wk.art || {}; var W = A.w || [];
     function inp(k, label, ph, area) { return '<label class="m-f wide"><span>' + label + '</span>' + (area ? '<textarea rows="3" data-wkart="' + k + '" placeholder="' + esc(ph || '') + '">' + esc(A[k] || '') + '</textarea>' : '<input type="text" data-wkart="' + k + '" value="' + esc(A[k] || '') + '" placeholder="' + esc(ph || '') + '" autocomplete="off">') + '</label>'; }
@@ -493,9 +506,9 @@ templateEngineOverride: false
   }
   function viewArtikel(wk) {
     var ar = P.articleText(wk, club()); var hints = P.articleHints(wk);
-    return ART_CSS + '<section class="wm-card"><div class="wm-bar"><h3>Artikel</h3></div><p class="wm-note">Erst die Felder ausfüllen, der Entwurf darunter baut sich daraus auf. Leere Felder fehlen im Text. Platz, Altersklasse, Kampfrichter und Staffeln kommen aus der DSV7-Ergebnisdatei, ein PDF-Protokoll ist nicht nötig.</p><div class="m-btns" style="margin-bottom:10px"><button type="button" class="wm-amber" data-ma="artdsv">📥 Kampfrichter &amp; Staffeln aus DSV7 einlesen</button><input type="file" id="wkartfile" accept=".dsv7,.DSV7,.txt" style="display:none"></div>' + artFields(wk) +
+    return ART_CSS + '<section class="wm-card"><div class="wm-bar"><h3>Artikel</h3></div><p class="wm-note">Erst die Felder ausfüllen, der Entwurf darunter baut sich daraus auf. Leere Felder fehlen im Text. Platz, Altersklasse, Kampfrichter und Staffeln kommen aus der DSV7-Ergebnisdatei, ein PDF-Protokoll ist nicht nötig.</p><div class="m-btns" style="margin-bottom:10px"><button type="button" class="wm-amber" data-ma="artdsv">📥 Kampfrichter &amp; Staffeln aus DSV7 einlesen</button><input type="file" id="wkartfile" style="display:none"></div>' + artFields(wk) +
       (hints.length ? '<div class="m-sec">Vorschläge für Highlights (antippen zum Übernehmen)</div>' + hints.map(function (x) { return wkOpt('data-wkarth', esc(x.id), (wk.art && wk.art.hl || []).indexOf(x.id) >= 0, esc(x.label), 0); }).join('') : '') +
-      '</section><section class="wm-card"><div class="wm-bar"><h3>Entwurf</h3><span><button type="button" class="wm-amber" data-ma="artcopy">📋 Kopieren</button> <button type="button" class="wm-amber" data-ma="artdl">⬇️ Als ' + esc(ar.filename) + '</button></span></div><p class="wm-note">Fertige News-Datei. Bilder im CMS hochladen und die Zeilen mit „#“ im Kopf aktivieren. Dann im CMS einen neuen Eintrag anlegen oder die Datei unter src/news/ ins Repo hochladen. Eigene Änderungen im Entwurf gehen verloren, wenn danach ein Feld oben geändert wird.</p><label class="m-f wide"><span>Inhalt</span><textarea id="wkart" rows="22" style="font-size:13px;font-family:monospace">' + esc(ar.text) + '</textarea></label></section>';
+      '</section><section class="wm-card"><div class="wm-bar"><h3>Text mit KI schreiben lassen</h3><span><button type="button" class="wm-amber" data-ma="artbrief">📋 Stichpunkte kopieren</button></span></div><p class="wm-note">1. Stichpunkte kopieren, 2. in eine KI deiner Wahl einfügen, 3. den fertigen Text hier unten einfügen. Der Entwurf übernimmt ihn dann mit Kopfzeile, Bilderzeilen, Medaillentabelle und Link. Feld leeren = wieder der automatische Text.</p><label class="m-f wide"><span>Fertiger Text von der KI</span><textarea rows="8" data-wkart="ai" placeholder="Hier den Text einfügen …">' + esc((wk.art && wk.art.ai) || '') + '</textarea></label></section><section class="wm-card"><div class="wm-bar"><h3>Entwurf</h3><span><button type="button" class="wm-amber" data-ma="artcopy">📋 Kopieren</button> <button type="button" class="wm-amber" data-ma="artdl">⬇️ Als ' + esc(ar.filename) + '</button></span></div><p class="wm-note">Fertige News-Datei. Bilder im CMS hochladen und die Zeilen mit „#“ im Kopf aktivieren. Dann im CMS einen neuen Eintrag anlegen oder die Datei unter src/news/ ins Repo hochladen. Eigene Änderungen im Entwurf gehen verloren, wenn danach ein Feld oben geändert wird.</p><label class="m-f wide"><span>Inhalt</span><textarea id="wkart" rows="22" style="font-size:13px;font-family:monospace">' + esc(ar.text) + '</textarea></label></section>';
   }
 
   function viewGericht(wk) {
@@ -551,10 +564,11 @@ templateEngineOverride: false
         var f0 = t.files && t.files[0]; if (!f0) return; var wk0 = curWk(); if (!wk0) return; M.toast('Wird gelesen …');
         HubPdf.text(f0).then(function (txt) {
           var p0 = P.parseErgDsv7(txt, club()); var af = {}; var A1 = wk0.art || {};
-          if (p0.kr && p0.kr.length) af.kr = P.krText(p0.kr);
+          if (p0.kr && p0.kr.length) af.kr = P.krText(p0.kr); /* DSV7 ist maßgeblich: überschreibt das Feld */
           if (p0.relays && p0.relays.length) { af.staffeln = p0.relays.map(function (r) { return { e: r.e, evn: r.evn, pl: r.pl, t: r.t, st: r.st }; }); af.staffel = P.relayText(p0.relays); var w1 = (A1.w || []).slice(); if (w1.indexOf('staffel') < 0) { w1.push('staffel'); af.w = w1; } }
-          if (!Object.keys(af).length) { M.toast('In der Datei wurden keine Kampfrichter oder Staffeln für ' + club() + ' gefunden.'); return; }
-          M.S.dirty = false; M.op({ op: 'patch', coll: 'wettkaempfe', id: wk0.id, merge: true, fields: { art: af } }); M.toast((p0.kr ? p0.kr.length : 0) + ' Kampfrichter, ' + (p0.relays ? p0.relays.length : 0) + ' Staffeln übernommen.');
+          var kf2 = krFields(p0, wk0); if (kf2) M.op({ op: 'patch', coll: 'wettkaempfe', id: wk0.id, fields: kf2 });
+          if (!Object.keys(af).length && !kf2) { M.toast('In der Datei wurden keine Kampfrichter oder Staffeln für ' + club() + ' gefunden.'); return; }
+          M.S.dirty = false; if (Object.keys(af).length) M.op({ op: 'patch', coll: 'wettkaempfe', id: wk0.id, merge: true, fields: { art: af } }); else M.render(true); M.toast((p0.kr ? p0.kr.length : 0) + ' Kampfrichter, ' + (p0.relays ? p0.relays.length : 0) + ' Staffeln übernommen.');
         }, function (e) { M.toast('Nicht lesbar: ' + (e.message || e)); });
         return;
       }
@@ -630,6 +644,9 @@ templateEngineOverride: false
       swreset: function () { if (!SW) return; SW.run = false; SW.laps = []; delete SW.end; M.openDlg(swHtml()); },
       swsave: function () { swSave(); },
       artdl: function () { var t = document.getElementById('wkart'); if (!t) return; var fn = 'news-entwurf'; var m2 = /# preview: \/images\/news\/(.+)-team\.jpeg/.exec(t.value); fn = (m2 ? m2[1] : 'news-entwurf') + '.md'; try { var bl = new Blob([t.value], { type: 'text/markdown' }); var a = document.createElement('a'); a.href = URL.createObjectURL(bl); a.download = fn; document.body.appendChild(a); a.click(); setTimeout(function () { a.remove(); }, 500); M.toast('Datei ' + fn + ' erstellt.'); } catch (e) { M.toast('Download nicht möglich – bitte kopieren.'); } },
+      artbrief: function () { var wk = curWk(); if (!wk) return; var txt = P.articleBrief(wk, club()); var ok = false; try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(txt); ok = true; } } catch (e) { }
+        if (!ok) { var ta = document.createElement('textarea'); ta.value = txt; ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(ta); ta.focus(); ta.select(); try { ok = document.execCommand('copy'); } catch (e2) { } document.body.removeChild(ta); }
+        M.toast(ok ? 'Stichpunkte kopiert. Jetzt in die KI einfügen.' : 'Kopieren nicht möglich.'); },
       artdsv: function () { var i = document.getElementById('wkartfile'); if (i) { i.value = ''; i.click(); } },
       artcopy: function () { var t = document.getElementById('wkart'); if (!t) return; t.select(); var ok = false; try { if (navigator.clipboard) { navigator.clipboard.writeText(t.value); ok = true; } else ok = document.execCommand('copy'); } catch (e) { try { ok = document.execCommand('copy'); } catch (e2) { } } M.toast(ok ? 'Text kopiert.' : 'Bitte den Text markieren und kopieren.'); },
       sw: function () { }

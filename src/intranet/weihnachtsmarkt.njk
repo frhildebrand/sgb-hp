@@ -231,6 +231,52 @@ permalink: /intranet/weihnachtsmarkt/
 #portalHeader #themeToggleLabel { font-size: 12px !important; font-weight: 800 !important; }
 #portalHeader > div { max-width: 80rem; padding-left: 16px !important; padding-right: 16px !important; }
 @media (max-width: 560px) { #portalHeader #headerTitle { font-size: 16px; } #portalHeader #homeBtn { width: 44px !important; height: 44px !important; } #portalHeader #roleLabel { display: none; } #portalHeader #themeToggleLabel { display: none; } #portalHeader > div { padding-left: 12px !important; padding-right: 12px !important; } }
+
+/* Konto-Knopf und Menü wie im Intranet-Hub */
+#portalHeader #roleBadge { height: 44px; padding: 0 12px 0 5px !important; border-radius: 999px !important; gap: 8px !important; }
+#portalHeader #roleBadge .wm-avc { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #e8b54d, #c98f1f); color: #0a1f36; font: 900 13px ui-rounded, system-ui, sans-serif; }
+#portalHeader #roleBadge .wm-avc i { position: absolute; right: -1px; bottom: -1px; width: 11px; height: 11px; border-radius: 50%; background: #22c55e; border: 2px solid #12395c; }
+#portalHeader #roleBadge.wm-guest { padding: 0 16px !important; background: linear-gradient(135deg, #e8b54d, #c98f1f) !important; border-color: transparent; color: #0a1f36 !important; }
+#portalHeader #roleBadge.wm-guest .wm-avc { display: none; }
+#portalHeader #themeToggleBtn, #portalHeader #burgerMenuBtn { border-radius: 999px !important; }
+@media (max-width: 560px) { #portalHeader #roleBadge #roleLabel { display: none; } #portalHeader #roleBadge { padding: 0 5px !important; } #portalHeader #roleBadge.wm-guest { padding: 0 12px !important; } #portalHeader #roleBadge.wm-guest #roleLabel { display: inline; } }
+#navigationModal.wm-bg { background: rgba(3,9,22,.62); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+#navigationModal .wm-drawer { width: min(23rem, 100%); height: 100%; overflow-y: auto; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; padding: 14px 12px calc(18px + env(safe-area-inset-bottom)); background: linear-gradient(180deg, #fbfcfe, #f1f5fa); color: #0f172a; box-shadow: -18px 0 50px rgba(2,8,23,.45); }
+html.dark #navigationModal .wm-drawer { background: linear-gradient(180deg, #0f1c36, #0a1426 60%); color: #e8eef7; }
+#navigationModal .wm-dtop { display: flex; align-items: center; justify-content: space-between; padding: 2px 6px 4px; }
+#navigationModal .wm-dtitle { font: 800 12px -apple-system, system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: #64748b; }
+#navigationModal .wm-x { width: 40px; height: 40px; border-radius: 12px; border: 0; background: rgba(148,163,184,.18); color: inherit; font-size: 16px; font-weight: 800; cursor: pointer; }
+#navigationModal .wm-prof { padding: 14px; border-radius: 18px; color: #fff; background: linear-gradient(135deg, #0a1f36, #164a77 60%, #1b5c92); border: 1px solid rgba(255,255,255,.10); box-shadow: 0 8px 22px rgba(10,31,54,.35), inset 0 1px 0 rgba(255,255,255,.12); }
+#navigationModal .wm-prow { display: flex; align-items: center; gap: 12px; }
+#navigationModal .wm-avb { position: relative; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #e8b54d, #c98f1f); color: #0a1f36; font: 900 18px ui-rounded, system-ui, sans-serif; box-shadow: 0 0 0 3px rgba(255,255,255,.18); }
+#navigationModal .wm-dot { position: absolute; right: -1px; bottom: -1px; width: 13px; height: 13px; border-radius: 50%; background: #22c55e; border: 2px solid #164a77; }
+#navigationModal .wm-dot.hidden { display: none; }
+#navigationModal .wm-pmain { min-width: 0; }
+#navigationModal .wm-dn { font: 800 17px ui-rounded, system-ui, sans-serif; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#navigationModal .wm-dr { font-size: 12px; color: rgba(255,255,255,.7); }
+#navigationModal .wm-pact { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.16); display: flex; flex-direction: column; }
+#navigationModal .wm-pi { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 8px; border-radius: 12px; border: 0; background: transparent; color: #fff; font: 700 15px -apple-system, system-ui, sans-serif; text-decoration: none; text-align: left; cursor: pointer; }
+#navigationModal .wm-pi:hover { background: rgba(255,255,255,.12); }
+#navigationModal .wm-pi.hidden { display: none; }
+#navigationModal .wm-pic { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 10px; background: rgba(255,255,255,.14); font-size: 17px; }
+#navigationModal .wm-nav { display: flex; flex-direction: column; gap: 8px; }
+#navigationModal .wm-grp { border-radius: 16px; background: rgba(148,163,184,.10); border: 1px solid transparent; overflow: hidden; }
+html.dark #navigationModal .wm-grp { background: rgba(255,255,255,.04); }
+#navigationModal .wm-grp.hidden { display: none; }
+#navigationModal .wm-lab { display: flex; align-items: center; gap: 10px; padding: 11px 12px; font: 800 12px -apple-system, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; user-select: none; }
+#navigationModal .wm-lbl { flex: 1; }
+#navigationModal .wm-lic { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 9px; font-size: 15px; background: color-mix(in srgb, var(--mc) 22%, transparent); }
+#navigationModal .wm-chev { color: #94a3b8; font-size: 15px; }
+#navigationModal .wm-items { padding: 0 6px 8px; }
+#navigationModal .wm-items.hidden { display: none; }
+#navigationModal .wm-mi { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; padding: 9px 10px; min-height: 46px; border-radius: 12px; border: 0; background: transparent; color: inherit; font: 700 15px -apple-system, system-ui, sans-serif; text-align: left; cursor: pointer; }
+#navigationModal .wm-mi.hidden { display: none; }
+#navigationModal .wm-mi:hover { background: color-mix(in srgb, var(--mc) 14%, transparent); }
+#navigationModal .wm-mic { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 10px; font-size: 17px; background: color-mix(in srgb, var(--mc) 20%, transparent); }
+#navigationModal .wm-mi.ring-1 { background: rgba(214,162,58,.18); font-weight: 900; box-shadow: none; }
+#navigationModal .wm-mi.ring-1 .wm-mic { background: #d6a23a; }
+#navigationModal .wm-hub { display: block; padding: 12px; text-align: center; border-radius: 14px; background: rgba(148,163,184,.14); color: inherit; font: 800 14px -apple-system, system-ui, sans-serif; text-decoration: none; }
+#navigationModal .wm-ver { text-align: center; font-size: 11px; font-weight: 600; color: #94a3b8; padding-top: 8px; }
 </style>
   <header id="portalHeader" class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200 dark:border-slate-800">
   <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
@@ -243,9 +289,9 @@ permalink: /intranet/weihnachtsmarkt/
 
     <div class="flex items-center gap-3">
       <!-- Rolle / Status Badge (Klick öffnet das Rollenmenü) -->
-      <button onclick="switchView('login')" id="roleBadge" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer">
-        <span id="roleIcon">👁️</span>
-        <span id="roleLabel">GAST</span>
+      <button onclick="wmAcct()" id="roleBadge" class="wm-guest" aria-label="Konto">
+        <span class="wm-avc"><span id="roleIcon">G</span><i></i></span>
+        <span id="roleLabel">Anmelden</span>
       </button>
 
       <!-- Design: Auto (folgt dem Gerät) -> Hell -> Dunkel -->

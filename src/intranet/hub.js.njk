@@ -43,6 +43,7 @@ templateEngineOverride: false
     var n = state.next && state.next.token === SH.token() ? state.next : null;
     var line = '';
     if (n && n.wk && n.wk.length) { var w = n.wk[0]; var d = daysTo(w.date); line = '<a class="hub-hnext" href="/intranet/wettkaempfe/"><span>🏁</span><span><b>' + esc(w.title) + '</b><i>' + esc([fmtD(w.date), d !== null ? inDays(d) : '', w.ort || ''].filter(Boolean).join(' · ')) + '</i></span></a>'; }
+    var wm = state.wm; if (wm && wm.at) { var wd = daysTo(String(wm.at).slice(0, 10)); var wend = String(wm.endAt || wm.at).slice(0, 10); if (wd !== null && daysTo(wend) !== null && daysTo(wend) >= 0) { var wdt = new Date(String(wm.at).slice(0, 10) + 'T12:00:00'); var wtime = /T(\d{2}:\d{2})/.exec(wm.at); line += '<a class="hub-hnext" href="/intranet/weihnachtsmarkt/"><span>🎄</span><span><b>' + esc(wm.label || 'Weihnachtsmarkt') + '</b><i>' + esc([WD[wdt.getDay()].slice(0, 2) + ', ' + String(wdt.getDate()).padStart(2, '0') + '.' + String(wdt.getMonth() + 1).padStart(2, '0') + '.', wtime ? wtime[1] + ' Uhr' : '', wd > 0 ? inDays(wd) : wd === 0 ? 'heute' : 'läuft gerade'].filter(Boolean).join(' · ')) + '</i></span></a>'; } }
     return '<section class="hub-hero"><div class="hub-hero-t"><div class="hub-hdate">' + esc(longDate()) + '</div><h2 class="hub-hello">' + (S.me ? greet() + ', ' + esc(first) + ' 👋' : 'Willkommen') + '</h2></div>' + line + '</section>';
   }
   function fristHtml() {
@@ -130,8 +131,14 @@ templateEngineOverride: false
       state.next = { token: SH.token(), wk: wk, tasks: tasks, ev: ev, mine: mine, hints: hints, warn: warn, fr: fr.slice(0, 6) }; SH.lsSet('hubnext', state.next); render();
     });
   }
+  function loadWm() {
+    SH.get('list', { name: 'aushang' }).then(function (r) {
+      if (!r || !r.items) return; var c = r.items.filter(function (x) { return x.kind === 'countdown'; })[0];
+      state.wm = c ? { at: c.at, endAt: c.endAt, label: c.label } : null; SH.lsSet('hubwm', state.wm); render();
+    });
+  }
   function render() { root.innerHTML = SH.header('SG Barnstorf · Intranet') + '<main class="hub-main">' + body() + '</main>' + SH.overlay(); }
-  function load() { state.loaded = SH.restore(); render(); return SH.loadAccount().then(function () { state.loaded = true; render(); loadNext(); }); }
+  function load() { state.loaded = SH.restore(); state.wm = SH.lsGet('hubwm', null); render(); return SH.loadAccount().then(function () { state.loaded = true; render(); loadNext(); loadWm(); }); }
 
   root.addEventListener('click', function (ev) {
     if (SH.click(ev, render, load)) return;

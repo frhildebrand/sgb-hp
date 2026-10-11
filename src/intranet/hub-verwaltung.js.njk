@@ -74,6 +74,29 @@ templateEngineOverride: false
   // Rechte: oben Werkzeugleiste (Suche, Vorlage, alle an/aus), darunter je System ein ausklappbarer Bereich
   // (Intranet, Weihnachtsmarkt, Jugend) mit den Rechte-Gruppen. Nur Rechte, die man selbst hat, lassen sich vergeben.
   var HUB_KEYS = ['system.users', 'system.roles', 'system.rechte', 'system.passwords', 'account.password'];
+  // Rechte eines Systems in Kategorien aufteilen (Übersicht, Training, Mitglieder …); Unbekanntes landet unter „Weitere“
+  var SUBCATS = {
+    aufgaben: [['Übersicht', /^aufgaben\.(view|own)$/], ['Anlegen und bearbeiten', /^aufgaben\.(edit|anlegen|loeschen)$/]],
+    wettkaempfe: [['Übersicht', /^wettkaempfe\.(view|print|artikel)$/], ['Anlegen und verwalten', /^wettkaempfe\.(import|anlegen|loeschen)$/], ['Vorbereitung und Meldung', /^wettkaempfe\.(check|teilnahme|krzahl|meldegeld|kampfgericht)$/], ['Wettkampftag', /^wettkaempfe\.(zeiten|vorort)$/]],
+    training: [['Übersicht', /^training\.(rueckblick|print)$/], ['Training', /^training\.(view|edit|anlegen|loeschen|beobachtung)$/], ['Mitglieder', /^training\.mitglieder\./], ['Trainingstage und Anwesenheit', /^training\.tage\./]],
+    veranstaltungen: [['Übersicht', /^veranstaltungen\.(view|print)$/], ['Anlegen und bearbeiten', /^veranstaltungen\.(edit|anlegen|loeschen|check)$/], ['Vorlagen', /^veranstaltungen\.vorlagen$/]],
+    vorstand: [['Übersicht (alles)', /^vorstand\.(view|edit|print)$/], ['Anträge', /^vorstand\.antrag/], ['Sitzungen', /^vorstand\.sitzungen\./], ['Protokolle', /^vorstand\.protokolle\./], ['Beschlüsse', /^vorstand\.beschluesse\./]],
+    material: [['Übersicht', /^material\.(view|print)$/], ['Gegenstände', /^material\.(edit|anlegen|loeschen)$/], ['Bestand und Ausleihe', /^material\.(ausleihe|bestand)$/]],
+    jugend: [['Übersicht', /^jugend\.kasse\.(view|print)$/], ['Buchungen', /^jugend\.kasse\.(buchen|bestaetigen)$/], ['Verwaltung', /^jugend\.kasse\.verwalten$/]],
+    abrechnung: [['Eigene Abrechnungen', /^abrechnung\.eigene$/], ['Alle Abrechnungen', /^abrechnung\.(alle|ansehen|bezahlen)$/], ['Einstellungen', /^abrechnung\.saetze$/]],
+    fahrten: [['Eigene Fahrten', /^fahrten\.eigene$/], ['Alle Fahrten', /^fahrten\.(alle|ansehen|abrechnen)$/]]
+  };
+  function splitCats(sysId, title, perms, single) {
+    var defs = SUBCATS[sysId]; if (!defs || perms.length < 3) return [{ title: title, perms: perms }];
+    var by = {}, order = [], rest = [];
+    perms.forEach(function (q) {
+      var hit = defs.filter(function (d) { return d[1].test(q.key); })[0];
+      if (!hit) { rest.push(q); return; } if (!by[hit[0]]) { by[hit[0]] = []; order.push(hit[0]); } by[hit[0]].push(q);
+    });
+    var out = defs.map(function (d) { return d[0]; }).filter(function (n) { return by[n]; }).map(function (n) { return { title: (single ? '' : title + ' · ') + n, perms: by[n] }; });
+    if (rest.length) out.push({ title: (single ? '' : title + ' · ') + 'Weitere', perms: rest });
+    return out.length > 1 ? out : [{ title: title, perms: perms }];
+  }
   function sectionsFor() {
     var defs = S.catalog.sections && S.catalog.sections.length ? S.catalog.sections : [{ id: 'hub', title: '🌐 Intranet', hint: 'Welche Seiten im Hub erscheinen und wer Benutzer, Rollen und Rechte verwalten darf.' }, { id: 'weihnachtsmarkt', title: '🎄 Weihnachtsmarkt' }, { id: 'jugend', title: '🏊 Jugend' }];
     var out = defs.map(function (d) { return { id: d.id, title: d.title, hint: d.hint, groups: [], empty: 'Für diesen Bereich gibt es keine eigenen Rechte.' }; });
@@ -83,7 +106,7 @@ templateEngineOverride: false
       if (g.system === 'hub') { sec.groups.push({ title: 'Seiten im Hub', perms: g.perms }); return; }
       var keep = [];
       g.perms.forEach(function (q) { if (HUB_KEYS.indexOf(q.key) >= 0) verw.perms.push(q); else keep.push(q); });
-      if (keep.length) sec.groups.push({ title: g.title, perms: keep });
+      if (keep.length) { var single = g.title === sec.title.replace(/^\S+\s/, '') || out.filter(function (x) { return x.id === g.system; }).length && S.catalog.groups.filter(function (z) { return z.system === g.system; }).length === 1; splitCats(g.system, g.title, keep, single).forEach(function (x) { sec.groups.push(x); }); }
     });
     if (verw.perms.length) out[0].groups.push(verw);
     return out;

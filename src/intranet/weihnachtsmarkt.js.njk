@@ -1023,6 +1023,13 @@ window.switchView = function (viewName) {
   window.scrollTo(0, 0);
 };
 
+window.wmAcct = function () {
+  const role = window.currentUserRole;
+  const isLoggedIn = (role && role !== 'gast') || !!window.currentUserName;
+  if (!isLoggedIn) { window.switchView('login'); return; }
+  const navModal = document.getElementById('navigationModal');
+  if (navModal) navModal.classList.remove('hidden');
+};
 window.toggleBurgerMenu = function () {
   const navModal = document.getElementById('navigationModal');
   if (navModal) navModal.classList.toggle('hidden');
@@ -1239,12 +1246,21 @@ window.applyPermissionUi = function () {
   const def = window.roleById(role);
   const name = def ? def.name : 'Gast';
   const names = window.currentUserName && window.session && Array.isArray(window.session.roles) && window.session.roles.length ? window.session.roles.map((r) => r.name) : [name];
-  setText('roleLabel', (isLoggedIn ? String(names[0] || name).toUpperCase() : 'GAST') + (window.currentUserName ? ' · ' + window.currentUserName : ''));
+  const uname = window.currentUserName || (isLoggedIn ? String(names[0] || name) : '');
+  const ini = uname ? uname.split(/\s+/).map((w) => w.charAt(0)).join('').slice(0, 2).toUpperCase() : 'G';
+  setText('roleLabel', isLoggedIn ? uname.split(/\s+/)[0] : 'Anmelden');
   setText('navUserName', window.currentUserName || (isLoggedIn ? String(names[0] || name) : 'Gast'));
   setText('navUserRole', isLoggedIn ? String(names[0] || name) + (names.length > 1 ? ' (+' + (names.length - 1) + ')' : '') : 'nicht angemeldet');
+  setText('navAvatar', isLoggedIn ? ini : '👤');
+  setText('roleIcon', ini);
+  const rb = document.getElementById('roleBadge');
+  if (rb) rb.classList.toggle('wm-guest', !isLoggedIn);
+  const nd = document.getElementById('navDot');
+  if (nd) nd.classList.toggle('hidden', !isLoggedIn);
+  const npl = document.getElementById('navProfLink');
+  if (npl) npl.classList.toggle('hidden', !window.currentUserName);
   const navOut = document.getElementById('navLogoutBtn');
   if (navOut) navOut.classList.toggle('hidden', !isLoggedIn);
-  setText('roleIcon', isLoggedIn ? '🔓' : '👁️');
 
   const burgerBtn = document.getElementById('burgerMenuBtn');
   if (burgerBtn) burgerBtn.classList.toggle('hidden', !!window.kioskActive);

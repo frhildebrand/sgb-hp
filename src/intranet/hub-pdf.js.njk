@@ -217,7 +217,7 @@ var WKParse = (function () {
       else if (key === 'ABSCHNITT' && !out.date) out.date = dateDe(f[1]);
       else if (key === 'WETTKAMPF') { dist[f[0]] = +f[4] || 0; evName[f[0]] = (+f[3] > 1 ? f[3] + 'x' : '') + f[4] + ' m ' + (STROKE[f[5]] || f[5]); }
       else if (key === 'WERTUNG') { wer[f[0] + '|' + f[2]] = f[7] || ''; }
-      else if (key === 'KAMPFGERICHT') { if (String(f[3] || '').toLowerCase().indexOf(cl) >= 0 && f[2]) { var kn = f[2].replace(/^([^,]+),\s*(.+)$/, '$2 $1'); var kro = KRROLE[f[1]] || 'Kampfrichter:in'; var kx = out.kr.filter(function (z) { return z.name === kn; })[0]; if (!kx) out.kr.push(kx = { name: kn, rollen: [] }); if (kx.rollen.indexOf(kro) < 0) kx.rollen.push(kro); } }
+      else if (key === 'KAMPFGERICHT') { if (String(f[3] || '').toLowerCase().indexOf(cl) >= 0 && f[2]) { var kn = f[2].replace(/^([^,]+),\s*(.+)$/, '$2 $1'); var kro = KRROLE[f[1]] || 'Kampfrichter:in'; var kx = out.kr.filter(function (z) { return z.name === kn; })[0]; if (!kx) out.kr.push(kx = { name: kn, rollen: [] }); if (kx.rollen.indexOf(kro) < 0) kx.rollen.push(kro); var kab = +f[0] || 1; out.krAb = out.krAb || []; if (!out.krAb.some(function (z) { return z.ab === kab && z.name === kn && z.rolle === kro; })) out.krAb.push({ ab: kab, name: kn, rolle: kro }); } }
       else if (key === 'STAFFELERGEBNIS') { if (f.join(';').toLowerCase().indexOf(cl) >= 0) { var rt = ''; f.forEach(function (z) { if (!rt) rt = dsvTime(z); }); out.relays.push({ e: +f[0], pl: +f[3] || 0, t: rt, st: rt ? '' : (/NA|NT/i.test(f[4]) ? 'nicht angetreten' : 'DQ'), name: f[5] || '' }); } }
       else if (key === 'PNERGEBNIS') { out.all++; res.push(f); }
       else if (key === 'PNZWISCHENZEIT') { var k = f[0] + '|' + f[1]; (spl[k] = spl[k] || []).push({ d: +f[3], t: dsvTime(f[4]) }); }
@@ -339,6 +339,7 @@ var WKParse = (function () {
     L.push('# preview: ' + img, '# heroImage: ' + img, '# images:', '#   - src: ' + img, '#     alt: Das Team', '#   - src: /images/news/' + base + '-2.jpeg', '#     alt: Bildunterschrift');
     if (A.link) L.push('links:', '  - text: ' + q('Alle Ergebnisse vom ' + wk.title), '    url: ' + A.link);
     L.push('---', '');
+    var bodyStart = L.length;
     // Hilfen: Satzende bereinigen, Einzahl/Mehrzahl erkennen
     var fix = function (x) { return String(x || '').trim().replace(/[.\s]+$/, ''); };
     var many = function (x) { return /,| und | & |\+/.test(String(x || '')); };
@@ -375,12 +376,47 @@ var WKParse = (function () {
     var hs = articleHints(wk).filter(function (h) { return (A.hl || []).indexOf(h.id) >= 0; });
     var ht = highlightText(hs); if (ht || A.highlights) L.push([ht, fix(A.highlights) ? fix(A.highlights) + '.' : ''].filter(Boolean).join(' '), '');
     if (A.kr) L.push('Im Kampfgericht ' + ((A.kr.match(/ als /g) || []).length > 1 ? 'waren ' : 'war ') + fix(A.kr) + ' für uns im Einsatz.', '');
+    if (A.ai && String(A.ai).trim()) { L.splice(bodyStart, L.length - bodyStart, String(A.ai).trim().replace(/\r/g, ''), ''); }
     if (showMedals) {
       L.push('| Name | Gold (🥇) | Silber (🥈) | Bronze (🥉) | Gesamt |', '| --- | --- | --- | --- | --- |');
       mn.forEach(function (n) { var m = medal[n]; L.push('| ' + sw[n][0].name + ' | ' + m[0] + ' | ' + m[1] + ' | ' + m[2] + ' | ' + (m[0] + m[1] + m[2]) + ' |'); });
       L.push('| **GESAMT** | **' + tot[0] + '** | **' + tot[1] + '** | **' + tot[2] + '** | **' + totAll + '** |', '');
     }
     return { filename: base + '.md', text: L.join('\n') };
+  }
+
+  // Stichpunkte fuer eine andere KI: alle Fakten, ein fertiger Auftrag davor
+  function articleBrief(wk, club) {
+    club = club || 'SG Barnstorf'; var A = wk.art || {}; var W = A.w || [];
+    var MON = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+    var dd = wk.date ? new Date(wk.date + 'T12:00:00') : null; var datum = dd ? WT[dd.getDay()] + ', ' + dd.getDate() + '. ' + MON[dd.getMonth()] + ' ' + dd.getFullYear() : '';
+    var rows = artRows(wk), by = {}; rows.forEach(function (r) { (by[r.n] = by[r.n] || []).push(r); });
+    var has = function (k) { return W.indexOf(k) >= 0; }; var GN = ['', 'Gold', 'Silber', 'Bronze'];
+    var fx = function (x) { return String(x || '').trim().replace(/[.\s]+$/, ''); };
+    var o = [];
+    o.push('Schreibe einen Bericht für die Homepage unseres Schwimmvereins (' + club + ') über einen Wettkampf. Nutze nur die Fakten unten, erfinde nichts dazu.', '',
+      'Stil:', '- Lies dich wie ein Mensch aus dem Verein: locker, warm, konkret, in der Wir-Form. Keine Werbesprache, keine KI-Floskeln („spannende Wettkämpfe“, „unvergesslicher Tag“, „zeigten eindrucksvoll“).',
+      '- 3 bis 5 Absätze, ohne Überschriften, ohne Aufzählungen, ohne Tabelle (die Medaillentabelle ergänze ich selbst).',
+      '- Nicht jede Zeit nennen. Wähle die Höhepunkte aus und verbinde zusammengehörige Dinge zu einem Satz. Satzanfänge abwechseln, Wiederholungen vermeiden.',
+      '- Grammatik prüfen: Vornamen reichen, Er/Sie passend zur Person. Zeiten im Format 1:02,45.',
+      '- Kein Schlusssatz mit Dank, Gruß oder „wir freuen uns auf den nächsten Wettkampf“. Niemanden danken, wir waren nur Gast.', '', 'FAKTEN', '');
+    o.push('Wettkampf: ' + (wk.title || '') + (wk.ort ? ', ' + wk.ort : '') + (datum ? ', ' + datum : ''));
+    if (wk.veranstalter) o.push('Ausrichter: ' + fx(wk.veranstalter) + ' (nicht unser eigener Wettkampf)');
+    var names = Object.keys(by); o.push('Von uns am Start: ' + names.length + ' Schwimmer:innen (' + names.map(function (n) { return n.replace(/^([^,]+),\s*(.+)$/, '$2'); }).join(', ') + '), ' + rows.length + ' Einzelstarts' + ((A.staffeln || []).length ? ', ' + A.staffeln.length + ' Staffelstart(s)' : ''));
+    var timed = rows.filter(function (r) { return r.diff !== null; }), imp = timed.filter(function (r) { return r.diff < 0; });
+    if (timed.length) o.push('Meldezeiten: ' + imp.length + ' von ' + timed.length + ' Starts mit Meldezeit schneller als gemeldet');
+    var meds = rows.filter(function (r) { return r.pl >= 1 && r.pl <= 3 && !r.st; }).sort(function (a, b) { return a.pl - b.pl || a.e - b.e; });
+    if (has('einzel') || has('offen')) o.push('Medaillen (' + meds.length + '): ' + (meds.length ? meds.map(function (r) { return firstName(r.n) + ' ' + GN[r.pl] + ' über ' + r.ev + ' in ' + showT(r.t) + (r.ak ? ' (' + r.ak + ')' : ''); }).join('; ') : 'keine'));
+    var v4 = rows.filter(function (r) { return r.pl === 4 && !r.st; }); if (v4.length) o.push('Knapp am Treppchen (Platz 4): ' + v4.map(function (r) { return firstName(r.n) + ' über ' + r.ev; }).join('; '));
+    var best = imp.slice().sort(function (a, b) { return a.diff - b.diff; }).slice(0, 8); if (best.length) o.push('Größte Verbesserungen zur Meldezeit: ' + best.map(function (r) { return firstName(r.n) + ' über ' + r.ev + ' ' + showT(r.t) + ' (' + diffStr(r.diff) + ')'; }).join('; '));
+    var hs = articleHints(wk).filter(function (h) { return (A.hl || []).indexOf(h.id) >= 0; }); if (hs.length) o.push('Ausdrücklich erwähnen: ' + hs.map(function (h) { return h.label; }).join('; '));
+    if (has('staffel') && A.staffel) o.push('Staffeln: ' + fx(A.staffel));
+    if ((has('teamg') || has('team')) && A.team) o.push('Mannschaftswertung gesamt: ' + fx(A.team)); if (has('teamw') && A.teamw) o.push('Mannschaftswertung weiblich: ' + fx(A.teamw)); if (has('teamm') && A.teamm) o.push('Mannschaftswertung männlich: ' + fx(A.teamm));
+    if (A.trainer) o.push('Betreut von: ' + fx(A.trainer)); if (A.debuet) o.push('Erster Wettkampf überhaupt für: ' + fx(A.debuet));
+    var sb = STIMM.filter(function (x) { return (A.sb || []).indexOf(x[0]) >= 0; }).map(function (x) { return x[1]; }); if (sb.length) o.push('Stimmung (Stichpunkte): ' + sb.join('; '));
+    if (A.stimmung) o.push('Stimmung (eigene Worte): ' + fx(A.stimmung)); if (A.highlights) o.push('Weitere Highlights: ' + fx(A.highlights));
+    if (A.kr) o.push('Kampfrichter von uns: ' + fx(A.kr));
+    return o.join('\n');
   }
 
   // Ausschreibung (PDF-Text in Zeilen)
@@ -408,8 +444,9 @@ var WKParse = (function () {
     }
     var joined = L.join(' \n ');
     if ((m = /Das Meldegeld beträgt[^.]*?(?:EUR|Euro|€)[^.]*?(?:EUR|Euro|€)[^.]*\./i.exec(joined))) out.meldegeld = m[0].replace(/\s+/g, ' ').trim().slice(0, 240);
-    else if ((m = /Einzel\w*:?\s*([\d,.]+)\s*(?:EUR|Euro|€)\s+Staffel\w*:?\s*([\d,.]+)\s*(?:EUR|Euro|€)/i.exec(joined))) out.meldegeld = 'Einzelstart ' + m[1] + ' €, Staffelstart ' + m[2] + ' €';
+    else if ((m = /Einzel\w*:?\s*([\d,.]+)\s*(?:EUR|Euro|€)\s+Staffel\w*:?\s*([\d,.]+)\s*(?:EUR|Euro|€)/i.exec(joined))) out.meldegeld = m[1] + ' € pro Einzelstart, ' + m[2] + ' € pro Staffelstart';
     else if ((m = /Meldegeld[^.]{0,160}(?:EUR|Euro|€)[^.]{0,80}\./i.exec(joined))) out.meldegeld = m[0].replace(/\s+/g, ' ').trim().slice(0, 240);
+    if (out.meldegeld) out.meldegeld = cleanGeld(out.meldegeld);
     for (i = 0; i < L.length; i++) if (/^Meldeanschrift:/i.test(L[i])) { var a = [L[i].replace(/^Meldeanschrift:\s*/i, '')]; for (var k = 1; k <= 2; k++) { var nx = L[i + k] || ''; if (!/^(E-?Mail|Tel|Fax|www|\S+@\S+|\d{5})/i.test(nx)) break; a.push(nx); } out.meldeanschrift = a.join(', ').replace(/\s{2,}/g, ' ').slice(0, 240); break; }
     // Kampfrichter-Tabelle: "bis 15 Meldungen 2 Kampfrichter 16 bis 25 Meldungen 3 Kampfrichter ..."
     var kj = joined.replace(/\s+/g, ' '); var re = /(?:bis\s+(\d+)|(\d+)\s+bis\s+(\d+)|ab\s+(\d+))\s+Meldungen\s+(\d+)\s+Kampfrichter/gi;
@@ -527,7 +564,15 @@ var WKParse = (function () {
     return out;
   }
 
-  return { parse: parse, parseDsv7: parseDsv7, parseAusschreibung: parseAusschreibung, parseProtokoll: parseProtokoll, parseErgDsv7: parseErgDsv7, articleText: articleText, articleHints: articleHints, STIMM: STIMM, krText: krText, relayText: relayText, showT: showT, digitTime: digitTime, parseAnwesenheit: parseAnwesenheit, krFor: krFor, dateDe: dateDe, linesFromItems: linesFromItems, fmtTime: fmtTime, timeMs: timeMs, diffStr: diffStr, isoDate: isoDate, toMin: toMin };
+  function cleanGeld(t) {
+    t = String(t || '').replace(/\s+/g, ' ').trim(); if (!t) return '';
+    var first = t.split(/(?<=[a-zäöüß\)])\.\s+(?=[A-ZÄÖÜ])/)[0];
+    first = first.replace(/^(Das\s+)?Meldegeld(er)?\s*(beträgt|ist|sind|wird|:)?\s*/i, '').replace(/\s*(EUR|Euro)\b/g, ' €').replace(/(\d)\s*€/g, '$1 €').replace(/\s+und\s+(?=[\d,.]+ €)/g, ', ').replace(/\.$/, '');
+    first = first.replace(/\s*(ist|sind|zu)\s+(bis|auf|an|nach)\b.*$/i, '').replace(/\s+(und|sowie)$/i, '').replace(/[,;]\s*$/, '').trim();
+    first = first.replace(/\s+(und|sowie)\s+(ist|sind|wird)\b.*$/i, '').replace(/(Einzel\w*|Staffel\w*):?\s*([\d,.]+ €)/g, '$2 pro $1').replace(/(pro \w+)\s+(?=[\d,.]+ €)/g, '$1, ');
+    return first || t;
+  }
+  return { articleBrief: articleBrief, cleanGeld: cleanGeld, parse: parse, parseDsv7: parseDsv7, parseAusschreibung: parseAusschreibung, parseProtokoll: parseProtokoll, parseErgDsv7: parseErgDsv7, articleText: articleText, articleHints: articleHints, STIMM: STIMM, krText: krText, relayText: relayText, showT: showT, digitTime: digitTime, parseAnwesenheit: parseAnwesenheit, krFor: krFor, dateDe: dateDe, linesFromItems: linesFromItems, fmtTime: fmtTime, timeMs: timeMs, diffStr: diffStr, isoDate: isoDate, toMin: toMin };
 })();
 
 /* Gemeinsamer PDF-Leser (pdf.js wird erst bei Bedarf geladen) und Dateihilfen für Wettkämpfe und Wettkampfgruppe. */

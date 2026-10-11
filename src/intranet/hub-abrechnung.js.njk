@@ -178,9 +178,12 @@ templateEngineOverride: false
   function tageImport(a) {
     if (deniedNote('trainingTage')) { M.toast('Für die Trainingstage fehlt dir die Berechtigung. Nutze „Aus WebClub-Liste“.'); return; }
     var have = billedKeys(); (a.zeilen || []).forEach(function (z) { have[rowKey(z)] = 1; });
-    var add = tageRows(M.items('trainingTage')).filter(function (z) { return !have[rowKey(z)]; });
+    var allT = tageRows(M.items('trainingTage')); var add = allT.filter(function (z) { return !have[rowKey(z)]; });
+    var tk = {}; allT.forEach(function (z) { tk[rowKey(z)] = z; }); var upd = 0;
+    var zl = (a.zeilen || []).map(function (z) { var t = tk[rowKey(z)]; if (t && /wettkampf/i.test(z.gruppe || '') && (+z.min !== +t.min || (t.ort && z.ort !== t.ort))) { upd++; return Object.assign({}, z, { min: t.min, ort: t.ort || z.ort }); } return z; });
+    if (!add.length && upd) { patchAb(a, { zeilen: zl }, true); M.toast(upd + (upd === 1 ? ' Zeile' : ' Zeilen') + ' aktualisiert (Dauer ' + wkMin() + ' Min.).'); return; }
     if (!add.length) { M.toast('Alle deine Trainingstage sind schon abgerechnet. Neue Termine liest du über „Aus WebClub-Liste“ ein.'); return; }
-    patchAb(a, { zeilen: (a.zeilen || []).concat(add) }, true); M.toast(add.length + (add.length === 1 ? ' Zeile' : ' Zeilen') + ' übernommen.');
+    patchAb(a, { zeilen: zl.concat(add) }, true); M.toast(add.length + (add.length === 1 ? ' Zeile' : ' Zeilen') + ' übernommen' + (upd ? ', ' + upd + ' aktualisiert' : '') + '.');
   }
 
   /* ---- Import aus der WebClub-Anwesenheitsliste (mit Fahrerwahl beim Wettkampftraining) ---- */
@@ -203,30 +206,31 @@ templateEngineOverride: false
       p.sessions.forEach(function (s, i) {
         if (!mineP.some(function (x) { return x.st[i] === 'a'; })) return; seen++;
         var z = { d: s.date, zeit: normTime(s.time || ''), min: isWK ? wkMin() : dmin, gruppe: gname, ort: '' };
-        if (!have[rowKey(z)]) rows.push({ z: z, on: true, drv: [] });
+        if (!have[rowKey(z)]) rows.push({ z: z, on: true, drv: [] }); else if (isWK) rows.push({ z: z, on: false, only: true, drv: [] });
       });
-      if (!rows.length) { msg.innerHTML = '<span class="m-over">' + (seen ? 'Alle ' + seen + ' Termine, bei denen du Trainer warst, stehen schon in Abrechnungen.' : 'In dieser Liste gibt es keinen Termin, bei dem du als Trainer anwesend bist.') + '</span>'; return; }
+      if (!rows.filter(function (x) { return !x.only; }).length && !rows.length) { msg.innerHTML = '<span class="m-over">' + (seen ? 'Alle ' + seen + ' Termine, bei denen du Trainer warst, stehen schon in Abrechnungen.' : 'In dieser Liste gibt es keinen Termin, bei dem du als Trainer anwesend bist.') + '</span>'; return; }
       var last = ''; try { last = localStorage.getItem('hubFahrerLast') || ''; } catch (e) { }
-      var def = last ? last.split('|').filter(function (n) { return rates().fahrer.indexOf(n) >= 0; }).slice(0, 2) : [];
-      PD = { rows: rows, isWK: isWK, gname: gname, def: def, ort: '' };
+      var fl0 = rates().fahrer.slice(); p.people.filter(function (x) { return x.trainer; }).forEach(function (x) { var n = String(x.name || '').replace(/^Trainer\s+/i, '').trim(); if (n && !fl0.some(function (y) { return lower(y) === lower(n); })) fl0.push(n); });
+      if (!fl0.some(function (y) { return lower(y) === lower(me()); })) fl0.unshift(me());
+      var def = last ? last.split('|').filter(function (n) { return fl0.indexOf(n) >= 0; }).slice(0, 2) : [];
+      PD = { rows: rows, isWK: isWK, gname: gname, def: def, ort: '', fl: fl0 };
       if (isWK && def.length) rows.forEach(function (x) { x.drv = def.slice(); });
       pdRender();
     }, function (e) { msg.innerHTML = '<span class="m-over">' + esc(e.message || String(e)) + '</span>'; });
   }
   function drvChips(sel, attrs) {
-    return rates().fahrer.map(function (n, k) { return '<button type="button" class="m-chip' + (sel.indexOf(n) >= 0 ? ' on' : '') + '" ' + attrs + ' data-n="' + k + '" style="padding:5px 11px">' + esc(n) + '</button>'; }).join(' ');
+    return PD.fl.map(function (n, k) { return '<button type="button" class="m-chip' + (sel.indexOf(n) >= 0 ? ' on' : '') + '" ' + attrs + ' data-n="' + k + '" style="padding:5px 11px">' + esc(n) + '</button>'; }).join(' ');
   }
   function pdRender() {
     var box = document.getElementById('abpd'); if (!box || !PD) return;
-    var fl = rates().fahrer; var withDrv = PD.isWK;
+    var fl = PD.fl; var withDrv = PD.isWK;
     var out = '<p class="wm-note"><b>' + esc(PD.gname) + '</b>: ' + PD.rows.length + ' neue Termine gefunden. Abgewählte Termine werden nicht übernommen.</p><label class="m-f wide"><span>Ort (optional, gilt für alle)</span><input type="text" id="abpdort" list="abOrte" value="' + esc(PD.ort) + '" autocomplete="off"></label>';
     if (withDrv) {
-      if (!fl.length) out += '<p class="wm-sub">Tipp: Lege unter „Sätze“ eine Fahrerliste an, dann kannst du hier die Fahrer pro Termin wählen und die Fahrten werden automatisch angelegt.</p>';
-      else out += '<div class="m-sec">Fahrer für alle Termine</div><div style="display:flex;flex-wrap:wrap;gap:6px">' + drvChips(PD.def, 'data-ma="abdrvall"') + '</div>';
+      out += '<p class="wm-sub">Fahrer antippen (höchstens zwei pro Termin). Für jeden gewählten Fahrer wird eine Fahrt angelegt.</p>'; out += '<div class="m-sec">Fahrer für alle Termine</div><div style="display:flex;flex-wrap:wrap;gap:6px">' + drvChips(PD.def, 'data-ma="abdrvall"') + '</div>';
     }
     out += '<div style="max-height:46vh;overflow:auto;margin-top:8px">';
     PD.rows.forEach(function (x, i) {
-      out += '<div class="m-chk" style="flex-wrap:wrap;gap:6px"><button type="button" class="wm-btn" data-ma="abpick" data-i="' + i + '" style="min-width:2.4em">' + (x.on ? '☑' : '☐') + '</button><span style="flex:1;min-width:8em">' + esc(fs(x.z.d)) + ' · ' + esc(x.z.zeit) + ' · ' + x.z.min + ' Min.</span>' + (withDrv && fl.length && x.on ? '<span style="display:flex;flex-wrap:wrap;gap:4px;width:100%">' + drvChips(x.drv, 'data-ma="abdrv" data-i="' + i + '"') + '</span>' : '') + '</div>';
+      out += '<div class="m-chk" style="flex-wrap:wrap;gap:6px"><button type="button" class="wm-btn" data-ma="abpick" data-i="' + i + '" style="min-width:2.4em">' + (x.on ? '☑' : '☐') + '</button><span style="flex:1;min-width:8em">' + esc(fs(x.z.d)) + ' · ' + esc(x.z.zeit) + ' · ' + x.z.min + ' Min.' + (x.only ? ' <i class="wm-sub">(schon abgerechnet, nur Fahrten ergänzen)</i>' : '') + '</span>' + (withDrv && fl.length && x.on ? '<span style="display:flex;flex-wrap:wrap;gap:4px;width:100%">' + drvChips(x.drv, 'data-ma="abdrv" data-i="' + i + '"') + '</span>' : '') + '</div>';
     });
     out += '</div><div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="abpdok">Übernehmen</button></div>';
     box.innerHTML = out;
@@ -234,7 +238,7 @@ templateEngineOverride: false
   function pdOk() {
     var a = curAb(); if (!a || !PD) return; var ortEl = document.getElementById('abpdort'); var ort = ortEl ? ortEl.value.trim() : '';
     var sel = PD.rows.filter(function (x) { return x.on; }); if (!sel.length) { M.toast('Kein Termin ausgewählt.'); return; }
-    var zeilen = sel.map(function (x) { return Object.assign({}, x.z, { ort: ort || x.z.ort }); });
+    var zeilen = sel.filter(function (x) { return !x.only; }).map(function (x) { return Object.assign({}, x.z, { ort: ort || x.z.ort }); });
     var ops = []; var fcount = 0, skipped = 0; var admin = M.anyCan(['fahrten.alle', 'fahrten.abrechnen']); var haveF = {};
     M.items('fahrten').forEach(function (f) { haveF[lower(f.owner) + '|' + f.datum] = 1; });
     sel.forEach(function (x) {
@@ -246,7 +250,7 @@ templateEngineOverride: false
       });
     });
     try { var used = []; sel.forEach(function (x) { x.drv.forEach(function (n) { if (used.indexOf(n) < 0) used.push(n); }); }); if (PD.def.length) localStorage.setItem('hubFahrerLast', PD.def.join('|')); } catch (e) { }
-    M.closeDlg(); patchAb(a, { zeilen: (a.zeilen || []).concat(zeilen) }, true);
+    M.closeDlg(); if (zeilen.length) patchAb(a, { zeilen: (a.zeilen || []).concat(zeilen) }, true);
     if (ops.length) M.ops(ops);
     M.toast(zeilen.length + ' Termine übernommen' + (fcount ? ', ' + fcount + ' Fahrten angelegt' : '') + (skipped ? ' (' + skipped + ' Fahrten anderer Personen brauchen das Recht „Alle Fahrten“)' : '') + '.');
   }
@@ -290,13 +294,13 @@ templateEngineOverride: false
       abpdfread: function () { pdfRead(); },
       abpick: function (it, el) { var x = PD && PD.rows[+el.getAttribute('data-i')]; if (x) { x.on = !x.on; pdRender(); } },
       abdrv: function (it, el) {
-        var x = PD && PD.rows[+el.getAttribute('data-i')]; if (!x) return; var n = rates().fahrer[+el.getAttribute('data-n')]; var k = x.drv.indexOf(n);
+        var x = PD && PD.rows[+el.getAttribute('data-i')]; if (!x) return; var n = PD.fl[+el.getAttribute('data-n')]; var k = x.drv.indexOf(n);
         if (k >= 0) x.drv.splice(k, 1); else { if (x.drv.length >= 2) x.drv.shift(); x.drv.push(n); } pdRender();
       },
       abdrvall: function (it, el) {
-        if (!PD) return; var n = rates().fahrer[+el.getAttribute('data-n')]; var k = PD.def.indexOf(n);
+        if (!PD) return; var n = PD.fl[+el.getAttribute('data-n')]; var k = PD.def.indexOf(n);
         if (k >= 0) PD.def.splice(k, 1); else { if (PD.def.length >= 2) PD.def.shift(); PD.def.push(n); }
-        PD.rows.forEach(function (x) { x.drv = PD.def.slice(); }); pdRender();
+        PD.rows.forEach(function (x) { if (x.on) x.drv = PD.def.slice(); }); pdRender();
       },
       abpdok: function () { pdOk(); },
       abprint: function () { var a = curAb(); if (a) printAb(a); },
