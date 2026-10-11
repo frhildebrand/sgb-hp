@@ -1,0 +1,66 @@
+<!-- NAVIGATION MODAL / DRAWER -->
+<div id="navigationModal" class="fixed inset-0 z-50 flex justify-end hidden wm-bg">
+
+  <div class="wm-drawer">
+
+    <div class="space-y-3">
+      <div class="wm-dtop"><span class="wm-dtitle">Menü</span><button onclick="toggleBurgerMenu()" aria-label="Menü schließen" class="wm-x">✕</button></div>
+      <!-- Konto wie im Intranet -->
+      <div class="wm-prof">
+        <div class="wm-prow"><span class="wm-avb"><span id="navAvatar">G</span><i class="wm-dot hidden" id="navDot"></i></span><div class="wm-pmain"><div id="navUserName" class="wm-dn">Gast</div><div id="navUserRole" class="wm-dr">nicht angemeldet</div></div></div>
+        <div class="wm-pact">
+          <a id="navProfLink" href="/intranet/profil/" class="wm-pi hidden"><span class="wm-pic">👤</span>Mein Profil</a>
+          <button id="navPwBtn" onclick="changeOwnPassword(); toggleBurgerMenu()" class="wm-pi hidden"><span class="wm-pic">🔑</span>Passwort ändern</button>
+          <button onclick="switchView('login')" class="wm-pi"><span class="wm-pic">🔁</span>Anmelden / Konto wechseln</button>
+          <button id="navLogoutBtn" onclick="logout(); toggleBurgerMenu()" class="wm-pi hidden"><span class="wm-pic">🚪</span>Abmelden</button>
+        </div>
+      </div>
+
+      <!-- Seiten, nach Aufgabe gruppiert -->
+      <nav class="wm-nav">
+      <div data-nav-group="Am Stand" class="wm-grp" style="--mc:#14b8a6">
+        <div data-nav-head role="button" aria-expanded="true" onclick="toggleNavGroup(this)" class="wm-lab"><span class="wm-lic">🎄</span><span class="wm-lbl">Am Stand</span><span data-nav-chev class="wm-chev">▾</span></div>
+        <div data-nav-items class="wm-items">
+        <button onclick="switchView('aushang')" class="wm-mi"><span class="wm-mic">📌</span><span>Aushang</span></button>
+        <button onclick="switchView('verkauf')" class="wm-mi"><span class="wm-mic">💶</span><span>Kasse</span></button>
+        <button onclick="switchView('statistik')" class="wm-mi"><span class="wm-mic">📊</span><span>Statistik</span></button>
+        <button onclick="switchView('rezepte')" class="wm-mi"><span class="wm-mic">🧇</span><span>Rezepte</span></button>
+        </div>
+      </div>
+      <div data-nav-group="Vorbereitung" class="wm-grp" style="--mc:#3b82f6">
+        <div data-nav-head role="button" aria-expanded="true" onclick="toggleNavGroup(this)" class="wm-lab"><span class="wm-lic">🧰</span><span class="wm-lbl">Vorbereitung</span><span data-nav-chev class="wm-chev">▾</span></div>
+        <div data-nav-items class="wm-items">
+        <button onclick="switchView('aufbau')" class="wm-mi"><span class="wm-mic">🧰</span><span>Auf- &amp; Abbau</span></button>
+        <button onclick="switchView('inventar')" class="wm-mi"><span class="wm-mic">📦</span><span>Inventar</span></button>
+        <button onclick="switchView('einkaufsliste')" class="wm-mi"><span class="wm-mic">🛒</span><span>Einkaufsliste</span></button>
+        <button onclick="switchView('verkabelung')" class="wm-mi"><span class="wm-mic">⚡</span><span>Strom &amp; Verkabelung</span></button>
+        <button onclick="switchView('lagerbestand')" class="wm-mi"><span class="wm-mic">🏬</span><span>Lagerbestand</span></button>
+        <button onclick="switchView('boxen')" class="wm-mi"><span class="wm-mic">📥</span><span>Kisten &amp; Boxen</span></button>
+        <button onclick="switchView('leihgaben')" class="wm-mi"><span class="wm-mic">🤝</span><span>Leihgaben</span></button>
+        </div>
+      </div>
+      <div data-nav-group="Verwaltung" class="wm-grp" style="--mc:#64748b">
+        <div data-nav-head role="button" aria-expanded="true" onclick="toggleNavGroup(this)" class="wm-lab"><span class="wm-lic">🛡️</span><span class="wm-lbl">Verwaltung</span><span data-nav-chev class="wm-chev">▾</span></div>
+        <div data-nav-items class="wm-items">
+        <button onclick="switchView('admin')" class="wm-mi"><span class="wm-mic">🛡️</span><span>Admin-Panel</span></button>
+        <button onclick="switchView('status')" class="wm-mi"><span class="wm-mic">🩺</span><span>Systemstatus</span></button>
+        <button onclick="switchView('protokoll')" class="wm-mi"><span class="wm-mic">📝</span><span>Änderungsprotokoll</span></button>
+        </div>
+      </div>
+      <div data-nav-group="Hilfe" class="wm-grp" style="--mc:#f59e0b">
+        <div data-nav-head role="button" aria-expanded="true" onclick="toggleNavGroup(this)" class="wm-lab"><span class="wm-lic">❓</span><span class="wm-lbl">Hilfe</span><span data-nav-chev class="wm-chev">▾</span></div>
+        <div data-nav-items class="wm-items">
+        <button onclick="switchView('hilfe')" class="wm-mi"><span class="wm-mic">❓</span><span>Hilfe</span></button>
+        </div>
+      </div>
+      </nav>
+    </div>
+
+    <!-- Fuß: Intranet und Version -->
+    <div class="wm-foot2">
+      <a id="navHubLink" href="/intranet/" class="wm-hub">🏠 Alle Systeme (Intranet)</a>
+      <div id="navVersion" class="wm-ver">App 11</div>
+    </div>
+
+  </div>
+</div>
