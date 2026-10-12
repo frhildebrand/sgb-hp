@@ -42,9 +42,14 @@ templateEngineOverride: false
     var S = SH.S; var nm = S.me ? String(S.me.user || (S.me.role && S.me.role.name) || '') : '';
     var first = nm.split(/\s+/)[0];
     var n = state.next && state.next.token === SH.token() ? state.next : null;
-    var line = '';
-    if (n && n.wk && n.wk.length) { var w = n.wk[0]; var d = daysTo(w.date); line = '<a class="hub-hnext" href="/intranet/wettkaempfe/"><span class="hub-hic">🏁</span><span class="hub-htx"><b>' + esc(w.title) + '</b><i>' + esc([fmtD(w.date), w.ort || ''].filter(Boolean).join(' · ')) + '</i></span>' + cdBadge(d) + '</a>'; }
-    var wm = state.wm; if (wm && wm.at) { var wd = daysTo(String(wm.at).slice(0, 10)); var wend = String(wm.endAt || wm.at).slice(0, 10); if (wd !== null && daysTo(wend) !== null && daysTo(wend) >= 0) { var wdt = new Date(String(wm.at).slice(0, 10) + 'T12:00:00'); var wtime = /T(\d{2}:\d{2})/.exec(wm.at); line += '<a class="hub-hnext" href="/intranet/weihnachtsmarkt/"><span class="hub-hic">🎄</span><span class="hub-htx"><b>' + esc(wm.label || 'Weihnachtsmarkt') + '</b><i>' + esc([WD[wdt.getDay()].slice(0, 2) + ', ' + String(wdt.getDate()).padStart(2, '0') + '.' + String(wdt.getMonth() + 1).padStart(2, '0') + '.', wtime ? wtime[1] + ' Uhr' : ''].filter(Boolean).join(' · ')) + '</i></span>' + cdBadge(wd) + '</a>'; } }
+    var items = [];
+    if (n) {
+      (n.wk || []).forEach(function (w) { items.push({ date: w.date, ic: '🏁', t: w.title, s: [fmtD(w.date), w.ort || ''].filter(Boolean).join(' · '), href: '/intranet/wettkaempfe/' }); });
+      (n.ev || []).forEach(function (e) { items.push({ date: e.date, ic: '🎪', t: e.title, s: [fmtD(e.date), e.prog || ''].filter(Boolean).join(' · '), href: '/intranet/veranstaltungen/' }); });
+    }
+    var wm = state.wm; if (wm && wm.at) { var wiso = String(wm.at).slice(0, 10); var wend = String(wm.endAt || wm.at).slice(0, 10); if (daysTo(wiso) !== null && daysTo(wend) !== null && daysTo(wend) >= 0) { var wdt = new Date(wiso + 'T12:00:00'); var wtime = /T(\d{2}:\d{2})/.exec(wm.at); items.push({ date: wiso, ic: '🎄', t: wm.label || 'Weihnachtsmarkt', s: [WD[wdt.getDay()].slice(0, 2) + ', ' + String(wdt.getDate()).padStart(2, '0') + '.' + String(wdt.getMonth() + 1).padStart(2, '0') + '.', wtime ? wtime[1] + ' Uhr' : ''].filter(Boolean).join(' · '), href: '/intranet/weihnachtsmarkt/' }); } }
+    items.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+    var line = items.length ? '<div class="hub-hline">' + items.slice(0, 3).map(function (x) { return '<a class="hub-hnext" href="' + x.href + '"><span class="hub-hic">' + x.ic + '</span><span class="hub-htx"><b>' + esc(x.t) + '</b><i>' + esc(x.s) + '</i></span>' + cdBadge(daysTo(x.date)) + '</a>'; }).join('') + '</div>' : '';
     return '<section class="hub-hero"><div class="hub-hero-t"><div class="hub-hdate">' + esc(longDate()) + '</div><h2 class="hub-hello">' + (S.me ? greet() + ', ' + esc(first) + ' 👋' : 'Willkommen') + '</h2></div>' + line + '</section>';
   }
   function fristHtml() {
@@ -55,26 +60,16 @@ templateEngineOverride: false
     var S = SH.S;
     if (!state.loaded) return '<section class="hub-tiles"><div class="hub-skel"></div><div class="hub-skel"></div><div class="hub-skel"></div></section>';
     if (S.offline) return '<section class="hub-card hub-offline"><h2>Keine Verbindung</h2><p class="hub-sub">Das Konto-System ist gerade nicht erreichbar. Bitte prüfe das Internet und versuche es nochmal.</p><button type="button" class="hub-btn hub-gold" data-act="retry">Nochmal versuchen</button><details class="hub-diag"><summary>Technische Details</summary><pre>' + esc(SH.DIAG.length ? SH.DIAG.join('\n') : 'Keine Angaben.') + '</pre></details></section>';
-    var out = hero() + fristHtml();
+    var out = hero() + fristHtml() + tasksHtml();
     out += S.systems.length ? groupsHtml(S.systems) : '<section class="hub-card"><p class="hub-sub">Für dein Konto sind noch keine Systeme freigeschaltet.</p></section>';
-    out += nextHtml();
     if (!S.me) out += '<section class="hub-card hub-note"><h3>Weitere Systeme?</h3><p class="hub-sub">Melde dich an, dann siehst du alle Systeme, die für dich freigeschaltet sind.</p><button type="button" class="hub-btn hub-gold" data-sh="login">Anmelden</button></section>';
     return out;
   }
-  // „Als Nächstes“: nächste Wettkämpfe (mit Fortschritt), nächste Veranstaltung und offene Aufgaben
-  function nextHtml() {
-    var n = state.next; if (!n || n.token !== SH.token() || (!n.wk.length && !n.tasks.length && !(n.ev || []).length)) return '';
-    var out = '';
-    if (!n.wk.length && !n.tasks.length && !(n.ev || []).length) return out;
-    out += '<h3 class="hub-sech" style="margin-top:8px">Als Nächstes</h3><section class="hub-nextgrid">';
-    if (n.wk.length) out += '<div class="hub-card"><h3>🏁 Wettkämpfe</h3>' + n.wk.map(function (w) {
-      var d = daysTo(w.date);
-      var meta = [d !== null ? inDays(d) : '', w.ort || '', w.prog || '', w.ms ? 'Meldeschluss ' + fmtD(w.ms) + (daysTo(w.ms) !== null && daysTo(w.ms) >= 0 && daysTo(w.ms) <= 7 ? ' (' + inDays(daysTo(w.ms)) + ')' : '') : ''].filter(Boolean);
-      return '<a class="hub-nrow" href="/intranet/wettkaempfe/"><b>' + esc(fmtD(w.date)) + '</b> ' + esc(w.title) + '<span class="hub-nmeta">' + esc(meta.join(' · ')) + '</span></a>';
-    }).join('') + '</div>';
-    if ((n.ev || []).length) out += '<div class="hub-card"><h3>🎪 Veranstaltungen</h3>' + n.ev.map(function (e) { var d = daysTo(e.date); return '<a class="hub-nrow" href="/intranet/veranstaltungen/"><b>' + esc(fmtD(e.date)) + '</b> ' + esc(e.title) + '<span class="hub-nmeta">' + esc([d !== null ? inDays(d) : '', e.prog || ''].filter(Boolean).join(' · ')) + '</span></a>'; }).join('') + '</div>';
-    if (n.tasks.length) out += '<div class="hub-card"><h3>✅ ' + (n.mine ? 'Meine Aufgaben' : 'Offene Aufgaben') + '</h3>' + n.tasks.map(function (t) { var over = t.due && t.due < todayIso(); return '<a class="hub-nrow" href="/intranet/aufgaben/">' + esc(t.title) + (t.due ? '<span class="hub-nmeta' + (over ? ' hub-over' : '') + '">' + (over ? '⚠️ überfällig seit ' : 'bis ') + esc(fmtD(t.due)) + '</span>' : '') + '</a>'; }).join('') + '</div>';
-    return out + '</section>';
+  // Kompakte Aufgabenübersicht direkt unter dem Kopfbereich
+  function tasksHtml() {
+    var n = state.next; if (!n || n.token !== SH.token() || !(n.tasks || []).length) return '';
+    var t0 = todayIso();
+    return '<section class="hub-tk"><div class="hub-tkh"><h3>✅ ' + (n.mine ? 'Meine Aufgaben' : 'Offene Aufgaben') + '</h3><a href="/intranet/aufgaben/">Alle ansehen →</a></div><div class="hub-tkl">' + n.tasks.map(function (t) { var over = t.due && t.due < t0; return '<a class="hub-tki' + (over ? ' hub-over' : '') + '" href="/intranet/aufgaben/"><span>' + esc(t.title) + '</span>' + (t.due ? '<em>' + (over ? '⚠️ ' : '') + esc(fmtD(t.due)) + '</em>' : '') + '</a>'; }).join('') + '</div></section>';
   }
   function wkProgress(w) {
     var KEYS = ['webclub', 'krabfrage', 'bekWA', 'lizenzen', 'geprueft', 'versendet', 'bestaetigung', 'waGruppe', 'meWA', 'urkGedruckt', 'urkVerteilt', 'artikel'];
@@ -107,7 +102,7 @@ templateEngineOverride: false
       var open = tasks.length;
       tasks = tasks.sort(function (a, b) { return (a.due || '9999') < (b.due || '9999') ? -1 : 1; }).slice(0, 5).map(function (x) { return { title: x.title, due: x.due }; });
       var evs = (d.veranstaltungen || []).filter(function (e) { return (e.date || '') >= t && e.status !== 'Abgeschlossen'; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
-      var ev = evs.slice(0, 2).map(function (e) { var c = e.check || []; var dn = c.filter(function (x) { return x.d; }).length; return { date: e.date, title: e.title, prog: c.length ? dn + '/' + c.length + ' erledigt' : '' }; });
+      var ev = evs.slice(0, 3).map(function (e) { var c = e.check || []; var dn = c.filter(function (x) { return x.d; }).length; return { date: e.date, title: e.title, prog: c.length ? dn + '/' + c.length + ' erledigt' : '' }; });
       var hints = {};
       if (d.aufgaben) hints.aufgaben = open ? { t: open + ' offen' + (overdue ? ', ' + overdue + ' überfällig' : ''), c: overdue ? 'bad' : 'warn' } : { t: 'Alles erledigt', c: '' };
       if (d.wettkaempfe) hints.wettkaempfe = up.length ? (function () { var dd = daysTo(up[0].date); return { t: 'Nächster ' + inDays(dd), c: dd <= 7 ? 'warn' : 'info' }; })() : { t: 'Kein Termin', c: 'none' };

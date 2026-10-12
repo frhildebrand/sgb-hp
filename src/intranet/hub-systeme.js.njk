@@ -462,7 +462,7 @@ templateEngineOverride: false
   M.register('vorstand', {
     title: 'Vorstand', icon: '🏛️', colls: ['vorstandAntraege', 'vorstandProtokolle', 'vorstandBeschluesse', 'vorstandSitzungen', 'profile', 'aufgaben'],
     tabs: [
-      { id: 'antraege', label: 'Anträge', coll: 'vorstandAntraege', view: ['vorstand.view', 'vorstand.antrag', 'vorstand.antraege.view'], edit: ['vorstand.edit', 'vorstand.antrag', 'vorstand.antraege.edit'], print: ['vorstand.print', 'vorstand.antrag'], sortBy: { k: 'datum', dir: -1 }, printItem: true, addLabel: 'Neuer Antrag', search: ['title', 'von', 'begruendung', 'beschluss'],
+      { id: 'antraege', label: 'Anträge', coll: 'vorstandAntraege', view: ['vorstand.view', 'vorstand.antrag', 'vorstand.antraege.view'], edit: ['vorstand.edit', 'vorstand.antrag', 'vorstand.antraege.edit'], sortBy: { k: 'datum', dir: -1 }, addLabel: 'Neuer Antrag', search: ['title', 'von', 'begruendung', 'beschluss'],
         hint: 'Anträge an den Vorstand. Du siehst unter „Meine“ alles, was du gestellt hast.',
         filter: function (it, f) { return !f.mine || lower(it.von) === lower(me()) || lower(it.owner) === lower(me()); },
         summary: function (all) { return '<div class="m-chips">' + (M.can('vorstand.view') ? '<button type="button" class="m-chip' + (M.S.filter.mine ? ' on' : '') + '" data-ma="minef">Meine Anträge</button>' : '') + '<button type="button" class="m-chip" data-ma="apdf">📄 Antrag aus PDF</button></div>'; },
@@ -473,7 +473,7 @@ templateEngineOverride: false
           minef: function () { M.S.filter.mine = !M.S.filter.mine; M.render(true); },
           toBeschl: function (it) { if (!it) return; var id = M.uid(); M.op({ op: 'set', coll: 'vorstandBeschluesse', item: { id: id, title: it.title, date: M.today(), text: it.beschluss || it.begruendung || '', who: [], due: '', status: 'offen', antrag: it.id } }); M.toast('Beschluss angelegt (Reiter „Beschlüsse“).'); }
         },
-        printItem: function (it) { return antragPrint(it); } },
+        noExport: true },
       { id: 'sitzungen', label: 'Sitzungen', coll: 'vorstandSitzungen', view: ['vorstand.view', 'vorstand.sitzungen.view'], edit: ['vorstand.edit', 'vorstand.sitzungen.edit'], print: ['vorstand.print'], sortBy: { k: 'date', dir: -1 }, printItem: true, addLabel: 'Neue Sitzung', search: ['title', 'ort', 'tops', 'protokoll'],
         hint: 'Erst die Tagesordnung, nach der Sitzung das Protokoll. Mit „Protokoll vorbereiten“ wird aus der Tagesordnung eine Gliederung.',
         fields: [{ k: 'title', t: 'text', label: 'Titel', req: true, ph: 'z. B. Vorstandssitzung November' }, { k: 'date', t: 'date', label: 'Datum' }, { k: 'time', t: 'time', label: 'Uhrzeit' }, { k: 'ort', t: 'text', label: 'Ort' }, { k: 'status', t: 'sel', label: 'Stand', opts: ['Geplant', 'Durchgeführt'] }, { k: 'tops', t: 'lines', label: 'Tagesordnung', rows: 6, hint: 'Pro Zeile ein Punkt.' }, { k: 'teilnehmer', t: 'text', label: 'Teilnehmer' }, { k: 'protokoll', t: 'area', label: 'Protokoll', rows: 12 }],

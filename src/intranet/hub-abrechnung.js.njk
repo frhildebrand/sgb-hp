@@ -339,7 +339,7 @@ templateEngineOverride: false
   }
   function fForm(item, isNew, forOwner) {
     var fields = [{ k: 'datum', t: 'date', label: 'Datum', req: true }, { k: 'notiz', t: 'text', label: 'Bemerkung (optional)', ph: 'z. B. Wettkampftraining Hallenbad Delfin' }];
-    if (forOwner) { var fo = rates().fahrer.slice(); (M.D.people || []).forEach(function (n) { if (fo.indexOf(n) < 0) fo.push(n); }); fields.unshift({ k: 'fahrer', t: 'sel', label: 'Fahrer/in', req: true, opts: [['', 'Bitte wählen …']].concat(fo.map(function (n) { return [n, n]; })) }); }
+    if (forOwner) { var fo = rates().fahrer.slice(); if (!fo.length) (M.D.people || []).forEach(function (n) { if (fo.indexOf(n) < 0) fo.push(n); }); fields.unshift({ k: 'fahrer', t: 'sel', label: 'Fahrer/in', req: true, opts: [['', 'Bitte wählen …']].concat(fo.map(function (n) { return [n, n]; })) }); }
     M.openForm({ title: isNew ? 'Fahrt eintragen' : 'Fahrt ändern', fields: fields, item: item, onSave: function (v) {
       var who = forOwner ? v.fahrer : me(); delete v.fahrer;
       if (isNew) M.op({ op: 'set', coll: 'fahrten', item: Object.assign({ id: M.uid(), status: 'offen', betrag: rates().fahrt, owner: who }, v) }); else M.op({ op: 'patch', coll: 'fahrten', id: item.id, fields: v });
