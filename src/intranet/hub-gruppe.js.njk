@@ -84,10 +84,8 @@ templateEngineOverride: false
 
   /* ---------- Trainingstage ---------- */
   function fahrerOpts() {
-    var o = []; var add = function (n) { n = String(n || '').replace(/^Trainer\s+/i, '').trim(); if (n && o.indexOf(n) < 0) o.push(n); };
-    ((M.find('saetze', 'main') || {}).fahrer || []).forEach(add);
-    (M.D.trainingTage || []).forEach(function (t) { (t.fahrer || []).forEach(add); (t.trainer || []).forEach(add); });
-    (M.D.people || []).forEach(add);
+    var o = []; ((M.find('saetze', 'main') || {}).fahrer || []).forEach(function (n) { n = String(n || '').trim(); if (n && o.indexOf(n) < 0) o.push(n); });
+    if (!o.length) (M.D.people || []).forEach(function (n) { if (n && o.indexOf(n) < 0) o.push(n); });
     return o;
   }
   var TFIELDS = [
@@ -95,7 +93,7 @@ templateEngineOverride: false
     { k: 'time', t: 'time', label: 'Uhrzeit' },
     { k: 'dauer', t: 'num', label: 'Dauer (Min.)' },
     { k: 'trainer', t: 'tags', label: 'Trainer' },
-    { k: 'fahrer', t: 'pick', label: 'Fahrer (Wettkampftraining)', extra: 'Weitere Fahrer (z. B. Eltern), mit Komma trennen', opts: fahrerOpts, hint: 'Wer gefahren ist. Die Fahrt landet bei „Trainingstage einfügen“ in der Abrechnung des Fahrers.' },
+    { k: 'fahrer', t: 'pick', label: 'Fahrer (Wettkampftraining)', opts: fahrerOpts, hint: 'Wer gefahren ist. Die Fahrt landet bei „Trainingstage einfügen“ in der Abrechnung des Fahrers.' },
     { k: 'ort', t: 'text', label: 'Ort' },
     { k: 'fokus', t: 'text', label: 'Schwerpunkt', ph: 'z. B. Wenden, Ausdauer' },
     { k: 'inhalt', t: 'area', label: 'Einheit / Inhalt', rows: 5 },

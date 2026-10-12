@@ -69,7 +69,7 @@ templateEngineOverride: false
   function tasksHtml() {
     var n = state.next; if (!n || n.token !== SH.token() || !(n.tasks || []).length) return '';
     var t0 = todayIso();
-    return '<section class="hub-tk"><div class="hub-tkh"><h3>✅ ' + (n.mine ? 'Meine Aufgaben' : 'Offene Aufgaben') + '</h3><a href="/intranet/aufgaben/">Alle ansehen →</a></div><div class="hub-tkl">' + n.tasks.map(function (t) { var over = t.due && t.due < t0; return '<a class="hub-tki' + (over ? ' hub-over' : '') + '" href="/intranet/aufgaben/"><span>' + esc(t.title) + '</span>' + (t.due ? '<em>' + (over ? '⚠️ ' : '') + esc(fmtD(t.due)) + '</em>' : '') + '</a>'; }).join('') + '</div></section>';
+    return '<section class="hub-tk"><div class="hub-tkh"><h3>✅ ' + (n.mine ? 'Meine Aufgaben' : 'Offene Aufgaben') + '</h3><a href="/intranet/aufgaben/">Alle ansehen →</a></div><div class="hub-tkl">' + n.tasks.map(function (t) { var over = t.due && t.due < t0; return '<a class="hub-tki' + (over ? ' hub-over' : '') + (t.prio === 'hoch' ? ' hub-hi' : '') + '" href="/intranet/aufgaben/"><span>' + esc(t.title) + '</span>' + (t.due ? '<em>' + (over ? '⚠️ ' : '') + esc(fmtD(t.due)) + '</em>' : '') + '</a>'; }).join('') + '</div></section>';
   }
   function wkProgress(w) {
     var KEYS = ['webclub', 'krabfrage', 'bekWA', 'lizenzen', 'geprueft', 'versendet', 'bestaetigung', 'waGruppe', 'meWA', 'urkGedruckt', 'urkVerteilt', 'artikel'];
@@ -100,7 +100,7 @@ templateEngineOverride: false
       if (!mine && me) { var m2 = tasks.filter(function (x) { return (x.who || []).some(function (w) { return String(w).toLowerCase() === me; }); }); if (m2.length) { tasks = m2; mine = true; } }
       var overdue = tasks.filter(function (x) { return x.due && x.due < t; }).length;
       var open = tasks.length;
-      tasks = tasks.sort(function (a, b) { return (a.due || '9999') < (b.due || '9999') ? -1 : 1; }).slice(0, 5).map(function (x) { return { title: x.title, due: x.due }; });
+      tasks = tasks.sort(function (a, b) { var pa = a.prio === 'hoch' ? 0 : 1, pb = b.prio === 'hoch' ? 0 : 1; if (pa !== pb) return pa - pb; return (a.due || '9999') < (b.due || '9999') ? -1 : 1; }).slice(0, 6).map(function (x) { return { title: x.title, due: x.due, prio: x.prio }; });
       var evs = (d.veranstaltungen || []).filter(function (e) { return (e.date || '') >= t && e.status !== 'Abgeschlossen'; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
       var ev = evs.slice(0, 3).map(function (e) { var c = e.check || []; var dn = c.filter(function (x) { return x.d; }).length; return { date: e.date, title: e.title, prog: c.length ? dn + '/' + c.length + ' erledigt' : '' }; });
       var hints = {};

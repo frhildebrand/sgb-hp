@@ -7116,28 +7116,3 @@ if (document.readyState === 'loading') {
 } else {
   initApp();
 }
-
-// Tab-Leiste unter der Kopfzeile (wie auf der Jugend-Seite), gebaut aus dem Menue und passend zu den Rechten
-window.renderWmTabs = function () {
-  const bar = document.getElementById('wmTabs'); if (!bar) return;
-  if (!bar.__wm) { bar.__wm = 1; bar.addEventListener('click', (e) => { const b = e.target.closest && e.target.closest('.wm-tabb'); if (b) switchView(b.getAttribute('data-v')); }); }
-  const seen = {}; let html = '';
-  document.querySelectorAll('#navigationModal nav button.wm-mi').forEach((btn) => {
-    let hid = false; for (let e = btn; e && e.tagName !== 'NAV'; e = e.parentElement) { if (e.classList && e.classList.contains('hidden')) { hid = true; break; } }
-    if (hid) return;
-    const v = navViewOf(btn); if (!v || seen[v]) return; seen[v] = 1;
-    const ic = btn.querySelector('.wm-mic'); const tx = btn.querySelector('span:not(.wm-mic)');
-    html += '<button type="button" class="wm-tabb' + (v === window.currentView ? ' on' : '') + '" data-v="' + v + '"><span>' + (ic ? ic.textContent : '') + '</span>' + (tx ? tx.innerHTML : '') + '</button>';
-  });
-  bar.innerHTML = html;
-  const on = bar.querySelector('.on'); if (on && on.scrollIntoView) { try { bar.scrollLeft = Math.max(0, on.offsetLeft - 16); } catch (e) { /* egal */ } }
-};
-(function () {
-  const bar = document.getElementById('wmTabs');
-  if (bar && !bar.__wm) { bar.__wm = 1; bar.addEventListener('click', (e) => { const b = e.target.closest && e.target.closest('.wm-tabb'); if (b) switchView(b.getAttribute('data-v')); }); }
-  ['updateNavActive', 'applyNavPermissions', 'applyPermissionUi'].forEach((n) => {
-    const o = window[n]; if (typeof o !== 'function' || o.__wmt) return;
-    const w = function () { const r = o.apply(this, arguments); try { window.renderWmTabs(); } catch (e) { /* egal */ } return r; }; w.__wmt = 1; window[n] = w;
-  });
-  setTimeout(() => { try { window.renderWmTabs(); } catch (e) { /* egal */ } }, 300);
-})();

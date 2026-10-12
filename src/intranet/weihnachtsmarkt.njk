@@ -238,7 +238,7 @@ permalink: /intranet/weihnachtsmarkt/
 #portalHeader #roleBadge .wm-avc i { position: absolute; right: -1px; bottom: -1px; width: 11px; height: 11px; border-radius: 50%; background: #22c55e; border: 2px solid #12395c; }
 #portalHeader #roleBadge.wm-guest { padding: 0 16px !important; background: linear-gradient(135deg, #e8b54d, #c98f1f) !important; border-color: transparent; color: #0a1f36 !important; }
 #portalHeader #roleBadge.wm-guest .wm-avc { display: none; }
-#portalHeader #themeToggleBtn, #portalHeader #burgerMenuBtn { border-radius: 999px !important; }
+#portalHeader #themeToggleBtn, #portalHeader #burgerMenuBtn { border-radius: 12px !important; }
 @media (max-width: 560px) { #portalHeader #roleBadge #roleLabel { display: none; } #portalHeader #roleBadge { padding: 0 5px !important; } #portalHeader #roleBadge.wm-guest { padding: 0 12px !important; } #portalHeader #roleBadge.wm-guest #roleLabel { display: inline; } }
 #navigationModal.wm-bg { background: rgba(3,9,22,.62); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
 #navigationModal .wm-drawer { width: min(23rem, 100%); height: 100%; overflow-y: auto; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; padding: 14px 12px calc(18px + env(safe-area-inset-bottom)); background: linear-gradient(180deg, #fbfcfe, #f1f5fa); color: #0f172a; box-shadow: -18px 0 50px rgba(2,8,23,.45); }
@@ -308,18 +308,9 @@ html.dark #navigationModal .wm-grp { background: rgba(255,255,255,.04); }
 
   </div>
 </header>
-<nav id="wmTabs" class="wm-tabsbar" aria-label="Bereiche"></nav>
 <style>
-/* Seite wie Jugend: ruhiger Hub-Hintergrund, Tab-Leiste unter der Kopfzeile */
-#appBody, .dark #appBody { background-image: none !important; }
-#appBody { background-color: #f1f5f9 !important; }
-.dark #appBody { background-color: #020617 !important; }
-.wm-tabsbar { display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; max-width: 80rem; margin: 0 auto; padding: 12px 16px 4px; }
-.wm-tabsbar::-webkit-scrollbar { display: none; }
-.wm-tabb { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid rgba(148,163,184,.35); background: #fff; color: #334155; font: 700 14px -apple-system, system-ui, sans-serif; cursor: pointer; white-space: nowrap; }
-.wm-tabb.on { background: linear-gradient(135deg, #e8b54d, #c98f1f); border-color: transparent; color: #0a1f36; font-weight: 800; }
-.dark .wm-tabb { background: #131d30; border-color: #1f2a3d; color: #cbd5e1; }
-.dark .wm-tabb.on { background: linear-gradient(135deg, #e8b54d, #c98f1f); color: #0a1f36; }
+#navigationModal .wm-solo { background: rgba(148,163,184,.10); }
+html.dark #navigationModal .wm-solo { background: rgba(255,255,255,.04); }
 </style>
   {% include "weihnachtsmarkt/components/navigation.njk" %}
 

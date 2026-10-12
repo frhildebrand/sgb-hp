@@ -285,9 +285,32 @@ templateEngineOverride: false
     });
     return h + '</tbody></table>';
   }
+  function tabList() { var l = [['benutzer', '👤', 'Benutzerverwaltung'], ['zugang', '🛡️', 'Zugangsverwaltung']]; if (has('view.status')) l.push(['status', '🩺', 'Systemstatus']); if (has('view.protokoll')) l.push(['protokoll', '📝', 'Änderungsprotokoll']); return l; }
+  var L = { entries: [], areas: [], more: false, error: '', loading: false, area: '', q: '', from: '', to: '' }; var ST = { d: null, error: '', loading: false };
+  function fmtDT(t) { var d = new Date(+t); if (isNaN(d)) return ''; var p = function (n) { return String(n).padStart(2, '0'); }; return p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + String(d.getFullYear()).slice(2) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
+  function loadStatus() { if (ST.loading) return; ST.loading = true; ST.error = ''; render(); get('status').then(function (r) { ST.loading = false; if (!r) ST.error = 'Keine Verbindung.'; else if (r.code === 'perm') ST.error = 'Dafür fehlt dir die Berechtigung.'; else if (r.code === 'auth') ST.error = 'Bitte neu anmelden.'; else ST.d = r; render(); }); }
+  function loadLog(reset) {
+    if (L.loading) return; L.loading = true; var p = { limit: 100 }; if (L.area) p.area = L.area; if (L.q) p.q = L.q; if (L.from) p.from = new Date(L.from + 'T00:00:00').getTime(); if (L.to) p.to = new Date(L.to + 'T23:59:59').getTime();
+    if (!reset && L.entries.length) p.before = L.entries[L.entries.length - 1].t; render();
+    get('log', p).then(function (r) { L.loading = false; L.done = true; if (!r) L.error = 'Keine Verbindung.'; else if (r.code === 'perm') L.error = 'Dafür fehlt dir die Berechtigung.'; else if (r.code === 'auth') L.error = 'Bitte neu anmelden.'; else if (Array.isArray(r.entries)) { L.error = ''; L.entries = reset ? r.entries : L.entries.concat(r.entries); L.more = !!r.more; L.areas = r.areas || L.areas; } render(); });
+  }
+  function bar(label, used, max, note) { var pc = max ? Math.min(100, Math.round(used / max * 100)) : 0; return '<div class="wm-sub" style="margin-top:10px"><b>' + esc(label) + '</b> · ' + esc(note) + '</div><div style="height:10px;border-radius:6px;background:rgba(148,163,184,.25);overflow:hidden"><div style="height:100%;width:' + pc + '%;background:' + (pc > 80 ? '#dc2626' : pc > 60 ? '#f59e0b' : '#16a34a') + '"></div></div>'; }
+  function statusHtml() {
+    if (ST.error) return '<div class="wm-card"><p class="wm-note">' + esc(ST.error) + '</p></div>';
+    var d = ST.d; if (!d) return '<div class="wm-card"><p class="wm-note">' + (ST.loading ? 'Lade …' : 'Noch nicht geladen.') + '</p></div>';
+    var last = d.backups && d.backups.last ? fmtDT(d.backups.last.ts) + ' (' + esc(d.backups.last.kind || '') + ')' : 'noch keine';
+    var rows = [['Script-Version', d.version], ['Benutzer', d.users], ['Aktive Anmeldungen', d.sessions], ['Protokoll-Einträge', d.logRows], ['Sicherungen', (d.backups ? d.backups.count : 0) + ' · letzte: ' + last], ['Stand', fmtDT(d.now)]];
+    var parts = (d.parts || []).slice().sort(function (a, b) { return b.chars - a.chars; }).map(function (x) { return '<div class="m-chk"><span style="flex:1">' + esc(x.name) + '</span><b>' + Math.round(x.chars / 1000) + ' KB</b></div>'; }).join('');
+    return '<div class="wm-card"><div class="wm-bar"><h3>🩺 Systemstatus</h3><button type="button" class="wm-btn" data-act="stload">↻ Aktualisieren</button></div>' + rows.map(function (r) { return '<div class="m-chk"><span style="flex:1">' + esc(r[0]) + '</span><b>' + esc(String(r[1])) + '</b></div>'; }).join('') + bar('Google-Sheet-Zellen', d.cells, d.cellLimit, d.cells.toLocaleString('de-DE') + ' von ' + d.cellLimit.toLocaleString('de-DE')) + '</div>' + (parts ? '<div class="wm-card"><h3>Datenmenge je Bereich</h3>' + parts + '</div>' : '');
+  }
+  function logHtml() {
+    var sel = '<select data-lg="area"><option value="">Alle Bereiche</option>' + L.areas.map(function (a) { return '<option' + (a === L.area ? ' selected' : '') + ' value="' + esc(a) + '">' + esc(a) + '</option>'; }).join('') + '</select>';
+    var list = L.error ? '<p class="wm-note">' + esc(L.error) + '</p>' : !L.entries.length ? '<p class="wm-note">' + (L.loading ? 'Lade …' : 'Keine Einträge gefunden.') + '</p>' : L.entries.map(function (e) { return '<div class="m-chk" style="flex-wrap:wrap;gap:6px 12px"><span class="wm-sub" style="width:7.5em">' + fmtDT(e.t) + '</span><span class="m-chip" style="cursor:default">' + esc(e.a) + '</span><span style="flex:1;min-width:12em">' + esc(e.x) + '</span><span class="wm-sub">' + esc(e.n || 'unbekannt') + (e.r ? ' · ' + esc(e.r) : '') + '</span></div>'; }).join('');
+    return '<div class="wm-card"><div class="wm-bar"><h3>📝 Änderungsprotokoll</h3></div><form data-lgform style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">' + sel + '<input type="search" data-lg="q" placeholder="Suchen …" value="' + esc(L.q) + '"><input type="date" data-lg="from" value="' + esc(L.from) + '"><input type="date" data-lg="to" value="' + esc(L.to) + '"><button type="submit" class="wm-amber">Filtern</button></form>' + list + (L.more && !L.error ? '<div style="margin-top:10px"><button type="button" class="wm-btn" data-act="logmore">Mehr laden</button></div>' : '') + '</div>';
+  }
   function head() {
     var ok = !!S.me && canAny(CAN_ENTER);
-    SH.S.menuExtra = ok ? [['benutzer', '👤', 'Benutzerverwaltung'], ['zugang', '🛡️', 'Zugangsverwaltung']].map(function (t) { return { key: t[0], icon: t[1], label: t[2], on: S.tab === t[0] }; }) : [];
+    SH.S.menuExtra = ok ? tabList().map(function (t) { return { key: t[0], icon: t[1], label: t[2], on: S.tab === t[0] }; }) : [];
     return SH.header('Verwaltung');
   }
   function body() {
@@ -295,12 +318,14 @@ templateEngineOverride: false
     if (!S.me) return '<section class="hub-card hub-offline"><h2>Bitte anmelden</h2><p class="hub-sub">Die Verwaltung ist nur mit Anmeldung erreichbar.</p><button type="button" class="hub-btn hub-gold" data-sh="login">Anmelden</button></section>';
     if (!canAny(CAN_ENTER)) return '<section class="hub-card hub-offline"><h2>Kein Zugriff</h2><p class="hub-sub">Für dein Konto ist die Verwaltung nicht freigeschaltet.</p><a class="hub-btn hub-ghost" href="' + HUB_URL + '">← Hub</a></section>';
     if (S.offline) return '<section class="hub-card hub-offline"><h2>Keine Verbindung</h2><p class="hub-sub">Das Konto-System ist gerade nicht erreichbar.</p><button type="button" class="hub-btn hub-gold" data-act="retry">Nochmal versuchen</button><details class="hub-diag"><summary>Technische Details</summary><pre>' + esc(SH.DIAG.length ? SH.DIAG.join('\n') : 'Keine Angaben.') + '</pre></details></section>';
-    if (S.tab !== 'benutzer' && S.tab !== 'zugang') S.tab = 'benutzer';
-    var tabs = [['benutzer', '👤 Benutzerverwaltung'], ['zugang', '🛡️ Zugangsverwaltung']].map(function (t) { return '<button type="button" data-tab="' + t[0] + '" class="wm-tab' + (S.tab === t[0] ? ' on' : '') + '">' + t[1] + '</button>'; }).join('');
+    if (!tabList().some(function (t) { return t[0] === S.tab; })) S.tab = 'benutzer';
+    var tabs = tabList().map(function (t) { return [t[0], t[1] + ' ' + t[2]]; }).map(function (t) { return '<button type="button" data-tab="' + t[0] + '" class="wm-tab' + (S.tab === t[0] ? ' on' : '') + '">' + t[1] + '</button>'; }).join('');
     var top = '<div class="wm-card wm-top"><h2>👑 Verwaltung</h2><a class="wm-btn" href="' + HUB_URL + '">⬅️ Zurück zum Hub</a></div>';
     var inner = '';
     if (S.tab === 'benutzer') {
       inner = '<div class="wm-card"><div class="wm-bar"><h3>👤 Benutzer</h3>' + (has('system.users') ? '<button type="button" class="wm-amber" data-ed="newuser">➕ Neuer Benutzer</button>' : '') + '</div><p class="wm-note">Benutzer haben einen eigenen Namen und ein eigenes Passwort, eine oder mehrere Rollen und auf Wunsch Sonderrechte. Die Rechte aus allen Rollen und Sonderrechten zählen zusammen.</p>' + (canAny(['system.users', 'system.rechte', 'system.roles']) ? usersHtml() : '<p class="wm-note">Du darfst Benutzer nicht ansehen.</p>') + '</div>';
+    } else if (S.tab === 'status') { inner = statusHtml(); if (!ST.d && !ST.loading && !ST.error) setTimeout(loadStatus, 0);
+    } else if (S.tab === 'protokoll') { inner = logHtml(); if (!L.done && !L.loading && !L.error) setTimeout(function () { loadLog(true); }, 0);
     } else {
       inner = '<div class="wm-card"><div class="wm-bar"><h3>🛡️ Rollen</h3>' + (has('system.roles') ? '<button type="button" class="wm-amber" data-ed="newrole">➕ Neue Rolle</button>' : '') + '</div><p class="wm-note">Pro Rolle lassen sich Name, Beschreibung, Passwort und alle einzelnen Rechte einstellen. Die Rechte gelten sofort auf allen Geräten.</p>' + rolesHtml() + '</div>' +
         '<div class="wm-card"><div class="wm-bar"><h3>✨ Sonderrechte</h3>' + (has('system.rechte') ? '<button type="button" class="wm-amber" data-ed="newextra">➕ Neues Sonderrecht</button>' : '') + '</div><p class="wm-note">Ein Sonderrecht ist ein eigenes Rechte-Paket, das man einzelnen Benutzern zusätzlich zu ihren Rollen gibt, zum Beispiel „Statistik bearbeiten“ für einen Helfer. Es gilt nur bei persönlicher Anmeldung mit Benutzername, nicht bei der Anmeldung mit dem Passwort der Rolle.</p>' + extrasHtml() + '</div>' +
@@ -313,7 +338,7 @@ templateEngineOverride: false
     if (d.confirm) return '<div class="ha-overlay"><div class="ha-dialog small"><h3>' + esc(d.title) + '</h3><p class="hub-sub">' + esc(d.message) + '</p><div class="ha-actions"><span class="ha-extra"></span><button type="button" class="hub-btn hub-ghost" data-cf="no">Abbrechen</button><button type="button" class="hub-btn ha-danger" data-cf="yes">' + esc(d.ok) + '</button></div></div></div>';
     return dialogHtml().replace('class="ha-dialog"', 'class="ha-dialog' + (d.wide ? ' wide' : '') + '"');
   }
-  SH.S.onMenu = function (k) { S.tab = k === 'zugang' ? 'zugang' : 'benutzer'; S.msg = ''; };
+  SH.S.onMenu = function (k) { S.tab = ['zugang', 'status', 'protokoll'].indexOf(k) >= 0 ? k : 'benutzer'; S.msg = ''; };
   function render() {
     var keep = root.querySelector('.ha-body') ? root.querySelector('.ha-body').scrollTop : 0;
     root.innerHTML = head() + '<main class="hub-main">' + body() + '</main>' + SH.overlay() + dialogOrConfirm();
@@ -333,6 +358,8 @@ templateEngineOverride: false
     var t = ev.target.closest ? ev.target.closest('[data-tab],[data-ed],[data-mv],[data-dx],[data-cf],[data-act]') : null; if (!t) return;
     if (t.getAttribute('data-tab')) { S.tab = t.getAttribute('data-tab'); S.msg = ''; render(); return; }
     if (t.getAttribute('data-act') === 'retry') { load(); return; }
+    if (t.getAttribute('data-act') === 'stload') { ST.d = null; loadStatus(); return; }
+    if (t.getAttribute('data-act') === 'logmore') { loadLog(false); return; }
     if (t.getAttribute('data-act') === 'theme') { if (window.HubTheme) window.HubTheme.cycle(); render(); return; }
     if (t.getAttribute('data-cf')) { var d = S.dialog; S.dialog = null; render(); if (d && d.done) d.done(t.getAttribute('data-cf') === 'yes'); return; }
     if (t.getAttribute('data-dx')) {
@@ -367,6 +394,7 @@ templateEngineOverride: false
     });
   });
   root.addEventListener('submit', function (ev) {
+    if (ev.target.getAttribute && ev.target.getAttribute('data-lgform') !== null) { ev.preventDefault(); Array.prototype.forEach.call(ev.target.querySelectorAll('[data-lg]'), function (i) { L[i.getAttribute('data-lg')] = String(i.value || '').trim(); }); L.entries = []; L.done = false; loadLog(true); return; }
     if (SH.submit(ev, render, load)) return;
     if (!ev.target.getAttribute || !ev.target.getAttribute('data-dlg')) return;
     ev.preventDefault();
