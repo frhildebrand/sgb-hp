@@ -83,6 +83,14 @@ templateEngineOverride: false
   };
 
   /* ---------- Trainingstage ---------- */
+  // Fahrer eines Trainingstermins -> Fahrten (je Fahrer und Tag einmal), damit sie in der Fahrten-Abrechnung erscheinen
+  function syncFahrten(t) {
+    if (!t || !t.date || t.date > M.today() || !(t.fahrer || []).length) return;
+    var lw = function (x) { return String(x || '').toLowerCase(); }; var have = {}; M.items('fahrten').forEach(function (f) { have[lw(f.owner) + '|' + f.datum] = 1; });
+    var fahrt = (M.find('saetze', 'main') || {}).fahrt; fahrt = fahrt === undefined || fahrt === '' ? 5 : M.num(fahrt); var ops = [];
+    t.fahrer.forEach(function (n) { var k = lw(n) + '|' + t.date; if (have[k]) return; have[k] = 1; ops.push({ op: 'set', coll: 'fahrten', item: { id: M.uid(), owner: n, datum: t.date, notiz: 'Wettkampftraining' + (t.ort ? ', ' + t.ort : ''), status: 'offen', betrag: fahrt } }); });
+    if (ops.length) { M.ops(ops); M.toast(ops.length + (ops.length === 1 ? ' Fahrt' : ' Fahrten') + ' für die Abrechnung angelegt.'); }
+  }
   function fahrerOpts() {
     var o = []; ((M.find('saetze', 'main') || {}).fahrer || []).forEach(function (n) { n = String(n || '').trim(); if (n && o.indexOf(n) < 0) o.push(n); });
     if (!o.length) (M.D.people || []).forEach(function (n) { if (n && o.indexOf(n) < 0) o.push(n); });
@@ -288,7 +296,7 @@ templateEngineOverride: false
   /* ---------- Modul ---------- */
   function mk(id, label, view, render, extra) { return Object.assign({ id: id, label: label, view: view, render: render }, extra || {}); }
   M.register('training', {
-    title: 'Wettkampfgruppe', icon: '🦈', colls: ['wgMitglieder', 'trainingTage', 'saetze', 'wettkaempfe', 'abzeichen'],
+    title: 'Wettkampfgruppe', icon: '🦈', colls: ['wgMitglieder', 'trainingTage', 'saetze', 'wettkaempfe', 'abzeichen', 'fahrten'],
     tabs: [
       mk('uebersicht', 'Übersicht', ['training.view', 'training.tage.view', 'training.mitglieder.view'], function () { return uebersicht(); }),
       mk('tage', 'Training', ['training.tage.view'], function () { return tageTab(); }, { coll: 'trainingTage' }),
@@ -297,8 +305,8 @@ templateEngineOverride: false
     actions: {
       wgtab: function (it, el) { M.S.tab = el.getAttribute('data-v'); M.lsSet('modtab_training', M.S.tab); M.render(true); },
       wgmon: function (it, el) { M.S.sub.gm = monthShift(curMonth(), +el.getAttribute('data-d')); M.render(true); },
-      wgtnew: function () { M.openForm({ title: 'Neuer Trainingstag', fields: TFIELDS, item: { date: M.today(), dauer: 60, trainer: M.userName() ? [M.userName()] : [] }, onSave: function (v) { var t = Object.assign({ id: M.uid(), anw: {} }, v); M.S.sub.gm = ym(v.date); M.S.open[t.id] = true; M.op({ op: 'set', coll: 'trainingTage', item: t }); } }); },
-      wgtedit: function (it, el, ev, c) { var t = M.find('trainingTage', c.id); if (!t) return; M.openForm({ title: 'Trainingstag bearbeiten', fields: TFIELDS, item: t, onSave: function (v) { M.op({ op: 'patch', coll: 'trainingTage', id: t.id, fields: v }); } }); },
+      wgtnew: function () { M.openForm({ title: 'Neuer Trainingstag', fields: TFIELDS, item: { date: M.today(), dauer: 60, trainer: M.userName() ? [M.userName()] : [] }, onSave: function (v) { var t = Object.assign({ id: M.uid(), anw: {} }, v); M.S.sub.gm = ym(v.date); M.S.open[t.id] = true; M.op({ op: 'set', coll: 'trainingTage', item: t }); syncFahrten(t); } }); },
+      wgtedit: function (it, el, ev, c) { var t = M.find('trainingTage', c.id); if (!t) return; M.openForm({ title: 'Trainingstag bearbeiten', fields: TFIELDS, item: t, onSave: function (v) { M.op({ op: 'patch', coll: 'trainingTage', id: t.id, fields: v }); syncFahrten(Object.assign({}, t, v)); } }); },
       wgtdel: function (it, el, ev, c) { var t = M.find('trainingTage', c.id); if (!t) return; M.confirm('Trainingstag vom ' + fd(t.date) + ' samt Anwesenheit löschen?', 'Löschen', function () { M.op({ op: 'del', coll: 'trainingTage', id: t.id }); }); },
       wgtap: function (it, el, ev, c) {
         if (!canTage()) return; var t = M.find('trainingTage', c.id); if (!t) return; var mid = el.getAttribute('data-m');
