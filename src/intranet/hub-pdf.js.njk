@@ -327,7 +327,7 @@ var WKParse = (function () {
     var tot = [0, 0, 0]; mn.forEach(function (n) { for (var i = 0; i < 3; i++) tot[i] += medal[n][i]; });
     var totAll = tot[0] + tot[1] + tot[2];
     var has = function (k) { return W.indexOf(k) >= 0; };
-    var showMedals = (has('einzel') || has('offen')) && totAll > 0;
+    var aiOn = !!(A.ai && String(A.ai).trim()); var showMedals = (has('einzel') || has('offen') || aiOn || !W.length) && totAll > 0;
     var q = function (x) { return '"' + String(x).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"'; };
     var slug = (wk.title || 'wettkampf').toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss').replace(/\b\d+\.\s*/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').split('-').slice(0, 3).join('-');
     var base = (wk.date || '') + '-' + slug;
@@ -368,15 +368,16 @@ var WKParse = (function () {
     var tw = has('teamw') && A.teamw ? fix(A.teamw) : '', tm = has('teamm') && A.teamm ? fix(A.teamm) : '', tg = (has('teamg') || has('team')) && A.team ? fix(A.team) : '';
     var plat = function (x) { return /^(platz|\d)/i.test(x) ? 'belegte' : ''; };
     if (tg) p3.push('In der Mannschaftswertung ' + (plat(tg) ? 'belegte die ' + club + ' ' : 'kam die ' + club + ' auf ') + tg + '.');
-    if (tw && tm) p3.push('Bei den Mädchen und Frauen ' + (plat(tw) ? 'wurde es ' : 'gab es ') + tw + ', bei den Jungen und Männern ' + (plat(tm) ? '' : 'gab es ') + tm + ' in der Mannschaftswertung.');
-    else if (tw) p3.push('In der Mannschaftswertung der Mädchen und Frauen ' + (plat(tw) ? 'belegten wir ' : 'kamen wir auf ') + tw + '.');
-    else if (tm) p3.push('In der Mannschaftswertung der Jungen und Männer ' + (plat(tm) ? 'belegten wir ' : 'kamen wir auf ') + tm + '.');
+    if (tw && tm) p3.push('Bei den weiblichen Teilnehmern ' + (plat(tw) ? 'reichte es für ' : 'gab es ') + tw + ', bei den männlichen ' + (plat(tm) ? 'für ' : 'gab es ') + tm + '.');
+    else if (tw) p3.push('In der weiblichen Mannschaftswertung ' + (plat(tw) ? 'belegten wir ' : 'kamen wir auf ') + tw + '.');
+    else if (tm) p3.push('In der männlichen Mannschaftswertung ' + (plat(tm) ? 'belegten wir ' : 'kamen wir auf ') + tm + '.');
     L.push(p3.join(' '), '');
     // Absatz 4: Highlights
     var hs = articleHints(wk).filter(function (h) { return (A.hl || []).indexOf(h.id) >= 0; });
     var ht = highlightText(hs); if (ht || A.highlights) L.push([ht, fix(A.highlights) ? fix(A.highlights) + '.' : ''].filter(Boolean).join(' '), '');
-    if (A.kr) L.push('Im Kampfgericht ' + ((A.kr.match(/ als /g) || []).length > 1 ? 'waren ' : 'war ') + fix(A.kr) + ' für uns im Einsatz.', '');
-    if (A.ai && String(A.ai).trim()) { L.splice(bodyStart, L.length - bodyStart, String(A.ai).trim().replace(/\r/g, ''), ''); }
+    if (A.kr) { var krPl = (A.kr.match(/ als /g) || []).length > 1; L.push('Im Kampfgericht ' + (krPl ? 'waren ' : 'war ') + fix(A.kr) + ' für uns im Einsatz. Ohne Kampfrichter:innen kann kein Wettkampf stattfinden, deshalb ein großes Dankeschön dafür!', ''); }
+    L.push('Wir freuen uns auf den nächsten Wettkampf!', '');
+    if (A.ai && String(A.ai).trim()) { L.splice(bodyStart, L.length - bodyStart, String(A.ai).replace(/\r/g, '').split(/\n+/).map(function (x) { return x.trim(); }).filter(Boolean).join('\n\n'), ''); }
     if (showMedals) {
       L.push('| Name | Gold (🥇) | Silber (🥈) | Bronze (🥉) | Gesamt |', '| --- | --- | --- | --- | --- |');
       mn.forEach(function (n) { var m = medal[n]; L.push('| ' + sw[n][0].name + ' | ' + m[0] + ' | ' + m[1] + ' | ' + m[2] + ' | ' + (m[0] + m[1] + m[2]) + ' |'); });
@@ -399,7 +400,7 @@ var WKParse = (function () {
       '- 3 bis 5 Absätze, ohne Überschriften, ohne Aufzählungen, ohne Tabelle (die Medaillentabelle ergänze ich selbst).',
       '- Nicht jede Zeit nennen. Wähle die Höhepunkte aus und verbinde zusammengehörige Dinge zu einem Satz. Satzanfänge abwechseln, Wiederholungen vermeiden.',
       '- Grammatik prüfen: Vornamen reichen, Er/Sie passend zur Person. Zeiten im Format 1:02,45.',
-      '- Kein Schlusssatz mit Dank, Gruß oder „wir freuen uns auf den nächsten Wettkampf“. Niemanden danken, wir waren nur Gast.', '', 'FAKTEN', '');
+      '- Mannschaftswertungen mit „weiblich“ und „männlich“ benennen, nicht mit „Mädchen und Frauen“ oder „Jungen und Männer“.', '- Die Kampfrichter:innen bekommen einen eigenen Satz oder Absatz mit einem Dank (zum Beispiel: Ohne Kampfrichter:innen kann kein Wettkampf stattfinden). Sonst niemandem danken, wir waren nur Gast.', '- Letzter Satz: „Wir freuen uns auf den nächsten Wettkampf!“', '', 'FAKTEN', '');
     o.push('Wettkampf: ' + (wk.title || '') + (wk.ort ? ', ' + wk.ort : '') + (datum ? ', ' + datum : ''));
     if (wk.veranstalter) o.push('Ausrichter: ' + fx(wk.veranstalter) + ' (nicht unser eigener Wettkampf)');
     var names = Object.keys(by); o.push('Von uns am Start: ' + names.length + ' Schwimmer:innen (' + names.map(function (n) { return n.replace(/^([^,]+),\s*(.+)$/, '$2'); }).join(', ') + '), ' + rows.length + ' Einzelstarts' + ((A.staffeln || []).length ? ', ' + A.staffeln.length + ' Staffelstart(s)' : ''));

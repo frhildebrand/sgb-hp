@@ -170,12 +170,27 @@ templateEngineOverride: false
   }
   function saetzeEdit() {
     var r = rates();
-    M.openForm({ title: 'Sätze', fields: [{ k: 'std', t: 'num', label: 'Standard-Stundensatz (€)' }, { k: 'wkMin', t: 'num', label: 'Minuten pro Wettkampftraining', hint: 'So viele Minuten werden beim Import eines Wettkampftrainings eingetragen (90 = 1,5 Std., Training plus Vor- und Nachbereitung). Andere Gruppen trägst du mit ihrer Dauer ein.' }, { k: 'km', t: 'num', label: 'Kilometergeld (€ pro km)' }, { k: 'fahrt', t: 'num', label: 'Fahrer-Pauschale (€)' }, { k: 'fahrer', t: 'lines', label: 'Fahrerliste', rows: 6, hint: 'Pro Zeile ein Name, genau wie das Konto heißt.' }, { k: 'liz', t: 'lines', label: 'Satz nach Lizenz', rows: 4, hint: 'Pro Zeile: Lizenz | Satz, z. B. „Trainer C | 12“.' }], item: { std: r.std, wkMin: r.wkMin, km: r.km, fahrt: r.fahrt, fahrer: r.fahrer, liz: r.liz.map(function (l) { return l.art + ' | ' + l.satz; }) }, onSave: function (v) {
+    M.openForm({ title: 'Sätze', fields: [{ k: 'std', t: 'num', label: 'Standard-Stundensatz (€)' }, { k: 'wkMin', t: 'num', label: 'Minuten pro Wettkampftraining', hint: 'So viele Minuten werden beim Import eines Wettkampftrainings eingetragen (90 = 1,5 Std., Training plus Vor- und Nachbereitung). Andere Gruppen trägst du mit ihrer Dauer ein.' }, { k: 'km', t: 'num', label: 'Kilometergeld (€ pro km)' }, { k: 'fahrt', t: 'num', label: 'Fahrer-Pauschale (€)' }, { k: 'fahrer', t: 'pick', label: 'Fahrerliste', hint: 'Konten antippen, die als Fahrer zur Auswahl stehen sollen.' }, { k: 'liz', t: 'lines', label: 'Satz nach Lizenz', rows: 4, hint: 'Pro Zeile: Lizenz | Satz, z. B. „Trainer C | 12“.' }], item: { std: r.std, wkMin: r.wkMin, km: r.km, fahrt: r.fahrt, fahrer: r.fahrer, liz: r.liz.map(function (l) { return l.art + ' | ' + l.satz; }) }, onSave: function (v) {
       var liz = v.liz.map(function (x) { var p = x.split('|'); return { art: (p[0] || '').trim(), satz: num(p[1]) }; }).filter(function (x) { return x.art; });
       M.op({ op: 'set', coll: 'saetze', item: { id: 'main', std: num(v.std), wkMin: v.wkMin === '' ? 90 : num(v.wkMin), km: num(v.km), fahrt: num(v.fahrt), fahrer: v.fahrer.map(function (x) { return x.trim(); }).filter(Boolean), liz: liz } });
     } });
   }
+  function fahrtenOps() {
+    var haveF = {}; M.items('fahrten').forEach(function (f) { haveF[lower(f.owner) + '|' + f.datum] = 1; }); var admin = M.anyCan(['fahrten.alle', 'fahrten.abrechnen']); var ops = [];
+    M.items('trainingTage').forEach(function (t) {
+      if (!t.date || t.date > M.today()) return;
+      (t.fahrer || []).forEach(function (n) {
+        if (lower(n) !== lower(me()) && !admin) return; var k = lower(n) + '|' + t.date; if (haveF[k]) return; haveF[k] = 1;
+        ops.push({ op: 'set', coll: 'fahrten', item: { id: M.uid(), owner: n, datum: t.date, notiz: 'Wettkampftraining' + (t.ort ? ', ' + t.ort : ''), status: 'offen', betrag: rates().fahrt } });
+      });
+    });
+    return ops;
+  }
   function tageImport(a) {
+    var fo = fahrtenOps(); if (fo.length) { M.ops(fo); setTimeout(function () { M.toast(fo.length + (fo.length === 1 ? ' Fahrt' : ' Fahrten') + ' aus den Trainingstagen angelegt.'); }, 1800); }
+    tageImport0(a);
+  }
+  function tageImport0(a) {
     if (deniedNote('trainingTage')) { M.toast('Für die Trainingstage fehlt dir die Berechtigung. Nutze „Aus WebClub-Liste“.'); return; }
     var have = billedKeys(); (a.zeilen || []).forEach(function (z) { have[rowKey(z)] = 1; });
     var allT = tageRows(M.items('trainingTage')); var add = allT.filter(function (z) { return !have[rowKey(z)]; });
@@ -324,7 +339,7 @@ templateEngineOverride: false
   }
   function fForm(item, isNew, forOwner) {
     var fields = [{ k: 'datum', t: 'date', label: 'Datum', req: true }, { k: 'notiz', t: 'text', label: 'Bemerkung (optional)', ph: 'z. B. Wettkampftraining Hallenbad Delfin' }];
-    if (forOwner) fields.unshift({ k: 'fahrer', t: 'text', label: 'Fahrer/in', req: true, list: 'mPeople' });
+    if (forOwner) { var fo = rates().fahrer.slice(); (M.D.people || []).forEach(function (n) { if (fo.indexOf(n) < 0) fo.push(n); }); fields.unshift({ k: 'fahrer', t: 'sel', label: 'Fahrer/in', req: true, opts: [['', 'Bitte wählen …']].concat(fo.map(function (n) { return [n, n]; })) }); }
     M.openForm({ title: isNew ? 'Fahrt eintragen' : 'Fahrt ändern', fields: fields, item: item, onSave: function (v) {
       var who = forOwner ? v.fahrer : me(); delete v.fahrer;
       if (isNew) M.op({ op: 'set', coll: 'fahrten', item: Object.assign({ id: M.uid(), status: 'offen', betrag: rates().fahrt, owner: who }, v) }); else M.op({ op: 'patch', coll: 'fahrten', id: item.id, fields: v });
@@ -342,7 +357,7 @@ templateEngineOverride: false
   function fMeine() {
     if (!personal()) return needPersonal();
     var list = fownList(); var open = list.filter(function (f) { return (f.status || 'offen') === 'offen'; }); var sum = 0; open.forEach(function (f) { sum += num(f.betrag); });
-    var out = '<section class="wm-card"><div class="wm-bar"><h3>Meine Fahrten</h3><span class="m-actions"><button type="button" class="wm-btn" data-ma="fprint"' + (open.length ? '' : ' disabled') + '>🖨️ Formular drucken</button><button type="button" class="wm-amber" data-ma="fnew">+ Fahrt</button></span></div>' +
+    var out = '<section class="wm-card"><div class="wm-bar"><h3>Meine Fahrten</h3><span class="m-actions"><button type="button" class="wm-btn" data-ma="fprint"' + (open.length ? '' : ' disabled') + '>🖨️ Formular drucken</button><button type="button" class="wm-btn" data-ma="ftage">🦈 Aus Trainingstagen</button><button type="button" class="wm-amber" data-ma="fnew">+ Fahrt</button></span></div>' +
       '<p class="wm-note">Für jede Fahrt zum Wettkampftraining gibt es ' + euro(rates().fahrt) + '. Für Fahrten zu Wettkämpfen wird nichts gezahlt. Offen: <b>' + open.length + (open.length === 1 ? ' Fahrt' : ' Fahrten') + ' = ' + euro(sum) + '</b>. Zum Abrechnen das Formular drucken, unterschreiben und abgeben.</p>';
     if (!list.length) out += '<p class="wm-note">Noch keine Fahrt eingetragen.</p>';
     return out + list.map(function (f) { return fRow(f, false); }).join('') + '</section>';
@@ -363,6 +378,7 @@ templateEngineOverride: false
   }
   var FACT = {
     fnew: function () { fForm({ datum: M.today() }, true); },
+    ftage: function () { var fo = fahrtenOps(); if (!fo.length) { M.toast('Keine neuen Fahrten: In den Trainingstagen ist kein Fahrer eingetragen oder alle sind schon da.'); return; } M.ops(fo); M.toast(fo.length + (fo.length === 1 ? ' Fahrt' : ' Fahrten') + ' aus den Trainingstagen angelegt.'); },
     fnewall: function () { fForm({ datum: M.today(), fahrer: '' }, true, true); },
     fedit: function (it, el, ev, c) { var f = M.find('fahrten', c.id); if (f) fForm(f, false); },
     fdel: function (it, el, ev, c) { var id = c.id || (el.closest('[data-id]') && el.closest('[data-id]').getAttribute('data-id')); M.confirm('Fahrt löschen?', 'Löschen', function () { M.op({ op: 'del', coll: 'fahrten', id: id }); }); },
@@ -397,7 +413,7 @@ templateEngineOverride: false
       out += '<section class="wm-card"><div class="m-sec" style="margin-top:0">Kontakt</div>' + prow('Telefon', v('tel')) + prow('E-Mail', v('mail')) +
         '<div class="m-sec">Lizenzen und Nachweise</div>' + prow('Trainerlizenz', (p.lizArt ? esc(p.lizArt) + ' · ' : '') + (p.lizNr ? 'Nr. ' + esc(p.lizNr) : '') + (p.lizArt || p.lizNr ? '' : '')) + prow('Lizenz gültig', chip(p.lizBis)) + prow('ÜL-EDV-Nr.', v('edvNr')) +
         prow('Erste Hilfe', chip(p.ersteHilfeBis)) + prow('Rettungsnachweis', chip(p.rettungBis)) + prow('Führungszeugnis', p.fuehrungszeugnis ? 'vom ' + esc(dShow(p.fuehrungszeugnis)) : '') + prow('Kampfrichter', (p.kariNr ? 'Nr. ' + esc(p.kariNr) + ' · ' : '') + (p.kariBis ? chip(p.kariBis) : '')) +
-        '<div class="m-sec">Unterschrift</div><div class="m-chk"><span style="flex:1">' + (p.sig ? '<img src="' + esc(p.sig) + '" alt="Unterschrift" style="height:56px;background:#fff;border-radius:8px;padding:4px">' : '<span class="wm-sub">Noch keine Unterschrift gezeichnet.</span>') + '</span><button type="button" class="wm-btn" data-ma="pfsig">✍️ ' + (p.sig ? 'Neu zeichnen' : 'Zeichnen') + '</button>' + (p.sig ? '<button type="button" class="wm-btn m-danger" data-ma="pfsigdel">Löschen</button>' : '') + '</div><p class="wm-sub">Sie erscheint automatisch auf deinen Abrechnungen und Fahrtenformularen.</p><div class="m-sec">Bankverbindung</div>' + prow('Kontoinhaber', v('kontoinhaber')) + prow('IBAN', v('iban')) + prow('BIC', v('bic')) + '<p class="wm-sub" style="margin-top:12px">Nur du siehst diese Angaben. Sie füllen deine Abrechnungen automatisch aus.</p></section>';
+        '<div class="m-sec">Unterschrift</div><div class="m-chk"><span style="flex:1">' + (p.sig ? '<img src="' + esc(p.sig) + '" alt="Unterschrift" style="height:56px;background:#fff;border-radius:8px;padding:4px">' : '<span class="wm-sub">Noch keine Unterschrift gezeichnet.</span>') + '</span><button type="button" class="wm-btn" data-ma="pfsig">✍️ ' + (p.sig ? 'Neu zeichnen' : 'Zeichnen') + '</button><button type="button" class="wm-btn" data-ma="pfsigup">🖼️ Bild hochladen</button>' + (p.sig ? '<button type="button" class="wm-btn m-danger" data-ma="pfsigdel">Löschen</button>' : '') + '</div><p class="wm-sub">Sie erscheint automatisch auf deinen Abrechnungen und Fahrtenformularen.</p><div class="m-sec">Bankverbindung</div>' + prow('Kontoinhaber', v('kontoinhaber')) + prow('IBAN', v('iban')) + prow('BIC', v('bic')) + '<p class="wm-sub" style="margin-top:12px">Nur du siehst diese Angaben. Sie füllen deine Abrechnungen automatisch aus.</p></section>';
       return out;
     },
     actions: {
@@ -419,6 +435,34 @@ templateEngineOverride: false
         var o = document.createElement('canvas'); o.width = x1 - x0; o.height = y1 - y0; o.getContext('2d').drawImage(cv, x0, y0, o.width, o.height, 0, 0, o.width, o.height);
         var url = o.toDataURL('image/png'); if (url.length > 26000) { var o2 = document.createElement('canvas'); o2.width = Math.round(o.width / 2); o2.height = Math.round(o.height / 2); o2.getContext('2d').drawImage(o, 0, 0, o2.width, o2.height); url = o2.toDataURL('image/png'); }
         M.closeDlg(); M.op({ op: 'set', coll: 'profile', item: Object.assign({}, profile(), { id: pid(me()), sig: url }) }); M.toast('Unterschrift gespeichert.');
+      },
+      pfsigup: function () {
+        var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.style.display = 'none'; document.body.appendChild(inp);
+        inp.addEventListener('change', function () {
+          var f = inp.files && inp.files[0]; document.body.removeChild(inp); if (!f) return;
+          var im = new Image(); var u = URL.createObjectURL(f);
+          im.onerror = function () { URL.revokeObjectURL(u); M.toast('Das Bild konnte nicht gelesen werden. Nimm ein PNG oder JPG.'); };
+          im.onload = function () {
+            URL.revokeObjectURL(u);
+            var sc = Math.min(1, 700 / im.width, 260 / im.height); var w = Math.max(1, Math.round(im.width * sc)), h = Math.max(1, Math.round(im.height * sc));
+            var cv = document.createElement('canvas'); cv.width = w; cv.height = h; var cx = cv.getContext('2d'); cx.drawImage(im, 0, 0, w, h);
+            var id = cx.getImageData(0, 0, w, h), d = id.data, x0 = w, y0 = h, x1 = 0, y1 = 0;
+            for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
+              var i = (y * w + x) * 4; var m = Math.min(d[i], d[i + 1], d[i + 2]);
+              if (d[i + 3] === 255) { if (m >= 235) d[i + 3] = 0; else if (m > 170) d[i + 3] = Math.round((235 - m) / 65 * 255); }
+              if (d[i + 3] > 20) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+            }
+            if (x1 <= x0 || y1 <= y0) { M.toast('Im Bild ist keine Unterschrift zu erkennen (nur weiß?).'); return; }
+            cx.putImageData(id, 0, 0); x0 = Math.max(0, x0 - 4); y0 = Math.max(0, y0 - 4); x1 = Math.min(w, x1 + 4); y1 = Math.min(h, y1 + 4);
+            var o = document.createElement('canvas'); o.width = x1 - x0; o.height = y1 - y0; o.getContext('2d').drawImage(cv, x0, y0, o.width, o.height, 0, 0, o.width, o.height);
+            var url = o.toDataURL('image/png'); var k = 1;
+            while (url.length > 30000 && k > 0.2) { k *= 0.8; var o2 = document.createElement('canvas'); o2.width = Math.max(60, Math.round(o.width * k)); o2.height = Math.max(20, Math.round(o.height * k)); o2.getContext('2d').drawImage(o, 0, 0, o2.width, o2.height); url = o2.toDataURL('image/png'); }
+            if (url.length > 30000) { M.toast('Das Bild ist zu detailreich. Bitte eine einfachere Unterschrift hochladen.'); return; }
+            M.op({ op: 'set', coll: 'profile', item: Object.assign({}, profile(), { id: pid(me()), sig: url }) }); M.toast('Unterschrift gespeichert.');
+          };
+          im.src = u;
+        });
+        inp.click();
       },
       pfsigdel: function () { M.confirm('Unterschrift löschen?', 'Löschen', function () { M.op({ op: 'set', coll: 'profile', item: Object.assign({}, profile(), { id: pid(me()), sig: '' }) }); }); },
       pfedit: function () {
