@@ -506,9 +506,10 @@ templateEngineOverride: false
   }
   function viewArtikel(wk) {
     var ar = P.articleText(wk, club()); var hints = P.articleHints(wk);
+    var full = (wk.art && wk.art.full) || '';
     return ART_CSS + '<section class="wm-card"><div class="wm-bar"><h3>Artikel</h3></div><p class="wm-note">Erst die Felder ausfüllen, der Entwurf darunter baut sich daraus auf. Leere Felder fehlen im Text. Platz, Altersklasse, Kampfrichter und Staffeln kommen aus der DSV7-Ergebnisdatei, ein PDF-Protokoll ist nicht nötig.</p><div class="m-btns" style="margin-bottom:10px"><button type="button" class="wm-amber" data-ma="artdsv">📥 Kampfrichter &amp; Staffeln aus DSV7 einlesen</button><input type="file" id="wkartfile" style="display:none"></div>' + artFields(wk) +
       (hints.length ? '<div class="m-sec">Vorschläge für Highlights (antippen zum Übernehmen)</div>' + hints.map(function (x) { return wkOpt('data-wkarth', esc(x.id), (wk.art && wk.art.hl || []).indexOf(x.id) >= 0, esc(x.label), 0); }).join('') : '') +
-      '</section><section class="wm-card"><div class="wm-bar"><h3>Text mit KI schreiben lassen</h3><span><button type="button" class="wm-amber" data-ma="artbrief">📋 Stichpunkte kopieren</button></span></div><p class="wm-note">1. Stichpunkte kopieren, 2. in eine KI deiner Wahl einfügen, 3. den fertigen Text hier unten einfügen. Der Entwurf übernimmt ihn dann mit Kopfzeile, Bilderzeilen, Medaillentabelle und Link. Feld leeren = wieder der automatische Text.</p><label class="m-f wide"><span>Fertiger Text von der KI</span><textarea rows="8" data-wkart="ai" placeholder="Hier den Text einfügen …">' + esc((wk.art && wk.art.ai) || '') + '</textarea></label></section><section class="wm-card"><div class="wm-bar"><h3>Entwurf</h3><span><button type="button" class="wm-amber" data-ma="artcopy">📋 Kopieren</button> <button type="button" class="wm-amber" data-ma="artdl">⬇️ Als ' + esc(ar.filename) + '</button></span></div><p class="wm-note">Fertige News-Datei. Bilder im CMS hochladen und die Zeilen mit „#“ im Kopf aktivieren. Dann im CMS einen neuen Eintrag anlegen oder die Datei unter src/news/ ins Repo hochladen. Eigene Änderungen im Entwurf gehen verloren, wenn danach ein Feld oben geändert wird.</p><label class="m-f wide"><span>Inhalt</span><textarea id="wkart" rows="22" style="font-size:13px;font-family:monospace">' + esc(ar.text) + '</textarea></label></section>';
+      '</section><section class="wm-card"><div class="wm-bar"><h3>Text mit KI schreiben lassen</h3><span><button type="button" class="wm-amber" data-ma="artbrief">📋 Stichpunkte kopieren</button></span></div><p class="wm-note">1. Stichpunkte kopieren, 2. in eine KI deiner Wahl einfügen, 3. den fertigen Text hier unten einfügen. Der Entwurf übernimmt ihn dann mit Kopfzeile, Bilderzeilen, Medaillentabelle und Link. Feld leeren = wieder der automatische Text.</p><label class="m-f wide"><span>Fertiger Text von der KI</span><textarea rows="8" data-wkart="ai" placeholder="Hier den Text einfügen …">' + esc((wk.art && wk.art.ai) || '') + '</textarea></label></section><section class="wm-card"><div class="wm-bar"><h3>Entwurf</h3><span><button type="button" class="wm-amber" data-ma="artcopy">📋 Kopieren</button> <button type="button" class="wm-amber" data-ma="artdl">⬇️ Als ' + esc(ar.filename) + '</button></span></div><p class="wm-note">Fertige News-Datei. Bilder im CMS hochladen und die Zeilen mit „#“ im Kopf aktivieren. Dann im CMS einen neuen Eintrag anlegen oder die Datei unter src/news/ ins Repo hochladen. Änderungen im Entwurf werden automatisch gespeichert.' + (full ? ' Das ist deine eigene Fassung, Änderungen an den Feldern oben wirken sich nicht mehr darauf aus.</p><div class="m-btns" style="margin-bottom:8px"><button type="button" class="wm-btn" data-ma="artreset">↩️ Automatischen Entwurf wiederherstellen</button></div>' : '</p>') + '<label class="m-f wide"><span>Inhalt</span><textarea id="wkart" rows="22" style="font-size:13px;font-family:monospace">' + esc(full || ar.text) + '</textarea></label></section>';
   }
 
   function viewGericht(wk) {
@@ -572,6 +573,7 @@ templateEngineOverride: false
         }, function (e) { M.toast('Nicht lesbar: ' + (e.message || e)); });
         return;
       }
+      if (t.id === 'wkart') { M.op({ op: 'patch', coll: 'wettkaempfe', id: wk.id, merge: true, fields: { art: { full: t.value } } }, true); M.S.dirty = true; M.toast('Entwurf gespeichert.'); return; }
       if (t.getAttribute('data-wkart') || t.getAttribute('data-wkartw') || t.getAttribute('data-wkarth') || t.getAttribute('data-wkartb')) {
         var fa = {}, A0 = wk.art || {};
         if (t.getAttribute('data-wkart')) fa[t.getAttribute('data-wkart')] = t.value;
@@ -580,7 +582,7 @@ templateEngineOverride: false
         else { var w = (A0.w || []).slice(), k0 = t.getAttribute('data-wkartw'), ix = w.indexOf(k0); if (t.checked && ix < 0) w.push(k0); if (!t.checked && ix >= 0) w.splice(ix, 1); fa.w = w; }
         var lb0 = t.closest && t.closest('.wk-opt'); if (lb0) { lb0.classList.toggle('on', t.checked); var bx0 = lb0.querySelector('.wk-box'); if (bx0) bx0.textContent = t.checked ? '✓' : ''; }
         M.op({ op: 'patch', coll: 'wettkaempfe', id: wk.id, merge: true, fields: { art: fa } }, true);
-        var wk2 = Object.assign({}, wk, { art: Object.assign({}, A0, fa) }); var ta = document.getElementById('wkart'); if (ta) ta.value = P.articleText(wk2, club()).text;
+        var wk2 = Object.assign({}, wk, { art: Object.assign({}, A0, fa) }); var ta = document.getElementById('wkart'); if (ta && !A0.full) ta.value = P.articleText(wk2, club()).text;
         if (t.getAttribute('data-wkartw')) { M.S.dirty = false; M.render(true); } else M.S.dirty = true; return;
       }
       if (t.getAttribute('data-wknote')) { M.op({ op: 'patch', coll: 'wettkaempfe', id: wk.id, fields: { note: t.value } }, true); return; }
@@ -648,6 +650,7 @@ templateEngineOverride: false
         if (!ok) { var ta = document.createElement('textarea'); ta.value = txt; ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(ta); ta.focus(); ta.select(); try { ok = document.execCommand('copy'); } catch (e2) { } document.body.removeChild(ta); }
         M.toast(ok ? 'Stichpunkte kopiert. Jetzt in die KI einfügen.' : 'Kopieren nicht möglich.'); },
       artdsv: function () { var i = document.getElementById('wkartfile'); if (i) { i.value = ''; i.click(); } },
+      artreset: function () { var w = curWk(); if (!w) return; M.op({ op: 'patch', coll: 'wettkaempfe', id: w.id, merge: true, fields: { art: { full: '' } } }, true); M.render(true); M.toast('Automatischer Entwurf wiederhergestellt.'); },
       artcopy: function () { var t = document.getElementById('wkart'); if (!t) return; t.select(); var ok = false; try { if (navigator.clipboard) { navigator.clipboard.writeText(t.value); ok = true; } else ok = document.execCommand('copy'); } catch (e) { try { ok = document.execCommand('copy'); } catch (e2) { } } M.toast(ok ? 'Text kopiert.' : 'Bitte den Text markieren und kopieren.'); },
       sw: function () { }
     }
