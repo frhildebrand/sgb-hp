@@ -152,7 +152,7 @@ templateEngineOverride: false
     if (window.JSZip) return cb(); var s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'; s.onload = cb; s.onerror = function () { M.toast('Die Excel-Bibliothek konnte nicht geladen werden. Bitte Internet prüfen.'); }; document.head.appendChild(s);
   }
   function exportXlsx(a) {
-    var zl = (a.zeilen || []).slice().sort(function (x, y) { return (x.d || '') < (y.d || '') ? -1 : 1; });
+    var zl = (a.zeilen || []).filter(function (z) { return z.d || z.gruppe || z.ort; }).sort(function (x, y) { var kx = (x.d || '') + ' ' + normTime(x.zeit || ''), ky = (y.d || '') + ' ' + normTime(y.zeit || ''); return kx < ky ? -1 : kx > ky ? 1 : 0; });
     if (zl.length > 20) { M.toast('Die Vorlage hat 20 Zeilen, hier sind es ' + zl.length + '. Bitte in zwei Abrechnungen aufteilen.'); return; }
     loadJSZip(function () {
       JSZip.loadAsync(XLSX_TPL, { base64: true }).then(function (zip) {
@@ -184,7 +184,7 @@ templateEngineOverride: false
   }
   function printAb(a) {
     var c = calc(a); var sig = a.sig || (lower(a.owner) === lower(me()) ? profile().sig : '');
-    var zl = (a.zeilen || []).slice().sort(function (x, y) { return (x.d || '') < (y.d || '') ? -1 : 1; });
+    var zl = (a.zeilen || []).filter(function (z) { return z.d || z.gruppe || z.ort; }).sort(function (x, y) { var kx = (x.d || '') + ' ' + normTime(x.zeit || ''), ky = (y.d || '') + ' ' + normTime(y.zeit || ''); return kx < ky ? -1 : kx > ky ? 1 : 0; });
     var rows = zl.map(function (z) { return '<tr class="dr"><td class="nowrap">' + esc(dfull(z.d)) + '</td><td>' + esc(String(z.zeit || '').replace(/[–-].*$/, '')) + '</td><td style="text-align:right">' + fnum(stdOf(z)) + '</td><td>' + esc(z.gruppe || '') + '</td><td>' + esc(z.ort || '') + '</td></tr>'; }).join('');
     for (var pad = zl.length; pad < 15; pad++) rows += '<tr class="dr"><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>';
     var kmS = a.kmSatz === undefined || a.kmSatz === '' ? rates().km : num(a.kmSatz);
@@ -355,7 +355,7 @@ templateEngineOverride: false
       abback: function () { sub().ae = ''; sub().aeAll = false; M.render(true); },
       abfilter: function (it, el) { sub().af = el.getAttribute('data-v'); M.render(true); },
       abperiod: function (it, el) { var a = curAb(); if (!a) return; var y = (/\d{4}/.exec(a.title || '') || [new Date().getFullYear()])[0]; patchAb(a, { title: el.getAttribute('data-v') + ' ' + y }, true); },
-      abzadd: function () { var a = curAb(); if (!a) return; var ls = (a.zeilen || []); var p = ls[ls.length - 1] || {}; var l = ls.concat([{ d: M.today(), zeit: p.zeit || '', min: p.min !== undefined ? p.min : 60, gruppe: p.gruppe || '', ort: p.ort || '' }]); patchAb(a, { zeilen: l }, true); },
+      abzadd: function () { var a = curAb(); if (!a) return; var l = (a.zeilen || []).concat([{ d: '', zeit: '', min: '', gruppe: '', ort: '' }]); patchAb(a, { zeilen: l }, true); },
       abzdel: function (it, el) { var a = curAb(); if (!a) return; var i = +el.closest('.ab-row').getAttribute('data-i'); var l = M.clone(a.zeilen || []); l.splice(i, 1); patchAb(a, { zeilen: l }, true); },
       abtage: function () { var a = curAb(); if (a) tageImport(a); },
       abpdf: function () { pdfDialog(); },
