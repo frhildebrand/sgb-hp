@@ -7,8 +7,8 @@ tags:
   - bericht
 excerpt: "19 Starts beim 32. Wagenfelder Auburg-Pokalschwimmen"
 # Bilder im CMS hochladen, dann die Zeichen "# " vor den folgenden Zeilen entfernen
-preview: /images/news/2026-10-03-das-wagenfelder-auburg-team.jpeg
-heroImage: /images/news/2026-10-03-team.jpeg
+preview: /images/news/2026-10-03-team.jpeg
+heroImage: /images/news/2026-10-03-medaille.jpeg
 images:
   - src: /images/news/2026-10-03-team.jpeg
     alt: Unsere Schwimmer
