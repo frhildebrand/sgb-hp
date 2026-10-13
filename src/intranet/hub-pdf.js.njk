@@ -604,9 +604,9 @@ var WKParse = (function () {
   function read(file) {
     return Promise.all([ensure(), buf(file)]).then(function (a) {
       return a[0].getDocument({ data: new Uint8Array(a[1]) }).promise.then(function (doc) {
-        var pages = []; var chain = Promise.resolve();
-        for (var n = 1; n <= doc.numPages; n++) (function (n) { chain = chain.then(function () { return doc.getPage(n).then(function (pg) { return pg.getTextContent().then(function (tc) { pages.push(tc.items.map(function (i) { return { str: i.str, x: i.transform[4], y: i.transform[5], w: i.width }; })); }); }); }); })(n);
-        return chain.then(function () { return { pages: pages, lines: WKParse.linesFromItems(pages) }; });
+        var pages = [], clipped = false; var chain = Promise.resolve();
+        for (var n = 1; n <= doc.numPages; n++) (function (n) { chain = chain.then(function () { return doc.getPage(n).then(function (pg) { return pg.getTextContent().then(function (tc) { var pw = pg.view[2]; tc.items.forEach(function (i) { if (i.str.trim() && i.transform[4] + i.width > pw + 1) clipped = true; }); pages.push(tc.items.map(function (i) { return { str: i.str, x: i.transform[4], y: i.transform[5], w: i.width }; })); }); }); }); })(n);
+        return chain.then(function () { return { clipped: clipped, pages: pages, lines: WKParse.linesFromItems(pages) }; });
       });
     });
   }
