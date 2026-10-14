@@ -96,7 +96,7 @@ window.HubShell = (function () {
       if (h.authFailed) { S.session = { token: '', user: '' }; lsSet('session4', S.session); S.me = null; }
       else S.me = h.me && h.me.status === 'success' ? h.me : null;
       S.systems = h.systems || [];
-      S.loginRoles = (h.roles || []).filter(function (r) { return r.id !== 'gast' && r.hasPw; });
+      S.loginRoles = (h.roles || []).filter(function (r) { return r.id !== 'gast' && r.hasPw; }).sort(function (a, b) { return String(a.name || '').localeCompare(String(b.name || ''), 'de', { sensitivity: 'base' }); });
       saveCache();
     });
   }
@@ -132,7 +132,7 @@ window.HubShell = (function () {
   function profCard() {
     var m = S.me;
     if (!m) return '<div class="hub-prof"><div class="hub-prow"><span class="hub-avb">👤</span><div class="hub-pmain"><div class="hub-dn">Gast</div><div class="hub-dr">nicht angemeldet</div></div></div><button type="button" class="hub-btn hub-gold hub-pbtn" data-sh="login">Anmelden</button></div>';
-    var roles = (m.roles && m.roles.length ? m.roles : (m.role ? [m.role] : [])).filter(function (r) { return r && r.id !== 'gast'; });
+    var roles = (m.roles && m.roles.length ? m.roles : (m.role ? [m.role] : [])).filter(function (r) { return r && r.id !== 'gast'; }).sort(function (a, b) { return String(a.name || '').localeCompare(String(b.name || ''), 'de', { sensitivity: 'base' }); });
     var extras = m.extras || [];
     var chips = roles.map(function (r) { return '<span class="hub-chip">' + esc(r.name) + '</span>'; }).join('') + extras.map(function (x) { return '<span class="hub-chip hub-chip-x">✨ ' + esc(x.name) + '</span>'; }).join('');
     if (!chips) chips = '<span class="hub-chip hub-chip-n">Noch keine Rolle</span>';

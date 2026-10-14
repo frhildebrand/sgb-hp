@@ -22,7 +22,8 @@ templateEngineOverride: false
   function canAny(list) { return list.some(has); }
   var CAN_ENTER = ['system.users', 'system.roles', 'system.rechte', 'system.passwords'];
 
-  function sortRoles(r) { return (r || []).slice(); }
+  function nameCmp(a, b) { return String(a || '').localeCompare(String(b || ''), 'de', { sensitivity: 'base' }); }
+  function sortRoles(r) { return (r || []).slice().sort(function (a, b) { return nameCmp(a.name, b.name); }); }
   function roleName(id) { var r = S.roles.filter(function (x) { return x.id === id; })[0]; return r ? r.name : id; }
   function allPermKeys() { return S.catalog ? S.catalog.groups.reduce(function (a, g) { return a.concat(g.perms.map(function (q) { return q.key; })); }, []) : []; }
 
@@ -253,7 +254,7 @@ templateEngineOverride: false
     if (!S.users.length) return '<p class="wm-note">Noch keine Benutzer.</p>';
     return S.users.map(function (u) {
       var ex = (u.extras || []).map(function (id) { var x = S.extras.filter(function (e) { return e.id === id; })[0]; return x ? x.name : null; }).filter(Boolean);
-      return '<div class="wm-row' + (u.disabled ? ' off' : '') + '"><span class="wm-ic">' + (u.disabled ? '🚫' : '👤') + '</span><div class="wm-main"><div class="wm-name">' + esc(u.name) + (u.disabled ? ' <span class="wm-lock">gesperrt</span>' : '') + '</div><div class="wm-sub">' + esc((u.roles || []).map(roleName).join(' + ') || 'keine Rolle') + (ex.length ? ' · ✨ ' + esc(ex.join(', ')) : '') + ' · ' + esc(when(u.last)) + '</div></div>' +
+      return '<div class="wm-row' + (u.disabled ? ' off' : '') + '"><span class="wm-ic">' + (u.disabled ? '🚫' : '👤') + '</span><div class="wm-main"><div class="wm-name">' + esc(u.name) + (u.disabled ? ' <span class="wm-lock">gesperrt</span>' : '') + '</div><div class="wm-sub">' + esc((u.roles || []).map(roleName).sort(nameCmp).join(' + ') || 'keine Rolle') + (ex.length ? ' · ✨ ' + esc(ex.join(', ')) : '') + ' · ' + esc(when(u.last)) + '</div></div>' +
         (has('system.users') ? '<button type="button" class="wm-btn" data-ed="user" data-id="' + esc(u.id) + '">✏️ Bearbeiten</button>' : '') + '</div>';
     }).join('');
   }
@@ -261,8 +262,8 @@ templateEngineOverride: false
     var total = allPermKeys().length;
     return S.roles.map(function (r, i, all) {
       var n = (r.perms || []).filter(function (k) { return allPermKeys().indexOf(k) >= 0; }).length;
-      var mv = has('system.roles') ? '<span class="wm-nowrap"><button type="button" class="wm-btn" data-mv="-1" data-id="' + esc(r.id) + '" title="Höher einstufen"' + (i === 0 ? ' disabled' : '') + '>▲</button> <button type="button" class="wm-btn" data-mv="1" data-id="' + esc(r.id) + '" title="Niedriger einstufen"' + (i === all.length - 1 ? ' disabled' : '') + '>▼</button></span>' : '';
-      return '<div class="wm-row"><span class="wm-num">' + (i + 1) + '</span><span class="wm-ic">' + roleIcon(r.id) + '</span><div class="wm-main"><div class="wm-name">' + esc(r.name) + (r.builtin ? ' <span class="wm-fest">(fest)</span>' : '') + '</div><div class="wm-sub">' + esc(r.desc || 'ohne Beschreibung') + (r.last ? ' · ' + esc(when(r.last)) : '') + '</div></div>' +
+      var mv = '';
+      return '<div class="wm-row"><span class="wm-ic">' + roleIcon(r.id) + '</span><div class="wm-main"><div class="wm-name">' + esc(r.name) + (r.builtin ? ' <span class="wm-fest">(fest)</span>' : '') + '</div><div class="wm-sub">' + esc(r.desc || 'ohne Beschreibung') + (r.last ? ' · ' + esc(when(r.last)) : '') + '</div></div>' +
         '<span class="wm-meta">Rechte ' + n + ' von ' + total + '</span>' + mv +
         (has('system.roles') && has('system.rechte') ? '<button type="button" class="wm-btn" data-ed="copy" data-id="' + esc(r.id) + '" title="Als Vorlage für eine neue Rolle kopieren">⧉ Kopieren</button>' : '') +
         (canAny(['system.roles', 'system.rechte', 'system.passwords']) ? '<button type="button" class="wm-btn" data-ed="role" data-id="' + esc(r.id) + '">✏️ Bearbeiten</button>' : '') + '</div>';
