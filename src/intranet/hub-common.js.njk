@@ -156,13 +156,97 @@ window.HubShell = (function () {
       nav += '<div class="hub-mgrp' + (open ? ' hub-gopen' : '') + '" style="--mc:' + esc(g.info.color) + '"><button type="button" class="hub-mlabel hub-mcat" data-sh="cat" data-v="' + esc(g.name) + '" aria-expanded="' + (open ? 'true' : 'false') + '"><span class="hub-mcic">' + g.info.icon + '</span><span class="hub-mlb">' + esc(g.name) + '</span><span class="hub-mcn">' + g.items.length + '</span><span class="hub-car">' + (open ? '▴' : '▾') + '</span></button>' +
         (open ? '<div class="hub-mitems">' + g.items.map(function (s) { return link(esc(s.url), esc(s.icon || '•'), s.name, here === hereOf(s.url), g.info.color); }).join('') + '</div>' : '') + '</div>';
     });
-    var foot = '';
+    var foot = btn('help', '❓', 'Hilfe');
     if (canAdmin()) foot += link(HUB_URL + 'verwaltung/', '🛡️', 'Verwaltung', here === HUB_URL + 'verwaltung/', '#64748b');
     return '<div class="hub-drawer-bg" data-sh="menuclose"><aside class="hub-drawer" aria-label="Menü"><div class="hub-dtop"><span class="hub-dtitle">Menü</span><button type="button" class="hub-x" data-sh="menuclose" aria-label="Menü schließen">✕</button></div>' + profCard() + '<nav class="hub-dnav">' + nav + '</nav>' + (foot ? '<div class="hub-dfoot">' + foot + '</div>' : '') + '</aside></div>';
   }
   function header(title) {
     return '<header class="hub-head"><div class="hub-hin"><div class="hub-hl"><a class="hub-logo" href="' + HUB_URL + '" aria-label="Zur Startseite" title="Zur Startseite"><img src="/assets/weihnachtsmarkt/sharks-logo.png" alt=""></a><h1>' + esc(title) + '</h1></div>' +
       '<div class="hub-hr">' + roleBadge() + '<button type="button" class="hub-pill hub-theme" data-sh="theme" title="Design wechseln">' + esc(window.HubTheme.label()) + '</button><button type="button" class="hub-pill hub-burger" data-sh="menu" aria-label="Menü" aria-expanded="' + (S.menu ? 'true' : 'false') + '">☰</button></div></div>' + menuHtml() + '</header>';
+  }
+  // ---------- Hilfe: zeigt nur Bereiche und Funktionen, die für das Konto freigegeben sind ----------
+  // Je Bereich: Systemname (wie im Menü), Text und Hinweise. Ein Hinweis erscheint nur, wenn mindestens eines seiner Rechte da ist (null = immer).
+  var HELP = [
+    { id: 'aufgaben', icon: '✅', title: 'Aufgaben', text: 'Wer macht was bis wann. Du siehst deine eigenen und die gemeinsamen Aufgaben mit Frist und Status.', steps: [
+      [['aufgaben.anlegen'], 'Mit „+“ legst du eine neue Aufgabe an: Titel, Frist, wer sie übernimmt.'],
+      [['aufgaben.edit', 'aufgaben.own'], 'Aufgaben hakst du ab, wenn sie erledigt sind. Mit dem Stift änderst du Text, Frist und Zuständige.'],
+      [['aufgaben.loeschen'], 'Nicht mehr gebrauchte Aufgaben kannst du löschen.']] },
+    { id: 'wettkaempfe', icon: '🏁', title: 'Wettkämpfe', text: 'Von der Planung bis zur Nachbereitung: Jeder Wettkampf hat eine Seite mit den Abschnitten Planung, Meldung, Nach Meldeergebnis, Wettkampf und Nachbereitung.', steps: [
+      [['wettkaempfe.anlegen'], 'Mit „+“ legst du einen Wettkampf-Termin an.'],
+      [['wettkaempfe.import'], 'PDF-Dateien wie Ausschreibung und Meldeergebnis kannst du einlesen. Die Angaben daraus werden übernommen.'],
+      [['wettkaempfe.teilnahme', 'wettkaempfe.krzahl'], 'Du trägst ein, wer teilnimmt und wie viele Kampfrichter gestellt werden.'],
+      [['wettkaempfe.meldegeld'], 'Das Meldegeld wird je Wettkampf festgehalten.'],
+      [['wettkaempfe.zeiten', 'wettkaempfe.kampfgericht', 'wettkaempfe.vorort'], 'Zeiten, Kampfgericht und Hinweise für den Tag vor Ort pflegst du im Wettkampf selbst.'],
+      [['wettkaempfe.artikel'], 'Unter „Nachbereitung“ entsteht ein Entwurf für den Wettkampf-Artikel. Änderungen daran werden automatisch gespeichert.'],
+      [['wettkaempfe.check'], 'Die Checkliste hakst du Schritt für Schritt ab.'],
+      [['wettkaempfe.print'], 'Mit „Drucken“ bekommst du ein Blatt oder PDF.'],
+      [['wettkaempfe.loeschen'], 'Wettkämpfe können gelöscht werden.']] },
+    { id: 'abrechnung', icon: '🧾', title: 'Abrechnung', text: 'Trainerstunden und Fahrten zum Wettkampftraining. Aus den Daten entstehen die Excel-Formulare, die du ausdruckst oder abgibst.', steps: [
+      [['abrechnung.eigene'], 'Reiter „Stunden“: Du liest die Anwesenheitsliste aus WebClub (PDF) ein. Die Termine werden nach Datum und Uhrzeit sortiert. Fehlt am Seitenrand etwas, warnt dich die App. Neue Zeilen kommen leer dazu.'],
+      [['abrechnung.eigene'], '„📊 Excel“ erzeugt die Trainerabrechnung mit Name, Zeitraum, Stundensatz und IBAN aus deinem Profil.'],
+      [['fahrten.eigene'], 'Reiter „Fahrten“: Fahrten zum Wettkampftraining stammen aus den Trainingstagen. „📊 Excel“ erzeugt die Fahrtenabrechnung mit Satz, IBAN und BIC.'],
+      [['abrechnung.alle', 'abrechnung.ansehen', 'abrechnung.bezahlen'], 'Unter „Alle Stunden“ siehst du die Abrechnungen aller Trainer und markierst bezahlte.'],
+      [['fahrten.alle', 'fahrten.ansehen', 'fahrten.abrechnen'], 'Unter „Alle Fahrten“ siehst du die Fahrten aller Fahrer und kannst sie pro Person exportieren und abrechnen.'],
+      [['abrechnung.saetze'], 'Unter „Sätze“ stellst du Stundensätze (auch nach Lizenz), Kilometergeld, Fahrer-Pauschale und die Minuten pro Wettkampftraining ein.']] },
+    { id: 'training', icon: '🦈', title: 'Wettkampfgruppe', text: 'Mitglieder, Trainingstage und Anwesenheit der Wettkampfgruppe.', steps: [
+      [['training.view', 'training.tage.view', 'training.mitglieder.view'], 'Die Übersicht zeigt den Stand der Gruppe auf einen Blick.'],
+      [['training.tage.view'], 'Unter „Training“ stehen die Trainingstage nach Monaten. Zu jedem Tag gibt es Trainer, Fahrer, Ort und Inhalt.'],
+      [['training.tage.edit', 'training.edit'], 'Die Anwesenheit stellst du durch Antippen des Namens ein. „Alle anwesend“ trägt alle ein.'],
+      [['training.tage.anlegen', 'training.anlegen'], 'Mit „+“ legst du einen neuen Trainingstag an.'],
+      [['training.mitglieder.view'], 'Unter „Mitglieder“ steht die Liste der Gruppe mit Jahrgang und DSV-ID.'],
+      [['training.beobachtung'], 'Beobachtungen zu einzelnen Schwimmern hältst du am Trainingstag fest.'],
+      [['training.rueckblick'], 'Der Rückblick fasst das Jahr zusammen.']] },
+    { id: 'jugend', icon: '🏊', title: 'Jugend', text: 'Schwimmabzeichen und die Jugendkasse.', steps: [
+      [['jugend.abzeichen.view'], 'Reiter „Abzeichen“: Die Liste der abgelegten Abzeichen. Mit dem Stift änderst du Einträge.'],
+      [['jugend.abzeichen.anlegen'], 'Neue Abzeichen trägst du mit Name, Abzeichen und Datum ein.'],
+      [['jugend.kasse.view'], 'Reiter „Jugendkasse“: Kassenbuch mit Einnahmen und Ausgaben. Einnahmen sind grün, Ausgaben rot hinterlegt.'],
+      [['jugend.kasse.buchen'], 'Buchungen trägst du mit Datum, Betrag, Kategorie und Beleg ein. Wer eine Auslage hatte, kann sie beantragen.'],
+      [['jugend.kasse.bestaetigen'], 'Beantragte Auslagen bestätigst oder lehnst du ab.'],
+      [['jugend.kasse.verwalten'], 'Du richtest die Kasse ein, legst Kategorien fest und hältst fest, wer sie verwahrt oder wo sie ist.'],
+      [['jugend.kasse.print'], '„📊 Kassenbuch (Excel)“ erzeugt das Kassenbuch. Bei mehr als 29 Buchungen wählst du die Seite.']] },
+    { id: 'vorstand', icon: '🏛️', title: 'Vorstand', text: 'Anträge, Sitzungen, Beschlüsse, Fristen und Protokolle des Vorstands.', steps: [
+      [['vorstand.view', 'vorstand.antrag', 'vorstand.antraege.view'], 'Reiter „Anträge“: Anträge stellen und verfolgen. Aus dem Antragstext entsteht ein Blatt mit Briefkopf.'],
+      [['vorstand.abstimmen'], 'Bei Umlaufbeschlüssen kannst du abstimmen.'],
+      [['vorstand.view', 'vorstand.sitzungen.view'], 'Reiter „Sitzungen“: Termine mit Tagesordnung und Teilnehmern.'],
+      [['vorstand.view', 'vorstand.beschluesse.view'], 'Reiter „Beschlüsse“ und „Fristen“: Was beschlossen wurde und bis wann etwas zu erledigen ist.'],
+      [['vorstand.view', 'vorstand.protokolle.view'], 'Reiter „Protokolle“: Protokolle der Sitzungen.'],
+      [['vorstand.print'], 'Mit „Drucken“ bekommst du ein Blatt oder PDF.']] },
+    { id: 'material', icon: '📦', title: 'Material', text: 'Gegenstände des Vereins mit Bestand, Mindestmenge und Ausleihe.', steps: [
+      [['material.view'], 'Reiter „Gegenstände“: Alles, was der Verein besitzt, mit Lagerort und Bestand.'],
+      [['material.ausleihe', 'material.view'], 'Reiter „Wer hat was“: Zeigt, was gerade verliehen ist, und an wen.'],
+      [['material.view'], 'Reiter „Einkaufsliste“: Was unter dem Mindestbestand liegt, wird hier gesammelt.'],
+      [['material.anlegen', 'material.edit'], 'Gegenstände legst du mit „+“ an und änderst sie mit dem Stift.'],
+      [['material.bestand'], 'Den Bestand stellst du direkt ein.'],
+      [['material.print'], 'Die Listen lassen sich drucken.']] },
+    { id: 'veranstaltungen', icon: '🎪', title: 'Veranstaltungen', text: 'Eigene Events mit Checkliste, Helfern und Material.', steps: [
+      [['veranstaltungen.anlegen'], 'Mit „+“ legst du eine Veranstaltung an, auf Wunsch aus einer Vorlage.'],
+      [['veranstaltungen.check', 'veranstaltungen.edit'], 'Die Checkliste hakst du ab. Helfer und Material trägst du bei der Veranstaltung ein.'],
+      [['veranstaltungen.edit', 'veranstaltungen.vorlagen'], 'Reiter „Vorlagen“: Checklisten, die du für neue Veranstaltungen wiederverwendest.'],
+      [['veranstaltungen.print'], 'Veranstaltungen lassen sich drucken.']] },
+    { id: 'weihnachtsmarkt', icon: '🎄', title: 'Weihnachtsmarkt', text: 'Aushang, Kasse, Inventar, Aufbau und mehr. Der Weihnachtsmarkt hat eine eigene Hilfe, die im Menü des Marktes unter „Hilfe“ steht.', steps: [] }
+  ];
+  function anyOf(list) { return !list || !list.length || list.some(has); }
+  function helpHtml() {
+    var m = S.me; var ids = {}; S.systems.forEach(function (s) { ids[s.id] = s; });
+    var who = m && m.user ? 'Du bist angemeldet als <b>' + esc(m.user) + '</b>.' : (m ? 'Du bist mit einer Rolle angemeldet.' : 'Du bist als Gast unterwegs.');
+    var gen = '<section class="hub-help-card"><h4>👋 Allgemein</h4><p>' + who + ' Hier stehen nur die Bereiche und Funktionen, die für dein Konto freigegeben sind. Was du sehen und tun darfst, legt der Vorstand mit den Rechten fest.</p><ul>' +
+      '<li>Alle Bereiche findest du im Menü oben rechts (☰). Mit dem Kreis oben wechselst du das Konto oder meldest dich ab.</li>' +
+      (m && m.user ? '<li>Dein Passwort änderst du im Menü unter deinem Namen. Vergessen? Dann setzt es ein Administrator zurück.</li><li>Unter „Mein Profil“ pflegst du Kontakt, Bankverbindung und Lizenzen. Sie landen automatisch in deinen Abrechnungen.</li>' : '') +
+      '<li>Änderungen sind sofort auf allen Geräten da. Ohne Internet speichert das Gerät zuerst lokal und schickt später nach.</li>' +
+      '<li>Mit „Auto, Hell, Dunkel“ oben stellst du das Design um.</li></ul></section>';
+    var secs = HELP.filter(function (h) { return ids[h.id]; }).map(function (h) {
+      var steps = h.steps.filter(function (s) { return anyOf(s[0]); }).map(function (s) { return '<li>' + esc(s[1]) + '</li>'; }).join('');
+      return '<section class="hub-help-card"><div class="hub-help-top"><h4>' + h.icon + ' ' + esc(h.title) + '</h4><a class="hub-btn hub-ghost" href="' + esc(ids[h.id].url) + '">Öffnen</a></div><p>' + esc(h.text) + '</p>' + (steps ? '<ul>' + steps + '</ul>' : '') + '</section>';
+    }).join('');
+    var extra = '';
+    if (m && m.user) extra += '<section class="hub-help-card"><div class="hub-help-top"><h4>👤 Mein Profil</h4><a class="hub-btn hub-ghost" href="' + HUB_URL + 'profil/">Öffnen</a></div><p>Hier stehen deine Daten: Kontakt, Bankverbindung (IBAN, BIC), Lizenzen und Nachweise mit Ablaufdaten und deine Unterschrift. Daten lassen sich aus einer WebClub-Datei übernehmen. Die Abrechnung nutzt sie für Stundensatz, Excel-Formulare und Überweisung.</p></section>';
+    if (canAdmin()) extra += '<section class="hub-help-card"><div class="hub-help-top"><h4>🛡️ Verwaltung</h4><a class="hub-btn hub-ghost" href="' + HUB_URL + 'verwaltung/">Öffnen</a></div><p>Benutzer, Rollen und Rechte. Mit den Rechten steuerst du, welche Bereiche und Funktionen jede Person sieht. Rollen sind alphabetisch sortiert.</p><ul>' +
+      (has('system.users') ? '<li>Benutzer anlegen, Startpasswort setzen, Rollen und Sonderrechte zuweisen.</li>' : '') +
+      (has('system.roles') || has('system.rechte') ? '<li>Rollen anlegen und Rechte je Bereich einzeln freischalten.</li>' : '') +
+      (has('system.passwords') ? '<li>Passwörter von Benutzern zurücksetzen.</li>' : '') +
+      (has('view.status') ? '<li>Der Systemstatus zeigt Verbindung, Versionen und die Datenmenge je Bereich.</li>' : '') +
+      (has('view.protokoll') ? '<li>Das Änderungsprotokoll zeigt, wer wann was geändert hat.</li>' : '') + '</ul></section>';
+    return '<div class="ha-overlay" data-sh="cancelbg"><div class="ha-dialog wide hub-help"><div class="hub-dhead"><h3>❓ Hilfe</h3><button type="button" class="hub-btn hub-ghost" data-sh="cancel" aria-label="Schließen">✕</button></div><div class="hub-help-body">' + gen + secs + extra + '</div></div></div>';
   }
   function dialogHtml() {
     var d = S.dialog || (S.me && S.me.mustChange ? 'force' : null); if (!d) return '';
@@ -188,6 +272,7 @@ window.HubShell = (function () {
         '<label>Altes Passwort<input name="old" type="password" autocomplete="current-password" required></label><label>Neues Passwort (mindestens 6 Zeichen)<input name="neu" type="password" autocomplete="new-password" required></label><label>Neues Passwort wiederholen<input name="neu2" type="password" autocomplete="new-password" required></label>' +
         (S.error ? '<div class="hub-err">' + esc(S.error) + '</div>' : '') + '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-sh="cancel">Abbrechen</button><button type="submit" class="hub-btn hub-gold"' + (S.busy ? ' disabled' : '') + '>Speichern</button></div></form></div></div>';
     }
+    if (d === 'help') return helpHtml();
     if (d === 'info') return '<div class="ha-overlay"><div class="ha-dialog small"><h3>Erledigt</h3><p class="hub-sub">' + esc(S.info) + '</p><div class="ha-actions"><button type="button" class="hub-btn hub-gold" data-sh="cancel">OK</button></div></div></div>';
     return '';
   }
@@ -211,6 +296,7 @@ window.HubShell = (function () {
     if (a === 'menuclose') { if (t.classList.contains('hub-drawer-bg') && ev.target !== t) return false; S.menu = false; rerender(); return true; }
     if (a === 'theme') { window.HubTheme.cycle(); rerender(); return true; }
     if (a === 'login') { S.menu = false; S.dialog = 'login'; S.error = ''; rerender(); return true; }
+    if (a === 'help') { S.menu = false; S.dialog = 'help'; S.error = ''; rerender(); return true; }
     if (a === 'password') { S.menu = false; S.dialog = 'password'; S.error = ''; rerender(); return true; }
     if (a === 'cancel') { S.dialog = null; S.error = ''; rerender(); return true; }
     if (a === 'logout') {
