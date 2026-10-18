@@ -12,7 +12,7 @@ templateEngineOverride: false
   var SH = window.HubShell;
   if (!SH) { root.textContent = 'Der Grundbaustein hub-common.js fehlt.'; return; }
   var HUB_URL = '/intranet/';
-  var state = { loaded: false, next: SH.lsGet('hubnext', null) };
+  var state = { loaded: false, next: SH.lsGet('hubnext', null), brett: SH.lsGet('hubbrett', []) };
   var esc = SH.esc;
 
   function todayIso() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
@@ -75,12 +75,52 @@ templateEngineOverride: false
     if (state.qedit) return '<section class="hub-fr"><div class="hub-tkh"><h3>⚡ Schnellzugriff bearbeiten</h3><button type="button" class="hub-btn hub-gold" data-act="qdone">Fertig</button></div><p class="hub-sub" style="margin:2px 0 10px">Tippe die Bereiche an, die du oben haben willst. Das gilt nur für dieses Gerät.</p><div class="hub-frl">' + sys.map(function (x) { var on = sel.indexOf(x.url) >= 0; return '<button type="button" class="hub-fchip' + (on ? ' ok' : '') + '" data-act="qtog" data-u="' + esc(x.url) + '" style="cursor:pointer">' + (on ? '✓ ' : '') + esc(x.icon || '') + ' ' + esc(x.name) + '</button>'; }).join('') + '</div></section>';
     return '<section class="hub-sec" style="--cat:#d6a23a"><h3 class="hub-sech"><span class="hub-sechi">⚡</span>Schnellzugriff <button type="button" class="hub-btn hub-ghost" data-act="qedit" style="margin-left:auto;padding:4px 10px;font-size:12px">✏️ Ändern</button></h3><div class="hub-tiles">' + (quickList().map(function (x) { return tile(x, '#d6a23a'); }).join('') || '<p class="hub-sub">Noch nichts ausgewählt. Mit „Ändern“ legst du deine Lieblingsbereiche fest.</p>') + '</div></section>';
   }
+  // ---------- Startseite: zwei Spalten ----------
+  function dayBox(iso) { var d = new Date(iso + 'T12:00:00'); return '<span class="hub-dbx"><b>' + ('0' + d.getDate()).slice(-2) + '</b><i>' + ['JAN', 'FEB', 'MÄR', 'APR', 'MAI', 'JUN', 'JUL', 'AUG', 'SEP', 'OKT', 'NOV', 'DEZ'][d.getMonth()] + '</i></span>'; }
+  function banner() {
+    var l = (state.brett || []).filter(function (b) { return b.wichtig; }).sort(function (a, b) { return String(b.date || '') < String(a.date || '') ? -1 : 1; });
+    return l.length ? '<div class="hub-wichtig"><b>Wichtig:</b> ' + esc(l[0].title) + (l[0].text ? ' – ' + esc(l[0].text) : '') + '</div>' : '';
+  }
+  function brettHtml() {
+    var can = SH.has('startseite.brett'); var l = (state.brett || []).slice().sort(function (a, b) { return String(b.date || '') < String(a.date || '') ? -1 : String(b.date || '') > String(a.date || '') ? 1 : 0; });
+    var form = state.bform ? '<form class="hub-bf" data-bf="1"><input name="title" placeholder="Überschrift" required maxlength="80"><textarea name="text" rows="3" placeholder="Text (optional)" maxlength="400"></textarea><label class="hub-bfc"><input type="checkbox" name="wichtig"> Als „Wichtig“-Hinweis oben anzeigen</label><div class="hub-bfb"><button type="button" class="hub-btn hub-ghost" data-act="bcancel">Abbrechen</button><button type="submit" class="hub-btn hub-gold">Eintragen</button></div></form>' : '';
+    return '<section class="hub-card2"><div class="hub-c2h"><h3>📌 Schwarzes Brett</h3>' + (can ? '<button type="button" class="hub-btn hub-ghost" data-act="bnew" style="padding:4px 10px;font-size:12px">+ Eintrag</button>' : '<span class="hub-sub">gepflegt von Vorstand &amp; Orga</span>') + '</div>' + form +
+      (l.length ? l.slice(0, 6).map(function (b) { return '<div class="hub-bi"><span class="hub-bic">' + (b.wichtig ? '📣' : '📌') + '</span><div class="hub-bit"><b>' + esc(b.title) + '</b>' + (b.text ? '<p>' + esc(b.text) + '</p>' : '') + '<i>' + esc(b.by || '') + (b.date ? ' · ' + esc(fmtDMY(b.date).slice(0, 5)) : '') + '</i></div>' + (can ? '<button type="button" class="hub-bx" data-act="bdel" data-id="' + esc(b.id) + '" aria-label="Eintrag löschen">✕</button>' : '') + '</div>'; }).join('') : '<p class="hub-sub" style="margin:6px 0 0">Zurzeit gibt es keine Mitteilungen.</p>') + '</section>';
+  }
+  function termineHtml() {
+    var n = state.next && state.next.token === SH.token() ? state.next : null; var items = [];
+    if (n) {
+      (n.wk || []).forEach(function (w) { items.push({ date: w.ms || w.date, t: w.ms ? 'Meldeschluss ' + w.title : w.title, s: w.ms ? 'Wettkampf ' + fmtDMY(w.date).slice(0, 5) : (w.ort || ''), href: '/intranet/wettkaempfe/' }); if (w.ms) items.push({ date: w.date, t: w.title, s: w.ort || '', href: '/intranet/wettkaempfe/' }); });
+      (n.ev || []).forEach(function (e) { items.push({ date: e.date, t: e.title, s: e.prog || '', href: '/intranet/veranstaltungen/' }); });
+    }
+    var wm = state.wm; if (wm && wm.at) { var wiso = String(wm.at).slice(0, 10); if (daysTo(wiso) !== null && daysTo(wiso) >= 0) items.push({ date: wiso, t: wm.label || 'Weihnachtsmarkt', s: '', href: '/intranet/weihnachtsmarkt/' }); }
+    items.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+    return '<section class="hub-card2"><div class="hub-c2h"><h3>📅 Nächste Termine</h3></div>' + (items.length ? items.slice(0, 5).map(function (x) { return '<a class="hub-ti" href="' + x.href + '">' + dayBox(x.date) + '<span class="hub-tit"><b>' + esc(x.t) + '</b>' + (x.s ? '<i>' + esc(x.s) + '</i>' : '') + '</span></a>'; }).join('') : '<p class="hub-sub" style="margin:6px 0 0">Keine Termine in Sicht.</p>') + '</section>';
+  }
+  function quickCompact() {
+    var sys = SH.S.systems || []; if (!sys.length) return '';
+    var sel = quickList().map(function (x) { return x.url; });
+    if (state.qedit) return '<section class="hub-card2"><div class="hub-c2h"><h3>⚡ Schnellzugriffe</h3><button type="button" class="hub-btn hub-gold" data-act="qdone" style="padding:4px 12px;font-size:13px">Fertig</button></div><p class="hub-sub" style="margin:0 0 8px">Tippe an, was du hier haben willst. Das gilt für dein Konto auf allen Geräten.</p><div class="hub-qg">' + sys.map(function (x) { var on = sel.indexOf(x.url) >= 0; return '<button type="button" class="hub-q' + (on ? ' on' : '') + '" data-act="qtog" data-u="' + esc(x.url) + '">' + (on ? '✓ ' : '') + esc(x.icon || '') + ' ' + esc(x.name) + '</button>'; }).join('') + '</div></section>';
+    return '<section class="hub-card2"><div class="hub-c2h"><h3>⚡ Meine Schnellzugriffe</h3><button type="button" class="hub-btn hub-ghost" data-act="qedit" style="padding:4px 10px;font-size:12px">✏️ Bearbeiten</button></div><div class="hub-qg">' + (quickList().map(function (x) { return '<a class="hub-q" href="' + esc(x.url) + '">' + esc(x.icon || '') + ' ' + esc(x.name) + '</a>'; }).join('') || '<p class="hub-sub">Noch nichts ausgewählt.</p>') + '</div></section>';
+  }
+  function aufgabenCard() {
+    var n = state.next && state.next.token === SH.token() ? state.next : null; if (!n) return '';
+    var l = (n.tasks || []).slice(0, 5); var t = todayIso();
+    return '<section class="hub-card2"><div class="hub-c2h"><h3>✅ ' + (n.mine ? 'Meine Aufgaben' : 'Offene Aufgaben') + '</h3><a href="/intranet/aufgaben/" class="hub-sub">' + (n.tasks || []).length + ' offen →</a></div>' + (l.length ? l.map(function (x) { var d = x.due ? daysTo(x.due) : null; var bc = d === null ? '' : d < 0 ? 'bad' : d === 0 ? 'bad' : d <= 7 ? 'warn' : 'info'; return '<a class="hub-ai" href="/intranet/aufgaben/"><span>' + esc(x.title || x.t || '') + '</span>' + (x.due ? '<em class="hub-ab ' + bc + '">' + (d === 0 ? 'heute' : d < 0 ? 'überfällig' : 'bis ' + esc(fmtDMY(x.due).slice(0, 6))) + '</em>' : '') + '</a>'; }).join('') : '<p class="hub-sub" style="margin:6px 0 0">Alles erledigt.</p>') + '</section>';
+  }
+  function blickHtml() {
+    var n = state.next && state.next.token === SH.token() ? state.next : null; if (!n || !n.cnt) return '';
+    return '<section class="hub-card2"><div class="hub-c2h"><h3>📊 Verein auf einen Blick</h3></div><div class="hub-bl"><div><i>Mitglieder</i><b>' + n.cnt.mem + '</b></div><div><i>Wettkampfgruppe</i><b>' + n.cnt.wg + '</b></div>' + (n.nstarts ? '<div><i>Nächste Starts</i><b>' + n.nstarts + '</b></div>' : '') + '</div></section>';
+  }
+  function greetRow() { var nm = SH.S.me ? String(SH.S.me.user || '').split(/\s+/)[0] : ''; return '<div class="hub-greet"><h2>' + (nm ? 'Hallo ' + esc(nm) + ' 👋' : 'Willkommen') + '</h2><span>' + esc(longDate()) + '</span></div>'; }
   function body() {
     var S = SH.S;
     if (!state.loaded) return '<section class="hub-tiles"><div class="hub-skel"></div><div class="hub-skel"></div><div class="hub-skel"></div></section>';
     if (S.offline) return '<section class="hub-card hub-offline"><h2>Keine Verbindung</h2><p class="hub-sub">Das Konto-System ist gerade nicht erreichbar. Bitte prüfe das Internet und versuche es nochmal.</p><button type="button" class="hub-btn hub-gold" data-act="retry">Nochmal versuchen</button><details class="hub-diag"><summary>Technische Details</summary><pre>' + esc(SH.DIAG.length ? SH.DIAG.join('\n') : 'Keine Angaben.') + '</pre></details></section>';
-    var out = hero() + fristHtml() + quickHtml() + tasksHtml();
-    out += S.systems.length ? groupsHtml(S.systems) : '<section class="hub-card"><p class="hub-sub">Für dein Konto sind noch keine Systeme freigeschaltet.</p></section>';
+    var out = greetRow() + banner();
+    if (S.me) out += '<div class="hub-home"><div class="hub-hcol">' + brettHtml() + termineHtml() + fristHtml() + '</div><div class="hub-hcol">' + quickCompact() + aufgabenCard() + blickHtml() + '</div></div>';
+    else out += hero();
+    out += S.systems.length ? '<div class="hub-narrow">' + groupsHtml(S.systems) + '</div>' : '<section class="hub-card"><p class="hub-sub">Für dein Konto sind noch keine Systeme freigeschaltet.</p></section>';
     if (!S.me) out += '<section class="hub-card hub-note"><h3>Weitere Systeme?</h3><p class="hub-sub">Melde dich an, dann siehst du alle Systeme, die für dich freigeschaltet sind.</p><button type="button" class="hub-btn hub-gold" data-sh="login">Anmelden</button></section>';
     return out;
   }
@@ -106,6 +146,8 @@ templateEngineOverride: false
     if (['fahrten.eigene', 'fahrten.alle', 'fahrten.ansehen', 'fahrten.abrechnen'].some(function (k) { return SH.has(k); })) want.push('fahrten');
     if (SH.has('training.tage.view')) want.push('trainingTage');
     if (SH.S.me && SH.S.me.user) want.push('profile');
+    if (SH.S.me) want.push('brett');
+    if (SH.has('mitglieder.view')) want.push('wgMitglieder');
     if (!want.length) { if (state.next) { state.next = null; SH.lsSet('hubnext', null); render(); } return; }
     SH.get('data', { colls: want.join(',') }).then(function (r) {
       if (!r || r.status !== 'success') return;
@@ -143,7 +185,8 @@ templateEngineOverride: false
       var mineAb = (d.abrechnungen || []).filter(function (x) { return x.status === 'entwurf' && x.ts && (Date.now() - x.ts) > 21 * 86400000; });
       if (mineAb.length) fr.push({ t: mineAb.length === 1 ? 'Abrechnung nicht eingereicht' : mineAb.length + ' Abrechnungen nicht eingereicht', s: 'Entwurf seit über 3 Wochen', c: 'warn', href: '/intranet/abrechnung/', k: 25 });
       fr.sort(function (a, b) { return a.k - b.k; });
-      state.next = { token: SH.token(), wk: wk, tasks: tasks, ev: ev, mine: mine, hints: hints, warn: warn, fr: fr.slice(0, 6) }; SH.lsSet('hubnext', state.next); render();
+      state.brett = d.brett || state.brett || []; var memAct = (d.wgMitglieder || []).filter(function (m) { return m.status !== 'ausgetreten' && m.status !== 'pausiert'; }); var cnt = d.wgMitglieder ? { mem: memAct.length, wg: memAct.filter(function (m) { return !m.gruppen || !m.gruppen.length || m.gruppen.indexOf('Wettkampfgruppe') >= 0; }).length } : null; SH.lsSet('hubbrett', state.brett);
+      state.next = { token: SH.token(), cnt: cnt, nstarts: up[0] ? (up[0].starts || []).length : 0, wk: wk, tasks: tasks, ev: ev, mine: mine, hints: hints, warn: warn, fr: fr.slice(0, 6) }; SH.lsSet('hubnext', state.next); render();
     });
   }
   function loadWm() {
@@ -160,10 +203,22 @@ templateEngineOverride: false
     var t = ev.target.closest ? ev.target.closest('[data-act]') : null;
     if (!t) return; var a = t.getAttribute('data-act');
     if (a === 'retry') load();
+    else if (a === 'bnew') { state.bform = true; render(); }
+    else if (a === 'bcancel') { state.bform = false; render(); }
+    else if (a === 'bdel') { var bid = t.getAttribute('data-id'); state.brett = (state.brett || []).filter(function (b) { return b.id !== bid; }); SH.lsSet('hubbrett', state.brett); SH.post({ action: 'dataOps', token: SH.token(), ops: [{ op: 'del', coll: 'brett', id: bid }] }); render(); }
     else if (a === 'qedit') { state.qedit = true; render(); }
     else if (a === 'qdone') { state.qedit = false; render(); }
     else if (a === 'qtog') { var u = t.getAttribute('data-u'); var l = quickList().map(function (x) { return x.url; }); var i = l.indexOf(u); if (i >= 0) l.splice(i, 1); else l.push(u); state.quick = l; SH.lsSet('hubquick_' + (SH.S.me && SH.S.me.user || ''), l); saveQuick(l); render(); }
   });
-  root.addEventListener('submit', function (ev) { SH.submit(ev, render, load); });
+  root.addEventListener('submit', function (ev) {
+    var f = ev.target; if (f && f.getAttribute && f.getAttribute('data-bf')) {
+      ev.preventDefault(); var fd = new FormData(f); var title = String(fd.get('title') || '').trim(); if (!title) return;
+      var it = { id: 'b-' + Date.now().toString(36), title: title, text: String(fd.get('text') || '').trim(), wichtig: !!fd.get('wichtig'), by: SH.S.me && SH.S.me.user || '', date: todayIso() };
+      state.brett = [it].concat(state.brett || []); SH.lsSet('hubbrett', state.brett); state.bform = false;
+      SH.post({ action: 'dataOps', token: SH.token(), ops: [{ op: 'set', coll: 'brett', item: it }] }).then(function (r) { if (!r || r.status !== 'success') { state.brett = state.brett.filter(function (b) { return b.id !== it.id; }); render(); } });
+      render(); return;
+    }
+    SH.submit(ev, render, load);
+  });
   load();
 })();

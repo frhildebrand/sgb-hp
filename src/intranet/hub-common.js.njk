@@ -158,15 +158,17 @@ window.HubShell = (function () {
     }
     return out;
   }
+  function isWide() { try { return window.matchMedia('(min-width: 1100px)').matches; } catch (e) { return false; } }
+  try { var mq = window.matchMedia('(min-width: 1100px)'); var lastW = mq.matches; mq.addEventListener('change', function (e) { if (e.matches !== lastW) { lastW = e.matches; location.reload(); } }); } catch (e) { /* alte Browser */ }
   function menuHtml() {
-    if (!S.menu) return '';
+    if (!S.menu && !isWide()) return '';
     var here = hereOf(location.pathname); var ov = menuOv();
     var nav = '';
     if (S.menuExtra && S.menuExtra.length) nav += '<div class="hub-mgrp" style="--mc:#64748b"><div class="hub-mlabel">🛡️ Verwaltung</div>' + S.menuExtra.map(function (x) { return '<button type="button" class="hub-mi' + (x.on ? ' hub-on' : '') + '" data-shx="' + esc(x.key) + '" style="--mc:#64748b"><span class="hub-mic">' + esc(x.icon || '•') + '</span><span class="hub-mlb">' + esc(x.label) + '</span></button>'; }).join('') + '</div>';
     nav += link(HUB_URL, '🏠', 'Startseite', here === HUB_URL, '#d6a23a');
     groupsOf(S.systems).forEach(function (g) {
       var cur = g.items.some(function (s) { return here === hereOf(s.url); });
-      var open = ov[g.name] !== undefined ? !!ov[g.name] : cur;
+      var open = ov[g.name] !== undefined ? !!ov[g.name] : (cur || isWide());
       nav += '<div class="hub-mgrp' + (open ? ' hub-gopen' : '') + '" style="--mc:' + esc(g.info.color) + '"><button type="button" class="hub-mlabel hub-mcat" data-sh="cat" data-v="' + esc(g.name) + '" aria-expanded="' + (open ? 'true' : 'false') + '"><span class="hub-mcic">' + g.info.icon + '</span><span class="hub-mlb">' + esc(g.name) + '</span><span class="hub-mcn">' + g.items.length + '</span><span class="hub-car">' + (open ? '▴' : '▾') + '</span></button>' +
         (open ? '<div class="hub-mitems">' + g.items.map(function (s) { return itemHtml(s, g.info.color, here); }).join('') + '</div>' : '') + '</div>';
     });

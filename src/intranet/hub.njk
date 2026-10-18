@@ -504,8 +504,63 @@ permalink: /intranet/
   #hubRoot .m-stat { border-radius: 16px; border: 1px solid var(--line); }
   #hubRoot .hub-note.hub-card h3, #hubRoot .hub-card h3 { color: var(--ink); }
   @media (max-width: 560px) { #hubRoot .hub-hero { padding: 18px; } #hubRoot .hub-hero .hub-hello { font-size: 23px; } }
+
+  /* Startseite: zwei Spalten und feste Seitenleiste */
+  #hubRoot .hub-greet { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 0 0 12px; }
+  #hubRoot .hub-greet h2 { margin: 0; font: 900 26px ui-rounded, 'SF Pro Rounded', system-ui, sans-serif; }
+  #hubRoot .hub-greet span { color: var(--soft); font-weight: 600; }
+  #hubRoot .hub-wichtig { margin: 0 0 14px; padding: 12px 16px; border-radius: 14px; border: 1px solid #e8c36a; background: #fdf3d8; color: #5b3d00; font-weight: 600; }
+  .dark #hubRoot .hub-wichtig { background: #3a2c0b; border-color: #7a5d17; color: #f6dc9b; }
+  #hubRoot .hub-home { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
+  @media (min-width: 900px) { #hubRoot .hub-home { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); } }
+  #hubRoot .hub-hcol { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  #hubRoot .hub-card2 { padding: 16px 18px; border-radius: 20px; background: var(--card); border: 1px solid var(--line); box-shadow: 0 1px 2px rgba(15,23,42,.04); }
+  #hubRoot .hub-c2h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 8px; }
+  #hubRoot .hub-c2h h3 { margin: 0; font: 800 18px ui-rounded, 'SF Pro Rounded', system-ui, sans-serif; }
+  #hubRoot .hub-bi { display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+  #hubRoot .hub-bi:first-of-type { border-top: 0; }
+  #hubRoot .hub-bic { font-size: 22px; line-height: 1.2; }
+  #hubRoot .hub-bit { flex: 1; min-width: 0; }
+  #hubRoot .hub-bit b { font-size: 17px; }
+  #hubRoot .hub-bit p { margin: 3px 0; color: var(--soft); }
+  #hubRoot .hub-bit i { font-size: 12px; font-style: normal; color: var(--soft); }
+  #hubRoot .hub-bx { border: 0; background: none; color: var(--soft); font-size: 16px; cursor: pointer; padding: 4px 8px; }
+  #hubRoot .hub-bf { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 10px; }
+  #hubRoot .hub-bf input[type=text], #hubRoot .hub-bf input:not([type]), #hubRoot .hub-bf textarea { width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg, transparent); color: inherit; font: inherit; }
+  #hubRoot .hub-bfc { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+  #hubRoot .hub-bfb { display: flex; gap: 8px; justify-content: flex-end; }
+  #hubRoot .hub-ti { display: flex; align-items: center; gap: 14px; padding: 10px 0; border-top: 1px solid var(--line); color: inherit; text-decoration: none; }
+  #hubRoot .hub-ti:first-of-type { border-top: 0; }
+  #hubRoot .hub-dbx { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 14px; background: color-mix(in srgb, var(--gold, #d6a23a) 14%, var(--card)); }
+  #hubRoot .hub-dbx b { font: 900 20px ui-rounded, system-ui, sans-serif; line-height: 1; }
+  #hubRoot .hub-dbx i { font: 700 11px -apple-system, system-ui, sans-serif; font-style: normal; color: var(--soft); letter-spacing: .06em; }
+  #hubRoot .hub-tit { display: flex; flex-direction: column; min-width: 0; }
+  #hubRoot .hub-tit b { font-size: 16px; }
+  #hubRoot .hub-tit i { font-style: normal; color: var(--soft); font-size: 14px; }
+  #hubRoot .hub-qg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  #hubRoot .hub-q { display: flex; align-items: center; gap: 8px; padding: 11px 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); color: inherit; font: 700 15px -apple-system, system-ui, sans-serif; text-decoration: none; text-align: left; cursor: pointer; }
+  #hubRoot .hub-q:hover { border-color: var(--gold, #d6a23a); }
+  #hubRoot .hub-q.on { border-color: #16a34a; background: color-mix(in srgb, #16a34a 10%, var(--card)); }
+  #hubRoot .hub-ai { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); color: inherit; text-decoration: none; }
+  #hubRoot .hub-ai:first-of-type { border-top: 0; }
+  #hubRoot .hub-ab { flex: 0 0 auto; padding: 3px 10px; border-radius: 999px; font: 800 13px -apple-system, system-ui, sans-serif; font-style: normal; background: #dbeafe; color: #1d4ed8; }
+  #hubRoot .hub-ab.warn { background: #fef3c7; color: #92400e; }
+  #hubRoot .hub-ab.bad { background: #fee2e2; color: #b91c1c; }
+  #hubRoot .hub-bl { display: flex; gap: 28px; flex-wrap: wrap; }
+  #hubRoot .hub-bl i { display: block; font-style: normal; color: var(--soft); font-size: 14px; }
+  #hubRoot .hub-bl b { font: 900 30px ui-rounded, system-ui, sans-serif; }
+  #hubRoot .hub-narrow { margin-top: 18px; }
+  @media (min-width: 1100px) {
+    #hubRoot { padding-left: 304px; }
+    #hubRoot .hub-narrow { display: none; }
+    #hubRoot .hub-drawer-bg { position: fixed; inset: 0 auto 0 0; width: 304px; z-index: 60; display: block; background: none; backdrop-filter: none; -webkit-backdrop-filter: none; animation: none; pointer-events: none; }
+    #hubRoot .hub-drawer { pointer-events: auto; width: 304px; height: 100%; animation: none; box-shadow: none; border-right: 1px solid var(--line); border-radius: 0; }
+    #hubRoot .hub-head .hub-burger, #hubRoot .hub-burger, #hubRoot .hub-dtop { display: none; }
+    #hubRoot .hub-head, #hubRoot .hub-hin { max-width: none; }
+    #hubRoot .hub-main { max-width: 1280px; }
+  }
 </style>
 <div id="hubRoot" data-system=""><noscript><p style="padding:24px">Dafür wird JavaScript gebraucht.</p></noscript></div>
-<script src="/intranet/js/hub-config.js?v=10181857" defer></script>
-<script src="/intranet/js/hub-common.js?v=10181857" defer></script>
-<script src="/intranet/js/hub.js?v=10181857" defer></script>
+<script src="/intranet/js/hub-config.js?v=10182017" defer></script>
+<script src="/intranet/js/hub-common.js?v=10182017" defer></script>
+<script src="/intranet/js/hub.js?v=10182017" defer></script>
