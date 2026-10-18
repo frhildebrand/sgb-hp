@@ -90,7 +90,7 @@ templateEngineOverride: false
   }
 
   /* ---------- Übersicht aller Wettkämpfe ---------- */
-  function sortedAll() { return M.items('wettkaempfe').sort(function (a, b) { return String(a.date || '9999') < String(b.date || '9999') ? -1 : 1; }); }
+  function sortedAll() { return M.items('wettkaempfe').sort(function (a, b) { var x = String(a.date || '9999'), y = String(b.date || '9999'); return x < y ? -1 : x > y ? 1 : 0; }); }
   function viewSwitch(v) { return M.seg([['karten', 'Karten'], ['tabelle', 'Tabelle']], v, 'wklist'); }
   function listPage() {
     var all = sortedAll(); var t = M.today(); var lv = M.S.sub.lv || 'karten';
@@ -99,7 +99,7 @@ templateEngineOverride: false
     var canImp = M.anyCan(['wettkaempfe.import', 'wettkaempfe.anlegen']);
     var out = '<section class="wm-card"><div class="wm-bar"><h3>Wettkämpfe</h3><span class="m-actions">' + viewSwitch(lv) + (canImp ? '<button type="button" class="wm-btn" data-ma="wkneu">➕ Termin</button><button type="button" class="wm-amber" data-ma="wkaus">📄 Neu aus Ausschreibung</button>' : '') + '</span></div>';
     if (lv === 'tabelle') {
-      var rows = M.S.sub.allRows ? all : up.concat(past.filter(function (w) { return M.daysTo(w.date) >= -45; }).reverse());
+      var rows = M.S.sub.allRows ? all : up.concat(past.filter(function (w) { return M.daysTo(w.date) >= -45; }));
       out += tableHtml(rows) + '<p class="wm-note"><button type="button" class="m-chip' + (M.S.sub.allRows ? ' on' : '') + '" data-ma="allrows">Auch ältere zeigen</button> Tippe auf ein Feld, um es abzuhaken.</p></section>';
       return out;
     }
@@ -401,7 +401,7 @@ templateEngineOverride: false
     if (JSON.stringify(wk).length > 38000) { M.toast('Das Meldeergebnis ist zu groß. Bitte den Vereinsnamen prüfen.'); return; }
     M.closeDlg(); M.op({ op: 'set', coll: 'wettkaempfe', item: wk }); M.S.sub.wk = wk.id; M.S.sub.v = 'uebersicht'; M.S.sub.vSet = true; M.toast(tgt ? 'Meldeergebnis aktualisiert.' : 'Wettkampf angelegt.'); M.render(true);
   }
-  var NEW_FIELDS = [{ k: 'title', t: 'text', label: 'Name des Wettkampfs', req: true }, { k: 'date', t: 'date', label: 'Datum', req: true }, { k: 'ort', t: 'text', label: 'Ort' }, { k: 'meldeschluss', t: 'date', label: 'Meldeschluss' }, { k: 'intMs', t: 'date', label: 'Interner Meldeschluss' }];
+  var NEW_FIELDS = [{ k: 'title', t: 'text', label: 'Name des Wettkampfs', req: true }, { k: 'date', t: 'date', label: 'Datum', req: true }, { k: 'ort', t: 'text', label: 'Ort' }, { k: 'bahn', t: 'sel', label: 'Bahnlänge', opts: [['', 'automatisch aus dem Meldeergebnis'], ['25', 'Kurzbahn (25 m)'], ['50', 'Langbahn (50 m)']] }, { k: 'meldeschluss', t: 'date', label: 'Meldeschluss' }, { k: 'intMs', t: 'date', label: 'Interner Meldeschluss' }];
 
   function startLine(wk, st, withName) {
     var e = ev(wk, st.e);
@@ -622,7 +622,7 @@ templateEngineOverride: false
       wkkrtake: function (it, el) { var wk = curWk(); if (!wk) return; var f = {}; f[el.getAttribute('data-k')] = Number(el.getAttribute('data-n')); M.op({ op: 'patch', coll: 'wettkaempfe', id: wk.id, fields: f }); },
       wkaus: function () { docDialog('aus', ''); },
       wkdoc: function (it, el) { docDialog(el.getAttribute('data-kind'), M.S.sub.wk); },
-      wkneu: function () { M.openForm({ title: 'Wettkampf-Termin anlegen', fields: NEW_FIELDS, item: {}, onSave: function (v) { var wk = { id: M.uid(), title: v.title, date: v.date, ort: v.ort, meldeschluss: v.meldeschluss, intMs: v.intMs, club: club(), abschnitte: [], events: [], starts: [], gericht: [], res: {}, chk: {} }; M.op({ op: 'set', coll: 'wettkaempfe', item: wk }); M.S.sub.wk = wk.id; M.S.sub.v = 'check'; M.S.sub.vSet = true; M.render(true); } }); },
+      wkneu: function () { M.openForm({ title: 'Wettkampf-Termin anlegen', fields: NEW_FIELDS, item: {}, onSave: function (v) { var wk = { id: M.uid(), title: v.title, date: v.date, ort: v.ort, meldeschluss: v.meldeschluss, intMs: v.intMs, bahn: v.bahn || '', club: club(), abschnitte: [], events: [], starts: [], gericht: [], res: {}, chk: {} }; M.op({ op: 'set', coll: 'wettkaempfe', item: wk }); M.S.sub.wk = wk.id; M.S.sub.v = 'check'; M.S.sub.vSet = true; M.render(true); } }); },
       wkread: function (it, el) { doRead(el.getAttribute('data-kind') || 'erg', el.getAttribute('data-target') || ''); },
       wksave: function () { doSave(); },
       wksaveaus: function () { saveAus(); },
@@ -634,7 +634,7 @@ templateEngineOverride: false
       wkview: function (it, el) { M.S.sub.v = el.getAttribute('data-v'); M.S.q = ''; M.render(true); },
       wkprint: function () { var wk = curWk(); if (wk) printMenu(wk); },
       pr: function (it, el) { var wk = curWk(); M.closeDlg(); if (wk) printWhat(wk, el.getAttribute('data-w')); },
-      wkedit: function () { var wk = curWk(); if (!wk) return; M.openForm({ title: 'Wettkampf bearbeiten', fields: NEW_FIELDS, item: wk, onSave: function (v) { M.op({ op: 'patch', coll: 'wettkaempfe', id: wk.id, fields: { title: v.title, date: v.date, ort: v.ort, meldeschluss: v.meldeschluss, intMs: v.intMs } }); } }); },
+      wkedit: function () { var wk = curWk(); if (!wk) return; M.openForm({ title: 'Wettkampf bearbeiten', fields: NEW_FIELDS, item: wk, onSave: function (v) { M.op({ op: 'patch', coll: 'wettkaempfe', id: wk.id, fields: { title: v.title, date: v.date, ort: v.ort, bahn: v.bahn || '', meldeschluss: v.meldeschluss, intMs: v.intMs } }); } }); },
       wkdel: function () { var wk = curWk(); if (!wk) return; M.confirm('„' + wk.title + '“ samt aller Zeiten löschen?', 'Löschen', function () { M.S.sub.wk = ''; M.op({ op: 'del', coll: 'wettkaempfe', id: wk.id }); }); },
       onlyopen: function () { M.S.sub.onlyOpen = !M.S.sub.onlyOpen; M.render(true); },
       gedit: function (it, el) { var wk = curWk(); var i = +el.closest('[data-gi]').getAttribute('data-gi'); if (!wk || !wk.gericht[i]) return; var g = wk.gericht[i]; M.openForm({ title: g.pos + ' (Abschnitt ' + g.a + ')', fields: [{ k: 'name', t: 'text', label: 'Name (leer = offen)' }], item: { name: /^N\s?N$/i.test(g.name) ? '' : g.name }, onSave: function (v) { var l = M.clone(wk.gericht); l[i].name = v.name || 'NN'; M.op({ op: 'patch', coll: 'wettkaempfe', id: wk.id, fields: { gericht: l } }); } }); },

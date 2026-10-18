@@ -16,7 +16,7 @@ templateEngineOverride: false
   function me() { return M.userName(); }
   function personal() { var m = M.SH.S.me; return !!(m && m.user); }
   function profile() { return M.find('profile', pid(me())) || {}; }
-  function rates() { var s = M.find('saetze', 'main') || {}; var d = function (v, x) { return v === undefined || v === '' ? x : num(v); }; return { std: d(s.std, 5), km: d(s.km, 0.2), fahrt: d(s.fahrt, 5), wkMin: d(s.wkMin, 90), liz: Array.isArray(s.liz) ? s.liz : [], fahrer: Array.isArray(s.fahrer) ? s.fahrer : [] }; }
+  function rates() { var s = M.find('saetze', 'main') || {}; var d = function (v, x) { return v === undefined || v === '' ? x : num(v); }; return { std: d(s.std, 5), km: d(s.km, 0.2), fahrt: d(s.fahrt, 5), liz: Array.isArray(s.liz) ? s.liz : [], fahrer: Array.isArray(s.fahrer) ? s.fahrer : [] }; }
   function satzFor(lizArt) {
     var r = rates(); var l = lower(lizArt);
     if (l) for (var i = 0; i < r.liz.length; i++) if (r.liz[i].art && l.indexOf(lower(r.liz[i].art)) >= 0) return num(r.liz[i].satz);
@@ -41,7 +41,7 @@ templateEngineOverride: false
     return time + '–' + ('0' + Math.floor(e / 60) % 24).slice(-2) + ':' + ('0' + e % 60).slice(-2);
   }
   function dfull(i) { return isoOk(i) ? String(i).split('-').reverse().join('.') : String(i || ''); }
-  function wkMin() { return rates().wkMin; }
+  function ttDauer(d, zeit) { var f = null; M.items('trainingTage').forEach(function (t) { if (t.date === d && normTime(t.time || '') === normTime(zeit || '') && num(t.dauer) > 0) f = num(t.dauer); }); return f; }
   function stdOf(z) { return z.min !== undefined && z.min !== '' ? num(z.min) / 60 : num(z.std); }
   function fnum(x) { return String(Math.round(x * 100) / 100).replace('.', ','); }
   function rowKey(r) { return r.d + '|' + String(r.zeit || '').slice(0, 5); }
@@ -51,7 +51,7 @@ templateEngineOverride: false
   }
   function tageRows(tage) {
     return tage.filter(function (t) { return t.date <= M.today() && (t.trainer || []).some(nameMatches); }).sort(function (x, y) { return x.date < y.date ? -1 : 1; }).map(function (t) {
-      return { d: t.date, zeit: normTime(t.time || ''), min: wkMin(), gruppe: 'Wettkampfgruppe', ort: t.ort || '' };
+      return { d: t.date, zeit: normTime(t.time || ''), min: num(t.dauer) > 0 ? num(t.dauer) : '', gruppe: 'Wettkampfgruppe', ort: t.ort || '' };
     });
   }
   function billedKeys() { var k = {}; ownList().forEach(function (a) { (a.zeilen || []).forEach(function (z) { k[rowKey(z)] = 1; }); }); return k; }
@@ -193,11 +193,12 @@ templateEngineOverride: false
     if (!l.length) return ''; var a = l[0].datum, b = l[l.length - 1].datum; var ma = MON3[+a.slice(5, 7) - 1], mb = MON3[+b.slice(5, 7) - 1], ya = a.slice(0, 4), yb = b.slice(0, 4);
     return ya !== yb ? ma + ' ' + ya + ' - ' + mb + ' ' + yb : ma === mb ? ma + ' ' + ya : ma + ' - ' + mb + ' ' + ya;
   }
-  function fahrtenXlsx(list, owner) {
+  function fahrtenXlsx(list, owner, part, done) {
     var tt = {}; try { M.items('trainingTage').forEach(function (t) { if (t.date && t.time && !tt[t.date]) tt[t.date] = t; }); } catch (e) { }
     var rows = list.map(function (f) { var t = tt[f.datum] || {}; var ort = String(f.notiz || '').replace(/^Wettkampftraining\s*,?\s*/i, '').trim() || t.ort || (f.notiz ? '' : ''); return { datum: f.datum, zeit: normTime(t.time || ''), ort: ort }; }).sort(function (x, y) { var kx = x.datum + ' ' + x.zeit, ky = y.datum + ' ' + y.zeit; return kx < ky ? -1 : kx > ky ? 1 : 0; });
     if (!rows.length) { M.toast('Keine offenen Fahrten.'); return; }
-    if (rows.length > 23) { M.toast('Die Vorlage hat 23 Zeilen, hier sind es ' + rows.length + '. Bitte in zwei Abrechnungen aufteilen.'); return; }
+    var all = rows.length;
+    if (all > 23) { var pages = Math.ceil(all / 23); part = Math.min(part || 1, pages); rows = rows.slice((part - 1) * 23, part * 23); list = list.slice().sort(function (x, y) { return x.datum < y.datum ? -1 : 1; }).slice((part - 1) * 23, part * 23); if (!window.__fahrtPartNote) { M.toast('Mehr als 23 Fahrten: Seite ' + part + ' von ' + pages + ' wird erstellt.'); } }
     var op = lower(owner) === lower(me()) ? profile() : (M.find('profile', pid(owner)) || {}); var satz = rates().fahrt; var n = rows.length; var cm = function (v) { return String((Math.round(v * 100) / 100).toFixed(2)).replace('.', ','); };
     var per = fPeriod(rows);
     buildXlsx(XLSX_FA, function (x) {
@@ -242,16 +243,16 @@ templateEngineOverride: false
   function saetzeTab() {
     var r = rates();
     var out = '<section class="wm-card"><div class="wm-bar"><h3>Sätze</h3><button type="button" class="wm-amber" data-ma="saetzeedit">✏️ Bearbeiten</button></div><p class="wm-note">Diese Werte werden bei jeder neuen Abrechnung und Fahrt vorgeschlagen. Jeder kann sie in seiner eigenen Abrechnung ändern.</p>' +
-      '<div class="m-chk"><span style="flex:1">Standard-Stundensatz</span><b>' + euro(r.std) + '</b></div><div class="m-chk"><span style="flex:1">Minuten pro Wettkampftraining (Import)</span><b>' + r.wkMin + ' Min.</b></div><div class="m-chk"><span style="flex:1">Kilometergeld</span><b>' + euro(r.km) + ' / km</b></div><div class="m-chk"><span style="flex:1">Fahrer-Pauschale (Wettkampftraining)</span><b>' + euro(r.fahrt) + '</b></div>';
+      '<div class="m-chk"><span style="flex:1">Standard-Stundensatz</span><b>' + euro(r.std) + '</b></div><div class="m-chk"><span style="flex:1">Kilometergeld</span><b>' + euro(r.km) + ' / km</b></div><div class="m-chk"><span style="flex:1">Fahrer-Pauschale (Wettkampftraining)</span><b>' + euro(r.fahrt) + '</b></div>';
     out += '<div class="m-sec">Fahrerliste</div>' + (r.fahrer.length ? '<div class="m-chips">' + r.fahrer.map(function (n) { return '<span class="m-chip">' + esc(n) + '</span>'; }).join('') + '</div>' : '<p class="wm-note">Noch keine Fahrer. Beim Einlesen der WebClub-Liste des Wettkampftrainings kannst du nur Personen aus dieser Liste als Fahrer wählen.</p>');
     out += '<div class="m-sec">Satz nach Lizenz</div>' + (r.liz.length ? r.liz.map(function (l) { return '<div class="m-chk"><span style="flex:1">' + esc(l.art) + '</span><b>' + euro(l.satz) + '</b></div>'; }).join('') : '<p class="wm-note">Keine Lizenz-Sätze. Es gilt der Standard-Stundensatz.</p>');
     return out + '</section>';
   }
   function saetzeEdit() {
     var r = rates();
-    M.openForm({ title: 'Sätze', fields: [{ k: 'std', t: 'num', label: 'Standard-Stundensatz (€)' }, { k: 'wkMin', t: 'num', label: 'Minuten pro Wettkampftraining', hint: 'So viele Minuten werden beim Import eines Wettkampftrainings eingetragen (90 = 1,5 Std., Training plus Vor- und Nachbereitung). Andere Gruppen trägst du mit ihrer Dauer ein.' }, { k: 'km', t: 'num', label: 'Kilometergeld (€ pro km)' }, { k: 'fahrt', t: 'num', label: 'Fahrer-Pauschale (€)' }, { k: 'fahrer', t: 'pick', label: 'Fahrerliste', hint: 'Konten antippen, die als Fahrer zur Auswahl stehen sollen.' }, { k: 'liz', t: 'lines', label: 'Satz nach Lizenz', rows: 4, hint: 'Pro Zeile: Lizenz | Satz, z. B. „Trainer C | 12“.' }], item: { std: r.std, wkMin: r.wkMin, km: r.km, fahrt: r.fahrt, fahrer: r.fahrer, liz: r.liz.map(function (l) { return l.art + ' | ' + l.satz; }) }, onSave: function (v) {
+    M.openForm({ title: 'Sätze', fields: [{ k: 'std', t: 'num', label: 'Standard-Stundensatz (€)' }, { k: 'km', t: 'num', label: 'Kilometergeld (€ pro km)' }, { k: 'fahrt', t: 'num', label: 'Fahrer-Pauschale (€)' }, { k: 'fahrer', t: 'pick', label: 'Fahrerliste', hint: 'Konten antippen, die als Fahrer zur Auswahl stehen sollen.' }, { k: 'liz', t: 'lines', label: 'Satz nach Lizenz', rows: 4, hint: 'Pro Zeile: Lizenz | Satz, z. B. „Trainer C | 12“.' }], item: { std: r.std, km: r.km, fahrt: r.fahrt, fahrer: r.fahrer, liz: r.liz.map(function (l) { return l.art + ' | ' + l.satz; }) }, onSave: function (v) {
       var liz = v.liz.map(function (x) { var p = x.split('|'); return { art: (p[0] || '').trim(), satz: num(p[1]) }; }).filter(function (x) { return x.art; });
-      M.op({ op: 'set', coll: 'saetze', item: { id: 'main', std: num(v.std), wkMin: v.wkMin === '' ? 90 : num(v.wkMin), km: num(v.km), fahrt: num(v.fahrt), fahrer: v.fahrer.map(function (x) { return x.trim(); }).filter(Boolean), liz: liz } });
+      M.op({ op: 'set', coll: 'saetze', item: { id: 'main', std: num(v.std), km: num(v.km), fahrt: num(v.fahrt), fahrer: v.fahrer.map(function (x) { return x.trim(); }).filter(Boolean), liz: liz } });
     } });
   }
   function fahrtenOps() {
@@ -274,17 +275,17 @@ templateEngineOverride: false
     var have = billedKeys(); (a.zeilen || []).forEach(function (z) { have[rowKey(z)] = 1; });
     var allT = tageRows(M.items('trainingTage')); var add = allT.filter(function (z) { return !have[rowKey(z)]; });
     var tk = {}; allT.forEach(function (z) { tk[rowKey(z)] = z; }); var upd = 0;
-    var zl = (a.zeilen || []).map(function (z) { var t = tk[rowKey(z)]; if (t && /wettkampf/i.test(z.gruppe || '') && (+z.min !== +t.min || (t.ort && z.ort !== t.ort))) { upd++; return Object.assign({}, z, { min: t.min, ort: t.ort || z.ort }); } return z; });
-    if (!add.length && upd) { patchAb(a, { zeilen: zl }, true); M.toast(upd + (upd === 1 ? ' Zeile' : ' Zeilen') + ' aktualisiert (Dauer ' + wkMin() + ' Min.).'); return; }
+    var zl = (a.zeilen || []).map(function (z) { var t = tk[rowKey(z)]; if (t && /wettkampf/i.test(z.gruppe || '') && ((t.min !== '' && +z.min !== +t.min) || (t.ort && z.ort !== t.ort))) { upd++; return Object.assign({}, z, { min: t.min !== '' ? t.min : z.min, ort: t.ort || z.ort }); } return z; });
+    if (!add.length && upd) { patchAb(a, { zeilen: zl }, true); M.toast(upd + (upd === 1 ? ' Zeile' : ' Zeilen') + ' aktualisiert (Dauer aus den Trainingstagen).'); return; }
     if (!add.length) { M.toast('Alle deine Trainingstage sind schon abgerechnet. Neue Termine liest du über „Aus WebClub-Liste“ ein.'); return; }
-    patchAb(a, { zeilen: zl.concat(add) }, true); M.toast(add.length + (add.length === 1 ? ' Zeile' : ' Zeilen') + ' übernommen' + (upd ? ', ' + upd + ' aktualisiert' : '') + '.');
+    var miss = add.filter(function (z) { return z.min === ''; }).length; patchAb(a, { zeilen: zl.concat(add) }, true); M.toast(add.length + (add.length === 1 ? ' Zeile' : ' Zeilen') + ' übernommen' + (upd ? ', ' + upd + ' aktualisiert' : '') + '.' + (miss ? ' Achtung: ' + miss + ' ohne Dauer – bitte im Trainingstag „Dauer (Min.)“ eintragen oder hier ergänzen.' : ''));
   }
 
   /* ---- Import aus der WebClub-Anwesenheitsliste (mit Fahrerwahl beim Wettkampftraining) ---- */
   var PD = null;
   function pdfDialog() {
     PD = null;
-    M.openDlg('<div class="hub-dhead"><h3>Aus WebClub-Liste</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div><div id="abpd"><p class="wm-note">Wähle die „Anwesenheitsliste“ (PDF) aus WebClub. Übernommen werden alle Termine, bei denen du als Trainer anwesend bist und die noch in keiner Abrechnung stehen. Die Wettkampfgruppe zählt ' + rates().wkMin + ' Min., bei anderen Gruppen gibst du die Dauer an.</p><div class="m-fgrid"><label class="m-f wide"><span>PDF-Datei</span><input type="file" id="abfile" accept="application/pdf,.pdf"></label><label class="m-f"><span>Dauer pro Termin (Min.), nur andere Gruppen</span><input type="number" inputmode="numeric" id="abdauer" value="60"></label></div><p id="abmsg" class="wm-note"></p><div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="abpdfread">Einlesen</button></div></div>');
+    M.openDlg('<div class="hub-dhead"><h3>Aus WebClub-Liste</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div><div id="abpd"><p class="wm-note">Wähle die „Anwesenheitsliste“ (PDF) aus WebClub. Übernommen werden alle Termine, bei denen du als Trainer anwesend bist und die noch in keiner Abrechnung stehen. Die Dauer kommt aus dem Trainingstag (Feld „Dauer (Min.)“). Fehlt sie dort, gilt die Dauer unten.</p><div class="m-fgrid"><label class="m-f wide"><span>PDF-Datei</span><input type="file" id="abfile" accept="application/pdf,.pdf"></label><label class="m-f"><span>Dauer pro Termin (Min.), falls im Trainingstag keine steht</span><input type="number" inputmode="numeric" id="abdauer" value="60"></label></div><p id="abmsg" class="wm-note"></p><div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="abpdfread">Einlesen</button></div></div>');
   }
   function pdfRead() {
     var a = curAb(); var f = document.getElementById('abfile') && document.getElementById('abfile').files[0]; var msg = document.getElementById('abmsg');
@@ -300,7 +301,7 @@ templateEngineOverride: false
       var rows = [], seen = 0;
       p.sessions.forEach(function (s, i) {
         if (!mineP.some(function (x) { return x.st[i] === 'a'; })) return; seen++;
-        var z = { d: s.date, zeit: normTime(s.time || ''), min: isWK ? wkMin() : dmin, gruppe: gname, ort: '' };
+        var z = { d: s.date, zeit: normTime(s.time || ''), min: ttDauer(s.date, s.time) || dmin, gruppe: gname, ort: '' };
         if (!have[rowKey(z)]) rows.push({ z: z, on: true, drv: [] }); else if (isWK) rows.push({ z: z, on: false, only: true, drv: [] });
       });
       if (!rows.filter(function (x) { return !x.only; }).length && !rows.length) { msg.innerHTML = clipNote + '<span class="m-over">' + (seen ? 'Alle ' + seen + ' Termine, bei denen du Trainer warst, stehen schon in Abrechnungen.' : 'In dieser Liste gibt es keinen Termin, bei dem du als Trainer anwesend bist.') + '</span>'; return; }
@@ -435,12 +436,16 @@ templateEngineOverride: false
       '<p style="margin-top:20px">Ich bitte um Überweisung auf das oben genannte Konto.</p><div class="sigrow"><div>Barnstorf, ' + (sig ? esc(dfull(M.today())) : '. . . . . . . . . . .') + '<br><span class="sub">(Datum)</span></div><div class="sigbox">' + sigImg(sig) + '<div class="line"></div><span class="sub">(Unterschrift)</span></div></div>',
       { t2: 'Fahrtenformular', t3: 'Wettkampftraining', css: '.fbox{display:flex;flex-wrap:wrap;gap:10px 24px;border:1px solid #888;border-radius:6px;padding:10px 14px;margin:0 0 14px}.fbox div{min-width:40%}.fbox div.w{min-width:100%}.fbox span{display:block;font-size:10.5px}.fbox b{font-size:13.5px}.sigrow{display:flex;justify-content:space-between;align-items:flex-end;margin-top:34px;gap:30px}.sigbox{min-width:260px;text-align:center}.sigbox .line{border-top:1px solid #333;margin-top:2px}.sigbox img.sig{margin:0 auto;height:58px}' });
   }
+  var FPN = ['Jan - Mai', 'Mai - Sep', 'Sep - Dez', 'Ganzes Jahr'];
+  function fpState() { var s = sub(); var m = new Date().getMonth() + 1; if (s.fp === undefined) s.fp = m <= 4 ? 0 : m <= 8 ? 1 : 2; if (!s.fy) s.fy = new Date().getFullYear(); return s; }
+  function fInPeriod(f, s) { var d = String(f.datum || ''); if (+d.slice(0, 4) !== +s.fy) return false; var mo = +d.slice(5, 7); return s.fp === 3 || (s.fp === 0 ? mo <= 4 : s.fp === 1 ? mo >= 5 && mo <= 8 : mo >= 9); }
   function fMeine() {
     if (!personal()) return needPersonal();
-    var list = fownList(); var open = list.filter(function (f) { return (f.status || 'offen') === 'offen'; }); var sum = 0; open.forEach(function (f) { sum += num(f.betrag); });
-    var out = '<section class="wm-card"><div class="wm-bar"><h3>Meine Fahrten</h3><span class="m-actions"><button type="button" class="wm-btn" data-ma="fxlsx"' + (open.length ? '' : ' disabled') + '>📊 Excel</button><button type="button" class="wm-btn" data-ma="ftage">🦈 Aus Trainingstagen</button><button type="button" class="wm-amber" data-ma="fnew">+ Fahrt</button></span></div>' +
-      '<p class="wm-note">Für jede Fahrt zum Wettkampftraining gibt es ' + euro(rates().fahrt) + '. Für Fahrten zu Wettkämpfen wird nichts gezahlt. Offen: <b>' + open.length + (open.length === 1 ? ' Fahrt' : ' Fahrten') + ' = ' + euro(sum) + '</b>. Zum Abrechnen die Excel-Datei erstellen, ausdrucken, unterschreiben und abgeben.</p>';
-    if (!list.length) out += '<p class="wm-note">Noch keine Fahrt eingetragen.</p>';
+    var fs0 = fpState(); var list = fownList().filter(function (f) { return fInPeriod(f, fs0); }); var open = list.filter(function (f) { return (f.status || 'offen') === 'offen'; }); var sum = 0; open.forEach(function (f) { sum += num(f.betrag); });
+    var perChips = '<div class="m-chips" style="margin:2px 0 8px">' + FPN.map(function (n, i) { return '<button type="button" class="m-chip' + (fs0.fp === i ? ' on' : '') + '" data-ma="fper" data-v="' + i + '">' + n + '</button>'; }).join('') + '<button type="button" class="m-chip" data-ma="fyear" data-v="-1">‹</button><span class="m-chip">' + fs0.fy + '</span><button type="button" class="m-chip" data-ma="fyear" data-v="1">›</button></div>';
+    var out = '<section class="wm-card"><div class="wm-bar"><h3>Meine Fahrten</h3><span class="m-actions">' + (open.length > 23 ? Array.apply(null, Array(Math.ceil(open.length / 23))).map(function (x, i) { return '<button type="button" class="wm-btn" data-ma="fxlsx" data-part="' + (i + 1) + '">📊 Excel Seite ' + (i + 1) + '</button>'; }).join('') : '<button type="button" class="wm-btn" data-ma="fxlsx" data-part="1"' + (open.length ? '' : ' disabled') + '>📊 Excel</button>') + '<button type="button" class="wm-btn" data-ma="ftage">🦈 Aus Trainingstagen</button><button type="button" class="wm-amber" data-ma="fnew">+ Fahrt</button></span></div>' +
+      perChips + '<p class="wm-note">Für jede Fahrt zum Wettkampftraining gibt es ' + euro(rates().fahrt) + '. Für Fahrten zu Wettkämpfen wird nichts gezahlt. Offen in diesem Zeitraum: <b>' + open.length + (open.length === 1 ? ' Fahrt' : ' Fahrten') + ' = ' + euro(sum) + '</b>. Zum Abrechnen die Excel-Datei erstellen, ausdrucken, unterschreiben und abgeben.</p>';
+    if (!list.length) out += '<p class="wm-note">Keine Fahrt in diesem Zeitraum.</p>';
     return out + list.map(function (f) { return fRow(f, false); }).join('') + '</section>';
   }
   function fAlle() {
@@ -463,7 +468,15 @@ templateEngineOverride: false
     fnewall: function () { fForm({ datum: M.today(), fahrer: '' }, true, true); },
     fedit: function (it, el, ev, c) { var f = M.find('fahrten', c.id); if (f) fForm(f, false); },
     fdel: function (it, el, ev, c) { var id = c.id || (el.closest('[data-id]') && el.closest('[data-id]').getAttribute('data-id')); M.confirm('Fahrt löschen?', 'Löschen', function () { M.op({ op: 'del', coll: 'fahrten', id: id }); }); },
-    fxlsx: function () { fahrtenXlsx(fownList().filter(function (f) { return (f.status || 'offen') === 'offen'; }), me()); },
+    fper: function (it, el) { var s = fpState(); s.fp = +el.getAttribute('data-v'); M.render(true); },
+    fyear: function (it, el) { var s = fpState(); s.fy += +el.getAttribute('data-v'); M.render(true); },
+    fxlsx: function (it, el) {
+      var s = fpState(); var part = +(el && el.getAttribute('data-part')) || 1;
+      var open = fownList().filter(function (f) { return (f.status || 'offen') === 'offen' && fInPeriod(f, s); }).sort(function (a, b) { return a.datum < b.datum ? -1 : 1; });
+      var chunk = open.length > 23 ? open.slice((part - 1) * 23, part * 23) : open;
+      fahrtenXlsx(open, me(), part);
+      if (chunk.length) setTimeout(function () { M.confirm('Diese ' + chunk.length + (chunk.length === 1 ? ' Fahrt' : ' Fahrten') + ' jetzt als eingereicht markieren?', 'Als eingereicht markieren', function () { M.ops(chunk.map(function (f) { return { op: 'patch', coll: 'fahrten', id: f.id, fields: { status: 'eingereicht', paidAt: M.today() } }; })); }); }, 700);
+    },
     ftoggle: function (it, el, ev, c) { var n = el.closest('[data-own]').getAttribute('data-own'); M.S.open['f' + n] = !M.S.open['f' + n]; M.render(true); },
     fxlsxall: function (it, el) { var n = el.closest('[data-own]').getAttribute('data-own'); fahrtenXlsx(M.items('fahrten').filter(function (f) { return f.owner === n && (f.status || 'offen') === 'offen'; }), n); },
     fpaid: function (it, el) { var n = el.closest('[data-own]').getAttribute('data-own'); var l = M.items('fahrten').filter(function (f) { return f.owner === n && (f.status || 'offen') === 'offen'; }); M.confirm(l.length + ' Fahrten von ' + n + ' als abgerechnet markieren?', 'Markieren', function () { M.ops(l.map(function (f) { return { op: 'patch', coll: 'fahrten', id: f.id, fields: { status: 'abgerechnet', paidAt: M.today() } }; })); }); }

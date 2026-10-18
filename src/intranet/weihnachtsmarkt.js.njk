@@ -3981,6 +3981,8 @@ async function loadBackups() {
   }
 }
 function renderBackups() {
+  // Sicherungen liegen jetzt in der Verwaltung (Intranet) – hier ausgeblendet
+  const bxHide = document.getElementById('adminBackupsBox'); if (bxHide) { bxHide.style.display = 'none'; return; }
   const box = document.getElementById('adminBackupList');
   if (!box) return;
   if (!window.canAny(['system.backup', 'system.restore'])) { box.innerHTML = ''; return; }

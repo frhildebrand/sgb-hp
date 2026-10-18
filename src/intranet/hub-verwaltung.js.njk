@@ -286,7 +286,9 @@ templateEngineOverride: false
     });
     return h + '</tbody></table>';
   }
-  function tabList() { var l = [['benutzer', '👤', 'Benutzerverwaltung'], ['zugang', '🛡️', 'Zugangsverwaltung']]; if (has('view.status')) l.push(['status', '🩺', 'Systemstatus']); if (has('view.protokoll')) l.push(['protokoll', '📝', 'Änderungsprotokoll']); return l; }
+  function tabList() { var l = [['benutzer', '👤', 'Benutzerverwaltung'], ['zugang', '🛡️', 'Zugangsverwaltung']]; if (has('view.status')) l.push(['status', '🩺', 'Systemstatus']); if (has('view.protokoll')) l.push(['protokoll', '📝', 'Änderungsprotokoll']); if (has('system.backup') || has('system.restore')) l.push(['backups', '💾', 'Backups']); return l; }
+  try { var hh = (location.hash || '').replace('#', ''); if (['benutzer', 'zugang', 'status', 'protokoll', 'backups'].indexOf(hh) >= 0) S.tab = hh; } catch (e) {}
+  window.addEventListener('hashchange', function () { var hh = (location.hash || '').replace('#', ''); if (['benutzer', 'zugang', 'status', 'protokoll', 'backups'].indexOf(hh) >= 0) { S.tab = hh; S.msg = ''; render(); } });
   var L = { entries: [], areas: [], more: false, error: '', loading: false, area: '', q: '', from: '', to: '' }; var ST = { d: null, error: '', loading: false };
   function fmtDT(t) { var d = new Date(+t); if (isNaN(d)) return ''; var p = function (n) { return String(n).padStart(2, '0'); }; return p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + String(d.getFullYear()).slice(2) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
   function loadStatus() { if (ST.loading) return; ST.loading = true; ST.error = ''; render(); get('status').then(function (r) { ST.loading = false; if (!r) ST.error = 'Keine Verbindung.'; else if (r.code === 'perm') ST.error = 'Dafür fehlt dir die Berechtigung.'; else if (r.code === 'auth') ST.error = 'Bitte neu anmelden.'; else ST.d = r; render(); }); }
@@ -294,6 +296,22 @@ templateEngineOverride: false
     if (L.loading) return; L.loading = true; var p = { limit: 100 }; if (L.area) p.area = L.area; if (L.q) p.q = L.q; if (L.from) p.from = new Date(L.from + 'T00:00:00').getTime(); if (L.to) p.to = new Date(L.to + 'T23:59:59').getTime();
     if (!reset && L.entries.length) p.before = L.entries[L.entries.length - 1].t; render();
     get('log', p).then(function (r) { L.loading = false; L.done = true; if (!r) L.error = 'Keine Verbindung.'; else if (r.code === 'perm') L.error = 'Dafür fehlt dir die Berechtigung.'; else if (r.code === 'auth') L.error = 'Bitte neu anmelden.'; else if (Array.isArray(r.entries)) { L.error = ''; L.entries = reset ? r.entries : L.entries.concat(r.entries); L.more = !!r.more; L.areas = r.areas || L.areas; } render(); });
+  }
+  var BK = { list: null, triggers: null, mail: null, error: '', loading: false, msg: '' };
+  var BK_KIND = { auto: 'automatisch', manuell: 'von Hand', 'vor-wiederherstellung': 'vor Wiederherstellung', 'vor-reset': 'vor Saison-Reset' };
+  function loadBackups() {
+    if (BK.loading) return; BK.loading = true; BK.error = ''; render();
+    get('backups').then(function (r) { BK.loading = false; if (!r) BK.error = 'Keine Verbindung.'; else if (r.code === 'perm') BK.error = 'Dafür fehlt dir die Berechtigung.'; else if (r.code === 'auth') BK.error = 'Bitte neu anmelden.'; else { BK.list = r.backups || []; BK.triggers = r.triggers || {}; BK.mail = r.mail || { to: '', aus: false }; } render(); });
+  }
+  function backupsHtml() {
+    if (BK.error) return '<div class="wm-card"><p class="wm-note">' + esc(BK.error) + '</p></div>';
+    if (!BK.list) return '<div class="wm-card"><p class="wm-note">Lade …</p></div>';
+    var canB = has('system.backup'), canR = has('system.restore'); var t = BK.triggers || {};
+    var rows = BK.list.length ? BK.list.map(function (b) { return '<div class="vw-row"><span><b>' + fmtDT(b.ts) + '</b> · ' + esc(BK_KIND[b.kind] || b.kind) + ' · ca. ' + b.kb + ' KB</span>' + (canR ? '<button type="button" class="wm-btn" data-act="bkrestore" data-id="' + esc(b.id) + '">↩️ Wiederherstellen</button>' : '') + '</div>'; }).join('') : '<p class="wm-note">Noch keine Sicherung.</p>';
+    var trig = function (ok, label) { return '<div class="vw-row"><span>' + label + '</span><b>' + (ok === true ? '✅ aktiv' : ok === false ? '⚠️ nicht eingerichtet' : '❔ unbekannt') + '</b></div>'; };
+    return '<div class="wm-card"><div class="wm-bar"><h3>💾 Sicherungen</h3>' + (canB ? '<button type="button" class="wm-amber" data-act="bknow">💾 Sicherung jetzt</button>' : '') + '</div><p class="wm-note">Es bleiben die letzten 4 automatischen Sicherungen. Handsicherungen zählen nicht mit. Vor einem Saison-Reset wird automatisch gesichert. Eine Sicherung enthält alle Daten des Intranets und des Weihnachtsmarkts.</p>' + (BK.msg ? '<div class="hub-err" style="margin-bottom:10px">' + esc(BK.msg) + '</div>' : '') + rows + '</div>' +
+      (canB ? '<div class="wm-card"><div class="wm-bar"><h3>⏰ Zeitpläne</h3><button type="button" class="wm-btn" data-act="bktrig">Zeitpläne einrichten</button></div>' + trig(t.backup, 'Tägliche Sicherung (ca. 03:00)') + trig(t.mails, 'Meldeschluss-Mails (20:00)') + '<p class="wm-note">Beim ersten Einrichten fragt Google nach der Erlaubnis (Zeitpläne und E-Mail). Danach laufen beide automatisch.</p>' +
+      '<div class="m-sec">Meldeschluss-Erinnerung</div><form data-bkform class="vw-filt"><input type="email" data-bk="to" placeholder="E-Mail-Adresse" value="' + esc((BK.mail || {}).to || '') + '"><label class="wm-sub"><input type="checkbox" data-bk="aus"' + ((BK.mail || {}).aus ? ' checked' : '') + '> ausgeschaltet</label><button type="submit" class="wm-amber">Speichern</button></form><p class="wm-note">Gesendet wird am Abend des internen Meldeschlusses und 5 Tage davor, solange „Meldungen versendet“ nicht abgehakt ist.</p></div>' : '');
   }
   function bar(label, used, max, note) { var pc = max ? Math.min(100, Math.round(used / max * 100)) : 0; return '<div class="wm-sub" style="margin-top:10px"><b>' + esc(label) + '</b> · ' + esc(note) + '</div><div style="height:10px;border-radius:6px;background:rgba(148,163,184,.25);overflow:hidden"><div style="height:100%;width:' + pc + '%;background:' + (pc > 80 ? '#dc2626' : pc > 60 ? '#f59e0b' : '#16a34a') + '"></div></div>'; }
   function statusHtml() {
@@ -307,7 +325,7 @@ templateEngineOverride: false
   function logHtml() {
     var sel = '<select data-lg="area"><option value="">Alle Bereiche</option>' + L.areas.map(function (a) { return '<option' + (a === L.area ? ' selected' : '') + ' value="' + esc(a) + '">' + esc(a) + '</option>'; }).join('') + '</select>';
     var list = L.error ? '<p class="wm-note">' + esc(L.error) + '</p>' : !L.entries.length ? '<p class="wm-note">' + (L.loading ? 'Lade …' : 'Keine Einträge gefunden.') + '</p>' : L.entries.map(function (e) { return '<div class="vw-log"><div class="vw-lh"><span class="vw-t">' + fmtDT(e.t) + '</span><span class="vw-a">' + esc(e.a) + '</span><span class="vw-n">' + esc(e.n || 'unbekannt') + (e.r ? ' · ' + esc(e.r) : '') + '</span></div><div class="vw-x">' + esc(e.x) + '</div></div>'; }).join('');
-    return '<div class="wm-card"><div class="wm-bar"><h3>📝 Änderungsprotokoll</h3></div><form data-lgform class="vw-filt">' + sel + '<input type="search" data-lg="q" placeholder="Suchen …" value="' + esc(L.q) + '"><input type="date" data-lg="from" value="' + esc(L.from) + '"><input type="date" data-lg="to" value="' + esc(L.to) + '"><button type="submit" class="wm-amber">Filtern</button></form>' + list + (L.more && !L.error ? '<div style="margin-top:10px"><button type="button" class="wm-btn" data-act="logmore">Mehr laden</button></div>' : '') + '</div>';
+    return '<div class="wm-card"><div class="wm-bar"><h3>📝 Änderungsprotokoll</h3></div><form data-lgform class="vw-filt">' + sel + '<input type="search" data-lg="q" placeholder="Suchen …" value="' + esc(L.q) + '"><label class="wm-sub">Von <input type="date" data-lg="from" value="' + esc(L.from) + '"></label><label class="wm-sub">Bis <input type="date" data-lg="to" value="' + esc(L.to) + '"></label><button type="submit" class="wm-amber">Filtern</button></form>' + list + (L.more && !L.error ? '<div style="margin-top:10px"><button type="button" class="wm-btn" data-act="logmore">Mehr laden</button></div>' : '') + '</div>';
   }
   function head() {
     var ok = !!S.me && canAny(CAN_ENTER);
@@ -326,6 +344,7 @@ templateEngineOverride: false
     if (S.tab === 'benutzer') {
       inner = '<div class="wm-card"><div class="wm-bar"><h3>👤 Benutzer</h3>' + (has('system.users') ? '<button type="button" class="wm-amber" data-ed="newuser">➕ Neuer Benutzer</button>' : '') + '</div><p class="wm-note">Benutzer haben einen eigenen Namen und ein eigenes Passwort, eine oder mehrere Rollen und auf Wunsch Sonderrechte. Die Rechte aus allen Rollen und Sonderrechten zählen zusammen.</p>' + (canAny(['system.users', 'system.rechte', 'system.roles']) ? usersHtml() : '<p class="wm-note">Du darfst Benutzer nicht ansehen.</p>') + '</div>';
     } else if (S.tab === 'status') { inner = statusHtml(); if (!ST.d && !ST.loading && !ST.error) setTimeout(loadStatus, 0);
+    } else if (S.tab === 'backups') { inner = backupsHtml(); if (!BK.list && !BK.loading && !BK.error) setTimeout(loadBackups, 0);
     } else if (S.tab === 'protokoll') { inner = logHtml(); if (!L.done && !L.loading && !L.error) setTimeout(function () { loadLog(true); }, 0);
     } else {
       inner = '<div class="wm-card"><div class="wm-bar"><h3>🛡️ Rollen</h3>' + (has('system.roles') ? '<button type="button" class="wm-amber" data-ed="newrole">➕ Neue Rolle</button>' : '') + '</div><p class="wm-note">Pro Rolle lassen sich Name, Beschreibung, Passwort und alle einzelnen Rechte einstellen. Die Rechte gelten sofort auf allen Geräten.</p>' + rolesHtml() + '</div>' +
@@ -339,7 +358,7 @@ templateEngineOverride: false
     if (d.confirm) return '<div class="ha-overlay"><div class="ha-dialog small"><h3>' + esc(d.title) + '</h3><p class="hub-sub">' + esc(d.message) + '</p><div class="ha-actions"><span class="ha-extra"></span><button type="button" class="hub-btn hub-ghost" data-cf="no">Abbrechen</button><button type="button" class="hub-btn ha-danger" data-cf="yes">' + esc(d.ok) + '</button></div></div></div>';
     return dialogHtml().replace('class="ha-dialog"', 'class="ha-dialog' + (d.wide ? ' wide' : '') + '"');
   }
-  SH.S.onMenu = function (k) { S.tab = ['zugang', 'status', 'protokoll'].indexOf(k) >= 0 ? k : 'benutzer'; S.msg = ''; };
+  SH.S.onMenu = function (k) { S.tab = ['zugang', 'status', 'protokoll', 'backups'].indexOf(k) >= 0 ? k : 'benutzer'; S.msg = ''; };
   function render() {
     var keep = root.querySelector('.ha-body') ? root.querySelector('.ha-body').scrollTop : 0;
     root.innerHTML = head() + '<main class="hub-main">' + body() + '</main>' + SH.overlay() + dialogOrConfirm();
@@ -360,6 +379,9 @@ templateEngineOverride: false
     if (t.getAttribute('data-tab')) { S.tab = t.getAttribute('data-tab'); S.msg = ''; render(); return; }
     if (t.getAttribute('data-act') === 'retry') { load(); return; }
     if (t.getAttribute('data-act') === 'stload') { ST.d = null; loadStatus(); return; }
+    if (t.getAttribute('data-act') === 'bknow') { BK.msg = ''; post({ action: 'backupNow', token: token() }).then(function (r) { BK.msg = r && r.status === 'success' ? '' : (r && r.message) || 'Sicherung fehlgeschlagen.'; BK.list = null; loadBackups(); }); return; }
+    if (t.getAttribute('data-act') === 'bktrig') { BK.msg = ''; post({ action: 'installTriggers', token: token() }).then(function (r) { BK.msg = r && r.status === 'success' ? '' : (r && r.message) || 'Einrichten fehlgeschlagen.'; BK.list = null; loadBackups(); }); return; }
+    if (t.getAttribute('data-act') === 'bkrestore') { var bid = t.getAttribute('data-id'); confirmBox('Sicherung wiederherstellen?', 'Der aktuelle Stand wird vorher automatisch gesichert. Danach gilt der Stand dieser Sicherung für alle Daten.', 'Wiederherstellen').then(function (ok) { if (!ok) return; post({ action: 'restoreBackup', token: token(), id: bid }).then(function (r) { BK.msg = r && r.status === 'success' ? 'Wiederhergestellt.' : (r && r.message) || 'Fehlgeschlagen.'; BK.list = null; loadBackups(); }); }); return; }
     if (t.getAttribute('data-act') === 'logmore') { loadLog(false); return; }
     if (t.getAttribute('data-act') === 'theme') { if (window.HubTheme) window.HubTheme.cycle(); render(); return; }
     if (t.getAttribute('data-cf')) { var d = S.dialog; S.dialog = null; render(); if (d && d.done) d.done(t.getAttribute('data-cf') === 'yes'); return; }
@@ -396,6 +418,7 @@ templateEngineOverride: false
   });
   root.addEventListener('submit', function (ev) {
     if (ev.target.getAttribute && ev.target.getAttribute('data-lgform') !== null) { ev.preventDefault(); Array.prototype.forEach.call(ev.target.querySelectorAll('[data-lg]'), function (i) { L[i.getAttribute('data-lg')] = String(i.value || '').trim(); }); L.entries = []; L.done = false; loadLog(true); return; }
+    if (ev.target.getAttribute && ev.target.getAttribute('data-bkform') !== null) { ev.preventDefault(); var bf = ev.target; post({ action: 'setMailcfg', token: token(), to: bf.querySelector('[data-bk=to]').value, aus: bf.querySelector('[data-bk=aus]').checked }).then(function (r) { BK.msg = r && r.status === 'success' ? '' : (r && r.message) || 'Speichern fehlgeschlagen.'; BK.list = null; loadBackups(); }); return; }
     if (SH.submit(ev, render, load)) return;
     if (!ev.target.getAttribute || !ev.target.getAttribute('data-dlg')) return;
     ev.preventDefault();

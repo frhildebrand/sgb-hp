@@ -56,11 +56,30 @@ templateEngineOverride: false
     var n = state.next; if (!n || n.token !== SH.token() || !(n.fr || []).length) return '';
     return '<section class="hub-fr"><h3 class="hub-frh">⏰ Fristen &amp; Hinweise</h3><div class="hub-frl">' + n.fr.map(function (f) { return '<a class="hub-fchip ' + esc(f.c || '') + '" href="' + esc(f.href || '/intranet/') + '"><b>' + esc(f.t) + '</b><span>' + esc(f.s || '') + '</span></a>'; }).join('') + '</div></section>';
   }
+  // Schnellzugriff: jeder wählt seine Lieblingsbereiche selbst (bleibt in diesem Browser gespeichert).
+  // Speichert den Schnellzugriff im eigenen Profil, damit er auf jedem Gerät gleich ist.
+  function pidOf(n) { return 'p-' + String(n || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 36); }
+  function saveQuick(l) {
+    var u = SH.S.me && SH.S.me.user; if (!u) return; var id = pidOf(u);
+    var o = state.hasProfile ? { op: 'patch', coll: 'profile', id: id, fields: { quick: l } } : { op: 'set', coll: 'profile', item: { id: id, owner: u, quick: l } };
+    SH.post({ action: 'dataOps', token: SH.token(), ops: [o] }).then(function (r) { if (r && r.status === 'success') state.hasProfile = true; });
+  }
+  function quickList() {
+    var sys = SH.S.systems || []; var sel = Array.isArray(state.quick) ? state.quick : SH.lsGet('hubquick_' + (SH.S.me && SH.S.me.user || ''), null);
+    if (!Array.isArray(sel)) sel = sys.slice(0, 4).map(function (x) { return x.url; });
+    return sel.map(function (u) { return sys.filter(function (x) { return x.url === u; })[0]; }).filter(Boolean);
+  }
+  function quickHtml() {
+    var sys = SH.S.systems || []; if (!sys.length) return '';
+    var sel = quickList().map(function (x) { return x.url; });
+    if (state.qedit) return '<section class="hub-fr"><div class="hub-tkh"><h3>⚡ Schnellzugriff bearbeiten</h3><button type="button" class="hub-btn hub-gold" data-act="qdone">Fertig</button></div><p class="hub-sub" style="margin:2px 0 10px">Tippe die Bereiche an, die du oben haben willst. Das gilt nur für dieses Gerät.</p><div class="hub-frl">' + sys.map(function (x) { var on = sel.indexOf(x.url) >= 0; return '<button type="button" class="hub-fchip' + (on ? ' ok' : '') + '" data-act="qtog" data-u="' + esc(x.url) + '" style="cursor:pointer">' + (on ? '✓ ' : '') + esc(x.icon || '') + ' ' + esc(x.name) + '</button>'; }).join('') + '</div></section>';
+    return '<section class="hub-sec" style="--cat:#d6a23a"><h3 class="hub-sech"><span class="hub-sechi">⚡</span>Schnellzugriff <button type="button" class="hub-btn hub-ghost" data-act="qedit" style="margin-left:auto;padding:4px 10px;font-size:12px">✏️ Ändern</button></h3><div class="hub-tiles">' + (quickList().map(function (x) { return tile(x, '#d6a23a'); }).join('') || '<p class="hub-sub">Noch nichts ausgewählt. Mit „Ändern“ legst du deine Lieblingsbereiche fest.</p>') + '</div></section>';
+  }
   function body() {
     var S = SH.S;
     if (!state.loaded) return '<section class="hub-tiles"><div class="hub-skel"></div><div class="hub-skel"></div><div class="hub-skel"></div></section>';
     if (S.offline) return '<section class="hub-card hub-offline"><h2>Keine Verbindung</h2><p class="hub-sub">Das Konto-System ist gerade nicht erreichbar. Bitte prüfe das Internet und versuche es nochmal.</p><button type="button" class="hub-btn hub-gold" data-act="retry">Nochmal versuchen</button><details class="hub-diag"><summary>Technische Details</summary><pre>' + esc(SH.DIAG.length ? SH.DIAG.join('\n') : 'Keine Angaben.') + '</pre></details></section>';
-    var out = hero() + fristHtml() + tasksHtml();
+    var out = hero() + fristHtml() + quickHtml() + tasksHtml();
     out += S.systems.length ? groupsHtml(S.systems) : '<section class="hub-card"><p class="hub-sub">Für dein Konto sind noch keine Systeme freigeschaltet.</p></section>';
     if (!S.me) out += '<section class="hub-card hub-note"><h3>Weitere Systeme?</h3><p class="hub-sub">Melde dich an, dann siehst du alle Systeme, die für dich freigeschaltet sind.</p><button type="button" class="hub-btn hub-gold" data-sh="login">Anmelden</button></section>';
     return out;
@@ -111,7 +130,7 @@ templateEngineOverride: false
       if (d.vorstandAntraege) { var oa = d.vorstandAntraege.filter(function (x) { return x.status === 'Eingereicht'; }).length; hints.vorstand = oa ? { t: oa + (oa > 1 ? ' Anträge' : ' Antrag') + ' offen', c: 'warn' } : { t: 'Keine offenen Anträge', c: 'none' }; }
       if (d.abrechnungen || d.fahrten) { var ent = (d.abrechnungen || []).filter(function (x) { return x.status === 'entwurf' || x.status === 'eingereicht'; }).length; var fo = (d.fahrten || []).filter(function (x) { return x.status !== 'abgerechnet'; }).length; var parts = []; if (ent) parts.push(ent + ' in Arbeit'); if (fo) parts.push(fo + (fo === 1 ? ' Fahrt' : ' Fahrten') + ' offen'); hints.abrechnung = parts.length ? { t: parts.join(', '), c: 'warn' } : { t: 'Alles abgerechnet', c: 'none' }; }
       if (d.trainingTage) { var last = d.trainingTage.slice().sort(function (a, b) { return String(b.date) < String(a.date) ? -1 : 1; }).filter(function (x) { return (x.date || '') <= t; })[0]; if (last) { var an = Object.keys(last.anw || {}).filter(function (k) { return last.anw[k] === 'a'; }).length; hints.training = { t: 'Zuletzt ' + fmtD(last.date) + ', ' + an + ' da', c: 'none' }; } }
-      var warn = []; var pf = (d.profile || [])[0];
+      var warn = []; var pf = (d.profile || [])[0]; state.hasProfile = !!pf; if (pf && Array.isArray(pf.quick)) state.quick = pf.quick;
       if (pf) [['lizBis', 'Trainerlizenz'], ['ersteHilfeBis', 'Erste Hilfe'], ['rettungBis', 'Rettungsnachweis'], ['kariBis', 'Kampfrichter-Lizenz']].forEach(function (x) { var iso = pf[x[0]]; if (/^\d{4}-\d{2}-\d{2}$/.test(iso || '')) { var dd = daysTo(iso); if (dd !== null && dd <= 60) warn.push({ label: x[1], iso: iso, days: dd }); } });
       warn.sort(function (a, b) { return a.days - b.days; });
       var fr = [];
@@ -139,7 +158,11 @@ templateEngineOverride: false
   root.addEventListener('click', function (ev) {
     if (SH.click(ev, render, load)) return;
     var t = ev.target.closest ? ev.target.closest('[data-act]') : null;
-    if (t && t.getAttribute('data-act') === 'retry') load();
+    if (!t) return; var a = t.getAttribute('data-act');
+    if (a === 'retry') load();
+    else if (a === 'qedit') { state.qedit = true; render(); }
+    else if (a === 'qdone') { state.qedit = false; render(); }
+    else if (a === 'qtog') { var u = t.getAttribute('data-u'); var l = quickList().map(function (x) { return x.url; }); var i = l.indexOf(u); if (i >= 0) l.splice(i, 1); else l.push(u); state.quick = l; SH.lsSet('hubquick_' + (SH.S.me && SH.S.me.user || ''), l); saveQuick(l); render(); }
   });
   root.addEventListener('submit', function (ev) { SH.submit(ev, render, load); });
   load();

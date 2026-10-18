@@ -17,7 +17,7 @@ templateEngineOverride: false
   function fs(iso) { return iso ? M.fmtDate(iso, true) : ''; }
   function ym(iso) { return String(iso || '').slice(0, 7); }
   function canTage() { return M.can('training.tage.edit'); }
-  function members() { return M.items('wgMitglieder').sort(function (a, b) { return String(a.name || '').localeCompare(String(b.name || ''), 'de'); }); }
+  function members() { return M.items('wgMitglieder').filter(function (m) { return !Array.isArray(m.gruppen) || m.gruppen.indexOf('Wettkampfgruppe') >= 0; }).sort(function (a, b) { return String(a.name || '').localeCompare(String(b.name || ''), 'de'); }); }
   var firstSeenCache = { n: -1, map: {} };
   // Ohne Eintrittsdatum gilt: dabei ab dem ersten Termin, an dem jemand eine Anwesenheit für die Person eingetragen hat (neue Mitglieder zählen also nicht rückwirkend)
   function firstSeen() {

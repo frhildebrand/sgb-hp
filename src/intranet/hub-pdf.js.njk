@@ -565,6 +565,48 @@ var WKParse = (function () {
     return out;
   }
 
+  function parsePunkte(pages) {
+    var out = { rows: [], saison: '', warnings: [] };
+    var all = []; pages.forEach(function (p) { p.forEach(function (it) { all.push(it.str); }); });
+    var ms = /Saison\s+(\d{4})/.exec(all.join(' ')); if (ms) out.saison = ms[1];
+    var by = {};
+    pages.forEach(function (items) {
+      var cols = items.filter(function (it) { return /^\d{2,4}[SRBFL]$/.test(it.str.trim()); }).map(function (it) { return { k: it.str.trim(), cx: it.x + (it.w || 0) / 2 }; });
+      var jg = items.filter(function (it) { return it.str.trim() === 'Jg'; })[0], ges = items.filter(function (it) { return it.str.trim() === 'Gesamt'; })[0], mw = items.filter(function (it) { return it.str.trim() === 'M/W'; })[0];
+      if (!cols.length || !jg) return;
+      var headY = Math.min.apply(null, items.filter(function (it) { return /^\d{2,4}[SRBFL]$/.test(it.str.trim()); }).map(function (it) { return it.y; }));
+      var rows = [], idx = {};
+      items.forEach(function (it) {
+        if (!it.str.trim() || it.y >= headY - 2 || it.y < 60) return;
+        var ky = Math.round(it.y), r = null; [0, -1, 1, -2, 2].forEach(function (d) { if (!r && idx[ky + d]) r = idx[ky + d]; });
+        if (!r) { r = { y: it.y, its: [] }; rows.push(r); idx[ky] = r; }
+        r.its.push(it);
+      });
+      var gesCx = ges ? ges.x + (ges.w || 0) / 2 : 1e9;
+      rows.forEach(function (r) {
+        r.its.sort(function (a, b) { return a.x - b.x; });
+        var nm = r.its.filter(function (it) { return it.x + (it.w || 0) < jg.x - 4; }).map(function (it) { return it.str.trim(); }).join(' ').replace(/\s+/g, ' ').trim();
+        var jgi = r.its.filter(function (it) { return /^(19|20)\d\d$/.test(it.str.trim()) && Math.abs(it.x + (it.w || 0) / 2 - (jg.x + (jg.w || 0) / 2)) < 20; })[0];
+        if (!nm || !jgi || /^Schwimmer$/i.test(nm)) return;
+        var sx = r.its.filter(function (it) { return /^[MW]$/.test(it.str.trim()) && mw && Math.abs(it.x - mw.x) < 25; })[0];
+        var o = { name: nm, jg: +jgi.str.trim(), sex: sx ? sx.str.trim() : '', p: {}, ges: 0 };
+        r.its.forEach(function (it) {
+          if (!/^\d+$/.test(it.str.trim()) || it === jgi) return; var c = it.x + (it.w || 0) / 2, v = +it.str.trim();
+          if (mw && c < mw.x + (mw.w || 0) + 4) return;
+          var bi = null, bd = 1e9; cols.forEach(function (cc) { var d = Math.abs(cc.cx - c); if (d < bd) { bd = d; bi = cc; } });
+          if (Math.abs(gesCx - c) < bd && Math.abs(gesCx - c) < 22) o.ges = v; else if (bi) o.p[bi.k] = v;
+        });
+        var sum = 0; Object.keys(o.p).forEach(function (k) { sum += o.p[k]; });
+        if (!o.ges) o.ges = sum;
+        by[nm.toLowerCase()] = o;
+      });
+    });
+    out.rows = Object.keys(by).map(function (k) { return by[k]; });
+    if (!out.rows.length) out.warnings.push('Keine Schwimmer gefunden. Ist das die Liste „Punktbeste Leistung nach World Aquatics“ aus WebClub?');
+    out.rows.forEach(function (o) { var sum = 0; Object.keys(o.p).forEach(function (k) { sum += o.p[k]; }); if (sum !== o.ges) out.warnings.push(o.name + ': Einzelpunkte (' + sum + ') passen nicht zur Summe (' + o.ges + ').'); });
+    return out;
+  }
+
   function cleanGeld(t) {
     t = String(t || '').replace(/\s+/g, ' ').trim(); if (!t) return '';
     var first = t.split(/(?<=[a-zäöüß\)])\.\s+(?=[A-ZÄÖÜ])/)[0];
@@ -573,7 +615,7 @@ var WKParse = (function () {
     first = first.replace(/\s+(und|sowie)\s+(ist|sind|wird)\b.*$/i, '').replace(/(Einzel\w*|Staffel\w*):?\s*([\d,.]+ €)/g, '$2 pro $1').replace(/(pro \w+)\s+(?=[\d,.]+ €)/g, '$1, ');
     return first || t;
   }
-  return { articleBrief: articleBrief, cleanGeld: cleanGeld, parse: parse, parseDsv7: parseDsv7, parseAusschreibung: parseAusschreibung, parseProtokoll: parseProtokoll, parseErgDsv7: parseErgDsv7, articleText: articleText, articleHints: articleHints, STIMM: STIMM, krText: krText, relayText: relayText, showT: showT, digitTime: digitTime, parseAnwesenheit: parseAnwesenheit, krFor: krFor, dateDe: dateDe, linesFromItems: linesFromItems, fmtTime: fmtTime, timeMs: timeMs, diffStr: diffStr, isoDate: isoDate, toMin: toMin };
+  return { articleBrief: articleBrief, cleanGeld: cleanGeld, parse: parse, parseDsv7: parseDsv7, parseAusschreibung: parseAusschreibung, parseProtokoll: parseProtokoll, parseErgDsv7: parseErgDsv7, articleText: articleText, articleHints: articleHints, STIMM: STIMM, krText: krText, relayText: relayText, showT: showT, digitTime: digitTime, parseAnwesenheit: parseAnwesenheit, parsePunkte: parsePunkte, krFor: krFor, dateDe: dateDe, linesFromItems: linesFromItems, fmtTime: fmtTime, timeMs: timeMs, diffStr: diffStr, isoDate: isoDate, toMin: toMin };
 })();
 
 /* Gemeinsamer PDF-Leser (pdf.js wird erst bei Bedarf geladen) und Dateihilfen für Wettkämpfe und Wettkampfgruppe. */

@@ -204,7 +204,20 @@ templateEngineOverride: false
   /* ================= VERANSTALTUNGEN ================= */
   var STD_VORLAGEN = [
     { title: 'Schwimmfest (eigene Ausrichtung)', punkte: [['Halle und Termin bestätigen', 'vor', -90], ['Ausschreibung erstellen und versenden', 'vor', -60], ['Meldeschluss festlegen', 'vor', -60], ['Kampfgericht einladen', 'vor', -45], ['Zeitnehmer und Helfer einteilen', 'vor', -21], ['Meldeergebnis erstellen und verschicken', 'vor', -7], ['Kuchenverkauf und Verpflegung organisieren', 'vor', -7], ['Urkunden und Medaillen besorgen', 'vor', -14], ['Stoppuhren, Startblöcke und Technik prüfen', 'vor', -2], ['Aufbau', 'tag', 0], ['Abbau und Aufräumen', 'tag', 0], ['Ergebnisse veröffentlichen', 'danach', 1], ['Abrechnung', 'danach', 7]] },
-    { title: 'Weihnachtsmarkt', punkte: [['Standplatz bestätigen', 'vor', -60], ['Helfer einteilen', 'vor', -21], ['Einkaufsliste abstimmen', 'vor', -14], ['Material packen', 'vor', -2], ['Strom und Verteiler planen', 'vor', -7], ['Aufbau', 'tag', 0], ['Abbau', 'tag', 0], ['Kasse abrechnen', 'danach', 2]] },
+    { title: 'Weihnachtsmarkt', punkte: [['Standplatz bestätigen', 'vor', -60], ['Helfer einteilen', 'vor', -21],
+      ['Aushang: Aushang gestalten', 'vor', -30], ['Aushang: drucken und aufhängen', 'vor', -14],
+      ['Produkte und Einkauf: Produktliste und Preise festlegen', 'vor', -21], ['Produkte und Einkauf: Einkauf erledigen', 'vor', -3],
+      ['Rezepte: Rezepte und Mengen festlegen', 'vor', -21], ['Rezepte: Zutaten je Rezept prüfen', 'vor', -7],
+      ['Skizze: Standskizze zeichnen', 'vor', -14],
+      ['Strom: Strombedarf berechnen', 'vor', -14], ['Strom: Verteiler und Kabel bereitlegen', 'vor', -3],
+      ['Leihgaben: Leihgaben anfragen', 'vor', -14], ['Leihgaben: zurückgeben', 'danach', 2],
+      ['Boxen: Boxen packen und beschriften', 'vor', -2],
+      ['Kasse: Wechselgeld besorgen', 'vor', -2],
+      ['Aufbau: Aufbauplan und Helfer abstimmen', 'vor', -7], ['Aufbau', 'tag', 0],
+      ['Abnahme: Stand abnehmen lassen', 'tag', 0], ['Abbau', 'tag', 0],
+      ['Kasse: Kasse zählen und abrechnen', 'danach', 2], ['Inventar: Bestand zählen und einlagern', 'danach', 3]] },
+    { title: 'Jugendversammlung (JV)', punkte: [['Termin bestimmen (vor JHV)', 'vor', -70], ['Meyer-Köster-Haus reservieren (Heimatverein)', 'vor', -70], ['Einladung', 'vor', -60], ['Jahresauswertung', 'vor', -60], ['Jahresauswertung drucken', 'vor', -30], ['Medaillen bestellen', 'vor', -30], ['Präsentation', 'vor', -5], ['Spiele', 'vor', -5], ['Getränke', 'vor', -3], ['Süßes', 'vor', -3], ['Feedback vorbereiten', 'vor', -2]] },
+    { title: 'Jahreshauptversammlung (JHV)', punkte: [['Termin bestimmen', 'vor', -90], ['Raum bei Roshop reservieren', 'vor', -90], ['Einladung', 'vor', -60], ['Jahresauswertung', 'vor', -60], ['Pokale gravieren', 'vor', -30], ['Urkunden Jubiläen (WebClub: Stammdaten > Personen > Statistiken/Listen > Jubiläum)', 'vor', -20], ['Präsentation', 'vor', -5], ['Unterschriftenliste', 'vor', -1], ['Übersicht Jubiläen', 'vor', -1], ['Beamer', 'tag', 0]] },
     { title: 'Vereinsfeier / Ausflug', punkte: [['Termin und Ort festlegen', 'vor', -60], ['Einladung verschicken', 'vor', -35], ['Anmeldungen sammeln', 'vor', -14], ['Verpflegung planen', 'vor', -10], ['Fahrdienste klären', 'vor', -7], ['Kosten abrechnen', 'danach', 7]] }
   ];
   function applyVorlage(v, date) {
@@ -313,7 +326,8 @@ templateEngineOverride: false
       render: function () {
         var l = vorlagen('veranstaltung');
         var out = '<section class="wm-card"><div class="wm-bar"><h3>Checklisten-Vorlagen</h3><span class="m-actions"><button type="button" class="wm-btn" data-ma="cpvor">📄 Aus PDF</button><button type="button" class="wm-amber" data-ma="vnew">+ Neue Vorlage</button></span></div><p class="wm-note">Eine Vorlage ist eine fertige Checkliste. Beim Anwenden werden Fristen automatisch aus dem Datum der Veranstaltung berechnet.</p>';
-        if (!l.length) out += '<p class="wm-note">Noch keine Vorlagen.</p><button type="button" class="wm-btn" data-ma="vseed">Standard-Vorlagen anlegen (Schwimmfest, Weihnachtsmarkt, Feier)</button>';
+        if (!l.length) out += '<p class="wm-note">Noch keine Vorlagen.</p>';
+        if (STD_VORLAGEN.some(function (s) { return !l.some(function (v) { return v.title === s.title; }); })) out += '<button type="button" class="wm-btn" data-ma="vseed">Fehlende Standard-Vorlagen anlegen (Schwimmfest, Weihnachtsmarkt, JV, JHV, Feier)</button>';
         l.forEach(function (v) {
           var open = M.S.open[v.id];
           out += '<article class="m-card" data-id="' + esc(v.id) + '"><div class="m-head" data-ma="toggle"><div class="m-main"><div class="m-title">📋 ' + esc(v.title) + '</div><div class="wm-sub">' + (v.punkte || []).length + ' Punkte</div></div><span class="m-chev">' + (open ? '▾' : '▸') + '</span></div>' + (open ? '<div class="m-body">' + catsOf(v.punkte).map(function (ph) { var x = (v.punkte || []).filter(function (p) { return catOf(p) === ph; }); return x.length ? '<div class="m-sec" style="margin:8px 0 2px">' + esc(ph) + '</div>' + x.map(function (p) { return '<div class="m-chk"><span style="flex:1">' + esc(p.t) + '</span><span class="wm-sub">' + (p.off > 0 ? '+' : '') + p.off + ' Tg.</span></div>'; }).join('') : ''; }).join('') + '<div class="m-btns"><button type="button" class="wm-btn" data-ma="vedit">✏️ Bearbeiten</button><button type="button" class="wm-btn m-danger" data-ma="vdel">🗑️ Löschen</button></div></div>' : '') + '</article>';
@@ -324,7 +338,7 @@ templateEngineOverride: false
         vnew: function () { vform(null); },
         vedit: function (it) { vform(it); },
         vdel: function (it) { if (!it) return; M.confirm('Vorlage „' + it.title + '“ löschen?', 'Löschen', function () { M.op({ op: 'del', coll: 'vorlagen', id: it.id }); }); },
-        vseed: function () { M.ops(STD_VORLAGEN.map(function (s) { return { op: 'set', coll: 'vorlagen', item: { id: M.uid(), typ: 'veranstaltung', title: s.title, punkte: s.punkte.map(function (p) { return { t: p[0], ph: p[1], off: p[2] }; }) } }; })); }
+        vseed: function () { var have = vorlagen('veranstaltung').map(function (v) { return v.title; }); M.ops(STD_VORLAGEN.filter(function (s) { return have.indexOf(s.title) < 0; }).map(function (s) { return { op: 'set', coll: 'vorlagen', item: { id: M.uid(), typ: 'veranstaltung', title: s.title, punkte: s.punkte.map(function (p) { return { t: p[0], ph: p[1], off: p[2] }; }) } }; })); }
       } }]
   });
   M.mod('veranstaltungen').actions = { cpnew: function () { cpdOpen('new'); }, cpvor: function () { cpdOpen('vorlage'); }, cpadd: function (it, el, ev, c) { cpdOpen('add', c.id); }, cpread: function () { cpdRead(); }, cpsave: function () { cpdSave(); } };
@@ -443,6 +457,7 @@ templateEngineOverride: false
     var f = document.getElementById('apfile') && document.getElementById('apfile').files[0]; var msg = document.getElementById('apmsg');
     if (!f) { msg.textContent = 'Bitte zuerst eine PDF-Datei auswählen.'; return; }
     msg.textContent = 'Wird gelesen … (beim ersten Mal wird der PDF-Leser geladen)';
+    APD = { file: f };
     HubPdf.read(f).then(function (r) {
       var p = parseAntragPdf(linesWithTables(r.pages)); var box = document.getElementById('apbox'); if (!box) return;
       var fl = function (id, lab, v, t, wide) { return '<label class="m-f' + (wide ? ' wide' : '') + '"><span>' + lab + '</span><input type="' + (t || 'text') + '" id="' + id + '" value="' + esc(v || '') + '"></label>'; };
@@ -453,7 +468,18 @@ templateEngineOverride: false
     var g = function (id) { var e = document.getElementById(id); return e ? e.value.trim() : ''; };
     var item = { id: M.uid(), title: g('ap_t'), untertitel: g('ap_u'), ueberschrift: g('ap_h'), von: g('ap_v'), datum: g('ap_d'), status: 'Entwurf', begruendung: g('ap_x') };
     if (!item.title) { M.toast('Bitte einen Titel eintragen.'); return; }
-    M.closeDlg(); M.op({ op: 'set', coll: 'vorstandAntraege', item: item }); M.toast('Antrag angelegt.');
+    var apf = APD && APD.file; M.closeDlg(); M.op({ op: 'set', coll: 'vorstandAntraege', item: item }); M.toast('Antrag angelegt.');
+    if (apf && apf.size < 6000000) {
+      var fr = new FileReader();
+      fr.onload = function () {
+        var b64 = String(fr.result).split(',')[1] || '';
+        window.HubShell.post({ action: 'fileSave', token: window.HubShell.token(), area: 'antraege', name: (item.datum || M.today()) + ' ' + (item.title || 'Antrag').replace(/[^\wÄÖÜäöüß \-]/g, '') + '.pdf', data: b64 }).then(function (r) {
+          if (r && r.status === 'success') { M.op({ op: 'patch', coll: 'vorstandAntraege', id: item.id, fields: { pdfUrl: r.url } }); M.toast('PDF im Drive abgelegt.'); }
+          else M.toast((r && r.message) || 'PDF konnte nicht im Drive abgelegt werden.');
+        });
+      };
+      fr.readAsDataURL(apf);
+    }
   }
 
   var ASTAT = { 'Entwurf': 'gray', 'Eingereicht': 'blue', 'Beschlossen': 'green', 'Abgelehnt': 'red', 'Zurückgestellt': 'amber' };
@@ -468,7 +494,7 @@ templateEngineOverride: false
         summary: function (all) { return '<div class="m-chips">' + (M.can('vorstand.view') ? '<button type="button" class="m-chip' + (M.S.filter.mine ? ' on' : '') + '" data-ma="minef">Meine Anträge</button>' : '') + '<button type="button" class="m-chip" data-ma="apdf">📄 Antrag aus PDF</button></div>'; },
         get fields() { return [{ k: 'title', t: 'text', label: 'Antrag (Zeile 2 im Briefkopf)', req: true, ph: 'z. B. Antrag Kostenübernahme Wettkampftraining' }, { k: 'untertitel', t: 'text', label: 'Zeile 3 im Briefkopf (optional)', ph: 'z. B. Hallenbad Delfin' }, { k: 'ueberschrift', t: 'area', label: 'Überschrift im Text (optional)', rows: 2 }, { k: 'datum', t: 'date', label: 'Datum' }, { k: 'von', t: 'text', label: 'Gestellt von' }, { k: 'status', t: 'sel', label: 'Stand', opts: antragOpts() }, { k: 'begruendung', t: 'area', label: 'Antragstext', rows: 14, hint: 'Der Text wird beim Drucken im Antrag-Layout gesetzt. Anrede und Gruß werden ergänzt, wenn sie fehlen. Leere Zeile = neuer Absatz. Tabelle: Zeilen mit | trennen, z. B. | Kinder | 3,50 € | 24,50 € |, die erste Zeile ist die Überschrift.' }].concat(M.anyCan(['vorstand.edit', 'vorstand.antraege.edit']) ? [{ k: 'beschluss', t: 'area', label: 'Beschluss / Ergebnis', rows: 3 }] : []); },
         newItem: function () { return { datum: M.today(), status: 'Entwurf', von: me() }; },
-        card: function (it) { return { title: it.title, badges: M.badge(it.status || 'Entwurf', ASTAT[it.status] || 'gray'), sub: [fmtShort(it.datum), it.von ? 'von ' + esc(it.von) : ''].filter(Boolean).join(' · '), body: (it.begruendung ? '<h4 class="wm-sub">Antragstext</h4><div class="m-rich">' + richText(it.begruendung, 'm-table') + '</div>' : '') + (it.beschluss ? '<h4 class="wm-sub">Beschluss</h4>' + pre(it.beschluss) : ''), buttons: M.anyCan(['vorstand.edit', 'vorstand.antraege.edit']) && it.status === 'Beschlossen' ? '<button type="button" class="wm-btn" data-ma="toBeschl">→ Beschluss anlegen</button>' : '' }; },
+        card: function (it) { return { title: it.title, badges: M.badge(it.status || 'Entwurf', ASTAT[it.status] || 'gray'), sub: [fmtShort(it.datum), it.von ? 'von ' + esc(it.von) : ''].filter(Boolean).join(' · '), body: (it.begruendung ? '<h4 class="wm-sub">Antragstext</h4><div class="m-rich">' + richText(it.begruendung, 'm-table') + '</div>' : '') + (it.beschluss ? '<h4 class="wm-sub">Beschluss</h4>' + pre(it.beschluss) : '') + (it.pdfUrl && /^https:\/\//.test(it.pdfUrl) ? '<p><a class="wm-btn" href="' + esc(it.pdfUrl) + '" target="_blank" rel="noopener">📎 Original-PDF öffnen</a></p>' : ''), buttons: M.anyCan(['vorstand.edit', 'vorstand.antraege.edit']) && it.status === 'Beschlossen' ? '<button type="button" class="wm-btn" data-ma="toBeschl">→ Beschluss anlegen</button>' : '' }; },
         actions: {
           minef: function () { M.S.filter.mine = !M.S.filter.mine; M.render(true); },
           toBeschl: function (it) { if (!it) return; var id = M.uid(); M.op({ op: 'set', coll: 'vorstandBeschluesse', item: { id: id, title: it.title, date: M.today(), text: it.beschluss || it.begruendung || '', who: [], due: '', status: 'offen', antrag: it.id } }); M.toast('Beschluss angelegt (Reiter „Beschlüsse“).'); }
@@ -545,8 +571,14 @@ templateEngineOverride: false
     M.op({ op: 'patch', coll: 'material', id: it.id, fields: { loans: loans, hist: hist } });
   }
   M.register('material', {
-    title: 'Material', icon: '📦', colls: ['material'],
+    title: 'Material', icon: '📦', colls: ['material', 'abzListe'],
     tabs: [
+      { id: 'abzb', label: '🏅 Abzeichen', view: ['material.view'], render: function () {
+        var d = M.find('abzListe', 'main') || {}; var b = d.bestand || {}, mn = d.minBestand || {}; var ks = Object.keys(b).sort(function (x, y) { return x.localeCompare(y, 'de'); });
+        var low = ks.filter(function (k) { return M.num(b[k]) <= M.num(mn[k]) && mn[k] !== undefined && mn[k] !== ''; });
+        return '<section class="wm-card"><div class="wm-bar"><h3>Abzeichen-Bestand</h3><a class="wm-btn" href="/intranet/jugend/">Bestand ändern in Jugend →</a></div>' +
+          (low.length ? '<p class="wm-note"><b>Nachbestellen:</b> ' + low.map(function (k) { return M.esc(k) + ' (' + M.num(b[k]) + ')'; }).join(', ') + '</p>' : '') +
+          (ks.length ? '<div class="m-twrap"><table><tr><th>Abzeichen</th><th>Bestand</th><th>Mindestbestand</th></tr>' + ks.map(function (k) { var l = low.indexOf(k) >= 0; return '<tr><td><b>' + M.esc(k) + '</b></td><td>' + (l ? '<span class="m-over">' + M.num(b[k]) + '</span>' : M.num(b[k])) + '</td><td>' + (mn[k] !== undefined && mn[k] !== '' ? M.num(mn[k]) : '–') + '</td></tr>'; }).join('') + '</table></div>' : '<p class="wm-note">Es ist noch kein Abzeichenbestand eingetragen. Er wird in der Jugend unter „Preise &amp; Bestand“ gepflegt und erscheint hier automatisch.</p>') + '</section>'; } },
       { id: 'geg', label: 'Gegenstände', coll: 'material', view: ['material.view'], edit: ['material.edit'], add: ['material.edit', 'material.anlegen'], del: ['material.edit', 'material.loeschen'], print: ['material.print'], printAll: true, addLabel: 'Neuer Gegenstand', search: ['title', 'kategorie', 'ort', 'notiz'],
         filter: function (it, f) { return (!f.low || low(it) || it.kaufen) && (!f.out || openLoans(it).length); },
         summary: function (all) { var n = needList(all).length, out = all.filter(function (x) { return openLoans(x).length; }).length, ov = all.reduce(function (s, x) { return s + (x.loans || []).filter(overdueLoan).length; }, 0); return '<div class="m-chips"><button type="button" class="m-chip' + (M.S.filter.low ? ' on' : '') + '" data-ma="lowf">⚠️ Nachkaufen (' + n + ')</button><button type="button" class="m-chip' + (M.S.filter.out ? ' on' : '') + '" data-ma="outf">Verliehen (' + out + ')</button>' + (ov ? '<span class="m-over" style="align-self:center">⏰ ' + ov + ' überfällig</span>' : '') + '</div>'; },
@@ -602,6 +634,7 @@ templateEngineOverride: false
         } }
     ]
   });
+  (function () { var md = M.mod('material'); if (md && md.tabs.length > 1 && md.tabs[0].id === 'abzb') md.tabs.push(md.tabs.shift()); })();
   // Eingabevorschlaege fuer Gruppen
   if (!document.getElementById('mGruppen')) { var dl = document.createElement('datalist'); dl.id = 'mGruppen'; dl.innerHTML = ['Wettkampfgruppe', 'Frösche', 'Seepferdchen', 'Anfänger', 'Fortgeschrittene', 'Erwachsene'].map(function (g) { return '<option value="' + g + '">'; }).join(''); document.body.appendChild(dl); }
 })();

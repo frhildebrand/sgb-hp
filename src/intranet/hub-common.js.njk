@@ -123,6 +123,9 @@ window.HubShell = (function () {
     var by = {};
     systems.forEach(function (s) { var g = catName(s.group); (by[g] = by[g] || []).push(s); });
     var names = CATS.map(function (c) { return c.name; }).filter(function (g) { return by[g]; }).concat(Object.keys(by).filter(function (g) { return !CATS.some(function (c) { return c.name === g; }); }));
+    var ORD = ['mitglieder', 'training', 'trainer', 'anwesenheit', 'jugend', 'auswertung', 'vorstand', 'material', 'dokumente'];
+    function rk(x) { var m = /\/intranet\/([\w-]+)\/?$/.exec(x.url || ''); var i = m ? ORD.indexOf(m[1]) : -1; return i < 0 ? 99 : i; }
+    if (by['Verein']) by['Verein'] = by['Verein'].map(function (x, i) { return [x, i]; }).sort(function (a, b) { return rk(a[0]) - rk(b[0]) || a[1] - b[1]; }).map(function (x) { return x[0]; });
     return names.map(function (g) { return { name: g, items: by[g], info: catInfo(g) }; });
   }
   function hereOf(path) { return String(path || '').replace(/\/?$/, '/'); }
@@ -144,6 +147,17 @@ window.HubShell = (function () {
     }
     return out + '</div>';
   }
+  // Eintrag im Menü; „Wettkampfgruppe“ heißt dort „Gruppen“ und hat die sechs Gruppen als Unterpunkte.
+  var GRUPPEN = ['Wettkampfgruppe', 'Gruppe 1', 'Gruppe 2', 'Gruppe 3', 'Gruppe 4', 'Masters'];
+  function itemHtml(s, color, here) {
+    var u = hereOf(s.url); var out = link(esc(s.url), esc(s.icon || '•'), /\/training\/$/.test(u) ? 'Gruppen' : s.name, here === u && !/\/training\/$/.test(u), color);
+    if (/\/training\/$/.test(u)) {
+      out = link(esc(s.url), esc(s.icon || '•'), 'Gruppen', false, color) + '<div class="hub-msub">' + GRUPPEN.map(function (g, i) {
+        var href = i === 0 ? s.url : HUB_URL + 'mitglieder/#g=' + encodeURIComponent(g); if (i && !has('mitglieder.view')) return '';
+        return '<a class="hub-mi hub-mi2' + (i === 0 && here === u ? ' hub-on' : '') + '" href="' + esc(href) + '" style="--mc:' + esc(color) + '"><span class="hub-mlb">' + esc(g) + '</span></a>'; }).join('') + '</div>';
+    }
+    return out;
+  }
   function menuHtml() {
     if (!S.menu) return '';
     var here = hereOf(location.pathname); var ov = menuOv();
@@ -154,10 +168,15 @@ window.HubShell = (function () {
       var cur = g.items.some(function (s) { return here === hereOf(s.url); });
       var open = ov[g.name] !== undefined ? !!ov[g.name] : cur;
       nav += '<div class="hub-mgrp' + (open ? ' hub-gopen' : '') + '" style="--mc:' + esc(g.info.color) + '"><button type="button" class="hub-mlabel hub-mcat" data-sh="cat" data-v="' + esc(g.name) + '" aria-expanded="' + (open ? 'true' : 'false') + '"><span class="hub-mcic">' + g.info.icon + '</span><span class="hub-mlb">' + esc(g.name) + '</span><span class="hub-mcn">' + g.items.length + '</span><span class="hub-car">' + (open ? '▴' : '▾') + '</span></button>' +
-        (open ? '<div class="hub-mitems">' + g.items.map(function (s) { return link(esc(s.url), esc(s.icon || '•'), s.name, here === hereOf(s.url), g.info.color); }).join('') + '</div>' : '') + '</div>';
+        (open ? '<div class="hub-mitems">' + g.items.map(function (s) { return itemHtml(s, g.info.color, here); }).join('') + '</div>' : '') + '</div>';
     });
+    if (canAdmin() && !(S.menuExtra && S.menuExtra.length)) {
+      var vo = ov['Verwaltung'] !== undefined ? !!ov['Verwaltung'] : here === HUB_URL + 'verwaltung/';
+      var VT = [['benutzer', '👤', 'Benutzer'], ['zugang', '🛡️', 'Zugangsverwaltung'], ['status', '🩺', 'Systemstatus'], ['protokoll', '📝', 'Änderungsprotokoll'], ['backups', '💾', 'Backups']];
+      nav += '<div class="hub-mgrp' + (vo ? ' hub-gopen' : '') + '" style="--mc:#64748b"><button type="button" class="hub-mlabel hub-mcat" data-sh="cat" data-v="Verwaltung" aria-expanded="' + (vo ? 'true' : 'false') + '"><span class="hub-mcic">🛡️</span><span class="hub-mlb">Verwaltung</span><span class="hub-mcn">' + VT.length + '</span><span class="hub-car">' + (vo ? '▴' : '▾') + '</span></button>' +
+        (vo ? '<div class="hub-mitems">' + VT.map(function (t) { return link(HUB_URL + 'verwaltung/#' + t[0], t[1], t[2], false, '#64748b'); }).join('') + '</div>' : '') + '</div>';
+    }
     var foot = btn('help', '❓', 'Hilfe');
-    if (canAdmin()) foot += link(HUB_URL + 'verwaltung/', '🛡️', 'Verwaltung', here === HUB_URL + 'verwaltung/', '#64748b');
     return '<div class="hub-drawer-bg" data-sh="menuclose"><aside class="hub-drawer" aria-label="Menü"><div class="hub-dtop"><span class="hub-dtitle">Menü</span><button type="button" class="hub-x" data-sh="menuclose" aria-label="Menü schließen">✕</button></div>' + profCard() + '<nav class="hub-dnav">' + nav + '</nav>' + (foot ? '<div class="hub-dfoot">' + foot + '</div>' : '') + '</aside></div>';
   }
   function header(title) {
@@ -167,6 +186,19 @@ window.HubShell = (function () {
   // ---------- Hilfe: zeigt nur Bereiche und Funktionen, die für das Konto freigegeben sind ----------
   // Je Bereich: Systemname (wie im Menü), Text und Hinweise. Ein Hinweis erscheint nur, wenn mindestens eines seiner Rechte da ist (null = immer).
   var HELP = [
+    { id: 'mitglieder', icon: '👥', title: 'Mitglieder', text: 'Alle Vereinsmitglieder mit ihren Gruppen. Unter „Gruppen“ siehst du, wer in welcher Gruppe ist.', steps: [
+      [['mitglieder.anlegen'], 'Mit „+“ legst du ein Mitglied an und wählst die Gruppen.'],
+      [['mitglieder.edit'], 'Mit dem Stift änderst du Angaben, Rolle und Gruppen eines Mitglieds.'],
+      [['mitglieder.import'], 'Im Reiter „WebClub-Import“ liest du die Gruppenliste (PDF) einer Gruppe ein. Du siehst vorher, wer neu ist, wer sich geändert hat und wer nicht mehr in der Liste steht.']] },
+    { id: 'trainer', icon: '🎓', title: 'Trainer', text: 'Lizenzen, Erste Hilfe, Rettungsnachweis und Kampfrichter der Trainer. Die Ampel zeigt, was bald abläuft.', steps: [
+      [['trainer.edit', 'trainer.eigene'], 'Mit dem Stift trägst du Gültigkeitsdaten ein.']] },
+    { id: 'anwesenheit', icon: '📋', title: 'Anwesenheit', text: 'Anwesenheitslisten aus WebClub je Gruppe. Die Übersicht zeigt pro Monat, wer da war, und welche Gruppe schon eine Liste hat.', steps: [
+      [['anwesenheit.upload'], 'Im Reiter „Hochladen“ wählst du die Gruppe und die PDF-Datei. Die Liste wird gelesen, die PDF zusätzlich im Drive abgelegt.']] },
+    { id: 'auswertung', icon: '📈', title: 'Jahresauswertung', text: 'Rangliste, Einzelblätter und Ehrungen aus der Punkteliste (World Aquatics). Gewertet wird je Strecke die punktbeste Leistung aus Lang- und Kurzbahn.', steps: [
+      [['auswertung.upload'], 'Im Reiter „Hochladen“ liest du die Punkteliste je Saison ein, getrennt für Langbahn und Kurzbahn.'],
+      [['auswertung.print'], 'Mit „Drucken“ entsteht die Auswertung oder das Einzelblatt als PDF.']] },
+    { id: 'dokumente', icon: '📁', title: 'Dokumente', text: 'Vereinsunterlagen an einem Ort, als Link oder als Datei im Drive.', steps: [
+      [['dokumente.edit'], 'Mit „+“ trägst du einen Link ein, mit „Datei hochladen“ legst du eine Datei im Drive ab.']] },
     { id: 'aufgaben', icon: '✅', title: 'Aufgaben', text: 'Wer macht was bis wann. Du siehst deine eigenen und die gemeinsamen Aufgaben mit Frist und Status.', steps: [
       [['aufgaben.anlegen'], 'Mit „+“ legst du eine neue Aufgabe an: Titel, Frist, wer sie übernimmt.'],
       [['aufgaben.edit', 'aufgaben.own'], 'Aufgaben hakst du ab, wenn sie erledigt sind. Mit dem Stift änderst du Text, Frist und Zuständige.'],
