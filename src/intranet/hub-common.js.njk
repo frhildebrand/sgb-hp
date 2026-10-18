@@ -153,9 +153,11 @@ window.HubShell = (function () {
   function itemHtml(s, color, here) {
     var u = hereOf(s.url); var out = link(esc(s.url), esc(s.icon || '•'), /\/training\/$/.test(u) ? 'Gruppen' : s.name, here === u && !/\/training\/$/.test(u), color);
     if (/\/training\/$/.test(u)) {
-      out = link(esc(s.url), esc(s.icon || '•'), 'Gruppen', false, color) + '<div class="hub-msub">' + GRUPPEN.map(function (g, i) {
+      var ov = menuOv(); var oo = ov['Gruppen'] !== undefined ? !!ov['Gruppen'] : (here === u || (/\/mitglieder\/$/.test(here) && /^#g=/.test(location.hash)));
+      var allUrl = has('mitglieder.view') ? HUB_URL + 'mitglieder/#gruppen' : s.url;
+      out = '<div class="hub-mrow"><a class="hub-mi hub-mgo" href="' + esc(allUrl) + '" style="--mc:' + esc(color) + '"><span class="hub-mic">' + esc(s.icon || '•') + '</span><span class="hub-mlb">Gruppen</span></a><button type="button" class="hub-mcar" data-sh="cat" data-v="Gruppen" aria-expanded="' + (oo ? 'true' : 'false') + '" aria-label="Gruppen auf- oder zuklappen">' + (oo ? '▴' : '▾') + '</button></div>' + (oo ? '<div class="hub-msub">' + GRUPPEN.map(function (g, i) {
         var href = i === 0 ? s.url : HUB_URL + 'mitglieder/#g=' + encodeURIComponent(g); if (i && !has('mitglieder.view')) return '';
-        return '<a class="hub-mi hub-mi2' + (i === 0 && here === u ? ' hub-on' : '') + '" href="' + esc(href) + '" style="--mc:' + esc(color) + '"><span class="hub-mlb">' + esc(g) + '</span></a>'; }).join('') + '</div>';
+        return '<a class="hub-mi hub-mi2' + (i === 0 && here === u ? ' hub-on' : '') + '" href="' + esc(href) + '" style="--mc:' + esc(color) + '"><span class="hub-mlb">' + esc(g) + '</span></a>'; }).join('') + '</div>' : '');
     }
     return out;
   }
@@ -166,6 +168,7 @@ window.HubShell = (function () {
     var here = hereOf(location.pathname); var ov = menuOv();
     var nav = '';
     nav += link(HUB_URL, '🏠', 'Startseite', here === HUB_URL, '#d6a23a');
+    if (S.me) nav += link(HUB_URL + '#brett', '📌', 'Schwarzes Brett', false, '#e11d48');
     groupsOf(S.systems).forEach(function (g) {
       var cur = g.items.some(function (s) { return here === hereOf(s.url); });
       var open = ov[g.name] !== undefined ? !!ov[g.name] : (cur || isWide());
@@ -275,7 +278,7 @@ window.HubShell = (function () {
     }).join('');
     var extra = '';
     if (m && m.user) extra += '<section class="hub-help-card"><div class="hub-help-top"><h4>👤 Mein Profil</h4><a class="hub-btn hub-ghost" href="' + HUB_URL + 'profil/">Öffnen</a></div><p>Hier stehen deine Daten: Kontakt, Bankverbindung (IBAN, BIC), Lizenzen und Nachweise mit Ablaufdaten und deine Unterschrift. Daten lassen sich aus einer WebClub-Datei übernehmen. Die Abrechnung nutzt sie für Stundensatz, Excel-Formulare und Überweisung.</p></section>';
-    if (canAdmin()) extra += '<section class="hub-help-card"><div class="hub-help-top"><h4>🛡️ Verwaltung</h4><a class="hub-btn hub-ghost" href="' + HUB_URL + 'verwaltung/">Öffnen</a></div><p>Benutzer, Rollen und Rechte. Mit den Rechten steuerst du, welche Bereiche und Funktionen jede Person sieht. Rollen sind alphabetisch sortiert.</p><ul>' +
+    if (canAdmin()) extra += '<section class="hub-help-card"><div class="hub-help-top"><h4>🛡️ Verwaltung</h4><a class="hub-btn hub-ghost" href="' + HUB_URL + 'verwaltung/">Öffnen</a></div><p>Benutzer, Rollen und Rechte. Mit den Rechten steuerst du, welche Bereiche und Funktionen jede Person sieht. Die Reihenfolge der Rollen legst du mit ▲▼ fest; sie bestimmt auch die Benutzerliste.</p><ul>' +
       (has('system.users') ? '<li>Benutzer anlegen, Startpasswort setzen, Rollen und Sonderrechte zuweisen.</li>' : '') +
       (has('system.roles') || has('system.rechte') ? '<li>Rollen anlegen und Rechte je Bereich einzeln freischalten.</li>' : '') +
       (has('system.passwords') ? '<li>Passwörter von Benutzern zurücksetzen.</li>' : '') +

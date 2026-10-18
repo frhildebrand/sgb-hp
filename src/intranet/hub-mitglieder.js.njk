@@ -14,6 +14,8 @@ templateEngineOverride: false
   function lower(s) { return String(s || '').toLowerCase().trim(); }
   function members() { return M.items('wgMitglieder').sort(function (a, b) { return String(a.name || '').localeCompare(String(b.name || ''), 'de'); }); }
   // Ältere Einträge ohne Gruppenfeld gehören zur Wettkampfgruppe
+  function rOf(m) { return Array.isArray(m.rollen) && m.rollen.length ? m.rollen : [m.rolle || 'Schwimmer']; }
+  function hasR(m, r) { return rOf(m).indexOf(r) >= 0; }
   function gOf(m) { return Array.isArray(m.gruppen) ? m.gruppen : ['Wettkampfgruppe']; }
   function isActive(m) { return m.status !== 'ausgetreten' && m.status !== 'pausiert' && (!m.austritt || m.austritt >= M.today()); }
   function age(m) { return m.jg ? new Date().getFullYear() - Number(m.jg) : ''; }
@@ -32,7 +34,8 @@ templateEngineOverride: false
     { k: 'jg', t: 'num', label: 'Jahrgang' },
     { k: 'sex', t: 'sel', label: 'Geschlecht', opts: [['', '–'], ['w', 'weiblich'], ['m', 'männlich'], ['d', 'divers']] },
     { k: 'gruppen', t: 'pick', label: 'Gruppen', opts: GR, hint: 'Mehrere sind möglich.' },
-    { k: 'rolle', t: 'sel', label: 'Rolle', opts: ROLLEN },
+    { k: 'rollen', t: 'pick', label: 'Rollen', opts: ROLLEN, hint: 'Mehrere sind möglich, z. B. Schwimmer und Kampfrichter.' },
+    { k: 'trainerIn', t: 'pick', label: 'Trainer in Gruppen', opts: GR, hint: 'Wo diese Person Trainer ist. Sie erscheint dann auch im Bereich Trainer.' },
     { k: 'status', t: 'sel', label: 'Status', opts: [['', 'aktiv'], ['pausiert', 'pausiert'], ['ausgetreten', 'ausgetreten']] },
     { k: 'eintritt', t: 'date', label: 'Eintritt' },
     { k: 'austritt', t: 'date', label: 'Austritt' },
@@ -45,22 +48,28 @@ templateEngineOverride: false
   }
   var listTab = {
     id: 'alle', label: 'Alle Mitglieder', coll: 'wgMitglieder', view: ['mitglieder.view'], edit: ['mitglieder.edit'], add: ['mitglieder.edit', 'mitglieder.anlegen'], del: ['mitglieder.edit', 'mitglieder.loeschen'], addLabel: 'Neues Mitglied', search: ['name', 'kontakt', 'dsv'], fields: FIELDS,
-    newItem: function () { var f = flt(); return { gruppen: f.g ? [f.g] : [], rolle: 'Schwimmer' }; },
-    beforeSave: function (it) { it.title = it.name; },
-    filter: function (m, f) { f = f || {}; if (f.g && gOf(m).indexOf(f.g) < 0) return false; if (f.r && (m.rolle || 'Schwimmer') !== f.r) return false; if (!f.alle && !isActive(m)) return false; return true; },
+    newItem: function () { var f = flt(); return { gruppen: f.g ? [f.g] : [], rollen: ['Schwimmer'] }; },
+    prep: function (m) { var t = match(m.name, trainers().map(function (x) { return { name: x.name, g: x.gruppen }; })); if (!Array.isArray(m.trainerIn)) { var tr = trainers().filter(function (x) { return lower(x.name) === lower(m.name) || lower(x.name) === lower(swapName(m.name)); })[0]; m.trainerIn = tr ? (tr.gruppen || []).slice() : []; } return m; },
+    beforeSave: function (it) {
+      it.title = it.name; var tin = Array.isArray(it.trainerIn) ? it.trainerIn : [];
+      var tr = trainers().filter(function (x) { return lower(x.name) === lower(it.name) || lower(x.name) === lower(swapName(it.name)); })[0];
+      if (tr) { if (JSON.stringify(tr.gruppen || []) !== JSON.stringify(tin)) M.op({ op: 'patch', coll: 'trainer', id: tr.id, fields: { gruppen: tin } }); }
+      else if (tin.length) M.op({ op: 'set', coll: 'trainer', item: { id: 't-' + slug(it.name), name: it.name, title: it.name, owner: it.name, gruppen: tin } });
+    },
+    filter: function (m, f) { f = f || {}; if (f.g && gOf(m).indexOf(f.g) < 0) return false; if (f.r && !hasR(m, f.r)) return false; if (!f.alle && !isActive(m)) return false; return true; },
     summary: function (all) {
       var f = flt(); var act = all.filter(isActive);
-      return '<div class="m-stats">' + M.stat(act.length, 'Aktive Mitglieder', '') + M.stat(all.length - act.length, 'Pausiert / ausgetreten', '') + M.stat(act.filter(function (m) { return (m.rolle || 'Schwimmer') === 'Kampfrichter'; }).length, 'Kampfrichter', '') + M.stat(act.filter(function (m) { return !gOf(m).length; }).length, 'Ohne Gruppe', act.filter(function (m) { return !gOf(m).length; }).length ? 'warn' : '') + '</div>' +
+      return '<div class="m-stats">' + M.stat(act.length, 'Aktive Mitglieder', '') + M.stat(all.length - act.length, 'Pausiert / ausgetreten', '') + M.stat(act.filter(function (m) { return hasR(m, 'Kampfrichter'); }).length, 'Kampfrichter', '') + M.stat(act.filter(function (m) { return !gOf(m).length; }).length, 'Ohne Gruppe', act.filter(function (m) { return !gOf(m).length; }).length ? 'warn' : '') + '</div>' +
         chipRow('Gruppe', 'g', GR, f.g || '') + chipRow('Rolle', 'r', ROLLEN, f.r || '') + '<div class="m-chips" style="margin:2px 0 8px"><button type="button" class="m-chip' + (f.alle ? ' on' : '') + '" data-ma="mgall">Auch pausierte und ausgetretene zeigen</button></div>';
     },
     card: function (m) {
-      return { title: m.name, badges: (m.status ? M.badge(m.status, 'amber') : '') + (m.rolle && m.rolle !== 'Schwimmer' ? ' ' + M.badge(m.rolle, 'blue') : ''),
-        sub: [m.jg ? 'Jg. ' + m.jg + ' (' + age(m) + ')' : '', gOf(m).join(', ') || 'keine Gruppe'].filter(Boolean).join(' · '),
+      return { title: m.name, badges: (m.status ? M.badge(m.status, 'amber') : '') + rOf(m).filter(function (r) { return r !== 'Schwimmer'; }).map(function (r) { return ' ' + M.badge(r, 'blue'); }).join(''),
+        sub: [m.jg ? 'Jg. ' + m.jg + ' (' + age(m) + ')' : '', gOf(m).join(', ') || 'keine Gruppe', (function () { var tr = trainers().filter(function (x) { return lower(x.name) === lower(m.name); })[0]; return tr && (tr.gruppen || []).length ? 'Trainer: ' + tr.gruppen.join(', ') : ''; })()].filter(Boolean).join(' · '),
         body: [m.kontakt ? '<div><b>Kontakt:</b> ' + esc(m.kontakt) + '</div>' : '', m.dsv && m.dsv !== '0' ? '<div><b>DSV-ID:</b> ' + esc(m.dsv) + '</div>' : '', m.eintritt ? '<div><b>Eintritt:</b> ' + M.fmtDate(m.eintritt) + '</div>' : '', m.notiz ? '<div><pre>' + esc(m.notiz) + '</pre></div>' : ''].join('') };
     },
     printAll: function (all) {
       var f = flt(); var l = all.filter(function (m) { return listTab.filter(m, f); });
-      return { title: 'Mitglieder' + (f.g ? ' ' + f.g : ''), body: '<h1>Mitglieder' + (f.g ? ': ' + esc(f.g) : '') + '</h1><div class="sub">Stand ' + M.fmtDate(M.today()) + ' · ' + l.length + ' Personen</div><table><tr><th>Name</th><th>Jg.</th><th>Gruppen</th><th>Rolle</th></tr>' + l.map(function (m) { return '<tr><td>' + esc(m.name) + '</td><td>' + esc(m.jg || '') + '</td><td>' + esc(gOf(m).join(', ')) + '</td><td>' + esc(m.rolle || 'Schwimmer') + '</td></tr>'; }).join('') + '</table>' };
+      return { title: 'Mitglieder' + (f.g ? ' ' + f.g : ''), body: '<h1>Mitglieder' + (f.g ? ': ' + esc(f.g) : '') + '</h1><div class="sub">Stand ' + M.fmtDate(M.today()) + ' · ' + l.length + ' Personen</div><table><tr><th>Name</th><th>Jg.</th><th>Gruppen</th><th>Rolle</th></tr>' + l.map(function (m) { return '<tr><td>' + esc(m.name) + '</td><td>' + esc(m.jg || '') + '</td><td>' + esc(gOf(m).join(', ')) + '</td><td>' + esc(rOf(m).join(', ')) + '</td></tr>'; }).join('') + '</table>' };
     }
   };
 
@@ -70,7 +79,7 @@ templateEngineOverride: false
     var out = '<section class="wm-card"><div class="wm-bar"><h3>Gruppen</h3></div><p class="wm-note">Tippe auf eine Gruppe, um ihre Mitglieder zu sehen. Gruppen kommen aus dem WebClub-Import (Gruppenliste).</p></section><div class="m-stats" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">';
     GR.forEach(function (g) {
       var inG = ms.filter(function (m) { return gOf(m).indexOf(g) >= 0; });
-      var sw = inG.filter(function (m) { return (m.rolle || 'Schwimmer') === 'Schwimmer'; }).length; var kr = inG.filter(function (m) { return m.rolle === 'Kampfrichter'; }).length; var fu = inG.filter(function (m) { return m.rolle === 'Funktionär'; }).length;
+      var sw = inG.filter(function (m) { return hasR(m, 'Schwimmer'); }).length; var kr = inG.filter(function (m) { return hasR(m, 'Kampfrichter'); }).length; var fu = inG.filter(function (m) { return hasR(m, 'Funktionär'); }).length;
       var tn = tr.filter(function (t) { return (t.gruppen || []).indexOf(g) >= 0; }).length;
       out += '<button type="button" class="m-stat" data-ma="mggo" data-v="' + esc(g) + '"><b>' + sw + '</b><span>' + esc(g) + '</span><small class="wm-sub">Schwimmer · ' + tn + ' Trainer · ' + kr + ' Kampfrichter · ' + fu + ' Funktionäre</small></button>';
     });
@@ -134,7 +143,7 @@ templateEngineOverride: false
   }
   function impSave() {
     if (!IMP) return; var ops = []; var g = IMP.g;
-    IMP.neu.forEach(function (r) { ops.push({ op: 'set', coll: 'wgMitglieder', item: { id: M.uid(), name: swapName(r.x.name), title: swapName(r.x.name), jg: Number(r.x.jg), dsv: r.dsv, gruppen: [g], rolle: 'Schwimmer' } }); });
+    IMP.neu.forEach(function (r) { ops.push({ op: 'set', coll: 'wgMitglieder', item: { id: M.uid(), name: swapName(r.x.name), title: swapName(r.x.name), jg: Number(r.x.jg), dsv: r.dsv, gruppen: [g], rollen: ['Schwimmer'] } }); });
     IMP.chg.forEach(function (r) {
       var f = {}; if (r.x.jg && String(r.m.jg || '') !== r.x.jg) f.jg = Number(r.x.jg); if (r.dsv && r.m.dsv !== r.dsv) f.dsv = r.dsv;
       if (gOf(r.m).indexOf(g) < 0) f.gruppen = gOf(r.m).concat([g]);

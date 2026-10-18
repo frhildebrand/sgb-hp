@@ -23,7 +23,7 @@ templateEngineOverride: false
   var CAN_ENTER = ['system.users', 'system.roles', 'system.rechte', 'system.passwords'];
 
   function nameCmp(a, b) { return String(a || '').localeCompare(String(b || ''), 'de', { sensitivity: 'base' }); }
-  function sortRoles(r) { return (r || []).slice().sort(function (a, b) { return nameCmp(a.name, b.name); }); }
+  function sortRoles(r) { return (r || []).slice().sort(function (a, b) { return (typeof a.rank === 'number' ? a.rank : 999) - (typeof b.rank === 'number' ? b.rank : 999); }); }
   function roleName(id) { var r = S.roles.filter(function (x) { return x.id === id; })[0]; return r ? r.name : id; }
   function allPermKeys() { return S.catalog ? S.catalog.groups.reduce(function (a, g) { return a.concat(g.perms.map(function (q) { return q.key; })); }, []) : []; }
 
@@ -259,11 +259,15 @@ templateEngineOverride: false
   }
   function when(t) { if (!t) return 'noch nie angemeldet'; var m = Math.round((Date.now() - Number(t)) / 60000); return m < 2 ? 'zuletzt angemeldet gerade eben' : m < 120 ? 'zuletzt angemeldet vor ' + m + ' Min.' : m < 2880 ? 'zuletzt angemeldet vor ' + Math.round(m / 60) + ' Std.' : 'zuletzt angemeldet vor ' + Math.round(m / 1440) + ' Tagen'; }
   function roleIcon(id) { return { admin: '👑', orga: '🧭', helfer: '🙋', gast: '👁️' }[id] || '🛡️'; }
+  // Rang einer Rolle = Zahl ihrer Rechte (Administrator immer oben); ein Benutzer steht nach seiner höchsten Rolle
+  function roleRank(id) { var i = -1; S.roles.forEach(function (x, k) { if (x.id === id) i = k; }); return i < 0 ? -1 : 1000 - i; }
+  function userRank(u) { return (u.roles || []).reduce(function (m, id) { return Math.max(m, roleRank(id)); }, -1); }
   function usersHtml() {
     if (!S.users.length) return '<p class="wm-note">Noch keine Benutzer.</p>';
-    return S.users.map(function (u) {
+    var list = S.users.slice().sort(function (a, b) { return userRank(b) - userRank(a) || (b.roles || []).length - (a.roles || []).length || nameCmp(a.name, b.name); });
+    return list.map(function (u) {
       var ex = (u.extras || []).map(function (id) { var x = S.extras.filter(function (e) { return e.id === id; })[0]; return x ? x.name : null; }).filter(Boolean);
-      return '<div class="wm-row' + (u.disabled ? ' off' : '') + '"><span class="wm-ic">' + (u.disabled ? '🚫' : '👤') + '</span><div class="wm-main"><div class="wm-name">' + esc(u.name) + (u.disabled ? ' <span class="wm-lock">gesperrt</span>' : '') + '</div><div class="wm-sub">' + esc((u.roles || []).map(roleName).sort(nameCmp).join(' + ') || 'keine Rolle') + (ex.length ? ' · ✨ ' + esc(ex.join(', ')) : '') + ' · ' + esc(when(u.last)) + '</div></div>' +
+      return '<div class="wm-row' + (u.disabled ? ' off' : '') + '"><span class="wm-ic">' + (u.disabled ? '🚫' : '👤') + '</span><div class="wm-main"><div class="wm-name">' + esc(u.name) + (u.disabled ? ' <span class="wm-lock">gesperrt</span>' : '') + '</div><div class="wm-sub">' + esc((u.roles || []).slice().sort(function (a, b) { return roleRank(b) - roleRank(a); }).map(roleName).join(' + ') || 'keine Rolle') + (ex.length ? ' · ✨ ' + esc(ex.join(', ')) : '') + ' · ' + esc(when(u.last)) + '</div></div>' +
         (has('system.users') ? '<button type="button" class="wm-btn" data-ed="user" data-id="' + esc(u.id) + '">✏️ Bearbeiten</button>' : '') + '</div>';
     }).join('');
   }
@@ -271,7 +275,7 @@ templateEngineOverride: false
     var total = allPermKeys().length;
     return S.roles.map(function (r, i, all) {
       var n = (r.perms || []).filter(function (k) { return allPermKeys().indexOf(k) >= 0; }).length;
-      var mv = '';
+      var mv = has('system.roles') ? '<span class="wm-mv"><button type="button" class="wm-btn" data-mv="-1" data-id="' + esc(r.id) + '" title="Weiter nach oben"' + (i === 0 ? ' disabled' : '') + '>▲</button><button type="button" class="wm-btn" data-mv="1" data-id="' + esc(r.id) + '" title="Weiter nach unten"' + (i === all.length - 1 ? ' disabled' : '') + '>▼</button></span>' : '';
       return '<div class="wm-row"><span class="wm-ic">' + roleIcon(r.id) + '</span><div class="wm-main"><div class="wm-name">' + esc(r.name) + (r.builtin ? ' <span class="wm-fest">(fest)</span>' : '') + '</div><div class="wm-sub">' + esc(r.desc || 'ohne Beschreibung') + (r.last ? ' · ' + esc(when(r.last)) : '') + '</div></div>' +
         '<span class="wm-meta">Rechte ' + n + ' von ' + total + '</span>' + mv +
         (has('system.roles') && has('system.rechte') ? '<button type="button" class="wm-btn" data-ed="copy" data-id="' + esc(r.id) + '" title="Als Vorlage für eine neue Rolle kopieren">⧉ Kopieren</button>' : '') +
@@ -356,7 +360,7 @@ templateEngineOverride: false
     } else if (S.tab === 'backups') { inner = backupsHtml(); if (!BK.list && !BK.loading && !BK.error) setTimeout(loadBackups, 0);
     } else if (S.tab === 'protokoll') { inner = logHtml(); if (!L.done && !L.loading && !L.error) setTimeout(function () { loadLog(true); }, 0);
     } else {
-      inner = '<div class="wm-card"><div class="wm-bar"><h3>🛡️ Rollen</h3>' + (has('system.roles') ? '<button type="button" class="wm-amber" data-ed="newrole">➕ Neue Rolle</button>' : '') + '</div><p class="wm-note">Pro Rolle lassen sich Name, Beschreibung, Passwort und alle einzelnen Rechte einstellen. Die Rechte gelten sofort auf allen Geräten.</p>' + rolesHtml() + '</div>' +
+      inner = '<div class="wm-card"><div class="wm-bar"><h3>🛡️ Rollen</h3>' + (has('system.roles') ? '<button type="button" class="wm-amber" data-ed="newrole">➕ Neue Rolle</button>' : '') + '</div><p class="wm-note">Die Reihenfolge (▲▼) bestimmt auch die Benutzerliste: oben steht die höchste Rolle. Pro Rolle lassen sich Name, Beschreibung, Passwort und alle einzelnen Rechte einstellen. Die Rechte gelten sofort auf allen Geräten.</p>' + rolesHtml() + '</div>' +
         '<div class="wm-card"><div class="wm-bar"><h3>✨ Sonderrechte</h3>' + (has('system.rechte') ? '<button type="button" class="wm-amber" data-ed="newextra">➕ Neues Sonderrecht</button>' : '') + '</div><p class="wm-note">Ein Sonderrecht ist ein eigenes Rechte-Paket, das man einzelnen Benutzern zusätzlich zu ihren Rollen gibt, zum Beispiel „Statistik bearbeiten“ für einen Helfer. Es gilt nur bei persönlicher Anmeldung mit Benutzername, nicht bei der Anmeldung mit dem Passwort der Rolle.</p>' + extrasHtml() + '</div>' +
         '<details class="wm-card wm-det"><summary>📊 Rechte-Übersicht (wer darf was)</summary><p class="wm-note">Nur zum Ansehen. Geändert wird bei den einzelnen Rollen und Sonderrechten.</p><div class="wm-scroll">' + matrixHtml() + '</div></details>';
     }

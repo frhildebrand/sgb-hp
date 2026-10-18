@@ -84,13 +84,13 @@ templateEngineOverride: false
   function brettHtml() {
     var can = SH.has('startseite.brett'); var l = (state.brett || []).slice().sort(function (a, b) { return String(b.date || '') < String(a.date || '') ? -1 : String(b.date || '') > String(a.date || '') ? 1 : 0; });
     var form = state.bform ? '<form class="hub-bf" data-bf="1"><input name="title" placeholder="Überschrift" required maxlength="80"><textarea name="text" rows="3" placeholder="Text (optional)" maxlength="400"></textarea><label class="hub-bfc"><input type="checkbox" name="wichtig"> Als „Wichtig“-Hinweis oben anzeigen</label><div class="hub-bfb"><button type="button" class="hub-btn hub-ghost" data-act="bcancel">Abbrechen</button><button type="submit" class="hub-btn hub-gold">Eintragen</button></div></form>' : '';
-    return '<section class="hub-card2"><div class="hub-c2h"><h3>📌 Schwarzes Brett</h3>' + (can ? '<button type="button" class="hub-btn hub-ghost" data-act="bnew" style="padding:4px 10px;font-size:12px">+ Eintrag</button>' : '<span class="hub-sub">gepflegt von Vorstand &amp; Orga</span>') + '</div>' + form +
+    return '<section class="hub-card2" id="brett"><div class="hub-c2h"><h3>📌 Schwarzes Brett</h3>' + (can ? '<button type="button" class="hub-btn hub-ghost" data-act="bnew" style="padding:4px 10px;font-size:12px">+ Eintrag</button>' : '<span class="hub-sub">gepflegt von Vorstand &amp; Orga</span>') + '</div>' + form +
       (l.length ? l.slice(0, 6).map(function (b) { return '<div class="hub-bi"><span class="hub-bic">' + (b.wichtig ? '📣' : '📌') + '</span><div class="hub-bit"><b>' + esc(b.title) + '</b>' + (b.text ? '<p>' + esc(b.text) + '</p>' : '') + '<i>' + esc(b.by || '') + (b.date ? ' · ' + esc(fmtDMY(b.date).slice(0, 5)) : '') + '</i></div>' + (can ? '<button type="button" class="hub-bx" data-act="bdel" data-id="' + esc(b.id) + '" aria-label="Eintrag löschen">✕</button>' : '') + '</div>'; }).join('') : '<p class="hub-sub" style="margin:6px 0 0">Zurzeit gibt es keine Mitteilungen.</p>') + '</section>';
   }
   function termineHtml() {
     var n = state.next && state.next.token === SH.token() ? state.next : null; var items = [];
     if (n) {
-      (n.wk || []).forEach(function (w) { items.push({ date: w.ms || w.date, t: w.ms ? 'Meldeschluss ' + w.title : w.title, s: w.ms ? 'Wettkampf ' + fmtDMY(w.date).slice(0, 5) : (w.ort || ''), href: '/intranet/wettkaempfe/' }); if (w.ms) items.push({ date: w.date, t: w.title, s: w.ort || '', href: '/intranet/wettkaempfe/' }); });
+      (n.wk || []).forEach(function (w) { var sub = 'Wettkampf ' + fmtDMY(w.date).slice(0, 5); if (w.ims) items.push({ date: w.ims, t: 'Interner Meldeschluss ' + w.title, s: sub, href: '/intranet/wettkaempfe/' }); if (w.ms) items.push({ date: w.ms, t: 'Meldeschluss ' + w.title, s: sub + ' · laut Ausschreibung', href: '/intranet/wettkaempfe/' }); items.push({ date: w.date, t: w.title, s: w.ort || '', href: '/intranet/wettkaempfe/' }); });
       (n.ev || []).forEach(function (e) { items.push({ date: e.date, t: e.title, s: e.prog || '', href: '/intranet/veranstaltungen/' }); });
     }
     var wm = state.wm; if (wm && wm.at) { var wiso = String(wm.at).slice(0, 10); if (daysTo(wiso) !== null && daysTo(wiso) >= 0) items.push({ date: wiso, t: wm.label || 'Weihnachtsmarkt', s: '', href: '/intranet/weihnachtsmarkt/' }); }
@@ -154,7 +154,7 @@ templateEngineOverride: false
       var comps = d.wettkaempfe || [];
       var pastIds = {}; comps.forEach(function (w) { if ((w.date || '9999') < t) pastIds[w.id] = 1; });
       var up = comps.filter(function (w) { return (w.date || '') >= t; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
-      var wk = up.slice(0, 3).map(function (w) { return { date: w.date, title: w.title, ort: w.ort, prog: wkProgress(w), ms: (w.intMs && w.intMs >= t) ? w.intMs : (w.meldeschluss && w.meldeschluss >= t ? w.meldeschluss : '') }; });
+      var wk = up.slice(0, 3).map(function (w) { return { date: w.date, title: w.title, ort: w.ort, prog: wkProgress(w), ims: (w.intMs && w.intMs >= t) ? w.intMs : '', ms: (w.meldeschluss && w.meldeschluss >= t) ? w.meldeschluss : '' }; });
       var mine = !SH.has('aufgaben.view');
       var tasks = (d.aufgaben || []).filter(function (x) { return x.status !== 'erledigt' && !(x.ref && x.ref.indexOf('wk:') === 0 && pastIds[x.ref.slice(3)]); });
       if (!mine && me) { var m2 = tasks.filter(function (x) { return (x.who || []).some(function (w) { return String(w).toLowerCase() === me; }); }); if (m2.length) { tasks = m2; mine = true; } }
@@ -177,8 +177,11 @@ templateEngineOverride: false
       var fr = [];
       warn.forEach(function (w) { fr.push({ t: w.label, s: w.days < 0 ? 'abgelaufen seit ' + fmtDMY(w.iso) : (w.days === 0 ? 'läuft heute ab' : 'noch ' + w.days + ' Tage'), c: w.days < 0 ? 'bad' : w.days <= 14 ? 'warn' : '', href: '/intranet/profil/', k: w.days }); });
       up.forEach(function (w) {
-        var ms = (w.intMs && w.intMs >= t) ? w.intMs : (w.meldeschluss && w.meldeschluss >= t ? w.meldeschluss : ''); var dm = ms ? daysTo(ms) : null;
-        if (dm !== null && dm <= 14 && !((w.chk || {}).versendet || {}).d) fr.push({ t: 'Meldeschluss ' + String(w.title || '').slice(0, 26), s: dm === 0 ? 'heute' : 'in ' + dm + ' Tagen', c: dm <= 3 ? 'bad' : 'warn', href: '/intranet/wettkaempfe/', k: dm });
+        var sent = !!((w.chk || {}).versendet || {}).d;
+        [['Interner Meldeschluss ', w.intMs], ['Meldeschluss ', w.meldeschluss]].forEach(function (z) {
+          var ms = z[1] && z[1] >= t ? z[1] : ''; var dm = ms ? daysTo(ms) : null;
+          if (dm !== null && dm <= 14 && !sent) fr.push({ t: z[0] + String(w.title || '').slice(0, 26), s: (dm === 0 ? 'heute' : 'in ' + dm + ' Tagen') + ' · ' + fmtDMY(ms).slice(0, 5), c: dm <= 3 ? 'bad' : 'warn', href: '/intranet/wettkaempfe/', k: dm });
+        });
         if ((w.meldegeld === 'mail' || w.meldegeld === 'offen') && ((w.chk || {}).versendet || {}).d) fr.push({ t: 'Meldegeld ' + String(w.title || '').slice(0, 24), s: w.meldegeld === 'mail' ? 'Mail versendet, nicht bezahlt' : 'noch offen', c: 'warn', href: '/intranet/wettkaempfe/', k: 20 });
       });
       var mineAb = (d.abrechnungen || []).filter(function (x) { return x.status === 'entwurf' && x.ts && (Date.now() - x.ts) > 21 * 86400000; });

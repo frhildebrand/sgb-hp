@@ -295,7 +295,7 @@ templateEngineOverride: false
   }
   function editItem(t, it) {
     var isNew = !it;
-    var base = it ? clone(it) : (t.newItem ? t.newItem(api) : {});
+    var base = it ? clone(it) : (t.newItem ? t.newItem(api) : {}); if (it && t.prep) base = t.prep(base);
     openForm({ title: (isNew ? (t.addLabel || 'Neu') : 'Bearbeiten') + ' · ' + t.label, fields: t.fields, item: base, onSave: function (vals) {
       var item = Object.assign({}, base, vals); item.id = base.id || uid(); if (t.beforeSave) { try { t.beforeSave(item, api); } catch (e) { toast(e.message || 'Bitte Eingaben prüfen.'); return false; } }
       op({ op: 'set', coll: t.coll, item: item });
