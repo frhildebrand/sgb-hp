@@ -168,7 +168,7 @@ window.HubShell = (function () {
     var here = hereOf(location.pathname); var ov = menuOv();
     var nav = '';
     nav += link(HUB_URL, '🏠', 'Startseite', here === HUB_URL, '#d6a23a');
-    if (S.me) nav += link(HUB_URL + '#brett', '📌', 'Schwarzes Brett', false, '#e11d48');
+    if (S.me && (has('brett.view') || has('startseite.brett'))) nav += link(HUB_URL + 'brett/', '📌', 'Schwarzes Brett', here === HUB_URL + 'brett/', '#e11d48');
     groupsOf(S.systems).forEach(function (g) {
       var cur = g.items.some(function (s) { return here === hereOf(s.url); });
       var open = ov[g.name] !== undefined ? !!ov[g.name] : (cur || isWide());

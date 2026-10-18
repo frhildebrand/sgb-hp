@@ -114,8 +114,8 @@ templateEngineOverride: false
     var byId = {}; out.forEach(function (x) { byId[x.id] = x; });
     var ab = byId.abrechnung, fa = byId.fahrten;
     if (ab) { ab.title = '🧾 Abrechnung'; ab.hint = 'Jeder sieht nur seine eigenen Einträge, außer er hat „Alle …“.'; ab.groups = ab.groups.map(function (g) { return { title: 'Trainerabrechnung · ' + g.title.replace(/^Trainerabrechnung\s*·?\s*/, ''), perms: g.perms }; }); if (fa) { fa.groups.forEach(function (g) { ab.groups.push({ title: 'Fahrtenformular · ' + g.title.replace(/^Fahrtenformular\s*·?\s*/, ''), perms: g.perms }); }); byId.fahrten = null; } }
-    var TIT = { training: '🦈 Gruppen (Wettkampfgruppe)', auswertung: '📈 Jahresauswertung', hub: '🌐 Startseite und Verwaltung' };
-    var ORD = [['Mein Bereich', ['aufgaben', 'wettkaempfe', 'abrechnung']], ['Verein', ['mitglieder', 'training', 'trainer', 'anwesenheit', 'jugend', 'auswertung', 'vorstand', 'material', 'dokumente']], ['Aktionen', ['veranstaltungen', 'weihnachtsmarkt']], ['Verwaltung', ['hub']]];
+    var TIT = { training: '🦈 Gruppen (Wettkampfgruppe)', auswertung: '📈 Jahresauswertung', hub: '🌐 Menü: wer welchen Bereich sieht' };
+    var ORD = [['Startseite', ['brett']], ['Mein Bereich', ['aufgaben', 'wettkaempfe', 'abrechnung']], ['Verein', ['mitglieder', 'training', 'trainer', 'anwesenheit', 'jugend', 'auswertung', 'vorstand', 'material', 'dokumente']], ['Aktionen', ['veranstaltungen', 'weihnachtsmarkt']], ['Verwaltung', ['hub']]];
     var res = [], used = {};
     ORD.forEach(function (c) { c[1].forEach(function (id) { var x = byId[id]; if (!x) return; used[id] = 1; if (TIT[id]) x.title = TIT[id]; x.cat = c[0]; res.push(x); }); });
     out.forEach(function (x) { if (byId[x.id] && !used[x.id]) { x.cat = 'Weitere'; res.push(x); } });
@@ -131,7 +131,12 @@ templateEngineOverride: false
       '<span class="ha-ptotal"></span></div>';
     var first = true, lastCat = '';
     var secs = sectionsFor().map(function (sec) {
+      var flat = sec.groups.length === 1 && sec.groups[0].title === String(sec.title).replace(/^\S+\s/, '');
       var cards = sec.groups.map(function (g) {
+        if (flat) return '<div class="ha-accbody ha-flat">' + g.perms.map(function (q) {
+          var on = !!sel[q.key]; var mine = isAdmin || has(q.key); var dis = locked || forcedSet[q.key] || (!mine && !on);
+          return '<label class="ha-perm' + (!mine && !locked ? ' nomine' : '') + '"' + (!mine && !locked ? ' title="Dieses Recht hast du selbst nicht und kannst es daher nicht vergeben."' : '') + '><input type="checkbox" class="ha-sw" data-pk="' + esc(q.key) + '"' + (on ? ' checked' : '') + (dis ? ' disabled' : '') + '><span>' + esc(q.label) + '</span></label>';
+        }).join('') + '</div>';
         return '<details class="ha-acc" open><summary><span class="ha-gt">' + esc(g.title) + '</span><span class="ha-cnt"></span>' +
           (locked ? '' : '<span class="ha-gbtn"><button type="button" class="wm-btn" data-pall="on">alle</button><button type="button" class="wm-btn" data-pall="off">keine</button></span>') + '</summary><div class="ha-accbody">' + g.perms.map(function (q) {
           var on = !!sel[q.key]; var mine = isAdmin || has(q.key);
@@ -139,10 +144,10 @@ templateEngineOverride: false
           return '<label class="ha-perm' + (!mine && !locked ? ' nomine' : '') + '"' + (!mine && !locked ? ' title="Dieses Recht hast du selbst nicht und kannst es daher nicht vergeben."' : '') + '><input type="checkbox" class="ha-sw" data-pk="' + esc(q.key) + '"' + (on ? ' checked' : '') + (dis ? ' disabled' : '') + '><span>' + esc(q.label) + '</span></label>';
         }).join('') + '</div></details>';
       }).join('');
-      var o = false; first = false; var ch = sec.cat !== lastCat ? '<div class="ha-cat">' + esc(sec.cat) + '</div>' : ''; lastCat = sec.cat;
-      return ch + '<details class="ha-sysacc"' + (o ? ' open' : '') + ' data-sys="' + sec.id + '"><summary><span class="ha-st">' + esc(sec.title) + '</span><span class="ha-ptc"></span>' +
+      var o = false; first = false; var ch = sec.cat !== lastCat ? '<div class="ha-cat ha-cat-' + esc(sec.cat.replace(/\s+/g, '')) + '">' + esc(sec.cat) + '</div>' : ''; lastCat = sec.cat;
+      return ch + '<details class="ha-sysacc ha-c-' + esc(String(sec.cat).replace(/\s+/g, '')) + '"' + (o ? ' open' : '') + ' data-sys="' + sec.id + '"><summary><span class="ha-st">' + esc(sec.title) + '</span><span class="ha-ptc"></span>' +
         (locked || !sec.groups.length ? '' : '<span class="ha-gbtn"><button type="button" class="wm-btn" data-pall="on">alle</button><button type="button" class="wm-btn" data-pall="off">keine</button></span>') + '</summary><div class="ha-sysbody">' +
-        (sec.hint ? '<p class="ha-hint">' + esc(sec.hint) + '</p>' : '') + (cards ? '<div class="ha-grid">' + cards + '</div>' : '<p class="ha-hint">' + esc(sec.empty || 'Keine Rechte.') + '</p>') + '</div></details>';
+        (sec.hint ? '<p class="ha-hint">' + esc(sec.hint) + '</p>' : '') + (cards ? (flat ? cards : '<div class="ha-grid">' + cards + '</div>') : '<p class="ha-hint">' + esc(sec.empty || 'Keine Rechte.') + '</p>') + '</div></details>';
     }).join('');
     return bar + secs;
   }
@@ -364,7 +369,7 @@ templateEngineOverride: false
         '<div class="wm-card"><div class="wm-bar"><h3>✨ Sonderrechte</h3>' + (has('system.rechte') ? '<button type="button" class="wm-amber" data-ed="newextra">➕ Neues Sonderrecht</button>' : '') + '</div><p class="wm-note">Ein Sonderrecht ist ein eigenes Rechte-Paket, das man einzelnen Benutzern zusätzlich zu ihren Rollen gibt, zum Beispiel „Statistik bearbeiten“ für einen Helfer. Es gilt nur bei persönlicher Anmeldung mit Benutzername, nicht bei der Anmeldung mit dem Passwort der Rolle.</p>' + extrasHtml() + '</div>' +
         '<details class="wm-card wm-det"><summary>📊 Rechte-Übersicht (wer darf was)</summary><p class="wm-note">Nur zum Ansehen. Geändert wird bei den einzelnen Rollen und Sonderrechten.</p><div class="wm-scroll">' + matrixHtml() + '</div></details>';
     }
-    return top + (S.msg ? '<div class="hub-err" style="margin-bottom:14px">' + esc(S.msg) + '</div>' : '') + '<div class="wm-tabs vw-tabs-hide">' + tabs + '</div>' + inner;
+    return top + (S.msg ? '<div class="hub-err" style="margin-bottom:14px">' + esc(S.msg) + '</div>' : '') + inner;
   }
   function dialogOrConfirm() {
     var d = S.dialog; if (!d) return '';

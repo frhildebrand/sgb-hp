@@ -51,7 +51,7 @@ templateEngineOverride: false
   }
   function tageRows(tage) {
     return tage.filter(function (t) { return t.date <= M.today() && (t.trainer || []).some(nameMatches); }).sort(function (x, y) { return x.date < y.date ? -1 : 1; }).map(function (t) {
-      return { d: t.date, zeit: normTime(t.time || ''), min: num(t.dauer) > 0 ? num(t.dauer) : '', gruppe: 'Wettkampfgruppe', ort: t.ort || '' };
+      return { d: t.date, zeit: normTime(t.time || ''), min: num(t.dauer) > 0 ? num(t.dauer) : '', gruppe: (Array.isArray(t.gruppen) && t.gruppen.length ? t.gruppen.join(' + ') : (t.gruppe || 'Wettkampfgruppe')), ort: t.ort || '' };
     });
   }
   function billedKeys() { var k = {}; ownList().forEach(function (a) { (a.zeilen || []).forEach(function (z) { k[rowKey(z)] = 1; }); }); return k; }
@@ -107,7 +107,7 @@ templateEngineOverride: false
       (ro && !readOnly ? '<p class="wm-note">Eingereichte Abrechnungen sind gesperrt. Mit „Zurück zum Entwurf“ kannst du sie wieder ändern.</p>' : '') + '</section>';
     var chips = ro ? '' : '<div class="m-chips" style="margin:2px 0 8px">' + PERIODS.map(function (p) { return '<button type="button" class="m-chip" data-ma="abperiod" data-v="' + p + '">' + p + '</button>'; }).join('') + '</div>';
     out += '<section class="wm-card"><div class="m-sec" style="margin-top:0">Angaben</div>' + chips + '<div class="m-fgrid">' + inp('Zeitraum (z. B. Jan - Mai 2026)', 'title', a.title, 'text', dis) + inp('Name', 'name', a.name, 'text', dis) + inp('ÜL-EDV-Nr.', 'edv', a.edv, 'text', dis) + inp('Lizenz', 'lizArt', a.lizArt, 'text', dis) + '</div></section>';
-    out += '<section class="wm-card"><div class="wm-bar"><h3>Übungseinheiten</h3>' + (ro ? '' : '<span class="m-actions"><button type="button" class="wm-btn" data-ma="abpdf">📄 Aus WebClub-Liste</button><button type="button" class="wm-btn" data-ma="abtage">⬇️ Trainingstage</button><button type="button" class="wm-btn" data-ma="abzadd">+ Zeile</button></span>') + '</div>';
+    out += '<section class="wm-card"><div class="wm-bar"><h3>Übungseinheiten</h3>' + (ro ? '' : '<span class="m-actions">' + (M.anyCan(['abrechnung.termine', 'training.tage.view']) ? '<button type="button" class="wm-btn" data-ma="abtage">⬇️ Aus Trainingsterminen</button>' : '') + '<button type="button" class="wm-btn" data-ma="abzadd">+ Zeile</button></span>') + '</div>';
     if (!(a.zeilen || []).length) out += '<p class="wm-note">Noch keine Einheiten. „Aus WebClub-Liste“ liest die Anwesenheitsliste (PDF) ein, mit „+ Zeile“ trägst du von Hand ein.</p>';
     var gl = suggestions('gruppe'), ol = suggestions('ort');
     out += '<datalist id="abGruppen">' + gl.map(function (x) { return '<option value="' + esc(x) + '">'; }).join('') + '</datalist><datalist id="abOrte">' + ol.map(function (x) { return '<option value="' + esc(x) + '">'; }).join('') + '</datalist>';
@@ -271,16 +271,35 @@ templateEngineOverride: false
     tageImport0(a);
   }
   function tageImport0(a) {
-    if (deniedNote('trainingTage')) { M.toast('Für die Trainingstage fehlt dir die Berechtigung. Nutze „Aus WebClub-Liste“.'); return; }
+    if (deniedNote('trainingTage')) { M.toast('Für die Trainingstage fehlt dir die Berechtigung. Bitte frage den Vorstand.'); return; }
     var have = billedKeys(); (a.zeilen || []).forEach(function (z) { have[rowKey(z)] = 1; });
     var allT = tageRows(M.items('trainingTage')); var add = allT.filter(function (z) { return !have[rowKey(z)]; });
     var tk = {}; allT.forEach(function (z) { tk[rowKey(z)] = z; }); var upd = 0;
     var zl = (a.zeilen || []).map(function (z) { var t = tk[rowKey(z)]; if (t && /wettkampf/i.test(z.gruppe || '') && ((t.min !== '' && +z.min !== +t.min) || (t.ort && z.ort !== t.ort))) { upd++; return Object.assign({}, z, { min: t.min !== '' ? t.min : z.min, ort: t.ort || z.ort }); } return z; });
     if (!add.length && upd) { patchAb(a, { zeilen: zl }, true); M.toast(upd + (upd === 1 ? ' Zeile' : ' Zeilen') + ' aktualisiert (Dauer aus den Trainingstagen).'); return; }
-    if (!add.length) { M.toast('Alle deine Trainingstage sind schon abgerechnet. Neue Termine liest du über „Aus WebClub-Liste“ ein.'); return; }
+    if (!add.length) { M.toast('Alle deine Trainingstage sind schon abgerechnet. Neue Termine entstehen, wenn die Anwesenheitsliste im Bereich Anwesenheit eingelesen wird.'); return; }
     var miss = add.filter(function (z) { return z.min === ''; }).length; patchAb(a, { zeilen: zl.concat(add) }, true); M.toast(add.length + (add.length === 1 ? ' Zeile' : ' Zeilen') + ' übernommen' + (upd ? ', ' + upd + ' aktualisiert' : '') + '.' + (miss ? ' Achtung: ' + miss + ' ohne Dauer – bitte im Trainingstag „Dauer (Min.)“ eintragen oder hier ergänzen.' : ''));
   }
 
+  // Aus den im Bereich Anwesenheit gespeicherten Listen: alle Termine, bei denen ich als Trainer anwesend war
+  function awImport(a) {
+    if (deniedNote('anwesenheit')) { M.toast('Für die Anwesenheitslisten fehlt dir die Berechtigung. Bitte frage den Vorstand.'); return; }
+    var have = billedKeys(); (a.zeilen || []).forEach(function (z) { have[rowKey(z)] = 1; });
+    var add = [], found = 0, dmin = 60;
+    M.items('anwesenheit').forEach(function (l) {
+      var mine = (l.people || []).filter(function (x) { return x.trainer && nameMatches(x.name); }); if (!mine.length) return; found++;
+      var isWK = /wettkampf/i.test(l.gruppe || ''); var g = isWK ? 'Wettkampfgruppe' : (l.gruppe || 'Gruppe');
+      (l.sessions || []).forEach(function (s, i) {
+        if (s.date > M.today() || !mine.some(function (x) { return String(x.st || '').charAt(i) === 'a'; })) return;
+        var z = { d: s.date, zeit: normTime(s.time || ''), min: ttDauer(s.date, s.time) || dmin, gruppe: g, ort: '' };
+        if (!have[rowKey(z)]) { have[rowKey(z)] = 1; add.push(z); }
+      });
+    });
+    if (!found) { M.toast('Du stehst in keiner gespeicherten Anwesenheitsliste als Trainer (gesucht: „' + me() + '“).'); return; }
+    if (!add.length) { M.toast('Alle Termine aus den Anwesenheitslisten sind schon abgerechnet.'); return; }
+    add.sort(function (x, y) { return x.d < y.d ? -1 : 1; }); patchAb(a, { zeilen: (a.zeilen || []).concat(add) }, true);
+    M.toast(add.length + (add.length === 1 ? ' Zeile' : ' Zeilen') + ' aus der Anwesenheit übernommen (Dauer ' + dmin + ' Min., bitte prüfen).');
+  }
   /* ---- Import aus der WebClub-Anwesenheitsliste (mit Fahrerwahl beim Wettkampftraining) ---- */
   var PD = null;
   function pdfDialog() {
@@ -352,7 +371,7 @@ templateEngineOverride: false
   }
 
   M.register('abrechnung', {
-    title: 'Abrechnung', icon: '🧾', colls: ['abrechnungen', 'saetze', 'profile', 'trainingTage', 'fahrten'],
+    title: 'Abrechnung', icon: '🧾', colls: ['abrechnungen', 'saetze', 'profile', 'trainingTage', 'fahrten', 'anwesenheit'],
     tabs: [
       { id: 'meine', label: 'Stunden', view: ['abrechnung.eigene'], render: meineTab },
       { id: 'fmeine', label: 'Fahrten', view: ['fahrten.eigene'], render: function () { return fMeine(); } },
@@ -386,6 +405,7 @@ templateEngineOverride: false
       abzadd: function () { var a = curAb(); if (!a) return; var l = (a.zeilen || []).concat([{ d: '', zeit: '', min: '', gruppe: '', ort: '' }]); patchAb(a, { zeilen: l }, true); },
       abzdel: function (it, el) { var a = curAb(); if (!a) return; var i = +el.closest('.ab-row').getAttribute('data-i'); var l = M.clone(a.zeilen || []); l.splice(i, 1); patchAb(a, { zeilen: l }, true); },
       abtage: function () { var a = curAb(); if (a) tageImport(a); },
+      abaw: function () { var a = curAb(); if (a) awImport(a); },
       abpdf: function () { pdfDialog(); },
       abpdfread: function () { pdfRead(); },
       abpick: function (it, el) { var x = PD && PD.rows[+el.getAttribute('data-i')]; if (x) { x.on = !x.on; pdRender(); } },

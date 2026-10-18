@@ -82,15 +82,15 @@ templateEngineOverride: false
     return l.length ? '<div class="hub-wichtig"><b>Wichtig:</b> ' + esc(l[0].title) + (l[0].text ? ' – ' + esc(l[0].text) : '') + '</div>' : '';
   }
   function brettHtml() {
-    var can = SH.has('startseite.brett'); var l = (state.brett || []).slice().sort(function (a, b) { return String(b.date || '') < String(a.date || '') ? -1 : String(b.date || '') > String(a.date || '') ? 1 : 0; });
-    var form = state.bform ? '<form class="hub-bf" data-bf="1"><input name="title" placeholder="Überschrift" required maxlength="80"><textarea name="text" rows="3" placeholder="Text (optional)" maxlength="400"></textarea><label class="hub-bfc"><input type="checkbox" name="wichtig"> Als „Wichtig“-Hinweis oben anzeigen</label><div class="hub-bfb"><button type="button" class="hub-btn hub-ghost" data-act="bcancel">Abbrechen</button><button type="submit" class="hub-btn hub-gold">Eintragen</button></div></form>' : '';
-    return '<section class="hub-card2" id="brett"><div class="hub-c2h"><h3>📌 Schwarzes Brett</h3>' + (can ? '<button type="button" class="hub-btn hub-ghost" data-act="bnew" style="padding:4px 10px;font-size:12px">+ Eintrag</button>' : '<span class="hub-sub">gepflegt von Vorstand &amp; Orga</span>') + '</div>' + form +
-      (l.length ? l.slice(0, 6).map(function (b) { return '<div class="hub-bi"><span class="hub-bic">' + (b.wichtig ? '📣' : '📌') + '</span><div class="hub-bit"><b>' + esc(b.title) + '</b>' + (b.text ? '<p>' + esc(b.text) + '</p>' : '') + '<i>' + esc(b.by || '') + (b.date ? ' · ' + esc(fmtDMY(b.date).slice(0, 5)) : '') + '</i></div>' + (can ? '<button type="button" class="hub-bx" data-act="bdel" data-id="' + esc(b.id) + '" aria-label="Eintrag löschen">✕</button>' : '') + '</div>'; }).join('') : '<p class="hub-sub" style="margin:6px 0 0">Zurzeit gibt es keine Mitteilungen.</p>') + '</section>';
+    var can = SH.has('startseite.brett'); if (!SH.has('brett.view') && !can) return ''; var l = (state.brett || []).slice().sort(function (a, b) { return String(b.date || '') < String(a.date || '') ? -1 : String(b.date || '') > String(a.date || '') ? 1 : 0; });
+    var cut = function (t) { t = String(t || ''); return t.length > 110 ? t.slice(0, 108) + ' …' : t; };
+    return '<section class="hub-card2" id="brett"><div class="hub-c2h"><h3>📌 Schwarzes Brett</h3><a class="hub-btn hub-ghost" href="/intranet/brett/" style="padding:4px 10px;font-size:12px">' + (can ? 'Verwalten →' : 'Alle ansehen →') + '</a></div>' +
+      (l.length ? l.slice(0, 4).map(function (b) { return '<a class="hub-bi" href="/intranet/brett/" style="text-decoration:none;color:inherit"><span class="hub-bic">' + (b.wichtig ? '📣' : '📌') + '</span><div class="hub-bit"><b>' + esc(b.title) + '</b>' + (b.text ? '<p>' + esc(cut(b.text)) + '</p>' : '') + '<i>' + esc(b.by || '') + (b.date ? ' · ' + esc(fmtDMY(b.date).slice(0, 5)) : '') + '</i></div></a>'; }).join('') : '<p class="hub-sub" style="margin:6px 0 0">Zurzeit gibt es keine Mitteilungen.</p>') + '</section>';
   }
   function termineHtml() {
     var n = state.next && state.next.token === SH.token() ? state.next : null; var items = [];
     if (n) {
-      (n.wk || []).forEach(function (w) { var sub = 'Wettkampf ' + fmtDMY(w.date).slice(0, 5); if (w.ims) items.push({ date: w.ims, t: 'Interner Meldeschluss ' + w.title, s: sub, href: '/intranet/wettkaempfe/' }); if (w.ms) items.push({ date: w.ms, t: 'Meldeschluss ' + w.title, s: sub + ' · laut Ausschreibung', href: '/intranet/wettkaempfe/' }); items.push({ date: w.date, t: w.title, s: w.ort || '', href: '/intranet/wettkaempfe/' }); });
+      (n.wk || []).forEach(function (w) { var sub = 'Wettkampf ' + fmtDMY(w.date).slice(0, 5); items.push({ date: w.date, t: w.title, s: w.ort || '', href: '/intranet/wettkaempfe/' }); });
       (n.ev || []).forEach(function (e) { items.push({ date: e.date, t: e.title, s: e.prog || '', href: '/intranet/veranstaltungen/' }); });
     }
     var wm = state.wm; if (wm && wm.at) { var wiso = String(wm.at).slice(0, 10); if (daysTo(wiso) !== null && daysTo(wiso) >= 0) items.push({ date: wiso, t: wm.label || 'Weihnachtsmarkt', s: '', href: '/intranet/weihnachtsmarkt/' }); }
@@ -145,7 +145,7 @@ templateEngineOverride: false
     if (['fahrten.eigene', 'fahrten.alle', 'fahrten.ansehen', 'fahrten.abrechnen'].some(function (k) { return SH.has(k); })) want.push('fahrten');
     if (SH.has('training.tage.view')) want.push('trainingTage');
     if (SH.S.me && SH.S.me.user) want.push('profile');
-    if (SH.S.me) want.push('brett');
+    if (SH.S.me && SH.has('brett.view')) want.push('brett');
     if (SH.has('mitglieder.view')) want.push('wgMitglieder');
     if (!want.length) { if (state.next) { state.next = null; SH.lsSet('hubnext', null); render(); } return; }
     SH.get('data', { colls: want.join(',') }).then(function (r) {
@@ -180,7 +180,7 @@ templateEngineOverride: false
         var sent = !!((w.chk || {}).versendet || {}).d;
         [['Interner Meldeschluss ', w.intMs], ['Meldeschluss ', w.meldeschluss]].forEach(function (z) {
           var ms = z[1] && z[1] >= t ? z[1] : ''; var dm = ms ? daysTo(ms) : null;
-          if (dm !== null && dm <= 14 && !sent) fr.push({ t: z[0] + String(w.title || '').slice(0, 26), s: (dm === 0 ? 'heute' : 'in ' + dm + ' Tagen') + ' · ' + fmtDMY(ms).slice(0, 5), c: dm <= 3 ? 'bad' : 'warn', href: '/intranet/wettkaempfe/', k: dm });
+          if (dm !== null && dm <= 30 && !sent) fr.push({ t: z[0] + String(w.title || '').slice(0, 26), s: (dm === 0 ? 'heute' : 'in ' + dm + ' Tagen') + ' · ' + fmtDMY(ms).slice(0, 5), c: dm <= 3 ? 'bad' : 'warn', href: '/intranet/wettkaempfe/', k: dm });
         });
         if ((w.meldegeld === 'mail' || w.meldegeld === 'offen') && ((w.chk || {}).versendet || {}).d) fr.push({ t: 'Meldegeld ' + String(w.title || '').slice(0, 24), s: w.meldegeld === 'mail' ? 'Mail versendet, nicht bezahlt' : 'noch offen', c: 'warn', href: '/intranet/wettkaempfe/', k: 20 });
       });

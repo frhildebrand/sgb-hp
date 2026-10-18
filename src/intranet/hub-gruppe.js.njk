@@ -17,7 +17,12 @@ templateEngineOverride: false
   function fs(iso) { return iso ? M.fmtDate(iso, true) : ''; }
   function ym(iso) { return String(iso || '').slice(0, 7); }
   function canTage() { return M.can('training.tage.edit'); }
-  function members() { return M.items('wgMitglieder').filter(function (m) { return !Array.isArray(m.gruppen) || m.gruppen.indexOf('Wettkampfgruppe') >= 0; }).sort(function (a, b) { return String(a.name || '').localeCompare(String(b.name || ''), 'de'); }); }
+  var GRS = ['Wettkampfgruppe', 'Gruppe 1', 'Gruppe 2', 'Gruppe 3', 'Gruppe 4', 'Masters'];
+  function gsOf(t) { return t && Array.isArray(t.gruppen) && t.gruppen.length ? t.gruppen : [(t && t.gruppe) || 'Wettkampfgruppe']; }
+  function gOfT(t) { return gsOf(t).join(' + '); }
+  function isWK(t) { return gsOf(t).indexOf('Wettkampfgruppe') >= 0; }
+  function grpFromTitle(tt) { tt = String(tt || '').toLowerCase(); var f = GRS.filter(function (g) { return tt.indexOf(g.toLowerCase()) >= 0; })[0]; return f || (/wettkampf/.test(tt) ? 'Wettkampfgruppe' : ''); }
+  function members(g) { var gl = !g ? ['Wettkampfgruppe'] : Array.isArray(g) ? g : [g]; return M.items('wgMitglieder').filter(function (m) { return Array.isArray(m.gruppen) ? m.gruppen.some(function (x) { return gl.indexOf(x) >= 0; }) : gl.indexOf('Wettkampfgruppe') >= 0; }).sort(function (a, b) { return String(a.name || '').localeCompare(String(b.name || ''), 'de'); }); }
   var firstSeenCache = { n: -1, map: {} };
   // Ohne Eintrittsdatum gilt: dabei ab dem ersten Termin, an dem jemand eine Anwesenheit für die Person eingetragen hat (neue Mitglieder zählen also nicht rückwirkend)
   function firstSeen() {
@@ -30,7 +35,7 @@ templateEngineOverride: false
   function age(m) { return m.jg ? new Date().getFullYear() - Number(m.jg) : ''; }
   function sessions() { return M.items('trainingTage').sort(function (a, b) { return (a.date + (a.time || '')) < (b.date + (b.time || '')) ? 1 : -1; }); }
   function rosterFor(t) {
-    var ms = members(); var seen = {};
+    var ms = members(gsOf(t)); var seen = {};
     var r = ms.filter(function (m) { return inGroup(m, t.date) || (t.anw && t.anw[m.id]); });
     r.forEach(function (m) { seen[m.id] = 1; });
     return r;
@@ -42,13 +47,13 @@ templateEngineOverride: false
   /* ---------- Übersicht ---------- */
   function uebersicht() {
     var ms = members(); var act = ms.filter(isActive);
-    var tage = sessions(); var t = M.today();
+    var tage = sessions().filter(isWK); var t = M.today();
     var last8 = tage.filter(function (x) { return x.date <= t; }).slice(0, 8);
     var a = 0, tot = 0; last8.forEach(function (x) { var c = counts(x); a += c.a; tot += c.a + c.e + c.f; });
     var pct = tot ? Math.round(a * 100 / tot) + ' %' : '–';
     var nextT = tage.filter(function (x) { return x.date >= t; }).slice(-1)[0];
     var wks = M.items('wettkaempfe').filter(function (w) { return (w.date || '') >= t; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
-    var out = '<div class="m-stats">' + M.stat(act.length, 'Mitglieder', '', 'data-ma="wgtab" data-v="mitglieder"') + M.stat(tage.length, 'Trainingstage', '', 'data-ma="wgtab" data-v="tage"') + M.stat(pct, 'Anwesenheit (letzte 8)', pct === '–' ? '' : 'ok') + M.stat(wks.length ? M.daysTo(wks[0].date) : '–', wks.length ? 'Tage bis ' + wks[0].title.slice(0, 22) : 'Kein Wettkampf geplant', wks.length && M.daysTo(wks[0].date) <= 7 ? 'warn' : 'info', 'data-ma="wgtab" data-v="wk"') + '</div>';
+    var out = '<div class="m-stats">' + M.stat(act.length, 'Mitglieder', '', 'data-ma="wgmit"') + M.stat(pct, 'Anwesenheit (letzte 8)', pct === '–' ? '' : 'ok') + M.stat(wks.length ? M.daysTo(wks[0].date) : '–', wks.length ? 'Tage bis ' + wks[0].title.slice(0, 22) : 'Kein Wettkampf geplant', wks.length && M.daysTo(wks[0].date) <= 7 ? 'warn' : 'info', 'data-ma="wgtab" data-v="wk"') + '</div>';
     out += '<section class="wm-card"><div class="m-sec" style="margin-top:0">Zuletzt</div>';
     if (!tage.length) out += '<p class="wm-note">Noch keine Trainingstage. Lege einen an oder importiere die Anwesenheitsliste aus WebClub.</p>';
     tage.filter(function (x) { return x.date <= t; }).slice(0, 4).forEach(function (x) { var c = counts(x); out += '<div class="m-chk"><b>' + fd(x.date) + '</b><span class="wm-sub" style="flex:1"> ' + esc(x.time || '') + (x.fokus ? ' · ' + esc(x.fokus) : '') + '</span><span class="wm-sub">✓ ' + c.a + ' · E ' + c.e + ' · ✗ ' + c.f + '</span></div>'; });
@@ -98,6 +103,7 @@ templateEngineOverride: false
   }
   var TFIELDS = [
     { k: 'date', t: 'date', label: 'Datum', req: true },
+    { k: 'gruppen', t: 'pick', label: 'Gruppen', opts: GRS, hint: 'Mehrere sind möglich, wenn Gruppen zusammen trainieren.' },
     { k: 'time', t: 'time', label: 'Uhrzeit' },
     { k: 'dauer', t: 'num', label: 'Dauer (Min.)' },
     { k: 'trainer', t: 'tags', label: 'Trainer' },
@@ -109,25 +115,42 @@ templateEngineOverride: false
     { k: 'beob', t: 'area', label: 'Beobachtungen', rows: 3 }
   ];
   function tageTab() {
-    var ymv = curMonth(); var all = sessions();
-    var list = all.filter(function (x) { return ym(x.date) === ymv; });
+    var ymv = curMonth(); var gf = M.S.sub.gg || ''; var all = sessions();
+    var list = all.filter(function (x) { return ym(x.date) === ymv && (!gf || gsOf(x).indexOf(gf) >= 0); });
     var can = canTage();
     var out = '<section class="wm-card"><div class="wm-bar"><h3>Training</h3><span class="m-actions">' +
-      '<button type="button" class="wm-btn" data-ma="wgprintm">🖨️ Anwesenheitsliste</button>' + (M.anyCan(['training.tage.edit', 'training.tage.anlegen']) ? '<button type="button" class="wm-btn" data-ma="wgimport">📄 Import (PDF)</button><button type="button" class="wm-amber" data-ma="wgtnew">+ Trainingstag</button>' : '') + '</span></div>' +
-      '<div class="m-chips" style="align-items:center"><button type="button" class="m-chip" data-ma="wgmon" data-d="-1">‹</button><b>' + esc(M.monthLabel(ymv)) + '</b><button type="button" class="m-chip" data-ma="wgmon" data-d="1">›</button><span class="wm-sub">' + list.length + ' Termine</span></div>';
+      '<button type="button" class="wm-btn" data-ma="wgprintm">🖨️ Anwesenheitsliste</button>' + (M.anyCan(['training.tage.edit', 'training.tage.anlegen']) ? '<a class="wm-btn" href="/intranet/anwesenheit/#hochladen">📄 Liste einlesen</a><button type="button" class="wm-amber" data-ma="wgtnew">+ Trainingstag</button>' : '') + '</span></div>' +
+      '<div class="m-chips" style="align-items:center"><button type="button" class="m-chip" data-ma="wgmon" data-d="-1">‹</button><b>' + esc(M.monthLabel(ymv)) + '</b><button type="button" class="m-chip" data-ma="wgmon" data-d="1">›</button><span class="wm-sub">' + list.length + ' Termine</span></div><div class="m-chips" style="margin:4px 0 8px">' + [''].concat(GRS).map(function (g) { return '<button type="button" class="m-chip' + (gf === g ? ' on' : '') + '" data-ma="wggf" data-v="' + esc(g) + '">' + esc(g || 'Alle Gruppen') + '</button>'; }).join('') + '</div>';
     if (!list.length) out += '<p class="wm-note">In diesem Monat gibt es keinen Trainingstag.</p>';
+    function bodyHtml(t) {
+      var ro = rosterFor(t);
+      return '<div class="m-body">' + (t.inhalt ? '<div><b>Einheit:</b><pre>' + esc(t.inhalt) + '</pre></div>' : '') + (t.beob ? '<div><b>Beobachtungen:</b><pre>' + esc(t.beob) + '</pre></div>' : '') + (t.notiz ? '<div><b>Notiz:</b><pre>' + esc(t.notiz) + '</pre></div>' : '') +
+        '<div class="m-sec">Anwesenheit' + (can ? ' – zum Ändern antippen' : '') + '</div><div class="wg-grid">' + (ro.length ? ro.map(function (m) { var cd = (t.anw || {})[m.id] || (t.date < M.today() || t.date === M.today() ? 'f' : ''); return '<button type="button" class="wg-p c-' + (cd || 'o') + '" data-ma="wgtap" data-m="' + esc(m.id) + '"' + (can ? '' : ' disabled') + '><i>' + CODE_TXT[cd] + '</i><span>' + esc(m.name) + '</span></button>'; }).join('') : '<p class="wm-note">Noch keine Mitglieder angelegt.</p>') + '</div>' +
+        '<p class="wm-sub">✓ anwesend · E entschuldigt · ✗ fehlt · · offen</p>' +
+        '<div class="m-btns">' + (can ? '<button type="button" class="wm-btn" data-ma="wgall">Alle anwesend</button><button type="button" class="wm-btn" data-ma="wgtedit">✏️ Bearbeiten</button>' : '') + (M.anyCan(['training.tage.edit', 'training.tage.loeschen']) ? '<button type="button" class="wm-btn m-danger" data-ma="wgtdel">🗑️ Löschen</button>' : '') + '<button type="button" class="wm-btn" data-ma="wgprintd">🖨️ Liste</button></div></div>';
+    }
+    function isoWeek(d) { var x = new Date(d + 'T12:00:00'); x.setDate(x.getDate() + 4 - (x.getDay() || 7)); var y0 = new Date(x.getFullYear(), 0, 1); return [x.getFullYear(), Math.ceil(((x - y0) / 86400000 + 1) / 7)]; }
+    function weekRange(d) { var x = new Date(d + 'T12:00:00'); var wd = (x.getDay() || 7) - 1; var m0 = new Date(x); m0.setDate(x.getDate() - wd); var s0 = new Date(m0); s0.setDate(m0.getDate() + 6); var f = function (z) { return ('0' + z.getDate()).slice(-2) + '.' + ('0' + (z.getMonth() + 1)).slice(-2) + '.'; }; return f(m0) + '–' + f(s0); }
+    function gChips(t) { return gsOf(t).map(function (g) { var i = Math.max(0, GRS.indexOf(g)); return '<span class="tt-g tt-g' + (i % 5) + '">' + esc(g) + '</span>'; }).join(''); }
+    var DAYS = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+    var cards = '', rows = '', lastW = '';
     list.forEach(function (t) {
       var c = counts(t); var open = !!M.S.open[t.id]; var tr = (t.trainer || []);
-      out += '<article class="m-card" data-id="' + esc(t.id) + '"><div class="m-head" data-ma="toggle"><div class="m-main"><div class="m-title">' + esc(fd(t.date)) + (t.time ? ' · ' + esc(t.time) + ' Uhr' : '') + '</div><div class="wm-sub">' + [t.fokus ? esc(t.fokus) : '', tr.length ? 'Trainer: ' + esc(tr.join(', ')) : '', 'Anwesend ' + c.a + (c.e ? ' · entsch. ' + c.e : '') + (c.f ? ' · fehlt ' + c.f : '')].filter(Boolean).join(' · ') + '</div></div><span class="m-chev">' + (open ? '▾' : '▸') + '</span></div>';
-      if (open) {
-        var ro = rosterFor(t);
-        out += '<div class="m-body">' + (t.inhalt ? '<div><b>Einheit:</b><pre>' + esc(t.inhalt) + '</pre></div>' : '') + (t.beob ? '<div><b>Beobachtungen:</b><pre>' + esc(t.beob) + '</pre></div>' : '') + (t.notiz ? '<div><b>Notiz:</b><pre>' + esc(t.notiz) + '</pre></div>' : '') +
-          '<div class="m-sec">Anwesenheit' + (can ? ' – zum Ändern antippen' : '') + '</div><div class="wg-grid">' + (ro.length ? ro.map(function (m) { var cd = (t.anw || {})[m.id] || (t.date < M.today() || t.date === M.today() ? 'f' : ''); return '<button type="button" class="wg-p c-' + (cd || 'o') + '" data-ma="wgtap" data-m="' + esc(m.id) + '"' + (can ? '' : ' disabled') + '><i>' + CODE_TXT[cd] + '</i><span>' + esc(m.name) + '</span></button>'; }).join('') : '<p class="wm-note">Noch keine Mitglieder angelegt.</p>') + '</div>' +
-          '<p class="wm-sub">✓ anwesend · E entschuldigt · ✗ fehlt · · offen</p>' +
-          '<div class="m-btns">' + (can ? '<button type="button" class="wm-btn" data-ma="wgall">Alle anwesend</button><button type="button" class="wm-btn" data-ma="wgtedit">✏️ Bearbeiten</button>' : '') + (M.anyCan(['training.tage.edit', 'training.tage.loeschen']) ? '<button type="button" class="wm-btn m-danger" data-ma="wgtdel">🗑️ Löschen</button>' : '') + '<button type="button" class="wm-btn" data-ma="wgprintd">🖨️ Liste</button></div></div>';
-      }
-      out += '</article>';
+      cards += '<article class="m-card" data-id="' + esc(t.id) + '"><div class="m-head" data-ma="toggle"><div class="m-main"><div class="m-title">' + esc(fd(t.date)) + (t.time ? ' · ' + esc(t.time) + ' Uhr' : '') + '</div><div class="wm-sub">' + [esc(gOfT(t)), t.fokus ? esc(t.fokus) : '', tr.length ? 'Trainer: ' + esc(tr.join(', ')) : '', 'Anwesend ' + c.a + (c.e ? ' · entsch. ' + c.e : '') + (c.f ? ' · fehlt ' + c.f : '')].filter(Boolean).join(' · ') + '</div></div><span class="m-chev">' + (open ? '▾' : '▸') + '</span></div>' + (open ? bodyHtml(t) : '') + '</article>';
     });
+    // Tabelle (breite Bildschirme): je Woche eine Trennzeile, je Termin eine Zeile
+    var asc = list.slice().sort(function (x, y) { return (y.date + (y.time || '')) < (x.date + (x.time || '')) ? -1 : 1; });
+    asc.forEach(function (t) {
+      var w = isoWeek(t.date); var wk = w[0] + '-' + w[1];
+      if (wk !== lastW) { lastW = wk; rows += '<tr class="tt-wk"><td colspan="7">Woche ' + w[1] + ' · ' + esc(weekRange(t.date)) + '</td></tr>'; }
+      var c = counts(t); var tr = (t.trainer || []); var open = !!M.S.open[t.id]; var tot = c.a + c.e + c.f; var pastDay = t.date <= M.today();
+      var anw = tot || pastDay ? '<span class="tt-bar' + (tot && c.a / tot < 0.6 ? ' tt-warn' : '') + '"><i style="width:' + (tot ? Math.round(c.a / tot * 100) : 0) + '%"></i></span>' + c.a + (tot ? ' von ' + tot : '') : '<span class="wm-sub">offen</span>';
+      var d = new Date(t.date + 'T12:00:00');
+      rows += '<tr class="tt-row' + (open ? ' tt-open' : '') + '" data-id="' + esc(t.id) + '" data-ma="toggle"><td class="tt-d">' + DAYS[d.getDay()] + ', ' + esc(fd(t.date).replace(/^\S+,?\s*/, '').slice(0, 6)) + '<small>' + (t.time ? esc(t.time) + ' Uhr' : '–') + '</small></td><td>' + gChips(t) + '</td><td>' + (esc(tr.join(', ')) || '<span class="wm-sub">–</span>') + '</td><td>' + (esc(t.ort || '') || '<span class="wm-sub">–</span>') + '</td><td>' + (t.dauer ? esc(String(t.dauer)) + ' Min.' : '–') + '</td><td>' + anw + '</td>' +
+        '<td class="tt-opt"><button type="button" class="tt-ic" data-ma="toggle" title="Anwesenheit ansehen">' + (open ? '▾' : '👁') + '</button>' + (can ? '<button type="button" class="tt-ic" data-ma="wgtedit" title="Bearbeiten">✏️</button>' : '') + '<button type="button" class="tt-ic" data-ma="wgprintd" title="Liste drucken">🖨️</button>' + (M.anyCan(['training.tage.edit', 'training.tage.loeschen']) ? '<button type="button" class="tt-ic" data-ma="wgtdel" title="Löschen">🗑️</button>' : '') + '</td></tr>' +
+        (open ? '<tr class="tt-det" data-id="' + esc(t.id) + '"><td colspan="7">' + bodyHtml(t) + '</td></tr>' : '');
+    });
+    if (list.length) out += '<div class="tt-cards">' + cards + '</div><div class="tt-wide"><table class="tt-table"><thead><tr><th>Datum</th><th>Gruppen</th><th>Trainer</th><th>Ort</th><th>Dauer</th><th>Anwesenheit</th><th style="text-align:right">Optionen</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
     return out + '</section>';
   }
   function printSheet(days, title) {
@@ -143,7 +166,7 @@ templateEngineOverride: false
   function statistikTab() {
     var per = M.S.sub.sp || 'y'; var t = M.today();
     var from = per === '3m' ? M.addDays(t, -92) : per === 'y' ? t.slice(0, 4) + '-01-01' : '0000-00-00';
-    var days = sessions().filter(function (d) { return d.date >= from && d.date <= t; });
+    var days = sessions().filter(function (d) { return isWK(d) && d.date >= from && d.date <= t; });
     var out = '<section class="wm-card"><div class="wm-bar"><h3>Anwesenheit</h3>' + M.seg([['3m', '3 Monate'], ['y', 'Dieses Jahr'], ['all', 'Alles']], per, 'wgper') + '</div><p class="wm-note">' + days.length + ' Trainingstage im Zeitraum. Prozent = anwesend im Verhältnis zu allen Terminen seit Eintritt.</p>';
     var rows = members().map(function (m) {
       var a = 0, e = 0, f = 0, n = 0;
@@ -162,7 +185,7 @@ templateEngineOverride: false
   }
   function rueckblickData(year) {
     var y = String(year); var d = {};
-    var days = M.items('trainingTage').filter(function (x) { return String(x.date).slice(0, 4) === y; });
+    var days = M.items('trainingTage').filter(function (x) { return isWK(x) && String(x.date).slice(0, 4) === y; });
     var a = 0, tot = 0; days.forEach(function (x) { var c = counts(x); a += c.a; tot += c.a + c.e + c.f; });
     d.tage = days.length; d.pct = tot ? Math.round(a * 100 / tot) : null;
     var ms = members(); d.zug = ms.filter(function (m) { return String(m.eintritt || '').slice(0, 4) === y; }); d.abg = ms.filter(function (m) { return String(m.austritt || '').slice(0, 4) === y; }); d.aktiv = ms.filter(isActive).length;
@@ -177,7 +200,7 @@ templateEngineOverride: false
     var y = M.S.sub.ry || String(new Date().getFullYear()); var d = rueckblickData(y);
     var years = []; for (var i = 0; i < 4; i++) years.push([String(new Date().getFullYear() - i), String(new Date().getFullYear() - i)]);
     return '<section class="wm-card"><div class="wm-bar"><h3>Jahresrückblick ' + esc(y) + '</h3><span class="m-actions">' + M.seg(years, y, 'wgyear') + '<button type="button" class="wm-btn" data-ma="wgprintr">🖨️ Drucken</button></span></div>' +
-      '<div class="m-stats">' + M.stat(d.tage, 'Trainingstage') + M.stat(d.pct === null ? '–' : d.pct + ' %', 'Ø Anwesenheit', 'ok') + M.stat(d.wks.length, 'Wettkämpfe') + M.stat(d.best, 'Bestzeiten', 'info') + '</div>' +
+      '<div class="m-stats">' + M.stat(d.pct === null ? '–' : d.pct + ' %', 'Ø Anwesenheit', 'ok') + M.stat(d.wks.length, 'Wettkämpfe') + M.stat(d.best, 'Bestzeiten', 'info') + '</div>' +
       '<p class="wm-sub">' + Object.keys(d.sw).length + ' Schwimmer waren bei Wettkämpfen am Start (' + d.starts + ' Starts)' + (d.abz.length ? ' · ' + d.abz.length + ' Abzeichen' : '') + '.</p></section>';
   }
   function printRueck() {
@@ -203,10 +226,10 @@ templateEngineOverride: false
     var dm = M.num(document.getElementById('wgdauer').value) || 60;
     if (!f) { msg.textContent = 'Bitte zuerst eine PDF-Datei auswählen.'; return; }
     msg.textContent = 'Wird gelesen … (beim ersten Mal wird der PDF-Leser geladen)';
-    HubPdf.read(f).then(function (r) { imp = P.parseAnwesenheit(r.pages); imp.file = f.name; imp.dauer = dm; preview(); }, function (e) { msg.innerHTML = '<span class="m-over">' + esc(e.message || String(e)) + '</span>'; });
+    HubPdf.read(f).then(function (r) { imp = P.parseAnwesenheit(r.pages); imp.file = f.name; imp.dauer = dm; imp.gruppen = [grpFromTitle(imp.title) || M.S.sub.gg || 'Wettkampfgruppe']; preview(); }, function (e) { msg.innerHTML = '<span class="m-over">' + esc(e.message || String(e)) + '</span>'; });
   }
   function preview() {
-    var p = imp; var ms = members();
+    var p = imp; var ms = members(p.gruppen);
     var trainers = p.people.filter(function (x) { return x.trainer; }); var tn = trainers.map(function (x) { return lower(x.name); });
     var sw = p.people.filter(function (x) { return !x.trainer && tn.indexOf(lower(x.name)) < 0; });
     imp.sw = sw; imp.trainers = trainers;
@@ -215,6 +238,7 @@ templateEngineOverride: false
     var drop = ms.filter(function (m) { return tn.indexOf(lower(m.name)) >= 0; }); imp.drop = drop;
     var hours = {}; trainers.forEach(function (x) { hours[x.name] = p.sessions.filter(function (s, i) { return x.st[i] === 'a'; }).length; });
     M.openDlg('<div class="hub-dhead"><h3>Das wurde gefunden</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div>' + (p.warnings.length ? '<div class="hub-err">' + p.warnings.map(esc).join('<br>') + '</div>' : '') +
+      '<div class="m-sec">Die Termine gelten für</div><div class="m-chips">' + GRS.map(function (g) { return '<label class="m-chip' + (p.gruppen.indexOf(g) >= 0 ? ' on' : '') + '"><input type="checkbox" data-wgg="' + esc(g) + '"' + (p.gruppen.indexOf(g) >= 0 ? ' checked' : '') + ' style="display:none">' + esc(g) + '</label>'; }).join('') + '</div>' +
       '<p class="wm-note"><b>' + p.sessions.length + '</b> ' + (p.sessions.length === 1 ? 'Termin' : 'Termine') + ' (' + fs(p.sessions[0] && p.sessions[0].date) + ' – ' + fs(p.sessions.length && p.sessions[p.sessions.length - 1].date) + ') · <b>' + sw.length + '</b> Schwimmer</p>' +
       '<p class="wm-note">Trainer: ' + (trainers.length ? trainers.map(function (x) { return '<b>' + esc(x.name) + '</b> (' + hours[x.name] + (hours[x.name] === 1 ? ' Termin' : ' Termine') + ' anwesend, je ' + imp.dauer + ' Min.)'; }).join(', ') : '<b>keiner erkannt</b>') + '</p>' +
       (drop.length ? '<p class="wm-note">Aus der Mitgliederliste entfernt (sind Trainer): <b>' + drop.map(function (m) { return esc(m.name); }).join(', ') + '</b></p>' : '') +
@@ -222,22 +246,22 @@ templateEngineOverride: false
       '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="wgsave"' + (p.sessions.length ? '' : ' disabled') + '>Übernehmen</button></div>');
   }
   function doImport() {
-    var p = imp; var list = []; var ms = members(); var byName = {};
+    var p = imp; var list = []; var gl = p.gruppen && p.gruppen.length ? p.gruppen : ['Wettkampfgruppe']; var ms = members(gl); var byName = {}; var gx = gl.join(' + ');
     ms.forEach(function (m) { byName[lower(m.name)] = m; });
     (p.drop || []).forEach(function (m) { list.push({ op: 'del', coll: 'wgMitglieder', id: m.id }); });
     (p.unknown || []).forEach(function (x, i) {
       var cb = document.querySelector('[data-wgnew="' + i + '"]'); if (cb && !cb.checked) return;
-      var m = { id: M.uid(), name: x.name };
+      var m = { id: M.uid(), name: x.name }; if (gl.join() !== 'Wettkampfgruppe') m.gruppen = gl.slice();
       list.push({ op: 'set', coll: 'wgMitglieder', item: m }); byName[lower(x.name)] = m;
     });
-    var existing = {}; M.items('trainingTage').forEach(function (t) { existing[t.date + '|' + (t.time || '')] = t; });
+    var existing = {}; M.items('trainingTage').forEach(function (t) { existing[t.date + '|' + (t.time || '') + '|' + gOfT(t)] = t; });
     p.sessions.forEach(function (s, i) {
       var anw = {};
       (p.sw || []).forEach(function (x) { var m = matchMember(x.name, ms) || byName[lower(x.name)]; var c = x.st[i]; if (m && c) anw[m.id] = c; });
       var tr = (p.trainers || []).filter(function (x) { return x.st[i] === 'a'; }).map(function (x) { return x.name; });
-      var ex = existing[s.date + '|' + (s.time || '')];
+      var ex = existing[s.date + '|' + (s.time || '') + '|' + gx];
       if (ex) { var fields = { anw: anw }; if (tr.length) fields.trainer = tr; if (!ex.dauer) fields.dauer = p.dauer; list.push({ op: 'patch', coll: 'trainingTage', id: ex.id, merge: true, fields: fields }); }
-      else list.push({ op: 'set', coll: 'trainingTage', item: { id: 'tt-' + s.date.replace(/-/g, '') + '-' + String(s.time || '0000').replace(':', ''), date: s.date, time: s.time || '', dauer: p.dauer, trainer: tr, anw: anw, ort: '' } });
+      else list.push({ op: 'set', coll: 'trainingTage', item: { id: 'tt-' + s.date.replace(/-/g, '') + '-' + String(s.time || '0000').replace(':', '') + (gx === 'Wettkampfgruppe' ? '' : '-' + gx.toLowerCase().replace(/[^a-z0-9]+/g, '')), gruppe: gl[0], gruppen: gl.slice(), date: s.date, time: s.time || '', dauer: p.dauer, trainer: tr, anw: anw, ort: '' } });
     });
     M.closeDlg(); M.ops(list); M.toast(p.sessions.length + (p.sessions.length === 1 ? ' Termin' : ' Termine') + ' übernommen. Die Trainerstunden stehen jetzt in der Abrechnung bereit.');
     if (p.sessions[0]) M.S.sub.gm = ym(p.sessions[0].date);
@@ -299,14 +323,16 @@ templateEngineOverride: false
     title: 'Wettkampfgruppe', icon: '🦈', colls: ['wgMitglieder', 'trainingTage', 'saetze', 'wettkaempfe', 'abzeichen', 'fahrten'],
     tabs: [
       mk('uebersicht', 'Übersicht', ['training.view', 'training.tage.view', 'training.mitglieder.view'], function () { return uebersicht(); }),
-      mk('tage', 'Training', ['training.tage.view'], function () { return tageTab(); }, { coll: 'trainingTage' }),
-      memberTab
+      mk('tage', 'Training', ['training.tage.view'], function () { return tageTab(); }, { coll: 'trainingTage' })
     ],
+    onChange: function (ev) { if (ev.target && ev.target.getAttribute && ev.target.getAttribute('data-wgg') && imp) { var l = [].slice.call(document.querySelectorAll('input[data-wgg]:checked')).map(function (x) { return x.getAttribute('data-wgg'); }); imp.gruppen = l.length ? l : ['Wettkampfgruppe']; preview(); } },
     actions: {
+      wgmit: function () { location.href = '/intranet/mitglieder/#g=Wettkampfgruppe'; },
       wgtab: function (it, el) { M.S.tab = el.getAttribute('data-v'); M.lsSet('modtab_training', M.S.tab); M.render(true); },
+      wggf: function (it, el) { var v = el.getAttribute('data-v'); if (v) M.S.sub.gg = v; else delete M.S.sub.gg; M.render(true); },
       wgmon: function (it, el) { M.S.sub.gm = monthShift(curMonth(), +el.getAttribute('data-d')); M.render(true); },
-      wgtnew: function () { M.openForm({ title: 'Neuer Trainingstag', fields: TFIELDS, item: { date: M.today(), dauer: 60, trainer: M.userName() ? [M.userName()] : [] }, onSave: function (v) { var t = Object.assign({ id: M.uid(), anw: {} }, v); M.S.sub.gm = ym(v.date); M.S.open[t.id] = true; M.op({ op: 'set', coll: 'trainingTage', item: t }); syncFahrten(t); } }); },
-      wgtedit: function (it, el, ev, c) { var t = M.find('trainingTage', c.id); if (!t) return; M.openForm({ title: 'Trainingstag bearbeiten', fields: TFIELDS, item: t, onSave: function (v) { M.op({ op: 'patch', coll: 'trainingTage', id: t.id, fields: v }); syncFahrten(Object.assign({}, t, v)); } }); },
+      wgtnew: function () { M.openForm({ title: 'Neuer Trainingstag', fields: TFIELDS, item: { date: M.today(), gruppen: [M.S.sub.gg || 'Wettkampfgruppe'], dauer: 60, trainer: M.userName() ? [M.userName()] : [] }, onSave: function (v) { if (!v.gruppen || !v.gruppen.length) v.gruppen = ['Wettkampfgruppe']; v.gruppe = v.gruppen[0]; var t = Object.assign({ id: M.uid(), anw: {} }, v); M.S.sub.gm = ym(v.date); M.S.open[t.id] = true; M.op({ op: 'set', coll: 'trainingTage', item: t }); syncFahrten(t); } }); },
+      wgtedit: function (it, el, ev, c) { var t = M.find('trainingTage', c.id); if (!t) return; M.openForm({ title: 'Trainingstag bearbeiten', fields: TFIELDS, item: Object.assign({}, t, { gruppen: gsOf(t) }), onSave: function (v) { if (!v.gruppen || !v.gruppen.length) v.gruppen = ['Wettkampfgruppe']; v.gruppe = v.gruppen[0]; M.op({ op: 'patch', coll: 'trainingTage', id: t.id, fields: v }); syncFahrten(Object.assign({}, t, v)); } }); },
       wgtdel: function (it, el, ev, c) { var t = M.find('trainingTage', c.id); if (!t) return; M.confirm('Trainingstag vom ' + fd(t.date) + ' samt Anwesenheit löschen?', 'Löschen', function () { M.op({ op: 'del', coll: 'trainingTage', id: t.id }); }); },
       wgtap: function (it, el, ev, c) {
         if (!canTage()) return; var t = M.find('trainingTage', c.id); if (!t) return; var mid = el.getAttribute('data-m');

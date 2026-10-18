@@ -71,14 +71,45 @@ templateEngineOverride: false
       var have = lists(g).some(function (l) { return l.id === idFor(g, p); });
       M.openDlg('<div class="hub-dhead"><h3>Das wurde gefunden</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div>' + (p.warnings.length ? '<div class="hub-err">' + p.warnings.map(esc).join('<br>') + '</div>' : '') + hint +
         '<p class="wm-note"><b>' + p.sessions.length + '</b> Termine (' + fd(p.sessions[0].date) + ' – ' + fd(p.sessions[p.sessions.length - 1].date) + ') · <b>' + sw + '</b> Schwimmer · <b>' + tr + '</b> Trainer · Gruppe <b>' + esc(g) + '</b></p>' + (have ? '<p class="wm-note">Für diesen Zeitraum gibt es schon eine Liste. Sie wird ersetzt.</p>' : '') +
+        (M.anyCan(['anwesenheit.tage']) ? fahrerBlock(p) : '') +
         '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="awsave">Übernehmen</button></div>');
     }, function (e) { msg.innerHTML = '<span class="m-over">' + esc(e.message || String(e)) + '</span>'; });
   }
   function idFor(g, p) { return 'aw-' + slug(g) + '-' + String((p.sessions[0] && p.sessions[0].date) || '').replace(/-/g, ''); }
+  // Aus der Liste entstehen zugleich die Trainingstage (Trainer, Anwesenheit der Schwimmer, Gruppe). So wird die Liste nur einmal eingelesen.
+  function lowr(x) { return String(x || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+  function swapN(n) { n = String(n || '').trim(); var i = n.indexOf(','); return i > 0 ? (n.slice(i + 1).trim() + ' ' + n.slice(0, i).trim()).trim() : n; }
+  // Fahrer je Termin gleich beim Einlesen wählen (für das Fahrtenformular / die Erstattung)
+  function fahrerNames(p) {
+    var o = []; ((M.find('saetze', 'main') || {}).fahrer || []).forEach(function (n) { n = String(n || '').trim(); if (n && o.indexOf(n) < 0) o.push(n); });
+    return o;
+  }
+  function fahrerBlock(p) {
+    var names = fahrerNames(p); if (!names.length) return '<p class="wm-note">Fahrer: In den Sätzen (Abrechnung → Sätze) sind noch keine Fahrer eingetragen. Dort kannst du sie hinterlegen, dann stehen sie hier zur Auswahl.</p>';
+    return '<div class="m-sec">Wer ist gefahren? (optional, für das Fahrtenformular)</div><div style="max-height:24vh;overflow:auto">' + p.sessions.map(function (s, i) {
+      return '<div class="m-chips" style="align-items:center;margin:3px 0"><span class="wm-sub" style="min-width:110px">' + esc(M.fmtDate(s.date, true)) + (s.time ? ' ' + esc(s.time) : '') + '</span>' + names.map(function (n) { return '<label class="m-chip"><input type="checkbox" data-awf="' + i + '" value="' + esc(n) + '" style="margin-right:4px">' + esc(n) + '</label>'; }).join('') + '</div>';
+    }).join('') + '</div>';
+  }
+  function fahrerPick() { var f = {}; [].slice.call(document.querySelectorAll('input[data-awf]:checked')).forEach(function (x) { var i = x.getAttribute('data-awf'); (f[i] = f[i] || []).push(x.value); }); return f; }
+  function tageOps(p, g, fa) {
+    if (!M.anyCan(['anwesenheit.tage'])) return [];
+    var mem = M.items('wgMitglieder').filter(function (m) { return Array.isArray(m.gruppen) ? m.gruppen.indexOf(g) >= 0 : g === 'Wettkampfgruppe'; }); var byN = {};
+    mem.forEach(function (m) { byN[lowr(m.name)] = m; });
+    var sat = M.find('saetze', 'main'); var dauer = sat && sat.dauer ? M.num(sat.dauer) : 60; var ops = [];
+    var ex = M.items('trainingTage');
+    p.sessions.forEach(function (s, i) {
+      var anw = {}; p.people.forEach(function (x) { if (x.trainer) return; var m = byN[lowr(x.name)] || byN[lowr(swapN(x.name))]; var c = (x.st || [])[i]; if (m && (c === 'a' || c === 'e' || c === 'f')) anw[m.id] = c; });
+      var tr = p.people.filter(function (x) { return x.trainer && (x.st || [])[i] === 'a'; }).map(function (x) { return swapN(x.name); }); var fh = (fa && fa[i]) || [];
+      var old = ex.filter(function (t) { return t.date === s.date && String(t.time || '') === String(s.time || '') && (Array.isArray(t.gruppen) ? t.gruppen.indexOf(g) >= 0 : (t.gruppe || 'Wettkampfgruppe') === g); })[0];
+      if (old) { var f = { anw: Object.assign({}, old.anw || {}, anw) }; if (tr.length) f.trainer = tr; if (fh.length) f.fahrer = fh; if (!old.dauer) f.dauer = dauer; ops.push({ op: 'patch', coll: 'trainingTage', id: old.id, merge: true, fields: f }); }
+      else ops.push({ op: 'set', coll: 'trainingTage', item: { id: 'tt-' + s.date.replace(/-/g, '') + '-' + String(s.time || '0000').replace(':', '') + (g === 'Wettkampfgruppe' ? '' : '-' + slug(g)), gruppe: g, gruppen: [g], date: s.date, time: s.time || '', dauer: dauer, trainer: tr, anw: anw, ort: '', fahrer: fh } });
+    });
+    return ops;
+  }
   function save() {
-    if (!UP) return; var p = UP.p, g = UP.g;
+    if (!UP) return; UP.fa = fahrerPick(); var p = UP.p, g = UP.g;
     var item = { id: idFor(g, p), gruppe: g, title: g + ' ' + fd(p.sessions[0].date) + ' – ' + fd(p.sessions[p.sessions.length - 1].date), von: p.sessions[0].date, bis: p.sessions[p.sessions.length - 1].date, sessions: p.sessions, people: p.people.map(function (x) { return { name: x.name, trainer: !!x.trainer, st: x.st.map(function (c) { return c || '.'; }).join('') }; }), datei: UP.f.name };
-    var f = UP.f; M.closeDlg(); M.op({ op: 'set', coll: 'anwesenheit', item: item }); sub().ag = g; sub().am = ym(p.sessions[0].date); M.toast('Liste übernommen.');
+    var f = UP.f; M.closeDlg(); M.op({ op: 'set', coll: 'anwesenheit', item: item }); var tops = tageOps(p, g, UP.fa); if (tops.length) M.ops(tops); sub().ag = g; sub().am = ym(p.sessions[0].date); M.toast(M.anyCan(['anwesenheit.tage']) ? 'Liste übernommen. Trainingstage und Trainerstunden sind angelegt.' : 'Liste übernommen.');
     if (f.size < 6000000) {
       var fr = new FileReader();
       fr.onload = function () { window.HubShell.post({ action: 'fileSave', token: window.HubShell.token(), area: 'anwesenheit', sub: g, name: (item.von || M.today()) + ' ' + g + '.pdf', data: String(fr.result).split(',')[1] || '' }).then(function (r) { if (r && r.status === 'success') { M.op({ op: 'patch', coll: 'anwesenheit', id: item.id, fields: { pdfUrl: r.url } }); M.toast('PDF im Drive abgelegt.'); } else M.toast((r && r.message) || 'PDF konnte nicht im Drive abgelegt werden.'); }); };
@@ -91,7 +122,7 @@ templateEngineOverride: false
     return '<section class="wm-card"><div class="wm-bar"><h3>Hochgeladene Listen</h3></div>' + (l.length ? l.map(function (x) { return '<div class="m-chk" data-id="' + esc(x.id) + '"><span style="flex:1"><b>' + esc(x.gruppe) + '</b> · ' + fd(x.von) + ' – ' + fd(x.bis) + ' <span class="wm-sub">' + (x.people || []).length + ' Personen</span></span>' + (x.pdfUrl && /^https:\/\//.test(x.pdfUrl) ? '<a class="wm-btn" href="' + esc(x.pdfUrl) + '" target="_blank" rel="noopener">📎 PDF</a>' : '') + (M.anyCan(['anwesenheit.edit', 'anwesenheit.loeschen']) ? ' <button type="button" class="wm-btn m-danger" data-ma="awdel">🗑️</button>' : '') + '</div>'; }).join('') : '<p class="wm-note">Noch keine Liste hochgeladen.</p>') + '</section>';
   }
   M.register('anwesenheit', {
-    title: 'Anwesenheit', icon: '📋', colls: ['anwesenheit'],
+    title: 'Anwesenheit', icon: '📋', colls: ['anwesenheit', 'trainingTage', 'wgMitglieder', 'saetze'],
     tabs: [{ id: 'uebersicht', label: 'Übersicht', view: ['anwesenheit.view'], render: uebersicht }, { id: 'hochladen', label: 'Hochladen', view: ['anwesenheit.upload'], render: function () { return hochladen() + verwalten(); } }],
     actions: {
       awg: function (it, el) { sub().ag = el.getAttribute('data-v'); M.render(true); },
@@ -100,4 +131,6 @@ templateEngineOverride: false
       awdel: function (it, el, ev, c) { var id = c.id || el.closest('[data-id]').getAttribute('data-id'); M.confirm('Diese Liste löschen?', 'Löschen', function () { M.op({ op: 'del', coll: 'anwesenheit', id: id }); }); }
     }
   });
+  function applyHash() { var h = String(location.hash || '').replace('#', ''); if (h === 'hochladen' || h === 'uebersicht') { M.S.tab = h; if (M.render) M.render(true); } }
+  window.addEventListener('hashchange', applyHash); setTimeout(applyHash, 900); setTimeout(applyHash, 2500);
 })();

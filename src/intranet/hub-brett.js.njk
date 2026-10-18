@@ -1,0 +1,46 @@
+---
+permalink: /intranet/js/hub-brett.js
+layout: false
+eleventyExcludeFromCollections: true
+templateEngineOverride: false
+---
+/* Schwarzes Brett: Mitteilungen für den ganzen Verein. Verfassen und pflegen nur mit dem Recht „startseite.brett“. */
+(function () {
+  'use strict';
+  var M = window.HubMod; if (!M) return; var esc = M.esc;
+  function can() { return M.anyCan(['startseite.brett']); }
+  function canDel() { return M.anyCan(['brett.loeschen']); }
+  function fd(d) { return d ? M.fmtDate(d) : ''; }
+  var FIELDS = [
+    { k: 'title', t: 'text', label: 'Überschrift', req: true },
+    { k: 'text', t: 'area', label: 'Text', rows: 6, hint: 'Nur Text. Zeilenumbrüche bleiben erhalten.' },
+    { k: 'wichtig', t: 'chk', label: 'Als „Wichtig“ markieren (erscheint auf der Startseite als Hinweis)' }
+  ];
+  function list() { return M.items('brett').slice().sort(function (a, b) { return (b.wichtig ? 1 : 0) - (a.wichtig ? 1 : 0) || String(b.date || '').localeCompare(String(a.date || '')); }); }
+  function render() {
+    var l = list();
+    var out = '<section class="wm-card"><div class="wm-bar"><h3>📌 Schwarzes Brett</h3>' + (can() ? '<button type="button" class="wm-amber" data-ma="bbnew">+ Neue Mitteilung</button>' : '') + '</div>' +
+      '<p class="wm-note">Mitteilungen für den ganzen Verein. ' + (can() ? 'Du darfst Einträge verfassen und ändern' + (canDel() ? ' und löschen.' : '.') : 'Verfasst werden sie vom Vorstand und der Orga.') + '</p></section>';
+    if (!l.length) return out + '<section class="wm-card"><p class="wm-note">Zurzeit gibt es keine Mitteilungen.</p></section>';
+    return out + '<div class="bb-wall">' + l.map(function (b) {
+      return '<article class="bb-note' + (b.wichtig ? ' bb-imp' : '') + '" data-id="' + esc(b.id) + '"><div class="bb-pin"></div><h4>' + (b.wichtig ? '📣 ' : '') + esc(b.title) + '</h4>' + (b.text ? '<p>' + esc(b.text) + '</p>' : '') +
+        '<div class="bb-foot"><span>' + esc(b.by || '') + (b.date ? ' · ' + esc(fd(b.date)) : '') + '</span>' + (can() || canDel() ? '<span class="bb-act">' + (can() ? '<button type="button" class="wm-btn" data-ma="bbedit">✏️</button>' : '') + (canDel() ? '<button type="button" class="wm-btn m-danger" data-ma="bbdel">🗑️</button>' : '') + '</span>' : '') + '</div></article>';
+    }).join('') + '</div>';
+  }
+  function form(item, title) {
+    M.openForm({ title: title, fields: FIELDS, item: item, onSave: function (v) {
+      var it = Object.assign({}, item, v); if (!it.id) it.id = M.uid(); if (!it.date) it.date = M.today(); if (!it.by) it.by = M.userName();
+      M.op({ op: 'set', coll: 'brett', item: it });
+    } });
+  }
+  M.register('brett', {
+    title: 'Schwarzes Brett', icon: '📌', colls: ['brett'],
+    tabs: [{ id: 'brett', label: 'Mitteilungen', view: ['brett.view', 'startseite.brett'], render: render }],
+    actions: {
+      bbnew: function () { form({}, 'Neue Mitteilung'); },
+      bbedit: function (it, el, ev, c) { var b = M.find('brett', c.id); if (b) form(b, 'Mitteilung bearbeiten'); },
+      bbdel: function (it, el, ev, c) { var b = M.find('brett', c.id); if (b) M.confirm('„' + b.title + '“ löschen?', 'Löschen', function () { M.op({ op: 'del', coll: 'brett', id: b.id }); }); }
+    }
+  });
+  var st = document.createElement('style'); st.textContent = '#hubRoot .bb-wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;align-items:start}#hubRoot .bb-note{position:relative;padding:20px 16px 12px;border-radius:6px 6px 14px 14px;background:#fff8dc;color:#3b2f0b;box-shadow:0 4px 12px rgba(0,0,0,.14);border-top:4px solid #e0b53a}#hubRoot .bb-imp{background:#ffe8e6;border-top-color:#e11d48;color:#4a1013}#hubRoot .bb-pin{position:absolute;top:-9px;left:50%;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff8a80,#c62828);box-shadow:0 2px 4px rgba(0,0,0,.35)}#hubRoot .bb-note h4{margin:0 0 6px;font:800 16px/1.25 ui-rounded,system-ui,sans-serif}#hubRoot .bb-note p{margin:0 0 8px;white-space:pre-wrap;font-size:14px;line-height:1.45}#hubRoot .bb-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;opacity:.75}#hubRoot .bb-act{display:flex;gap:4px}html.dark #hubRoot .bb-note{background:#3a3214;color:#fdf1c4}html.dark #hubRoot .bb-imp{background:#4a1d20;color:#ffd9d6}'; document.head.appendChild(st);
+})();

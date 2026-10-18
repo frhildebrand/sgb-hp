@@ -37,21 +37,18 @@ templateEngineOverride: false
     { k: 'rollen', t: 'pick', label: 'Rollen', opts: ROLLEN, hint: 'Mehrere sind möglich, z. B. Schwimmer und Kampfrichter.' },
     { k: 'trainerIn', t: 'pick', label: 'Trainer in Gruppen', opts: GR, hint: 'Wo diese Person Trainer ist. Sie erscheint dann auch im Bereich Trainer.' },
     { k: 'status', t: 'sel', label: 'Status', opts: [['', 'aktiv'], ['pausiert', 'pausiert'], ['ausgetreten', 'ausgetreten']] },
-    { k: 'eintritt', t: 'date', label: 'Eintritt' },
-    { k: 'austritt', t: 'date', label: 'Austritt' },
     { k: 'dsv', t: 'text', label: 'DSV-ID' },
-    { k: 'kontakt', t: 'text', label: 'Kontakt (Telefon/E-Mail)' },
     { k: 'notiz', t: 'area', label: 'Notiz', rows: 3 }
   ];
   function chipRow(label, key, opts, cur) {
     return '<div class="m-chips" style="margin:2px 0 6px"><span class="wm-sub" style="align-self:center">' + label + '</span>' + [['', 'Alle']].concat(opts.map(function (o) { return [o, o]; })).map(function (o) { return '<button type="button" class="m-chip' + (cur === o[0] ? ' on' : '') + '" data-ma="mgf" data-k="' + key + '" data-v="' + esc(o[0]) + '">' + esc(o[1]) + '</button>'; }).join('') + '</div>';
   }
   var listTab = {
-    id: 'alle', label: 'Alle Mitglieder', coll: 'wgMitglieder', view: ['mitglieder.view'], edit: ['mitglieder.edit'], add: ['mitglieder.edit', 'mitglieder.anlegen'], del: ['mitglieder.edit', 'mitglieder.loeschen'], addLabel: 'Neues Mitglied', search: ['name', 'kontakt', 'dsv'], fields: FIELDS,
+    id: 'alle', label: 'Alle Mitglieder', coll: 'wgMitglieder', view: ['mitglieder.view'], edit: ['mitglieder.edit'], add: ['mitglieder.edit', 'mitglieder.anlegen'], del: ['mitglieder.edit', 'mitglieder.loeschen'], addLabel: 'Neues Mitglied', search: ['name', 'dsv'], get fields() { return M.anyCan(['mitglieder.trainer']) ? FIELDS : FIELDS.filter(function (f) { return f.k !== 'trainerIn'; }); },
     newItem: function () { var f = flt(); return { gruppen: f.g ? [f.g] : [], rollen: ['Schwimmer'] }; },
     prep: function (m) { var t = match(m.name, trainers().map(function (x) { return { name: x.name, g: x.gruppen }; })); if (!Array.isArray(m.trainerIn)) { var tr = trainers().filter(function (x) { return lower(x.name) === lower(m.name) || lower(x.name) === lower(swapName(m.name)); })[0]; m.trainerIn = tr ? (tr.gruppen || []).slice() : []; } return m; },
     beforeSave: function (it) {
-      it.title = it.name; var tin = Array.isArray(it.trainerIn) ? it.trainerIn : [];
+      it.title = it.name; if (!M.anyCan(['mitglieder.trainer'])) { delete it.trainerIn; return; } var tin = Array.isArray(it.trainerIn) ? it.trainerIn : [];
       var tr = trainers().filter(function (x) { return lower(x.name) === lower(it.name) || lower(x.name) === lower(swapName(it.name)); })[0];
       if (tr) { if (JSON.stringify(tr.gruppen || []) !== JSON.stringify(tin)) M.op({ op: 'patch', coll: 'trainer', id: tr.id, fields: { gruppen: tin } }); }
       else if (tin.length) M.op({ op: 'set', coll: 'trainer', item: { id: 't-' + slug(it.name), name: it.name, title: it.name, owner: it.name, gruppen: tin } });
@@ -65,7 +62,7 @@ templateEngineOverride: false
     card: function (m) {
       return { title: m.name, badges: (m.status ? M.badge(m.status, 'amber') : '') + rOf(m).filter(function (r) { return r !== 'Schwimmer'; }).map(function (r) { return ' ' + M.badge(r, 'blue'); }).join(''),
         sub: [m.jg ? 'Jg. ' + m.jg + ' (' + age(m) + ')' : '', gOf(m).join(', ') || 'keine Gruppe', (function () { var tr = trainers().filter(function (x) { return lower(x.name) === lower(m.name); })[0]; return tr && (tr.gruppen || []).length ? 'Trainer: ' + tr.gruppen.join(', ') : ''; })()].filter(Boolean).join(' · '),
-        body: [m.kontakt ? '<div><b>Kontakt:</b> ' + esc(m.kontakt) + '</div>' : '', m.dsv && m.dsv !== '0' ? '<div><b>DSV-ID:</b> ' + esc(m.dsv) + '</div>' : '', m.eintritt ? '<div><b>Eintritt:</b> ' + M.fmtDate(m.eintritt) + '</div>' : '', m.notiz ? '<div><pre>' + esc(m.notiz) + '</pre></div>' : ''].join('') };
+        body: [m.dsv && m.dsv !== '0' ? '<div><b>DSV-ID:</b> ' + esc(m.dsv) + '</div>' : '', m.notiz ? '<div><pre>' + esc(m.notiz) + '</pre></div>' : ''].join('') };
     },
     printAll: function (all) {
       var f = flt(); var l = all.filter(function (m) { return listTab.filter(m, f); });

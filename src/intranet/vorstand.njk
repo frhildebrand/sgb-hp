@@ -648,10 +648,37 @@ permalink: /intranet/vorstand/
   #hubRoot .hub-mrow .hub-mgo { flex: 1; min-width: 0; }
   #hubRoot .hub-mcar { border: 0; background: transparent; color: inherit; width: 30px; min-height: 30px; border-radius: 8px; cursor: pointer; font-size: 12px; opacity: .7; }
   html #hubRoot .hub-mgrp { margin-bottom: 9px; }
+
+  #hubRoot .tt-wide { display: none; } #hubRoot .tt-cards { display: block; }
+  @media (min-width: 760px) { #hubRoot .tt-wide { display: block; overflow-x: auto; } #hubRoot .tt-cards { display: none; } }
+  #hubRoot .tt-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  #hubRoot .tt-table th { text-align: left; padding: 7px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; background: rgba(100,116,139,.14); border-bottom: 1px solid rgba(148,163,184,.35); }
+  #hubRoot .tt-table td { padding: 7px 10px; border-bottom: 1px solid rgba(148,163,184,.25); vertical-align: middle; }
+  #hubRoot .tt-wk td { background: rgba(230,176,67,.18); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; padding: 5px 10px; }
+  #hubRoot .tt-row { cursor: pointer; } #hubRoot .tt-row:hover td { background: rgba(100,160,255,.08); } #hubRoot .tt-open td { background: rgba(100,160,255,.10); }
+  #hubRoot .tt-d { font-weight: 800; white-space: nowrap; } #hubRoot .tt-d small { display: block; font-weight: 600; color: #64748b; font-size: 11.5px; }
+  #hubRoot .tt-g { display: inline-block; border-radius: 6px; padding: 2px 8px; margin: 1px 4px 1px 0; font-size: 11.5px; font-weight: 800; }
+  #hubRoot .tt-g0 { background: #dbeafe; color: #1e4f9b; } #hubRoot .tt-g1 { background: #fef3c7; color: #92400e; } #hubRoot .tt-g2 { background: #dcfce7; color: #166534; } #hubRoot .tt-g3 { background: #f3e8ff; color: #6b21a8; } #hubRoot .tt-g4 { background: #ffe4e6; color: #9f1239; }
+  #hubRoot .tt-bar { display: inline-block; width: 64px; height: 7px; border-radius: 9px; background: rgba(148,163,184,.35); vertical-align: middle; margin-right: 7px; overflow: hidden; } #hubRoot .tt-bar i { display: block; height: 100%; background: #22a06b; } #hubRoot .tt-warn i { background: #e0a020; }
+  #hubRoot .tt-opt { text-align: right; white-space: nowrap; }
+  #hubRoot .tt-ic { width: 28px; height: 26px; border: 1px solid rgba(148,163,184,.5); border-radius: 7px; background: transparent; cursor: pointer; margin-left: 3px; font-size: 12.5px; color: inherit; }
+  #hubRoot .tt-det > td { padding: 4px 10px 12px; background: rgba(100,160,255,.05); }
+
+  /* Rechte-Ansicht: Gliederung wie das Menü, farbige Kategorien */
+  #hubRoot .ha-cat { display: flex; align-items: center; gap: 10px; margin: 18px 2px 8px; font: 800 12px ui-rounded, system-ui, sans-serif; letter-spacing: .09em; text-transform: uppercase; color: var(--cc, #64748b); }
+  #hubRoot .ha-cat::after { content: ''; flex: 1; height: 2px; border-radius: 2px; background: linear-gradient(90deg, var(--cc, #64748b), transparent); opacity: .45; }
+  #hubRoot .ha-cat-Startseite, #hubRoot .ha-c-Startseite { --cc: #e11d48; } #hubRoot .ha-cat-MeinBereich, #hubRoot .ha-c-MeinBereich { --cc: #0d9488; } #hubRoot .ha-cat-Verein, #hubRoot .ha-c-Verein { --cc: #2563eb; } #hubRoot .ha-cat-Aktionen, #hubRoot .ha-c-Aktionen { --cc: #d97706; } #hubRoot .ha-cat-Verwaltung, #hubRoot .ha-c-Verwaltung { --cc: #64748b; } #hubRoot .ha-c-Weitere { --cc: #64748b; }
+  html #hubRoot .ha-sysacc { border: 1px solid color-mix(in srgb, var(--cc, #94a3b8) 30%, transparent); border-left: 4px solid var(--cc, #94a3b8); background: color-mix(in srgb, var(--cc, #94a3b8) 4%, transparent); }
+  html #hubRoot .ha-sysacc > summary { background: color-mix(in srgb, var(--cc, #94a3b8) 10%, transparent); font-weight: 800; }
+  html #hubRoot .ha-sysacc[open] > summary { border-bottom: 1px solid color-mix(in srgb, var(--cc, #94a3b8) 25%, transparent); }
+  html #hubRoot .ha-ptc { margin-left: auto; padding: 1px 9px; border-radius: 99px; font-size: 11.5px; font-weight: 800; background: color-mix(in srgb, var(--cc, #94a3b8) 18%, transparent); }
+  html #hubRoot .ha-acc { border-radius: 10px; background: rgba(255,255,255,.55); } html.dark #hubRoot .ha-acc { background: rgba(255,255,255,.03); }
+  html #hubRoot .ha-perm { border-radius: 8px; } html #hubRoot .ha-perm:has(input:checked) span { font-weight: 800; }
+  html #hubRoot .ha-perm input { accent-color: var(--cc, #2563eb); }
 </style>
 <div id="hubRoot" data-modul="vorstand"><noscript><p style="padding:24px">Dafür wird JavaScript gebraucht.</p></noscript></div>
-<script src="/intranet/js/hub-config.js?v=10182230" defer></script>
-<script src="/intranet/js/hub-common.js?v=10182230" defer></script>
-<script src="/intranet/js/hub-modul.js?v=10182230" defer></script>
-<script src="/intranet/js/hub-pdf.js?v=10182230" defer></script>
-<script src="/intranet/js/hub-systeme.js?v=10182230" defer></script>
+<script src="/intranet/js/hub-config.js?v=10182329" defer></script>
+<script src="/intranet/js/hub-common.js?v=10182329" defer></script>
+<script src="/intranet/js/hub-modul.js?v=10182329" defer></script>
+<script src="/intranet/js/hub-pdf.js?v=10182329" defer></script>
+<script src="/intranet/js/hub-systeme.js?v=10182329" defer></script>
