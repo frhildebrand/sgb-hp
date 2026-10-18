@@ -559,10 +559,95 @@ permalink: /intranet/profil/
     #hubRoot .hub-head, #hubRoot .hub-hin { max-width: none; }
     #hubRoot .hub-main { max-width: 1280px; }
   }
+
+  /* Website-Kopf, Foto, Titel und Fußzeile gehören nicht ins Intranet: ausblenden, Inhalt auf volle Breite */
+  body > section.hero, body > .hero, nav.navbar.is-fixed-top, body > .mt-6 > footer.footer, body > .mt-6 > .container > hr { display: none !important; }
+  body > .mt-6 { margin-top: 0 !important; }
+  body > .mt-6 > .container { max-width: none !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+  html.has-navbar-fixed-top, body.has-navbar-fixed-top { padding-top: 0 !important; }
+
+  /* Kompakte Darstellung (Tablet und Desktop): kleinere Symbole, Schrift und Abstände, volle Breite */
+  @media (min-width: 700px) {
+    html #hubRoot .hub-hin { padding: 6px 14px; max-width: none; }
+    html #hubRoot .hub-head .hub-logo { width: 36px; height: 36px; border-radius: 11px; }
+    html #hubRoot .hub-head .hub-logo img { height: 24px; }
+    html #hubRoot .hub-head h1 { font-size: 16px; }
+    html #hubRoot .hub-head .hub-pill { min-height: 32px; padding: 0 10px; font-size: 13px; border-radius: 10px; }
+    html #hubRoot .hub-head .hub-burger { width: 34px; font-size: 17px; }
+    html #hubRoot .hub-head .hub-acct { height: 34px; padding: 0 10px 0 3px; }
+    html #hubRoot .hub-head .hub-avc { width: 28px; height: 28px; font-size: 12px; }
+    html #hubRoot .hub-head, html.dark #hubRoot .hub-head { border-bottom-width: 3px; }
+    html #hubRoot .hub-main { max-width: none; padding: 14px 18px 8px; }
+    html #hubRoot .hub-greet h2 { font-size: 21px; }
+    html #hubRoot .hub-card2 { padding: 11px 14px; border-radius: 14px; }
+    html #hubRoot .hub-c2h { margin-bottom: 4px; }
+    html #hubRoot .hub-c2h h3 { font-size: 15px; }
+    html #hubRoot .hub-home, html #hubRoot .hub-hcol { gap: 12px; }
+    html #hubRoot .hub-bi { padding: 8px 0; }
+    html #hubRoot .hub-bit b { font-size: 15px; }
+    html #hubRoot .hub-dbx { width: 40px; height: 40px; border-radius: 11px; }
+    html #hubRoot .hub-dbx b { font-size: 16px; }
+    html #hubRoot .hub-tit b { font-size: 14px; }
+    html #hubRoot .hub-tit i { font-size: 12.5px; }
+    html #hubRoot .hub-q { padding: 6px 9px; font-size: 13.5px; border-radius: 10px; }
+    html #hubRoot .hub-bl b { font-size: 24px; }
+    html #hubRoot .hub-ai { padding: 7px 0; font-size: 14px; }
+    html #hubRoot .hub-ti { padding: 7px 0; }
+    /* Seitenleiste */
+    html #hubRoot .hub-drawer { padding: 8px 8px calc(10px + env(safe-area-inset-bottom)); }
+    html #hubRoot .hub-mgrp { margin-bottom: 4px; border-radius: 12px; }
+    html #hubRoot .hub-mlabel { padding: 6px 8px; gap: 8px; font-size: 11px; }
+    html #hubRoot .hub-mcic { width: 22px; height: 22px; border-radius: 7px; font-size: 12px; }
+    html #hubRoot .hub-mcn { min-width: 18px; padding: 0 6px; font-size: 10.5px; }
+    html #hubRoot .hub-mitems { padding: 0 4px 4px; gap: 0; }
+    html #hubRoot .hub-drawer .hub-mi { min-height: 32px; padding: 3px 8px; gap: 8px; font-size: 13.5px; border-radius: 9px; }
+    html #hubRoot .hub-drawer .hub-mic { width: 24px; height: 24px; border-radius: 8px; font-size: 13px; }
+    html #hubRoot .hub-drawer .hub-mi2 { min-height: 27px; padding: 2px 8px; font-size: 12.5px; }
+    html #hubRoot .hub-msub { margin: 0 0 2px 20px; }
+    html #hubRoot .hub-drawer .hub-mi.hub-on::before { top: 6px; bottom: 6px; }
+    html #hubRoot .hub-prof { padding: 8px 10px; border-radius: 14px; }
+    html #hubRoot .hub-avb { width: 34px; height: 34px; font-size: 13px; }
+    html #hubRoot .hub-dn { font-size: 14px; }
+    html #hubRoot .hub-dr { font-size: 11.5px; }
+    html #hubRoot .hub-dfoot { margin-top: 4px; padding-top: 4px; }
+    /* Module: Karten, Tabellen, Knöpfe */
+    html #hubRoot .hub-card, html #hubRoot .wm-card { padding: 12px 14px; margin-bottom: 10px; border-radius: 14px; }
+    html #hubRoot .wm-bar h3, html #hubRoot .wm-card > h3 { font-size: 15px; }
+    html #hubRoot .wm-btn { min-height: 30px; padding: 0 10px; font-size: 12.5px; border-radius: 9px; }
+    html #hubRoot .wm-amber { padding: 6px 12px; font-size: 12.5px; border-radius: 10px; }
+    html #hubRoot .wm-tabs { margin-bottom: 10px; padding: 3px; }
+    html #hubRoot .wm-tab { padding: 6px 12px; font-size: 13px; border-radius: 9px; }
+    html #hubRoot .m-card { border-radius: 12px; }
+    html #hubRoot .m-title { font-size: 14px; }
+    html #hubRoot .m-stat { border-radius: 12px; padding: 8px 10px; }
+    html #hubRoot .m-stat b { font-size: 20px; }
+    html #hubRoot .m-chip { padding: 4px 10px; font-size: 12.5px; }
+    html #hubRoot .m-twrap table { font-size: 13px; }
+    html #hubRoot .m-twrap th, html #hubRoot .m-twrap td { padding: 6px 8px; }
+    html #hubRoot .m-chk { padding: 5px 0; }
+    html #hubRoot .m-f input, html #hubRoot .m-f select, html #hubRoot .m-f textarea { padding: 7px 10px; font-size: 14px; }
+  }
+  /* Verwaltung: Reiter und Titelkarte stehen schon in der Seitenleiste */
+  @media (min-width: 1100px) { #hubRoot .wm-top, #hubRoot .vw-tabs-hide { display: none; } }
+  #hubRoot .hub-tabs-vw .wm-tab { padding-left: 10px; padding-right: 10px; }
+
+  #hubRoot .ha-cat { margin: 14px 2px 6px; font: 800 11px ui-rounded, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #64748b; }
+  html #hubRoot .ha-sysacc { margin: 0 0 6px; border-radius: 12px; }
+  html #hubRoot .ha-sysacc > summary { padding: 8px 12px; font-size: 14px; }
+  html #hubRoot .ha-sysbody { padding: 8px 10px 10px; }
+  html #hubRoot .ha-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+  html #hubRoot .ha-acc summary { padding: 7px 10px; font-size: 13px; }
+  html #hubRoot .ha-accbody { gap: 0; padding: 2px 6px 6px; }
+  html #hubRoot .ha-perm { padding: 4px 6px; gap: 8px; font-size: 13px; }
+  html #hubRoot .ha-perm input { width: 16px; height: 16px; margin-top: 0; }
+  html #hubRoot .ha-hint { font-size: 12.5px; margin: 0 0 6px; }
+  html #hubRoot .ha-gbtn .wm-btn { min-height: 24px; padding: 0 8px; font-size: 11.5px; }
+  html #hubRoot .ha-sysacc > summary, html #hubRoot .ha-acc summary { padding-top: 5px; padding-bottom: 5px; }
+  @media (min-width: 700px) { html #hubRoot .wm-tabs { display: inline-flex; max-width: 100%; } html #hubRoot .wm-tab { flex: 0 0 auto; padding-left: 18px; padding-right: 18px; } }
 </style>
 <div id="hubRoot" data-modul="profil"><noscript><p style="padding:24px">Dafür wird JavaScript gebraucht.</p></noscript></div>
-<script src="/intranet/js/hub-config.js?v=10182017" defer></script>
-<script src="/intranet/js/hub-common.js?v=10182017" defer></script>
-<script src="/intranet/js/hub-modul.js?v=10182017" defer></script>
-<script src="/intranet/js/hub-pdf.js?v=10182017" defer></script>
-<script src="/intranet/js/hub-abrechnung.js?v=10182017" defer></script>
+<script src="/intranet/js/hub-config.js?v=10182141" defer></script>
+<script src="/intranet/js/hub-common.js?v=10182141" defer></script>
+<script src="/intranet/js/hub-modul.js?v=10182141" defer></script>
+<script src="/intranet/js/hub-pdf.js?v=10182141" defer></script>
+<script src="/intranet/js/hub-abrechnung.js?v=10182141" defer></script>

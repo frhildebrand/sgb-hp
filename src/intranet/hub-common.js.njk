@@ -134,14 +134,15 @@ window.HubShell = (function () {
   function menuOv() { return lsGet('hubmenu', {}) || {}; }
   function profCard() {
     var m = S.me;
-    if (!m) return '<div class="hub-prof"><div class="hub-prow"><span class="hub-avb">👤</span><div class="hub-pmain"><div class="hub-dn">Gast</div><div class="hub-dr">nicht angemeldet</div></div></div><button type="button" class="hub-btn hub-gold hub-pbtn" data-sh="login">Anmelden</button></div>';
+    if (!m) return '<div class="hub-prof"><div class="hub-prow"><span class="hub-avb">👤</span><div class="hub-pmain"><div class="hub-dn">Gast</div><div class="hub-dr">nicht angemeldet – oben rechts anmelden</div></div></div></div>';
     var roles = (m.roles && m.roles.length ? m.roles : (m.role ? [m.role] : [])).filter(function (r) { return r && r.id !== 'gast'; }).sort(function (a, b) { return String(a.name || '').localeCompare(String(b.name || ''), 'de', { sensitivity: 'base' }); });
     var extras = m.extras || [];
     var chips = roles.map(function (r) { return '<span class="hub-chip">' + esc(r.name) + '</span>'; }).join('') + extras.map(function (x) { return '<span class="hub-chip hub-chip-x">✨ ' + esc(x.name) + '</span>'; }).join('');
     if (!chips) chips = '<span class="hub-chip hub-chip-n">Noch keine Rolle</span>';
     var open = !!S.prof;
-    var out = '<div class="hub-prof' + (open ? ' hub-open' : '') + '"><button type="button" class="hub-prow" data-sh="prof" aria-expanded="' + (open ? 'true' : 'false') + '"><span class="hub-avb">' + esc(initials(m.user || (m.role && m.role.name) || '')) + '<i class="hub-dot"></i></span><span class="hub-pmain"><span class="hub-dn">' + esc(m.user || (m.role && m.role.name) || '') + '</span><span class="hub-dr">Mein Konto</span></span><span class="hub-car">' + (open ? '▴' : '▾') + '</span></button><div class="hub-chips">' + chips + '</div>';
+    var out = '<div class="hub-prof' + (open ? ' hub-open' : '') + '"><button type="button" class="hub-prow" data-sh="prof" aria-expanded="' + (open ? 'true' : 'false') + '"><span class="hub-avb">' + esc(initials(m.user || (m.role && m.role.name) || '')) + '<i class="hub-dot"></i></span><span class="hub-pmain"><span class="hub-dn">' + esc(m.user || (m.role && m.role.name) || '') + '</span><span class="hub-dr">Mein Konto</span></span><span class="hub-car">' + (open ? '▴' : '▾') + '</span></button>';
     if (open) {
+      out += '<div class="hub-chips">' + chips + '</div>';
       var here = hereOf(location.pathname);
       out += '<div class="hub-pact">' + (m.user ? link(HUB_URL + 'profil/', '👤', 'Mein Profil', here === HUB_URL + 'profil/', '#14b8a6') + btn('password', '🔑', 'Passwort ändern') : '') + btn('login', '🔁', 'Konto wechseln') + btn('logout', '🚪', 'Abmelden') + '</div>';
     }
@@ -164,7 +165,6 @@ window.HubShell = (function () {
     if (!S.menu && !isWide()) return '';
     var here = hereOf(location.pathname); var ov = menuOv();
     var nav = '';
-    if (S.menuExtra && S.menuExtra.length) nav += '<div class="hub-mgrp" style="--mc:#64748b"><div class="hub-mlabel">🛡️ Verwaltung</div>' + S.menuExtra.map(function (x) { return '<button type="button" class="hub-mi' + (x.on ? ' hub-on' : '') + '" data-shx="' + esc(x.key) + '" style="--mc:#64748b"><span class="hub-mic">' + esc(x.icon || '•') + '</span><span class="hub-mlb">' + esc(x.label) + '</span></button>'; }).join('') + '</div>';
     nav += link(HUB_URL, '🏠', 'Startseite', here === HUB_URL, '#d6a23a');
     groupsOf(S.systems).forEach(function (g) {
       var cur = g.items.some(function (s) { return here === hereOf(s.url); });
@@ -172,11 +172,11 @@ window.HubShell = (function () {
       nav += '<div class="hub-mgrp' + (open ? ' hub-gopen' : '') + '" style="--mc:' + esc(g.info.color) + '"><button type="button" class="hub-mlabel hub-mcat" data-sh="cat" data-v="' + esc(g.name) + '" aria-expanded="' + (open ? 'true' : 'false') + '"><span class="hub-mcic">' + g.info.icon + '</span><span class="hub-mlb">' + esc(g.name) + '</span><span class="hub-mcn">' + g.items.length + '</span><span class="hub-car">' + (open ? '▴' : '▾') + '</span></button>' +
         (open ? '<div class="hub-mitems">' + g.items.map(function (s) { return itemHtml(s, g.info.color, here); }).join('') + '</div>' : '') + '</div>';
     });
-    if (canAdmin() && !(S.menuExtra && S.menuExtra.length)) {
+    if (canAdmin()) {
       var vo = ov['Verwaltung'] !== undefined ? !!ov['Verwaltung'] : here === HUB_URL + 'verwaltung/';
-      var VT = [['benutzer', '👤', 'Benutzer'], ['zugang', '🛡️', 'Zugangsverwaltung'], ['status', '🩺', 'Systemstatus'], ['protokoll', '📝', 'Änderungsprotokoll'], ['backups', '💾', 'Backups']];
+      var VT = [['benutzer', '👤', 'Benutzer'], ['zugang', '🛡️', 'Zugangsverwaltung'], ['status', '🩺', 'Systemstatus'], ['protokoll', '📝', 'Protokoll'], ['backups', '💾', 'Backups']];
       nav += '<div class="hub-mgrp' + (vo ? ' hub-gopen' : '') + '" style="--mc:#64748b"><button type="button" class="hub-mlabel hub-mcat" data-sh="cat" data-v="Verwaltung" aria-expanded="' + (vo ? 'true' : 'false') + '"><span class="hub-mcic">🛡️</span><span class="hub-mlb">Verwaltung</span><span class="hub-mcn">' + VT.length + '</span><span class="hub-car">' + (vo ? '▴' : '▾') + '</span></button>' +
-        (vo ? '<div class="hub-mitems">' + VT.map(function (t) { return link(HUB_URL + 'verwaltung/#' + t[0], t[1], t[2], false, '#64748b'); }).join('') + '</div>' : '') + '</div>';
+        (vo ? '<div class="hub-mitems">' + VT.map(function (t) { return link(HUB_URL + 'verwaltung/#' + t[0], t[1], t[2], here === HUB_URL + 'verwaltung/' && (location.hash || '#benutzer') === '#' + t[0], '#64748b'); }).join('') + '</div>' : '') + '</div>';
     }
     var foot = btn('help', '❓', 'Hilfe');
     return '<div class="hub-drawer-bg" data-sh="menuclose"><aside class="hub-drawer" aria-label="Menü"><div class="hub-dtop"><span class="hub-dtitle">Menü</span><button type="button" class="hub-x" data-sh="menuclose" aria-label="Menü schließen">✕</button></div>' + profCard() + '<nav class="hub-dnav">' + nav + '</nav>' + (foot ? '<div class="hub-dfoot">' + foot + '</div>' : '') + '</aside></div>';
@@ -264,10 +264,11 @@ window.HubShell = (function () {
     var m = S.me; var ids = {}; S.systems.forEach(function (s) { ids[s.id] = s; });
     var who = m && m.user ? 'Du bist angemeldet als <b>' + esc(m.user) + '</b>.' : (m ? 'Du bist mit einer Rolle angemeldet.' : 'Du bist als Gast unterwegs.');
     var gen = '<section class="hub-help-card"><h4>👋 Allgemein</h4><p>' + who + ' Hier stehen nur die Bereiche und Funktionen, die für dein Konto freigegeben sind. Was du sehen und tun darfst, legt der Vorstand mit den Rechten fest.</p><ul>' +
-      '<li>Alle Bereiche findest du im Menü oben rechts (☰). Mit dem Kreis oben wechselst du das Konto oder meldest dich ab.</li>' +
+      '<li>Alle Bereiche findest du im Menü links. Auf dem Handy und kleinen Tablets öffnest du es mit ☰ oben rechts. Das Logo oben links bringt dich zurück zur Startseite. Mit dem Kreis oben wechselst du das Konto oder meldest dich ab.</li>' +
       (m && m.user ? '<li>Dein Passwort änderst du im Menü unter deinem Namen. Vergessen? Dann setzt es ein Administrator zurück.</li><li>Unter „Mein Profil“ pflegst du Kontakt, Bankverbindung und Lizenzen. Sie landen automatisch in deinen Abrechnungen.</li>' : '') +
       '<li>Änderungen sind sofort auf allen Geräten da. Ohne Internet speichert das Gerät zuerst lokal und schickt später nach.</li>' +
-      '<li>Mit „Auto, Hell, Dunkel“ oben stellst du das Design um.</li></ul></section>';
+      '<li>Mit „Auto, Hell, Dunkel“ oben stellst du das Design um.</li>' +
+      (m ? '<li>Die Startseite zeigt das Schwarze Brett, Termine, Fristen und deinen Schnellzugriff. Den Schnellzugriff stellst du dir mit dem Stift selbst zusammen; er gehört zu deinem Konto.</li>' : '<li>Ohne Anmeldung siehst du nur die öffentlichen Bereiche. Zum Anmelden nutze den Knopf oben rechts.</li>') + '</ul></section>';
     var secs = HELP.filter(function (h) { return ids[h.id]; }).map(function (h) {
       var steps = h.steps.filter(function (s) { return anyOf(s[0]); }).map(function (s) { return '<li>' + esc(s[1]) + '</li>'; }).join('');
       return '<section class="hub-help-card"><div class="hub-help-top"><h4>' + h.icon + ' ' + esc(h.title) + '</h4><a class="hub-btn hub-ghost" href="' + esc(ids[h.id].url) + '">Öffnen</a></div><p>' + esc(h.text) + '</p>' + (steps ? '<ul>' + steps + '</ul>' : '') + '</section>';

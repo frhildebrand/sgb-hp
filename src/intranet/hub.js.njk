@@ -121,7 +121,6 @@ templateEngineOverride: false
     if (S.me) out += '<div class="hub-home"><div class="hub-hcol">' + brettHtml() + termineHtml() + fristHtml() + '</div><div class="hub-hcol">' + quickCompact() + aufgabenCard() + blickHtml() + '</div></div>';
     else out += hero();
     out += S.systems.length ? '<div class="hub-narrow">' + groupsHtml(S.systems) + '</div>' : '<section class="hub-card"><p class="hub-sub">Für dein Konto sind noch keine Systeme freigeschaltet.</p></section>';
-    if (!S.me) out += '<section class="hub-card hub-note"><h3>Weitere Systeme?</h3><p class="hub-sub">Melde dich an, dann siehst du alle Systeme, die für dich freigeschaltet sind.</p><button type="button" class="hub-btn hub-gold" data-sh="login">Anmelden</button></section>';
     return out;
   }
   // Kompakte Aufgabenübersicht direkt unter dem Kopfbereich

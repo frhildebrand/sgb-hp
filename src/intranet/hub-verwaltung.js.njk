@@ -110,7 +110,16 @@ templateEngineOverride: false
       if (keep.length) { var single = g.title === sec.title.replace(/^\S+\s/, '') || out.filter(function (x) { return x.id === g.system; }).length && S.catalog.groups.filter(function (z) { return z.system === g.system; }).length === 1; splitCats(g.system, g.title, keep, single).forEach(function (x) { sec.groups.push(x); }); }
     });
     if (verw.perms.length) out[0].groups.push(verw);
-    return out;
+    // Gliederung wie auf der Startseite: Mein Bereich / Verein / Aktionen / Verwaltung; Abrechnung enthält Trainerabrechnung und Fahrtenformular als Unterseiten
+    var byId = {}; out.forEach(function (x) { byId[x.id] = x; });
+    var ab = byId.abrechnung, fa = byId.fahrten;
+    if (ab) { ab.title = '🧾 Abrechnung'; ab.hint = 'Jeder sieht nur seine eigenen Einträge, außer er hat „Alle …“.'; ab.groups = ab.groups.map(function (g) { return { title: 'Trainerabrechnung · ' + g.title.replace(/^Trainerabrechnung\s*·?\s*/, ''), perms: g.perms }; }); if (fa) { fa.groups.forEach(function (g) { ab.groups.push({ title: 'Fahrtenformular · ' + g.title.replace(/^Fahrtenformular\s*·?\s*/, ''), perms: g.perms }); }); byId.fahrten = null; } }
+    var TIT = { training: '🦈 Gruppen (Wettkampfgruppe)', auswertung: '📈 Jahresauswertung', hub: '🌐 Startseite und Verwaltung' };
+    var ORD = [['Mein Bereich', ['aufgaben', 'wettkaempfe', 'abrechnung']], ['Verein', ['mitglieder', 'training', 'trainer', 'anwesenheit', 'jugend', 'auswertung', 'vorstand', 'material', 'dokumente']], ['Aktionen', ['veranstaltungen', 'weihnachtsmarkt']], ['Verwaltung', ['hub']]];
+    var res = [], used = {};
+    ORD.forEach(function (c) { c[1].forEach(function (id) { var x = byId[id]; if (!x) return; used[id] = 1; if (TIT[id]) x.title = TIT[id]; x.cat = c[0]; res.push(x); }); });
+    out.forEach(function (x) { if (byId[x.id] && !used[x.id]) { x.cat = 'Weitere'; res.push(x); } });
+    return res;
   }
   function permGrid(d, key, value, locked, forced) {
     var sel = {}; (value || []).forEach(function (k) { sel[k] = true; }); (forced || []).forEach(function (k) { sel[k] = true; });
@@ -120,7 +129,7 @@ templateEngineOverride: false
     var bar = '<div class="ha-ptool"><input type="search" class="ha-psearch" placeholder="🔎 Recht suchen …" data-psearch="1" autocomplete="off">' +
       (locked ? '' : '<select class="ha-ppreset" data-ppreset="1"><option value="">Vorlage übernehmen …</option>' + presets + '</select><button type="button" class="wm-btn" data-pgall="on">✓ Alle an</button><button type="button" class="wm-btn" data-pgall="off">✗ Alle aus</button>') +
       '<span class="ha-ptotal"></span></div>';
-    var first = true;
+    var first = true, lastCat = '';
     var secs = sectionsFor().map(function (sec) {
       var cards = sec.groups.map(function (g) {
         return '<details class="ha-acc" open><summary><span class="ha-gt">' + esc(g.title) + '</span><span class="ha-cnt"></span>' +
@@ -130,8 +139,8 @@ templateEngineOverride: false
           return '<label class="ha-perm' + (!mine && !locked ? ' nomine' : '') + '"' + (!mine && !locked ? ' title="Dieses Recht hast du selbst nicht und kannst es daher nicht vergeben."' : '') + '><input type="checkbox" class="ha-sw" data-pk="' + esc(q.key) + '"' + (on ? ' checked' : '') + (dis ? ' disabled' : '') + '><span>' + esc(q.label) + '</span></label>';
         }).join('') + '</div></details>';
       }).join('');
-      var o = first; first = false;
-      return '<details class="ha-sysacc"' + (o ? ' open' : '') + ' data-sys="' + sec.id + '"><summary><span class="ha-st">' + esc(sec.title) + '</span><span class="ha-ptc"></span>' +
+      var o = false; first = false; var ch = sec.cat !== lastCat ? '<div class="ha-cat">' + esc(sec.cat) + '</div>' : ''; lastCat = sec.cat;
+      return ch + '<details class="ha-sysacc"' + (o ? ' open' : '') + ' data-sys="' + sec.id + '"><summary><span class="ha-st">' + esc(sec.title) + '</span><span class="ha-ptc"></span>' +
         (locked || !sec.groups.length ? '' : '<span class="ha-gbtn"><button type="button" class="wm-btn" data-pall="on">alle</button><button type="button" class="wm-btn" data-pall="off">keine</button></span>') + '</summary><div class="ha-sysbody">' +
         (sec.hint ? '<p class="ha-hint">' + esc(sec.hint) + '</p>' : '') + (cards ? '<div class="ha-grid">' + cards + '</div>' : '<p class="ha-hint">' + esc(sec.empty || 'Keine Rechte.') + '</p>') + '</div></details>';
     }).join('');
@@ -286,7 +295,7 @@ templateEngineOverride: false
     });
     return h + '</tbody></table>';
   }
-  function tabList() { var l = [['benutzer', '👤', 'Benutzerverwaltung'], ['zugang', '🛡️', 'Zugangsverwaltung']]; if (has('view.status')) l.push(['status', '🩺', 'Systemstatus']); if (has('view.protokoll')) l.push(['protokoll', '📝', 'Änderungsprotokoll']); if (has('system.backup') || has('system.restore')) l.push(['backups', '💾', 'Backups']); return l; }
+  function tabList() { var l = [['benutzer', '👤', 'Benutzer'], ['zugang', '🛡️', 'Zugang']]; if (has('view.status')) l.push(['status', '🩺', 'Status']); if (has('view.protokoll')) l.push(['protokoll', '📝', 'Protokoll']); if (has('system.backup') || has('system.restore')) l.push(['backups', '💾', 'Backups']); return l; }
   try { var hh = (location.hash || '').replace('#', ''); if (['benutzer', 'zugang', 'status', 'protokoll', 'backups'].indexOf(hh) >= 0) S.tab = hh; } catch (e) {}
   window.addEventListener('hashchange', function () { var hh = (location.hash || '').replace('#', ''); if (['benutzer', 'zugang', 'status', 'protokoll', 'backups'].indexOf(hh) >= 0) { S.tab = hh; S.msg = ''; render(); } });
   var L = { entries: [], areas: [], more: false, error: '', loading: false, area: '', q: '', from: '', to: '' }; var ST = { d: null, error: '', loading: false };
@@ -329,7 +338,7 @@ templateEngineOverride: false
   }
   function head() {
     var ok = !!S.me && canAny(CAN_ENTER);
-    SH.S.menuExtra = ok ? tabList().map(function (t) { return { key: t[0], icon: t[1], label: t[2], on: S.tab === t[0] }; }) : [];
+    SH.S.menuExtra = [];
     return SH.header('Verwaltung');
   }
   function body() {
@@ -339,7 +348,7 @@ templateEngineOverride: false
     if (S.offline) return '<section class="hub-card hub-offline"><h2>Keine Verbindung</h2><p class="hub-sub">Das Konto-System ist gerade nicht erreichbar.</p><button type="button" class="hub-btn hub-gold" data-act="retry">Nochmal versuchen</button><details class="hub-diag"><summary>Technische Details</summary><pre>' + esc(SH.DIAG.length ? SH.DIAG.join('\n') : 'Keine Angaben.') + '</pre></details></section>';
     if (!tabList().some(function (t) { return t[0] === S.tab; })) S.tab = 'benutzer';
     var tabs = tabList().map(function (t) { return [t[0], t[1] + ' ' + t[2]]; }).map(function (t) { return '<button type="button" data-tab="' + t[0] + '" class="wm-tab' + (S.tab === t[0] ? ' on' : '') + '">' + t[1] + '</button>'; }).join('');
-    var top = '<div class="wm-card wm-top"><h2>👑 Verwaltung</h2><a class="wm-btn" href="' + HUB_URL + '">⬅️ Zurück zum Hub</a></div>';
+    var top = '';
     var inner = '';
     if (S.tab === 'benutzer') {
       inner = '<div class="wm-card"><div class="wm-bar"><h3>👤 Benutzer</h3>' + (has('system.users') ? '<button type="button" class="wm-amber" data-ed="newuser">➕ Neuer Benutzer</button>' : '') + '</div><p class="wm-note">Benutzer haben einen eigenen Namen und ein eigenes Passwort, eine oder mehrere Rollen und auf Wunsch Sonderrechte. Die Rechte aus allen Rollen und Sonderrechten zählen zusammen.</p>' + (canAny(['system.users', 'system.rechte', 'system.roles']) ? usersHtml() : '<p class="wm-note">Du darfst Benutzer nicht ansehen.</p>') + '</div>';
@@ -351,7 +360,7 @@ templateEngineOverride: false
         '<div class="wm-card"><div class="wm-bar"><h3>✨ Sonderrechte</h3>' + (has('system.rechte') ? '<button type="button" class="wm-amber" data-ed="newextra">➕ Neues Sonderrecht</button>' : '') + '</div><p class="wm-note">Ein Sonderrecht ist ein eigenes Rechte-Paket, das man einzelnen Benutzern zusätzlich zu ihren Rollen gibt, zum Beispiel „Statistik bearbeiten“ für einen Helfer. Es gilt nur bei persönlicher Anmeldung mit Benutzername, nicht bei der Anmeldung mit dem Passwort der Rolle.</p>' + extrasHtml() + '</div>' +
         '<details class="wm-card wm-det"><summary>📊 Rechte-Übersicht (wer darf was)</summary><p class="wm-note">Nur zum Ansehen. Geändert wird bei den einzelnen Rollen und Sonderrechten.</p><div class="wm-scroll">' + matrixHtml() + '</div></details>';
     }
-    return top + (S.msg ? '<div class="hub-err" style="margin-bottom:14px">' + esc(S.msg) + '</div>' : '') + '<div class="wm-tabs">' + tabs + '</div>' + inner;
+    return top + (S.msg ? '<div class="hub-err" style="margin-bottom:14px">' + esc(S.msg) + '</div>' : '') + '<div class="wm-tabs vw-tabs-hide">' + tabs + '</div>' + inner;
   }
   function dialogOrConfirm() {
     var d = S.dialog; if (!d) return '';
