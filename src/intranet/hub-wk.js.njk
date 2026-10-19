@@ -97,7 +97,7 @@ templateEngineOverride: false
     var up = all.filter(function (w) { return (w.date || '9999') >= t; });
     var past = all.filter(function (w) { return (w.date || '9999') < t; }).reverse();
     var canImp = M.anyCan(['wettkaempfe.import', 'wettkaempfe.anlegen']);
-    var out = '<section class="wm-card"><div class="wm-bar"><h3>Wettkämpfe</h3><span class="m-actions">' + viewSwitch(lv) + (canImp ? '<button type="button" class="wm-btn" data-ma="wkneu">➕ Termin</button><button type="button" class="wm-amber" data-ma="wkaus">📄 Neu aus Ausschreibung</button><button type="button" class="wm-btn" data-ma="wkneumeld">📋 Neu aus Meldedatei</button><button type="button" class="wm-btn" data-ma="wkneuprot">🏁 Neu aus Protokoll</button>' : '') + '</span></div>';
+    var out = '<section class="wm-card"><div class="wm-bar"><h3>Wettkämpfe</h3><span class="m-actions">' + viewSwitch(lv) + (canImp ? '<button type="button" class="wm-btn" data-ma="wkneu">➕ Termin</button><button type="button" class="wm-amber" data-ma="wkaus">📄 Neu aus Ausschreibung</button><button type="button" class="wm-btn" data-ma="wkbulk">📦 Mehrere CSV</button><button type="button" class="wm-btn" data-ma="wkneumeld">📋 Neu aus Meldedatei</button><button type="button" class="wm-btn" data-ma="wkneuprot">🏁 Neu aus Protokoll</button>' : '') + '</span></div>';
     if (lv === 'tabelle') {
       var rows = M.S.sub.allRows ? all : up.concat(past.filter(function (w) { return M.daysTo(w.date) >= -45; }));
       out += tableHtml(rows) + '<p class="wm-note"><button type="button" class="m-chip' + (M.S.sub.allRows ? ' on' : '') + '" data-ma="allrows">Auch ältere zeigen</button> Tippe auf ein Feld, um es abzuhaken.</p></section>';
@@ -399,6 +399,73 @@ templateEngineOverride: false
     if (Object.keys(af).length) wk.art = af;
     M.closeDlg(); M.op({ op: 'set', coll: 'wettkaempfe', item: wk }); M.S.sub.wk = wk.id; M.S.sub.v = 'uebersicht'; M.S.sub.vSet = true; M.toast('Wettkampf aus Protokoll angelegt.'); M.render(true);
   }
+
+  /* ---------- Sammel-Import: viele WebClub-CSVs (Meldungen + Ergebnisse) auf einmal ---------- */
+  var bulk = null;
+  function bulkDialog() {
+    M.openDlg('<div class="hub-dhead"><h3>Mehrere CSV-Dateien importieren</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div>' +
+      '<p class="wm-note">Wähle alle WebClub-Dateien „Meldungen …“ und „Ergebnisse …“ auf einmal aus. Die App ordnet sie nach Titel und Datum zu und legt die Wettkämpfe an oder ergänzt vorhandene. Du siehst vorher eine Übersicht.</p>' +
+      '<div class="m-fgrid"><label class="m-f wide"><span>CSV-Dateien</span><input type="file" id="wkbfiles" multiple accept=".csv,.txt,text/csv"></label></div><div id="wkmsg" class="wm-note"></div>' +
+      '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="wkbulkread">Auslesen</button></div>');
+  }
+  function sameWk(wk, g) { var t = String(wk.title || '').toLowerCase().trim(), u = String(g.title || '').toLowerCase().trim(); return wk.date === g.date && (!t || !u || t === u || t.indexOf(u) >= 0 || u.indexOf(t) >= 0); }
+  function bulkRead() {
+    var fs = document.getElementById('wkbfiles').files, msg = document.getElementById('wkmsg');
+    if (!fs.length) { msg.textContent = 'Bitte Dateien auswählen.'; return; }
+    msg.textContent = 'Wird gelesen …';
+    var groups = {}, bad = [];
+    var jobs = Array.prototype.map.call(fs, function (f) {
+      return readCsv(f).then(function (txt) {
+        var first = (txt.replace(/^﻿/, '').split(/\r?\n/)[0] || '').trim(); var isM = /^Meldungen\b/i.test(first), isE = /^Ergebnisse\b/i.test(first);
+        if (!isM && !isE) { bad.push(f.name + ' (weder „Meldungen“ noch „Ergebnisse“)'); return; }
+        var p = isM ? P.parseCsvMeld(txt) : P.parseCsvErg(txt);
+        if (p.warnings.length && !(p.starts || p.found || []).length) { bad.push(f.name + ': ' + p.warnings[0]); return; }
+        var k = (p.date || '') + '|' + String(p.title || '').toLowerCase().trim(); var g = groups[k] = groups[k] || { title: p.title, date: p.date, ort: p.ort, bahn: p.bahn, files: [] };
+        if (isM) g.meld = p; else g.erg = p; g.files.push(f.name); if (!g.ort) g.ort = p.ort; if (!g.bahn) g.bahn = p.bahn;
+      });
+    });
+    Promise.all(jobs).then(function () {
+      var canc = 0; var list = Object.keys(groups).map(function (k) { return groups[k]; }).filter(function (g) { if (/abgesagt/i.test(g.title || '')) { canc++; return false; } return true; }).sort(function (a, b) { return (a.date || '') < (b.date || '') ? -1 : 1; });
+      list.forEach(function (g) { g.ex = M.items('wettkaempfe').filter(function (w) { return sameWk(w, g); })[0] || null; });
+      bulk = { list: list };
+      M.openDlg('<div class="hub-dhead"><h3>Sammel-Import: Übersicht</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div>' +
+        (canc ? '<p class="wm-note">' + canc + ' abgesagte Veranstaltung' + (canc > 1 ? 'en' : '') + ' wurde' + (canc > 1 ? 'n' : '') + ' übersprungen.</p>' : '') + (bad.length ? '<div class="hub-err">Nicht gelesen: ' + bad.map(esc).join('; ') + '</div>' : '') +
+        '<div style="max-height:46vh;overflow:auto"><table class="m-table"><tr><th>Datum</th><th>Wettkampf</th><th>Meldungen</th><th>Ergebnisse</th><th></th></tr>' +
+        list.map(function (g) { return '<tr><td class="nowrap">' + esc(M.fmtDate(g.date, true)) + '</td><td>' + esc(g.title) + '<br><span class="wm-sub">' + esc(g.ort || '') + ' ' + esc(g.bahn || '') + '</span></td><td>' + (g.meld ? g.meld.starts.length + ' Starts' : '–') + '</td><td>' + (g.erg ? g.erg.found.length + ' Zeiten' : '–') + '</td><td>' + (g.ex ? '<span class="wm-sub">ergänzt vorhandenen</span>' : '<b>neu</b>') + '</td></tr>'; }).join('') + '</table></div>' +
+        '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="wkbulksave"' + (list.length ? '' : ' disabled') + '>' + list.length + ' Wettkämpfe übernehmen</button></div>');
+    }, function (e) { msg.textContent = 'Fehler: ' + (e && e.message || e); });
+  }
+  function bulkOne(g) {
+    var ex = g.ex; var starts = ex && (ex.starts || []).length ? (ex.starts || []).slice() : mkStarts(g.meld ? g.meld.starts : (ex && ex.meld && ex.meld.starts) || []);
+    var mx = {}; starts.forEach(function (x) { mx[x.e] = Math.max(mx[x.e] || 0, x.b || 0); });
+    var res = Object.assign({}, ex && ex.res || {}); var evs = {}; var n = 0;
+    ((ex && ex.events) || []).forEach(function (e) { evs[e.no] = e; });
+    if (g.meld) g.meld.events.forEach(function (e) { if (!evs[e.no]) evs[e.no] = { no: e.no, name: e.name, ab: e.ab }; });
+    if (g.erg) {
+      g.erg.found.forEach(function (x) {
+        if (!evs[x.e]) evs[x.e] = { no: x.e, name: x.evn, ab: x.ab || 1 };
+        var hit = starts.filter(function (s) { return s.e === x.e && normN(s.n) === normN(x.nn); })[0];
+        if (!hit) { mx[x.e] = (mx[x.e] || 0) + 1; hit = { e: x.e, l: 1, lt: 1, b: mx[x.e], n: x.orig || x.name, s: x.sx || '', j: x.jg || '', m: '' }; starts.push(hit); }
+        var k = key(hit); var old = res[k]; if (old && (old.t || old.st)) return;
+        var r = { t: x.t, sp: [], st: x.st || '' }; if (x.pl) r.pl = x.pl; res[k] = r; n++;
+      });
+    }
+    var events = Object.keys(evs).map(Number).sort(function (a, b) { return a - b; }).map(function (k) { return evs[k]; });
+    var abs = g.meld ? g.meld.abschnitte.map(function (a) { return { no: a.no, tag: a.date, beginn: a.beginn }; }) : ((ex && ex.abschnitte) || []);
+    var docs = Object.assign({}, ex && ex.docs || {}); if (g.meld) docs.meld = { name: g.files.filter(function (f) { return /meld/i.test(f); })[0] || 'CSV', at: M.today(), by: M.userName() }; if (g.erg) docs.prot = { name: g.files.filter(function (f) { return /erg/i.test(f); })[0] || 'CSV', at: M.today(), by: M.userName() };
+    var bahn = (ex && ex.bahn) || (/50/.test(g.bahn || '') ? '50' : /25/.test(g.bahn || '') ? '25' : '');
+    var base = ex ? Object.assign({}, ex) : { id: M.uid(), club: club(), gericht: [], chk: {} };
+    var wk = Object.assign(base, { title: (ex && ex.title) || g.title, date: (ex && ex.date) || g.date, ort: (ex && ex.ort) || g.ort || '', bahn: bahn, abschnitte: (ex && ex.abschnitte && ex.abschnitte.length) ? ex.abschnitte : abs, events: events, starts: starts, res: res, docs: docs });
+    if (g.meld) wk.meld = { n: g.meld.swimmerCount, kari: [], starts: g.meld.starts.map(function (x) { return { e: x.e, n: x.n, s: x.s, j: x.j, m: x.m }; }) };
+    if (g.erg && g.erg.relays && g.erg.relays.length) { var art = Object.assign({}, wk.art || {}); art.staffeln = g.erg.relays.map(function (r) { return { e: r.e, evn: r.evn, pl: r.pl, t: r.t, st: r.st }; }); wk.art = art; }
+    return wk;
+  }
+  function bulkSave() {
+    if (!bulk) return; var ops = [], big = [];
+    bulk.list.forEach(function (g) { var wk = bulkOne(g); if (JSON.stringify(wk).length > 38000) big.push(g.title); else ops.push({ op: 'set', coll: 'wettkaempfe', item: wk }); });
+    M.closeDlg(); if (ops.length) M.ops(ops); M.toast(ops.length + ' Wettkämpfe übernommen.' + (big.length ? ' Zu groß, nicht übernommen: ' + big.join(', ') : '')); bulk = null;
+  }
+
   /* Kampfrichter aus dem Protokoll: Anzahl pro Abschnitt und Namen ins Kampfgericht */
   function krFields(p, tgt) {
     var l = p.krAb || []; if (!l.length) return null; var f = {}; var abs = {};
@@ -678,6 +745,9 @@ templateEngineOverride: false
       wkgeld: function (it, el) { var wk = curWk(); if (wk) M.op({ op: 'patch', coll: 'wettkaempfe', id: wk.id, fields: { meldegeldStatus: el.getAttribute('data-v') } }); },
       wkkrtake: function (it, el) { var wk = curWk(); if (!wk) return; var f = {}; f[el.getAttribute('data-k')] = Number(el.getAttribute('data-n')); M.op({ op: 'patch', coll: 'wettkaempfe', id: wk.id, fields: f }); },
       wkaus: function () { docDialog('aus', ''); },
+      wkbulk: function () { bulkDialog(); },
+      wkbulkread: function () { bulkRead(); },
+      wkbulksave: function () { bulkSave(); },
       wkneumeld: function () { docDialog('meld', ''); },
       wkneuprot: function () { docDialog('prot', ''); },
       wksavenewprot: function () { saveNewProt(); },

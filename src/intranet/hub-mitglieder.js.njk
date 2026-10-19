@@ -37,6 +37,8 @@ templateEngineOverride: false
     { k: 'rollen', t: 'pick', label: 'Rollen', opts: ROLLEN, hint: 'Mehrere sind möglich, z. B. Schwimmer und Kampfrichter.' },
     { k: 'trainerIn', t: 'pick', label: 'Trainer in Gruppen', opts: GR, hint: 'Wo diese Person Trainer ist. Sie erscheint dann auch im Bereich Trainer.' },
     { k: 'status', t: 'sel', label: 'Status', opts: [['', 'aktiv'], ['pausiert', 'pausiert'], ['ausgetreten', 'ausgetreten']] },
+    { k: 'eintritt', t: 'text', label: 'Eintritt (Jahr oder Datum)' },
+    { k: 'austritt', t: 'text', label: 'Austritt (Jahr oder Datum)', hint: 'Nur für die Jahresauswertung (Austritte).' },
     { k: 'dsv', t: 'text', label: 'DSV-ID' },
     { k: 'notiz', t: 'area', label: 'Notiz', rows: 3 }
   ];
