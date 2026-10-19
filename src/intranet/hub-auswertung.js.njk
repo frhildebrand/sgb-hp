@@ -209,9 +209,9 @@ templateEngineOverride: false
       (wk.starts || []).forEach(function (s) {
         var r = (wk.res || {})[s.e + '-' + s.l + '-' + s.b]; if (!r || !r.t) return; var rel = s.j === 'Staffel';
         if (rel) sta++; else { ein++; sw[flip(s.n)] = 1; }
-        var p = +r.pl || 0; if (p > 0) pl[rel ? 's' : 'e'][p <= 3 ? p - 1 : 3]++;
+        var p = +r.pl || 0; pl[rel ? 's' : 'e'][p > 0 && p <= 3 ? p - 1 : 3]++;
       });
-      var rl = (wk.art && wk.art.staffeln) || []; if (!sta && rl.length) { rl.forEach(function (r) { var p = +r.pl || 0; if (p > 0) pl.s[p <= 3 ? p - 1 : 3]++; }); } sta = Math.max(sta, rl.length);
+      var rl = (wk.art && wk.art.staffeln) || []; if (!sta && rl.length) { rl.forEach(function (r) { var p = +r.pl || 0; pl.s[p > 0 && p <= 3 ? p - 1 : 3]++; }); } else if (sta < rl.length) { pl.s[3] += rl.length - sta; } sta = Math.max(sta, rl.length);
       var bw = bahnOf(wk); vr.push({ d: wk.date, t: wk.title || '', o: wk.ort || '', b: bw === 25 ? 'Kurz' : bw === 50 ? 'Lang' : '–', sw: Object.keys(sw).length, e: ein, s: sta, g: geld(wk, ein, sta), wid: wk.id, bw: bw }); tot.sw += Object.keys(sw).length; tot.e += ein; tot.s += sta;
       (wk.gericht || []).forEach(function (g) { var n = String(g.name || '').trim(); if (!n || /^N\s?N$/i.test(n)) return; var k = (kr[n] = kr[n] || { n: n, w: {}, a: {}, v: '' }); if (g.v && !/protokoll/i.test(g.v)) k.v = g.v; k.w[wk.id] = 1; k.a[wk.id + '|' + g.a] = 1; k.e = k.e || {}; var ee = k.e[wk.id] = k.e[wk.id] || { d: wk.date, t: wk.title || '', a: [] }; if (g.a && ee.a.indexOf(g.a) < 0) ee.a.push(g.a); });
     });
