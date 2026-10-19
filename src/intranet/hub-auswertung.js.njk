@@ -1,0 +1,804 @@
+---
+permalink: /intranet/js/hub-auswertung.js
+layout: false
+eleventyExcludeFromCollections: true
+templateEngineOverride: false
+---
+/* Jahresauswertung: Punkteliste (World Aquatics) je Saison, Kurzbahn und Langbahn. */
+(function () {
+  'use strict';
+  var M = window.HubMod; if (!M) return; var esc = M.esc; var P = window.WKParse;
+  var SO = { S: 'Schmetterling', R: 'Rücken', B: 'Brust', F: 'Freistil', L: 'Lagen' };
+  var ORDER = ['S', 'R', 'B', 'F', 'L'];
+  function skey(k) { var m = /^(\d+)([SRBFL])$/.exec(k); return ORDER.indexOf(m[2]) * 10000 + (+m[1]); }
+  function slabel(k) { var m = /^(\d+)([SRBFL])$/.exec(k); return m[1] + 'm ' + SO[m[2]]; }
+  function sub() { var s = M.S.sub; if (!s.sj) s.sj = ''; if (!s.sb) s.sb = 'best'; if (!s.sg) s.sg = 'Alle'; return s; }
+  function all() { return M.items('saison').filter(function (x) { return /^ps-/.test(x.id); }); }
+  function cfg() { return M.find('saison', 'cfg') || { id: 'cfg' }; }
+  function waSets() { return M.items('saison').filter(function (x) { return /^wa-/.test(x.id); }); }
+  function years() {
+    var y = {}; all().forEach(function (x) { y[x.jahr] = 1; });
+    if (waSets().length) M.items('wettkaempfe').forEach(function (wk) { if (wk.date && wk.res && Object.keys(wk.res).length) y[String(wk.date).slice(0, 4)] = 1; });
+    return Object.keys(y).sort().reverse();
+  }
+  function year() { var s = sub(), ys = years(); if (!s.sj || ys.indexOf(s.sj) < 0) s.sj = ys[0] || String(new Date().getFullYear()); return s.sj; }
+  function pset(j, b) { return all().filter(function (x) { return x.jahr === j && x.bahn === b; })[0]; }
+  // Je Schwimmer die Punkte je Strecke; bahn: 'best' | 'Lang' | 'Kurz'
+  function table(j, b) {
+    var by = {};
+    ['Lang', 'Kurz'].forEach(function (bn) {
+      if (b !== 'best' && b !== bn) return; var d = pset(j, bn); if (!d) return;
+      (d.rows || []).forEach(function (r) {
+        var k = r.name.toLowerCase(); var o = by[k] || (by[k] = { name: r.name, jg: r.jg, sex: r.sex, p: {}, l: {}, k: {} });
+        Object.keys(r.p).forEach(function (s) { (bn === 'Lang' ? o.l : o.k)[s] = r.p[s]; if (!(o.p[s] >= r.p[s])) o.p[s] = r.p[s]; });
+      });
+    });
+    // Punkte, die das Intranet selbst aus den Wettkampfergebnissen und den World-Aquatics-Basiszeiten errechnet
+    var sc = starts(j);
+    Object.keys(sc).forEach(function (n) {
+      sc[n].forEach(function (x) {
+        if (!(x.pt > 0)) return; var bn = x.b === 50 ? 'Lang' : x.b === 25 ? 'Kurz' : ''; if (!bn || (b !== 'best' && b !== bn)) return;
+        var o = by[n] || (by[n] = { name: x.nm, jg: x.jg, sex: x.sx, p: {}, l: {}, k: {} }); var tg = bn === 'Lang' ? o.l : o.k;
+        if (!(tg[x.k] >= x.pt)) tg[x.k] = x.pt; if (!(o.p[x.k] >= x.pt)) o.p[x.k] = x.pt;
+      });
+    });
+    var l = Object.keys(by).map(function (k) { var o = by[k]; o.n = Object.keys(o.p).length; o.ges = 0; Object.keys(o.p).forEach(function (s) { o.ges += o.p[s]; }); o.avg = o.n ? Math.round(o.ges / o.n) : 0; return o; });
+    l.sort(function (a, b2) { return b2.ges - a.ges || a.name.localeCompare(b2.name, 'de'); });
+    return l;
+  }
+  // Zeiten aus den angelegten Wettkämpfen (Meldeergebnis + Ergebnisse)
+  var STR = { schmetterling: 'S', rücken: 'R', ruecken: 'R', brust: 'B', freistil: 'F', lagen: 'L' };
+  function flipN(n) { return String(n || '').replace(/^([^,]+),\s*(.+)$/, '$2 $1').trim(); }
+  function flip(n) { return flipN(n).toLowerCase(); }
+  function streckeOf(name) { var m = /^\s*(\d+)\s*m\s+([A-Za-zäöüÄÖÜ]+)/.exec(name || ''); if (!m) return ''; var c = STR[m[2].toLowerCase()]; return c ? m[1] + c : ''; }
+  function bahnOf(wk) { if (wk.bahn === '25' || wk.bahn === '50') return +wk.bahn; var m = /à\s*(\d+)\s*m/.exec(wk.becken || ''); return m ? +m[1] : 0; }
+  function tms(t) { var m = /^(\d+):(\d{2}),(\d{2})$/.exec(t || ''); return m ? (+m[1]) * 60000 + (+m[2]) * 1000 + (+m[3]) * 10 : null; }
+  function tshow(t) { var m = /^(\d+):(\d{2}),(\d{2})$/.exec(t || ''); if (!m) return t || ''; return (+m[1] ? (+m[1]) + ':' : '') + (+m[1] ? m[2] : String(+m[2])) + ',' + m[3]; }
+  function dshow(ms) { var a = Math.abs(ms), sec = Math.floor(a / 1000), h = Math.round((a % 1000) / 10); if (h === 100) { sec++; h = 0; } return (ms < 0 ? '-' : '+') + ('0' + Math.floor(sec / 60)).slice(-2) + ':' + ('0' + (sec % 60)).slice(-2) + ',' + ('0' + h).slice(-2); }
+  function cancelled(wk) { return /abgesagt/i.test(wk.title || ''); }
+  var SC = null;
+  function starts(j) {
+    var by = {}; var ev = {};
+    M.items('wettkaempfe').forEach(function (wk) {
+      if (String(wk.date || '').slice(0, 4) !== String(j) || cancelled(wk)) return; var names = {}; (wk.events || []).forEach(function (e) { names[e.no] = e.name; });
+      (wk.starts || []).forEach(function (s) {
+        var r = (wk.res || {})[s.e + '-' + s.l + '-' + s.b]; if (!r || !r.t) return; var k = streckeOf(names[s.e]); if (!k) return; var n = flip(s.n);
+        var bw = bahnOf(wk); var pts = window.WAPunkte ? WAPunkte.points(waSets(), s.s, bw === 25 ? 'Kurz' : bw === 50 ? 'Lang' : '', k, wk.date, tms(r.t)) : null; (by[n] = by[n] || []).push({ d: wk.date, ort: wk.ort || wk.title || '', b: bw, k: k, t: r.t, wk: wk.id, nm: flipN(s.n), jg: +s.j || 0, sx: s.s, pt: pts });
+      });
+    });
+    Object.keys(by).forEach(function (n) { by[n].sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; }); var last = {}; by[n].forEach(function (x) { var lk = x.k + '|' + x.b; var pv = last[lk]; x.diff = pv !== undefined && tms(x.t) !== null ? tms(x.t) - pv : null; if (tms(x.t) !== null) last[lk] = tms(x.t); }); });
+    return by;
+  }
+  function age(o, j) { return +j - o.jg; }
+  function defBands(j) {
+    var y = +j, o = [['Junior (Jg. ' + (y - 18) + ' und älter)', 0, y - 18, '']];
+    for (var q = y - 17; q <= y - 8; q++) o.push(['Jahrgang ' + q, q, q, '']);
+    o.push(['Jahrgang ' + (y - 7) + ' und jünger', y - 7, 9999, '']);
+    return o.sort(function (a, b) { return a[1] - b[1]; });
+  }
+  // Jahrgangsgruppen: [Name, von, bis, Geschlecht ('' = beide, 'M' oder 'W')]
+  function bandList(j, sx) {
+    var c = cfg(), key = sx === 'W' ? 'bandsW' : sx === 'M' ? 'bandsM' : '', b = key && c[key] ? c[key][j] : null;
+    if (!(Array.isArray(b) && b.length)) b = (c.bands || {})[j];
+    if (Array.isArray(b) && b.length) return b.map(function (x) { var r = Array.isArray(x.r) && x.r.length ? x.r : [[+x.von || 0, +x.bis || 9999]]; return [x.l, r[0][0], r[0][1], x.sx || '', r]; });
+    return defBands(j).map(function (b) { return b.concat([[[b[1], b[2]]]]); });
+  }
+  function mergeMax() { var m = cfg().mergeMax; return m === undefined || m === null || m === '' ? 1 : Math.max(0, Math.min(9, +m || 0)); }
+  function mastersAb() { var m = +cfg().masters; return m > 0 ? m : 25; }
+  function isMastersName(n) { return /^masters/i.test(n); }
+  function isJuniorBand(b) { return /^junior/i.test(b[0]) || (b[4] && b[4][0] && b[4][0][0] === 0); }
+  // Jahrgangsgruppen: nur Jugend (jünger als die Masters-Grenze); Masters haben ihre eigene Wertung
+  function bands(j, sx) { var m = mastersAb(); return bandList(j, sx).map(function (b) { return [b[0], function (o) { return (isMastersName(b[0]) || age(o, j) < m) && (!b[3] || o.sex === b[3]) && b[4].some(function (r) { return o.jg >= r[0] && o.jg <= r[1]; }); }, b[3], b]; }); }
+  function isW(o) { return o.sex === 'W'; } function isM(o) { return o.sex === 'M'; }
+  function isJug(j) { return function (o) { return age(o, j) < mastersAb(); }; }
+  function groups(j) {
+    return [['Gesamt', function () { return true; }], ['Weiblich', isW], ['Männlich', isM], ['Masters', function (o) { return age(o, j) >= mastersAb(); }]];
+  }
+  function filt(l, j, name) { var f = groups(j).filter(function (g) { return g[0] === name; })[0]; return f ? l.filter(f[1]) : l; }
+  // Tabellenzeilen. base = Liste, nach der die Platznummern vergeben werden (wie in der Papierauswertung).
+  function tbl(l, j, base, top) {
+    var sc = starts(j); base = base || l;
+    var d = (top ? l.slice(0, top) : l).map(function (o) { var st = sc[o.name.toLowerCase()] || []; var w = {}; st.forEach(function (x) { w[x.wk] = 1; }); return { o: o, pl: (top ? l.indexOf(o) : base.indexOf(o)) + 1, v: st.length ? Object.keys(w).length : 0, s: st.length }; });
+    var mx = { v: 0, s: 0, n: 0, g: 0, a: 0 }; d.forEach(function (x) { mx.v = Math.max(mx.v, x.v); mx.s = Math.max(mx.s, x.s); mx.n = Math.max(mx.n, x.o.n); mx.g = Math.max(mx.g, x.o.ges); mx.a = Math.max(mx.a, x.o.avg); });
+    function c(v, m, txt) { return '<td>' + (v === m && m > 0 ? '<b>' + txt + '</b>' : txt) + '</td>'; }
+    return HEAD + d.map(function (x) { var o = x.o; return '<tr><td class="r">' + x.pl + '</td><td class="l">' + esc(o.name) + '</td><td>' + o.jg + '</td><td>' + esc(o.sex) + '</td>' + c(x.v, mx.v, x.s ? x.v : '–') + c(x.s, mx.s, x.s || '–') + c(o.n, mx.n, o.n) + c(o.ges, mx.g, o.ges) + c(o.avg, mx.a, o.avg) + '</tr>'; }).join('');
+  }
+  var HEAD = '<tr><th>Platz</th><th>Schwimmer</th><th>Jahrgang</th><th>M/W/D</th><th>Veranstaltungen</th><th>Starts</th><th>Anzahl Strecken</th><th>Erreichte Punkte</th><th>Durchschnitt Punkte</th></tr>';
+  function sec(title, l, j, base, top) { if (!l.length) return ''; return '<h2 class="aus-h">' + esc(title) + '</h2><table class="aus-t aus-r">' + tbl(l, j, base, top) + '</table>'; }
+  // Jahrgangsgruppen je Geschlecht. Gruppen mit nur 1 Person (ohne Junioren und Masters) werden mit der
+  // benachbarten Jahrgangsgruppe zusammengelegt, die weniger Personen hat. Leere Gruppen zählen nicht.
+  function mergedLabel(rs) {
+    var lo = 99999, hi = 0; rs.forEach(function (r) { lo = Math.min(lo, r[0] || 0); hi = Math.max(hi, r[1]); });
+    if (hi >= 9999) return 'Jahrgang ' + lo + ' und jünger'; return lo === hi ? 'Jahrgang ' + lo : 'Jahrgang ' + lo + '–' + hi;
+  }
+  function genderGroups(j, sl, sx) {
+    var gs = [];
+    bands(j, sx).forEach(function (b) {
+      var bd = b[3]; if (b[2] && b[2] !== sx) return; if (isMastersName(b[0])) return;
+      var ms = sl.filter(b[1]); gs.push({ label: b[0], ranges: bd[4].slice(), ms: ms, junior: isJuniorBand(bd), merged: false });
+    });
+    var guard = 0;
+    while (guard++ < 50) {
+      var cand = []; gs.forEach(function (g, i) { if (!g.junior && g.ms.length >= 1 && g.ms.length <= mergeMax() && !g.stuck) cand.push(i); });
+      if (!cand.length) break;
+      cand.sort(function (a, b) { return gs[a].ms.length - gs[b].ms.length || a - b; });
+      var i = cand[0], g = gs[i], pv = -1, nx = -1, k;
+      for (k = i - 1; k >= 0; k--) if (!gs[k].junior && gs[k].ms.length) { pv = k; break; }
+      for (k = i + 1; k < gs.length; k++) if (!gs[k].junior && gs[k].ms.length) { nx = k; break; }
+      if (pv < 0 && nx < 0) { g.stuck = true; continue; }
+      var t = pv < 0 ? nx : nx < 0 ? pv : (gs[nx].ms.length < gs[pv].ms.length ? nx : pv);
+      var T = gs[t]; T.ms = T.ms.concat(g.ms); T.ranges = T.ranges.concat(g.ranges); T.label = mergedLabel(T.ranges); T.merged = true;
+      T.ms.sort(function (a, b) { return l_sort(a, b); });
+      gs.splice(i, 1);
+    }
+    return gs.filter(function (g) { return g.ms.length; });
+  }
+  function l_sort(a, b) { return b.ges - a.ges || a.name.localeCompare(b.name, 'de'); }
+  function medalsFor(n) { return n <= 0 ? 0 : n <= 3 ? 1 : n <= 5 ? 2 : 3; }
+  // Gesamt, Weiblich und Männlich; je Geschlecht mit Jugend, Masters und den Jahrgangsgruppen (Platznummern je Gruppe ab 1)
+  function reportParts(j, l) {
+    var parts = [{ name: 'Auswertung Gesamt', html: sec('Gesamt', l, j) }];
+    [['Weiblich', isW, 'W'], ['Männlich', isM, 'M']].forEach(function (g) {
+      var sl = l.filter(g[1]); if (!sl.length) return; var out = sec(g[0], sl, j);
+      out += sec('Jugend', sl.filter(isJug(j)), j);
+      out += sec('Masters', sl.filter(function (o) { return age(o, j) >= mastersAb(); }), j);
+      genderGroups(j, sl.filter(isJug(j)), g[2]).forEach(function (x) { out += sec(x.label + (x.merged ? ' (zusammengelegt)' : ''), x.ms, j); });
+      parts.push({ name: 'Auswertung ' + g[0], html: out });
+    });
+    return parts;
+  }
+  function report(j, l) { return reportParts(j, l).map(function (x) { return x.html; }).join(''); }
+  function bahnSel(s) { return '<div class="m-chips">' + [['best', 'Beste Wertung'], ['Lang', 'Langbahn'], ['Kurz', 'Kurzbahn']].map(function (x) { return '<button type="button" class="m-chip' + (s.sb === x[0] ? ' on' : '') + '" data-ma="ausb" data-v="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>'; }
+  function yearSel(j) { var ys = years(); if (!ys.length) return ''; return '<div class="m-chips">' + ys.map(function (y) { return '<button type="button" class="m-chip' + (y === j ? ' on' : '') + '" data-ma="ausj" data-v="' + y + '">' + y + '</button>'; }).join('') + '</div>'; }
+  function leer() { return '<section class="wm-card"><p class="wm-note">Es gibt noch keine Punkte. Im Reiter „Hochladen“ zuerst die World-Aquatics-Basiszeiten einlesen. Dann rechnet das Intranet die Punkte aus den eingelesenen Wettkampfergebnissen selbst aus. Alternativ kannst du die WebClub-Liste „Punktbeste Leistung nach World Aquatics“ hochladen.</p></section>'; }
+  function waInfo() {
+    var ss = waSets(); if (!ss.length) return ''; var t = M.today();
+    return ss.sort(function (a, b) { return a.von < b.von ? -1 : 1; }).map(function (x) { return (x.bahn === 'Lang' ? 'Langbahn' : 'Kurzbahn') + ' ' + x.jahr + ' (gültig bis ' + M.fmtDate(x.bis) + (x.bis < t ? ', abgelaufen' : '') + ')'; }).join(', ');
+  }
+  // Hinweis, wenn die vorhandenen Basiszeiten aus einem früheren Jahr stammen als dem laufenden
+  function waExpired() {
+    var ss = waSets(); if (!ss.length) return ''; var cur = +String(M.today()).slice(0, 4), last = 0; ss.forEach(function (x) { if (+x.jahr > last) last = +x.jahr; });
+    if (last >= cur) return '';
+    return '<div class="hub-err"><b>Die Basiszeiten sind veraltet.</b> Die Punkte beruhen auf den World-Aquatics-Tabellen von ' + last + '. Für ' + cur + ' wurde noch keine neue Datei eingelesen' + (M.anyCan(['auswertung.upload']) ? '. Bitte im Reiter „Hochladen“ die Datei mit Kurzbahn und Langbahn für ' + cur + ' einlesen.' : '. Bitte bei den Verantwortlichen melden.') + '</div>';
+  }
+  function head(t, act) { return '<div class="wm-bar"><h3>' + t + '</h3><span class="m-actions">' + (act || '') + '</span></div>'; }
+  function xbtn() { return '<button type="button" class="wm-btn" data-ma="ausxlsx">📥 Excel</button>'; }
+  function pbtn(a, t) { return '<button type="button" class="wm-btn" data-ma="' + a + '">🖨️ ' + t + '</button>'; }
+  function chipRow(label, chips) { return '<div class="aus-fr"><span class="aus-fl">' + label + '</span><div class="m-chips">' + chips + '</div></div>'; }
+  function rangliste() {
+    if (!years().length) return leer(); var s = sub(), j = year(); var l = table(j, s.sb);
+    var d = []; ['Lang', 'Kurz'].forEach(function (b) { var x = pset(j, b); if (x) d.push((b === 'Lang' ? 'Langbahn' : 'Kurzbahn') + ' vom ' + M.fmtDate(x.stand)); });
+    var g = [['Alle']].concat(groups(j)); if (!g.some(function (x) { return x[0] === s.sg; })) s.sg = 'Alle';
+    var body, parts = reportParts(j, l);
+    if (s.sg === 'Alle') body = report(j, l) || '<p class="wm-note">Es gibt noch keine Schwimmer mit Punkten.</p>';
+    else if (s.sg === 'Weiblich' || s.sg === 'Männlich') { var pp = parts.filter(function (x) { return x.name === 'Auswertung ' + s.sg; })[0]; body = pp ? pp.html : '<p class="wm-note">In dieser Gruppe gibt es keine Schwimmer.</p>'; }
+    else { var cur = filt(l, j, s.sg); body = cur.length ? '<h2 class="aus-h">' + esc(s.sg) + '</h2><table class="aus-t aus-r">' + tbl(cur, j) + '</table>' : '<p class="wm-note">In dieser Gruppe gibt es keine Schwimmer.</p>'; }
+    var ys = years(), bahn = [['best', 'Beste Wertung'], ['Lang', 'Langbahn'], ['Kurz', 'Kurzbahn']];
+    var chip = function (on, act, v, t) { return '<button type="button" class="m-chip' + (on ? ' on' : '') + '" data-ma="' + act + '" data-v="' + esc(v) + '">' + esc(t) + '</button>'; };
+    var filter = '<div class="aus-filter">' + (ys.length > 1 ? chipRow('Jahr', ys.map(function (y) { return chip(y === j, 'ausj', y, y); }).join('')) : '') +
+      chipRow('Bahn', bahn.map(function (x) { return chip(s.sb === x[0], 'ausb', x[0], x[1]); }).join('')) +
+      chipRow('Wertung', g.map(function (x) { return chip(s.sg === x[0], 'ausg', x[0], x[0]); }).join('')) + '</div>';
+    return '<section class="wm-card">' + head('Rangliste ' + esc(j), pbtn('ausprint', 'Rangliste') + pbtn('ausprintall', 'Komplette Auswertung') + xbtn()) + filter +
+      waExpired() + '<p class="wm-sub">Stand der WebClub-Listen: ' + (d.join(' · ') || 'keine hochgeladen') + '.' + (waInfo() ? '<br>Punkte aus Wettkampfergebnissen mit den Basiszeiten: ' + esc(waInfo()) + '.' : '') + '<br>Gewertet wird je Strecke die punktbeste Leistung. Fett ist je Tabelle der höchste Wert einer Spalte. Jahrgangsgruppen mit nur 1 Person werden je Geschlecht automatisch mit der kleineren Nachbargruppe zusammengelegt.</p><div class="xl">' + body + '</div></section>';
+  }
+  // ---------- Statistik (Veranstaltungen, Kampfrichter, Ergebnisse) ----------
+  function wkOfYear(j) { return M.items('wettkaempfe').filter(function (wk) { return String(wk.date || '').slice(0, 4) === String(j) && !cancelled(wk) && wk.res && Object.keys(wk.res).length; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }); }
+  // Meldegeld aus dem Text der Ausschreibung („x € pro Einzelstart, y € pro Staffelstart“); sonst unbekannt
+  function num(z) { return parseFloat(String(z).replace(/\./g, '').replace(',', '.')); }
+  function geld(wk, e, st) {
+    var t = String(wk.meldegeld || ''); if (!t) return null;
+    var pe = /([\d.]+,\d{1,2}|\d+)\s*(?:€|EUR|Euro)\s*(?:pro|je|für)?\s*Einzel/i.exec(t) || /Einzel\w*\s*:?\s*([\d.]+,\d{1,2}|\d+)\s*(?:€|EUR|Euro)/i.exec(t);
+    var ps = /([\d.]+,\d{1,2}|\d+)\s*(?:€|EUR|Euro)\s*(?:pro|je|für)?\s*Staffel/i.exec(t) || /Staffel\w*\s*:?\s*([\d.]+,\d{1,2}|\d+)\s*(?:€|EUR|Euro)/i.exec(t);
+    if (pe) return e * num(pe[1]) + st * (ps ? num(ps[1]) : num(pe[1]));
+    var m = /([\d.]+,\d{1,2}|\d+)\s*(?:€|EUR|Euro)/i.exec(t); return m ? (e + st) * num(m[1]) : null;
+  }
+  function eur(v) { return v === null || v === undefined || isNaN(v) ? '–' : v.toFixed(2).replace('.', ',') + ' €'; }
+  function dd(d) { d = String(d || ''); return d.length >= 10 ? d.slice(8, 10) + '.' + d.slice(5, 7) + '.' + d.slice(2, 4) : d; }
+  function ausrKey(x) { return (x.d || '') + '|' + String(x.t || '').toLowerCase().replace(/\s+/g, ' ').slice(0, 40); }
+  function ausrEx() { var x = M.find('saison', 'ausr'); return (x && x.keys) || []; }
+  function krEx() { var x = M.find('saison', 'krx'); return (x && x.names) || []; }
+  function stat(j) {
+    var wks = wkOfYear(j), vr = [], kr = {}, pl = { e: [0, 0, 0, 0], s: [0, 0, 0, 0] }, tot = { sw: 0, e: 0, s: 0 };
+    wks.forEach(function (wk) {
+      var sw = {}, ein = 0, sta = 0;
+      (wk.starts || []).forEach(function (s) {
+        var r = (wk.res || {})[s.e + '-' + s.l + '-' + s.b]; if (!r || !r.t) return; var rel = s.j === 'Staffel';
+        if (rel) sta++; else { ein++; sw[flip(s.n)] = 1; }
+        var p = +r.pl || 0; if (p > 0) pl[rel ? 's' : 'e'][p <= 3 ? p - 1 : 3]++;
+      });
+      var rl = (wk.art && wk.art.staffeln) || []; if (!sta && rl.length) { sta = rl.length; rl.forEach(function (r) { var p = +r.pl || 0; if (p > 0) pl.s[p <= 3 ? p - 1 : 3]++; }); }
+      var bw = bahnOf(wk); vr.push({ d: wk.date, t: wk.title || '', o: wk.ort || '', b: bw === 25 ? 'Kurz' : bw === 50 ? 'Lang' : '–', sw: Object.keys(sw).length, e: ein, s: sta, g: geld(wk, ein, sta), wid: wk.id, bw: bw }); tot.sw += Object.keys(sw).length; tot.e += ein; tot.s += sta;
+      (wk.gericht || []).forEach(function (g) { var n = String(g.name || '').trim(); if (!n || /^N\s?N$/i.test(n)) return; var k = (kr[n] = kr[n] || { n: n, w: {}, a: {}, v: '' }); if (g.v && !/protokoll/i.test(g.v)) k.v = g.v; k.w[wk.id] = 1; k.a[wk.id + '|' + g.a] = 1; k.e = k.e || {}; var ee = k.e[wk.id] = k.e[wk.id] || { d: wk.date, t: wk.title || '', a: [] }; if (g.a && ee.a.indexOf(g.a) < 0) ee.a.push(g.a); });
+    });
+    return { vr: vr, tot: tot, kr: Object.keys(kr).map(function (n) { return { n: n, ex: krEx().indexOf(n) >= 0, v: kr[n].v, w: Object.keys(kr[n].w).length, a: Object.keys(kr[n].a).length, ev: Object.keys(kr[n].e || {}).map(function (id) { return kr[n].e[id]; }).sort(function (p, q) { return p.d < q.d ? -1 : 1; }) }; }).sort(function (a, b) { return b.a - a.a || a.n.localeCompare(b.n, 'de'); }), pl: pl, n: wks.length };
+  }
+  function wcOf(j) { return M.find('saison', 'wc-' + j) || null; }
+  function statWc(wc) {
+    var vr = (wc.ev || []).filter(function (x) { return !/abgesagt/i.test(x.t || ''); }).map(function (x) { return { d: x.d, t: x.t, o: x.o, bw: /lang/i.test(x.b) ? 50 : /kurz/i.test(x.b) ? 25 : 0, sw: x.sw, e: x.e, s: x.s, g: x.g, wid: '' }; });
+    var tot = { sw: 0, e: 0, s: 0 }; vr.forEach(function (x) { tot.sw += x.sw; tot.e += x.e; tot.s += x.s; });
+    var ab = wc.abs || {}; var pe = [ab.e1 || 0, ab.e2 || 0, ab.e3 || 0], ps = [ab.s1 || 0, ab.s2 || 0, ab.s3 || 0];
+    var ex = krEx();
+    var kr = (wc.kr || []).map(function (x) { return { n: x.n, v: x.v, w: x.w, a: x.a, ex: ex.indexOf(x.n) >= 0 }; });
+    return { vr: vr, tot: tot, kr: kr, n: vr.length, pl: { e: pe.concat([Math.max(0, tot.e - pe[0] - pe[1] - pe[2])]), s: ps.concat([Math.max(0, tot.s - ps[0] - ps[1] - ps[2])]) }, wc: true };
+  }
+  // Einsätze eines Kampfrichters: Datum, Wettkampf, Abschnitte (aus den Kampfgerichten der Wettkämpfe)
+  var OWN_KR = null;
+  function krEvText(x, j) {
+    var ev = x.ev; if (!ev) { if (!OWN_KR) OWN_KR = stat(j).kr; var me = OWN_KR.filter(function (o) { return flip(o.n) === flip(x.n); })[0]; ev = me ? me.ev : []; }
+    if (!ev || !ev.length) return '–';
+    return ev.map(function (e) { return esc(dd(e.d)) + ' ' + esc(e.t) + (e.a.length ? ' (Abschnitt ' + esc(e.a.join(', ')) + ')' : ''); }).join('; ');
+  }
+  function statHtml(j, noMit) {
+    OWN_KR = null;
+    var wc = wcOf(j); var s = wc && wc.ev && wc.ev.length ? statWc(wc) : stat(j); if (!s.n) return '<p class="wm-note">Für ' + esc(j) + ' gibt es noch keine Veranstaltungen mit Ergebnissen.</p>';
+    var miss = s.vr.filter(function (x) { return !x.bw; });
+    var warn = miss.length ? '<div class="hub-err no-print">Bei ' + miss.map(function (x) { return '<b>' + esc(x.t) + '</b> <button type="button" class="wm-btn" data-ma="ausbahn" data-id="' + esc(x.wid) + '" data-b="50">Langbahn</button> <button type="button" class="wm-btn" data-ma="ausbahn" data-id="' + esc(x.wid) + '" data-b="25">Kurzbahn</button>'; }).join('<br>') + '<br>fehlt die Bahnlänge. Ohne sie werden für diese Veranstaltung keine Punkte berechnet.</div>' : '';
+    var ausr = ausrEx(), tg = s.vr.reduce(function (a, x) { return x.g === null || x.g === undefined || ausr.indexOf(ausrKey(x)) >= 0 ? a : a + x.g; }, 0), anyG = s.vr.some(function (x) { return x.g !== null && x.g !== undefined; });
+    var v = '<h2 class="aus-h">Veranstaltungen, Saison ' + esc(j) + '</h2><table class="aus-t aus-v"><tr><th>Datum</th><th>Veranstaltung</th><th>Ort</th><th>Bahn</th><th>Schwimmer</th><th>Einzel</th><th>Staffel</th><th>Meldegeld</th><th class="no-print">Ausrichter</th></tr>' +
+      s.vr.map(function (x) { return '<tr><td class="r">' + esc(dd(x.d)) + '</td><td class="l">' + esc(x.t) + '</td><td class="l">' + esc(x.o) + '</td><td class="l">' + (x.bw === 25 ? 'Kurz' : x.bw === 50 ? 'Lang' : '–') + '</td><td class="r">' + x.sw + '</td><td class="r">' + x.e + '</td><td class="r">' + x.s + '</td><td class="r">' + (ausr.indexOf(ausrKey(x)) >= 0 ? 'Ausrichter' : eur(x.g)) + '</td><td class="no-print"><button type="button" class="wm-btn" data-ma="ausausr" data-k="' + esc(ausrKey(x)) + '">' + (ausr.indexOf(ausrKey(x)) >= 0 ? '✓ ja' : 'nein') + '</button></td></tr>'; }).join('') +
+      '<tr class="tot"><td colspan="4" class="l"><b>Gesamt für ' + s.n + ' Veranstaltungen mit Ergebnissen</b></td><td class="r"><b>' + s.tot.sw + '</b></td><td class="r"><b>' + s.tot.e + '</b></td><td class="r"><b>' + s.tot.s + '</b></td><td class="r"><b>' + (anyG ? eur(tg) : '–') + '</b></td><td class="no-print"></td></tr></table>';
+    var kin = s.kr.filter(function (x) { return !x.ex; });
+    var k = '<h2 class="aus-h">Kampfrichterstatistik, Saison ' + esc(j) + '</h2>' + (s.kr.length ? '<table class="aus-t aus-k"><tr><th>Kampfrichter</th><th>Stammverein</th><th>Veranstaltungen</th><th>Abschnitte</th><th class="no-prt">Wettkämpfe</th><th class="no-print">Zählt</th></tr>' + s.kr.map(function (x) { return '<tr class="' + (x.ex ? 'ex no-print' : '') + '"' + (x.ex ? ' style="opacity:.45"' : '') + '><td class="l">' + esc(x.n) + '</td><td class="l">' + esc(x.v) + '</td><td class="r">' + x.w + '</td><td class="r">' + x.a + '</td><td class="l no-prt">' + krEvText(x, j) + '</td><td class="no-print"><button type="button" class="wm-btn" data-ma="auskr" data-n="' + esc(x.n) + '">' + (x.ex ? '✗ nein' : '✓ ja') + '</button></td></tr>'; }).join('') + '<tr class="tot"><td colspan="2" class="l"><b>Gesamt für ' + kin.length + ' Kampfrichter</b></td><td class="r"><b>' + kin.reduce(function (a, x) { return a + x.w; }, 0) + '</b></td><td class="r"><b>' + kin.reduce(function (a, x) { return a + x.a; }, 0) + '</b></td><td class="no-prt"></td><td class="no-print"></td></tr></table><p class="wm-note no-print">Mit „Zählt“ legst du fest, wer als offizieller Kampfrichter in die Statistik kommt (z. B. nicht bei vereinsinternen Wettkämpfen).</p>' : '<p class="wm-note">Bei den Veranstaltungen ist kein Kampfgericht eingetragen.</p>');
+    function pt(lab, a) { var L = ['Platz 1', 'Platz 2', 'Platz 3', 'Andere']; return '<h2 class="aus-h">Ergebnisse, Saison ' + esc(j) + '</h2><table class="aus-t aus-p"><tr><th class="l">' + lab + '</th><th class="l">Platzierung</th><th class="l">Anzahl</th></tr>' + L.map(function (x, i) { return '<tr><td></td><td class="l">' + x + '</td><td class="r">' + a[i] + '</td></tr>'; }).join('') + '<tr class="tot"><td></td><td class="l"><b>Gesamt</b></td><td class="r"><b>' + (a[0] + a[1] + a[2] + a[3]) + '</b></td></tr></table>'; }
+    return warn + v + k + pt('Einzelstarts', s.pl.e).replace('<h2 class="aus-h">Ergebnisse, Saison ' + esc(j) + '</h2>', '<h2 class="aus-h">Ergebnisse, Saison ' + esc(j) + '</h2>') + '<div style="height:10px"></div>' + pt('Staffelstarts', s.pl.s).replace(/<h2 class="aus-h">.*?<\/h2>/, '') + '<p class="wm-note no-print">' + (s.wc ? 'Die Zahlen stammen aus den WebClub-Dateien, die unter „Hochladen“ eingelesen wurden (abgesagte Veranstaltungen sind weggelassen).' : 'Platzierungen und Staffelstarts zählen nur, wo sie in den eingelesenen Ergebnissen stehen. Das Meldegeld wird aus dem Text der Ausschreibung berechnet; fehlt er, steht „–“. Wo wir Ausrichter waren, gibt es kein Meldegeld: dort „Ausrichter“ auf „ja“ stellen. Mit den WebClub-Auswertungen unter „Hochladen“ werden diese Zahlen vollständig.') + '</p>' + (noMit ? '' : mitHtml(j));
+  }
+  // ---------- Datenprüfung: welche Starts fließen nicht in die Auswertung? ----------
+  function evNames(wk) { var n = {}; (wk.events || []).forEach(function (e) { n[e.no] = e.name; }); return n; }
+  // Gründe, warum ein Start nicht in die Auswertung kommt: 'noRes' (kein Ergebnis), 'dns' (nicht angetreten/disqualifiziert), 'noEv' (Strecke nicht erkannt)
+  function startReason(wk, s, names) {
+    var r = (wk.res || {})[s.e + '-' + s.l + '-' + s.b];
+    if (!r || !r.t) return r && r.st ? 'dns' : 'noRes';
+    if (s.j !== 'Staffel' && !streckeOf(names[s.e])) return 'noEv';
+    return '';
+  }
+  function diagWk(wk) {
+    var names = evNames(wk), d = { n: 0, ok: 0, noRes: 0, dns: 0, noEv: 0, ev: {} };
+    (wk.starts || []).forEach(function (s) {
+      if (s.j === 'Staffel') return; d.n++; var q = startReason(wk, s, names);
+      if (!q) d.ok++; else { d[q]++; if (q === 'noEv') d.ev[s.e] = 1; }
+    });
+    return d;
+  }
+  function ownRelays(wk) { var n = 0; (wk.starts || []).forEach(function (s) { if (s.j === 'Staffel') { var r = (wk.res || {})[s.e + '-' + s.l + '-' + s.b]; if (r && r.t) n++; } }); return Math.max(n, ((wk.art && wk.art.staffeln) || []).length); }
+  function nzT(t) { return String(t || '').toLowerCase().replace(/[^a-z0-9äöüß]+/g, ' ').trim(); }
+  function matchWk(e, wks) {
+    var et = nzT(e.t); return wks.filter(function (wk) { var wt = nzT(wk.title); var dn = Math.abs((Date.parse(wk.date) - Date.parse(e.d)) / 864e5); return dn <= 3 && wt && et && (wt === et || wt.indexOf(et) >= 0 || et.indexOf(wt) >= 0 || (nzT(wk.ort) && nzT(wk.ort) === nzT(e.o))); })[0] || null;
+  }
+  function diagList(j) {
+    var l = [], wks = M.items('wettkaempfe').filter(function (wk) { return String(wk.date || '').slice(0, 4) === String(j) && !cancelled(wk); }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    wks.forEach(function (wk) {
+      if (!(wk.starts || []).length || wk.date > M.today()) return; var d = diagWk(wk), t = [];
+      if (d.noRes) t.push(d.noRes + ' von ' + d.n + ' Starts ohne Ergebnis');
+      if (d.noEv) t.push(d.noEv + ' Starts mit nicht erkannter Strecke (Wettkampf-Nr. ' + Object.keys(d.ev).join(', ') + ')');
+      if (t.length) l.push('<li><b>' + esc(wk.title || 'Wettkampf') + '</b> (' + esc(M.fmtDate(wk.date)) + '): ' + esc(t.join(', ')) + '. Diese Zeiten fehlen in der Auswertung.</li>');
+    });
+    var wc = wcOf(j);
+    if (wc && wc.ev) wc.ev.forEach(function (e) {
+      if (!(e.s > 0)) return; var wk = matchWk(e, wks), own = wk ? ownRelays(wk) : 0;
+      if (own < e.s) l.push('<li><b>Staffeln fehlen bei ' + esc(e.t) + ':</b> WebClub meldet ' + e.s + ', hier sind ' + own + ' eingelesen (kann auch sein, dass keine Staffel angetreten ist). Am zuverlässigsten ist die DSV7-Ergebnisdatei (.dsv7) des Wettkampfs, im Wettkampf unter „Unterlagen“ › „Ergebnisse“.</li>');
+    });
+    return l;
+  }
+  // Pro Schwimmer: welche Starts kommen nicht ins Einzelblatt?
+  function diagSw(o, j) {
+    var l = [], nm = flip(o.name);
+    M.items('wettkaempfe').filter(function (wk) { return String(wk.date || '').slice(0, 4) === String(j) && !cancelled(wk); }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }).forEach(function (wk) {
+      if (wk.date > M.today()) return; var names = evNames(wk), c = { noRes: 0, noEv: 0, dns: 0 }, tot = 0;
+      (wk.starts || []).forEach(function (s) { if (s.j === 'Staffel' || flip(s.n) !== nm) return; tot++; var q = startReason(wk, s, names); if (q) c[q]++; });
+      var t = []; if (c.noRes) t.push(c.noRes + ' ohne Ergebnis'); if (c.noEv) t.push(c.noEv + ' mit nicht erkannter Strecke'); if (c.dns) t.push(c.dns + ' nicht angetreten');
+      if (t.length) l.push('<li>' + esc(wk.title || 'Wettkampf') + ' (' + esc(dd(wk.date)) + '): ' + esc(t.join(', ')) + ' von ' + tot + ' Starts</li>');
+    });
+    return l.length ? '<div class="aus-fehlt no-print"><b>Nicht in diesem Blatt (Prüfung)</b><ul>' + l.join('') + '</ul></div>' : '';
+  }
+  // Was für die Statistik noch fehlt: WebClub-Dateien, Ergebnisse je Wettkampf, Meldegeld
+  function fehltHtml(j) {
+    var wc = wcOf(j), miss = [], l = [];
+    [['abs', 'Statistik der Saison'], ['ev', 'Übersicht anhand Ergebnissen'], ['kr', 'Kampfrichterstatistik'], ['grp', 'Gruppenauslastung'], ['jg', 'Anzahl Personen nach Jahrgängen'], ['ein', 'Eintritte'], ['aus', 'Austritte'], ['mit', 'Mitgliederliste']].forEach(function (x) { if (!wc || !wc[x[0]]) miss.push(x[1]); });
+    if (miss.length) l.push('<li><b>WebClub-Dateien:</b> ' + esc(miss.join(', ')) + '. Sie werden im Reiter „Hochladen“ eingelesen.</li>');
+    var ohne = M.items('wettkaempfe').filter(function (wk) { return String(wk.date || '').slice(0, 4) === String(j) && !cancelled(wk) && wk.date <= M.today() && !(wk.res && Object.keys(wk.res).length); }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    if (ohne.length) l.push('<li><b>Ergebnisse fehlen bei:</b> ' + esc(ohne.map(function (w) { return (w.title || 'Wettkampf') + ' (' + M.fmtDate(w.date) + ')'; }).join('; ')) + '. Im Wettkampf unter „Unterlagen“ oder über „Mehrere CSV“ einlesen.</li>');
+    var ng = wkOfYear(j).filter(function (wk) { return !wk.meldegeld && ausrEx().indexOf(ausrKey({ d: wk.date, t: wk.title })) < 0; });
+    if (!(wc && wc.ev) && ng.length) l.push('<li><b>Meldegeld fehlt bei:</b> ' + esc(ng.map(function (w) { return w.title || 'Wettkampf'; }).join('; ')) + ' (mit der WebClub-Übersicht wird es vollständig).</li>');
+    l = l.concat(diagList(j));
+    if (!l.length) return '';
+    return '<div class="aus-fehlt"><b>Noch nicht vollständig</b><ul>' + l.join('') + '</ul></div>';
+  }
+  function statistik() {
+    if (!years().length) return leer(); var j = year();
+    return '<section class="wm-card">' + head('Statistik ' + esc(j), pbtn('ausprintstat', 'Statistik') + xbtn()) + yearSel(j) + fehltHtml(j) + '<div class="xl">' + statHtml(j) + '</div></section>';
+  }
+  function sheetTable(o, j) {
+    var st = (starts(j)[o.name.toLowerCase()] || []); var ks = Object.keys(o.p); st.forEach(function (x) { if (ks.indexOf(x.k) < 0) ks.push(x.k); });
+    ks.sort(function (a, b) { return skey(a) - skey(b); });
+    var out = '<table class="aus-t aus-s"><tr><td colspan="3" class="l"><b>' + esc(o.name) + '</b> &nbsp;&nbsp;&nbsp; <b>Jg. ' + o.jg + '</b></td><td colspan="3" class="r"><b>Jahresauswertung ' + esc(j) + '</b></td></tr><tr class="hd"><th>Datum</th><th>Ort</th><th>Bahntyp</th><th>Zeit</th><th>Differenz</th><th>World Aquatics</th></tr>';
+    ks.forEach(function (k) {
+      out += '<tr class="ausk"><td colspan="6" class="l">' + slabel(k) + '</td></tr>';
+      var rs = st.filter(function (x) { return x.k === k; }), bst = {}, bt = null, bp = 0;
+      rs.forEach(function (x) { var t = tms(x.t); if (t !== null) { if (bst[x.b] === undefined || t < bst[x.b]) bst[x.b] = t; if (bt === null || t < bt) bt = t; } if (x.pt > bp) bp = x.pt; });
+      rs.forEach(function (x) {
+        var t = tms(x.t), fast = t !== null && t === bt, top = x.pt > 0 && x.pt === bp, df = t !== null && !fast ? dshow(t - bt) : '--:--,--';
+        out += '<tr><td class="r">' + esc(dd(x.d)) + '</td><td class="l">' + esc(x.ort) + '</td><td class="l">' + (x.b === 25 ? 'Kurzbahn' : x.b === 50 ? 'Langbahn' : '–') + '</td><td class="r">' + (fast ? '<b>' + esc(tshow(x.t)) + '</b>' : esc(tshow(x.t))) + '</td><td class="l">' + df + '</td><td class="r">' + (x.pt > 0 ? (top ? '<b>' + x.pt + '</b>' : x.pt) : '') + '</td></tr>';
+      });
+    });
+    return out + '</table>';
+  }
+  function sheetHtml(o, j) {
+    return '<div class="xl-sheet">' + sheetTable(o, j) + '<div class="xs"><span>Summe der punktbesten Leistungen aller Strecken:</span><b>' + o.ges + '</b></div><div class="xs xs2"><span>Anzahl der gewerteten Strecken:</span><i>' + o.n + '</i></div><div class="xs"><span><b>Durchschnittlich erreichte Punktzahl pro Strecke:</b></span><b>' + o.avg + '</b></div></div>';
+  }
+  function pickList(l, sel, q) {
+    var ql = String(q || '').toLowerCase();
+    return '<div class="aus-pick"><input type="search" class="aus-q" id="au_q" placeholder="🔎 Schwimmer suchen …" value="' + esc(q || '') + '" autocomplete="off"><div class="aus-chips">' + l.filter(function (x) { return !ql || x.name.toLowerCase().indexOf(ql) >= 0; }).map(function (x) { return '<button type="button" class="aus-chip' + (x.name === sel ? ' on' : '') + '" data-ma="ausp" data-n="' + esc(x.name) + '">' + esc(x.name) + '</button>'; }).join('') + '</div></div>';
+  }
+  function namesHtml(al, sel, q) {
+    var ql = String(q || '').toLowerCase();
+    return al.filter(function (x) { return !ql || x.name.toLowerCase().indexOf(ql) >= 0; }).map(function (x) { return '<button type="button" class="aus-n' + (x.name === sel ? ' on' : '') + '" data-ma="ausp" data-n="' + esc(x.name) + '">' + esc(x.name) + '</button>'; }).join('');
+  }
+  function einzel() {
+    if (!years().length) return leer(); var s = sub(), j = year(); var l = table(j, 'best'); if (!s.sp || !l.some(function (o) { return o.name === s.sp; })) s.sp = l[0] && l[0].name;
+    var al = l.slice().sort(function (a, b) { return a.name.localeCompare(b.name, 'de'); });
+    var o = l.filter(function (x) { return x.name === s.sp; })[0]; var plat = l.indexOf(o) + 1; var ix = al.indexOf(o);
+    return '<section class="wm-card">' + head('Einzelblatt ' + esc(j), pbtn('ausone', 'Dieses Blatt') + pbtn('ausallsheets', 'Alle Blätter') + xbtn()) + waExpired() + yearSel(j) +
+      '<div class="aus-split"><div class="aus-names"><input type="search" id="au_q" placeholder="Suchen …" value="' + esc(s.q || '') + '" autocomplete="off"><div id="au_nl">' + namesHtml(al, s.sp, s.q) + '</div></div><div>' +
+      '<div class="aus-nav"><button type="button" class="wm-btn" data-ma="ausstep" data-d="-1"' + (ix <= 0 ? ' disabled' : '') + '>‹ Zurück</button><button type="button" class="wm-btn" data-ma="ausstep" data-d="1"' + (ix >= al.length - 1 ? ' disabled' : '') + '>Weiter ›</button><span class="wm-sub">' + (o ? 'Platz ' + plat + ' von ' + l.length + ' in der Gesamtwertung' : '') + '</span></div>' +
+      (o ? diagSw(o, j) + '<div class="xl">' + sheetHtml(o, j) + '</div>' : '') + '</div></div>' +
+      '<p class="wm-note">Die Zeiten kommen aus den Wettkämpfen dieser Saison, bei denen Ergebnisse eingelesen sind. Die Bahnlänge liest die App aus dem Meldeergebnis. Wo sie fehlt, trägst du sie im Wettkampf unter „Bahnlänge“ ein.</p></section>';
+  }
+  // Jubiläen: Mitgliedschaftsjubiläen 10, 25, 40 und 50 Jahre
+  function jubList(j) {
+    var by = {}, jl = M.find('saison', 'jub-' + j);
+    if (jl) (jl.rows || []).forEach(function (x) { (by[x.jahre] = by[x.jahre] || []).push(x.name); });
+    else M.items('wgMitglieder').filter(function (m) { return m.eintritt; }).forEach(function (m) { var n = +j - +String(m.eintritt).slice(0, 4); if ([10, 25, 40, 50].indexOf(n) >= 0) (by[n] = by[n] || []).push(m.name); });
+    var ys = [10, 25, 40, 50]; Object.keys(by).forEach(function (y) { if (ys.indexOf(+y) < 0) ys.push(+y); }); ys.sort(function (a, b) { return a - b; });
+    return ys.map(function (y) { return { y: y, n: (by[y] || []).sort(function (a, b) { return a.localeCompare(b, 'de'); }) }; });
+  }
+  function jubHtml(j) {
+    return '<h2 class="aus-h">Jubiläen ' + esc(j) + '</h2><table class="aus-t aus-jb"><tr><th>Jahre</th><th>Name</th></tr>' + jubList(j).map(function (x) { return x.n.length ? x.n.map(function (n) { return '<tr><td class="r">' + x.y + '</td><td class="l">' + esc(n) + '</td></tr>'; }).join('') : '<tr><td class="r">' + x.y + '</td><td class="l">–</td></tr>'; }).join('') + '</table>';
+  }
+  // Ehrungen: Pokale (je Geschlecht Gesamt 1 und Jugend 1) und Medaillen je Jahrgangsgruppe. Masters erhalten keine Medaille.
+  // Medaillen je Gruppe: bis 3 Personen nur Gold, 4 bis 5 Gold und Silber, ab 6 auch Bronze.
+  var MED = ['Gold', 'Silber', 'Bronze'];
+  function ehrData(j, l) {
+    var out = { pokale: [], groups: [], tot: [0, 0, 0] };
+    [['weiblich', isW, 'W'], ['männlich', isM, 'M']].forEach(function (g) {
+      var sl = l.filter(g[1]), jug = sl.filter(isJug(j));
+      if (sl.length) out.pokale.push({ t: 'Gesamt ' + g[0], o: sl[0] });
+      if (jug.length) out.pokale.push({ t: 'Jugend ' + g[0], o: jug[0] });
+      genderGroups(j, jug, g[2]).forEach(function (x) {
+        var m = medalsFor(x.ms.length); for (var i = 0; i < m; i++) out.tot[i]++;
+        out.groups.push({ t: x.label + ' ' + g[0], merged: x.merged, ms: x.ms, m: m });
+      });
+    });
+    return out;
+  }
+  function ehrHtml(j, l) {
+    var d = ehrData(j, l), out = jubHtml(j);
+    out += '<h2 class="aus-h">Pokale ' + esc(j) + '</h2><table class="aus-t aus-jb"><tr><th>Pokal</th><th>Name</th><th>Jahrgang</th><th>Punkte</th></tr>' + (d.pokale.length ? d.pokale.map(function (x) { return '<tr><td class="l">' + esc(x.t) + '</td><td class="l">' + esc(x.o.name) + '</td><td>' + x.o.jg + '</td><td class="r">' + x.o.ges + '</td></tr>'; }).join('') : '<tr><td class="l" colspan="4">Noch keine Punkte.</td></tr>') + '</table>';
+    out += '<h2 class="aus-h">Medaillen ' + esc(j) + '</h2><table class="aus-t aus-md"><tr><th>Jahrgangsgruppe</th><th>Personen</th><th>Gold</th><th>Silber</th><th>Bronze</th></tr>' +
+      d.groups.map(function (g) { return '<tr><td class="l">' + esc(g.t) + (g.merged ? ' (zusammengelegt)' : '') + '</td><td class="r">' + g.ms.length + '</td>' + [0, 1, 2].map(function (i) { return '<td class="r">' + (g.m > i ? 1 : '–') + '</td>'; }).join('') + '</tr>'; }).join('') +
+      '<tr class="tot"><td class="l"><b>Insgesamt benötigt</b></td><td></td><td class="r"><b>' + d.tot[0] + '</b></td><td class="r"><b>' + d.tot[1] + '</b></td><td class="r"><b>' + d.tot[2] + '</b></td></tr></table>' +
+      '<p class="wm-note">Bis 3 Personen in einer Gruppe gibt es nur Gold, bei 4 bis 5 auch Silber, ab 6 auch Bronze. Masters erhalten keine Medaille. Gruppen mit höchstens '+mergeMax()+' Person(en) sind je Geschlecht mit der kleineren Nachbargruppe zusammengelegt (Junioren ausgenommen).</p>';
+    d.groups.forEach(function (g) {
+      if (!g.m) return;
+      out += '<h2 class="aus-h">' + esc(g.t) + (g.merged ? ' (zusammengelegt)' : '') + '</h2><table class="aus-t aus-md"><tr><th>Medaille</th><th>Platz</th><th>Schwimmer</th><th>Jahrgang</th><th>Erreichte Punkte</th></tr>' +
+        g.ms.slice(0, g.m).map(function (o, i) { return '<tr><td class="l">' + MED[i] + '</td><td class="r">' + (i + 1) + '</td><td class="l">' + esc(o.name) + '</td><td>' + o.jg + '</td><td class="r">' + o.ges + '</td></tr>'; }).join('') + '</table>';
+    });
+    return out;
+  }
+  // „Übersicht für JHV“ wie in der Vorlage: je die ersten drei von Gesamt sowie weiblich und männlich (Gesamt und Jugend)
+  function jhvHtml(j, l) {
+    var jug = l.filter(isJug(j));
+    return sec('Auswertung Gesamt', l, j, null, 3) + sec('Weiblich Gesamt', l.filter(isW), j, null, 3) + sec('Weiblich Jugend', jug.filter(isW), j, null, 3) + sec('Männlich Gesamt', l.filter(isM), j, null, 3) + sec('Männlich Jugend', jug.filter(isM), j, null, 3);
+  }
+  function ehrAll(j, l) { return ehrHtml(j, l) + '<h1 style="font-size:18px;margin:22px 0 0">Übersicht für die JHV</h1>' + jhvHtml(j, l); }
+  function ehrungen() {
+    if (!years().length) return leer(); var j = year(); var l = table(j, 'best');
+    return '<section class="wm-card">' + head('Ehrungen ' + esc(j), pbtn('ausprintehr', 'Ehrungen') + xbtn()) + waExpired() + yearSel(j) + '<div class="xl">' + ehrAll(j, l) + '</div>' + (M.find('saison', 'jub-' + j) ? '' : '<p class="wm-note">Die Jubiläen kommen aus dem Eintrittsdatum der Mitglieder. Genauer geht es mit der Liste „Jubiläum im aktuellen Jahr“ aus WebClub im Reiter „Hochladen“.</p>') + '</section>';
+  }
+  // ---------- Mitglieder (Mitgliederzahlen, Statistik, Gruppenauslastung, Jubiläen) ----------
+  function yr(v) { var m = /(\d{4})/.exec(String(v || '')); return m ? +m[1] : 0; }
+  function mitHtml(j) {
+    var wc = wcOf(j), J = +j, ref = J + 1, src = '';
+    var jgRows = {}, ein = null, aus = null, grs = null, jubs = null;
+    if (wc && wc.jg && wc.jg.rows) {
+      ref = +wc.jg.stand || ref; wc.jg.rows.forEach(function (r) { jgRows[r[0]] = [r[1], r[2]]; });
+      (wc.nr0 || []).forEach(function (x) { var y = +x.gb; if (jgRows[y]) jgRows[y][x.sx === 'M' ? 1 : 0] -= 1; });
+      ein = wc.ein ? wc.ein.length : null; aus = wc.aus ? wc.aus.length : null; src = 'WebClub';
+    } else {
+      var all = M.items('wgMitglieder');
+      var act = all.filter(function (m) { var e = yr(m.eintritt), a = yr(m.austritt); return (m.status !== 'ausgetreten' || (a && a > J)) && (!e || e <= J) && (!a || a > J); });
+      act.forEach(function (m) { if (!m.jg) return; var r = jgRows[m.jg] || (jgRows[m.jg] = [0, 0]); if (m.sex === 'w') r[0]++; else if (m.sex === 'm') r[1]++; });
+      ein = all.filter(function (m) { return yr(m.eintritt) === J; }).length; aus = all.filter(function (m) { return yr(m.austritt) === J; }).length;
+      var gr0 = {}; act.forEach(function (m) { (m.gruppen || []).forEach(function (g) { gr0[g] = (gr0[g] || 0) + 1; }); });
+      grs = ['Wettkampfgruppe', 'Gruppe 1', 'Gruppe 2', 'Gruppe 3', 'Gruppe 4', 'Masters'].filter(function (g) { return gr0[g]; }).map(function (g) { return [g, gr0[g]]; });
+    }
+    if (wc && wc.grp && wc.grp.length) grs = wc.grp.map(function (g) { return [g.g, g.sw]; });
+    var w = 0, mm = 0; Object.keys(jgRows).forEach(function (y) { w += jgRows[y][0]; mm += jgRows[y][1]; });
+    var BD = [['0-6 Jahre', 0, 6], ['7-14 Jahre', 7, 14], ['15-18 Jahre', 15, 18], ['19-26 Jahre', 19, 26], ['27-40 Jahre', 27, 40], ['über 40 Jahre', 41, 200]];
+    function cnt(a, b) { var n = 0; Object.keys(jgRows).forEach(function (y) { var al = ref - +y; if (al >= a && al <= b) n += jgRows[y][0] + jgRows[y][1]; }); return n; }
+    function t(rows) { return '<table class="aus-t aus-jb">' + rows.map(function (r) { return '<tr><td class="l"><b>' + esc(r[0]) + '</b></td><td class="r">' + r[1] + '</td></tr>'; }).join('') + '</table>'; }
+    var jl;
+    if (wc && wc.mit) { var by = {}; wc.mit.forEach(function (r) { var y = yr(r[4]); if (!y || r[3] === '0') return; var n = J - y; if ([10, 25, 40, 50].indexOf(n) >= 0) (by[n] = by[n] || []).push(r[0] + ' ' + r[1]); }); jl = Object.keys(by).map(Number).sort(function (a, b) { return b - a; }).map(function (y) { return { y: y, n: by[y].sort(function (a, b) { return a.localeCompare(b, 'de'); }) }; }); }
+    else jl = jubList(j).filter(function (x) { return x.n.length; });
+    var jt = '<table class="aus-t aus-jb"><tr><th>Jahre</th><th>Name</th></tr>' + (jl.length ? jl.map(function (x) { return x.n.map(function (n) { return '<tr><td class="r">' + x.y + '</td><td class="l">' + esc(n) + '</td></tr>'; }).join(''); }).join('') : '<tr><td class="r">–</td><td class="l">–</td></tr>') + '</table>';
+    var left = '<div><h2 class="aus-h">Auswertung Mitgliederzahlen</h2>' + t([['Eintritte', ein === null ? '–' : ein], ['Austritte', aus === null ? '–' : aus], ['Mitgliederzahl am 01.01.' + ref, w + mm]]) +
+      '<h2 class="aus-h">Gruppenauslastung</h2>' + (grs && grs.length ? t(grs) : '<p class="wm-note">Noch keine Gruppen: Datei „Gruppenauslastung“ unter „Hochladen“ einlesen.</p>') + '</div>';
+    var mid = '<div><h2 class="aus-h">Mitgliederstatistik</h2>' + t([['Weiblich', w], ['Männlich', mm], ['Gesamt', w + mm]].concat(BD.map(function (b) { return [b[0], cnt(b[1], b[2])]; }))) + '</div>';
+    var right = '<div><h2 class="aus-h">Jubiläum ' + esc(j) + '</h2>' + jt + '</div>';
+    return '<div class="xl-row">' + left + mid + right + '</div>' + (src ? '' : '<p class="wm-note no-print">Diese Zahlen kommen aus dem Bereich Mitglieder. Genauer wird es mit den WebClub-Dateien unter „Hochladen“.</p>');
+  }
+  function mitglieder() { var j = year(); return '<section class="wm-card">' + head('Mitglieder ' + esc(j), pbtn('ausprintmit', 'Mitglieder')) + yearSel(j) + '<div class="xl">' + mitHtml(j) + '</div></section>'; }
+
+  // ---------- WebClub-Dateien einlesen (Auswertungen, Listen, Statistiken, Mitglieder) ----------
+  function wcDec(f) {
+    return new Promise(function (ok, no) { var r = new FileReader(); r.onerror = function () { no(new Error('Datei nicht lesbar')); }; r.onload = function () { var b = r.result, t; try { t = new TextDecoder('utf-8', { fatal: true }).decode(b); } catch (e) { t = new TextDecoder('windows-1252').decode(b); } ok(t); }; r.readAsArrayBuffer(f); });
+  }
+  function wcIso(d) { var m = /^(\d{2})\.(\d{2})\.(\d{4})/.exec(String(d || '').trim()); return m ? m[3] + '-' + m[2] + '-' + m[1] : ''; }
+  function wcNum(v) { var n = parseFloat(String(v || '').replace(/[^\d,.-]/g, '').replace(/\.(?=\d{3}\b)/g, '').replace(',', '.')); return isNaN(n) ? 0 : n; }
+  function parseWc(txt) {
+    var rows = String(txt || '').replace(/^﻿/, '').split(/\r?\n/).filter(function (l) { return l.trim(); }).map(function (l) { return l.replace(/;\s*$/, '').split(';').map(function (x) { return x.trim(); }); });
+    if (!rows.length) return null; var f = rows[0][0] || '', body = rows.slice(1), m;
+    function after(h) { for (var i = 0; i < body.length; i++) if (body[i][0] === h) return body.slice(i + 1); return []; }
+    function until(l) { var o = []; for (var i = 0; i < l.length; i++) { if (/^Gesamt/i.test(l[i][0])) break; o.push(l[i]); } return o; }
+    if (/^Statistik,\s*Saison/i.test(f)) {
+      var kv = {}; body.forEach(function (r) { if (r.length > 1) kv[r[0]] = r[1]; }); var g = function (k) { return Math.round(wcNum(kv[k])); };
+      return { kind: 'abs', label: 'Statistik der Saison', year: (/Saison\s+(\d{4})/.exec(f) || [])[1], data: { e1: g('Anzahl Einzelstarts Platz 1'), e2: g('Anzahl Einzelstarts Platz 2'), e3: g('Anzahl Einzelstarts Platz 3'), s1: g('Anzahl Staffelstarts Platz 1'), s2: g('Anzahl Staffelstarts Platz 2'), s3: g('Anzahl Staffelstarts Platz 3') }, info: 'Platz 1–3 für Einzel- und Staffelstarts' };
+    }
+    if (/^.{0,2}bersicht anhand Ergebnissen/i.test(f)) {
+      var ev = until(after('Von')).filter(function (r) { return r.length >= 9; }).map(function (r) { return { d: wcIso(r[0]), t: r[2], o: r[3], b: r[4], sw: +r[5] || 0, e: +r[6] || 0, s: +r[7] || 0, g: wcNum(r[8]) }; });
+      var canc = ev.filter(function (x) { return /abgesagt/i.test(x.t); }).length; ev = ev.filter(function (x) { return !/abgesagt/i.test(x.t); });
+      return { kind: 'ev', label: 'Übersicht anhand Ergebnissen', year: (/Saison\s+(\d{4})/.exec(f) || [])[1], data: ev, info: ev.length + ' Veranstaltungen' + (canc ? ' (' + canc + ' abgesagte weggelassen)' : '') };
+    }
+    if (/^.{0,2}bersicht anhand Meldungen/i.test(f)) return { kind: 'skip', label: 'Übersicht anhand Meldungen', year: (/Saison\s+(\d{4})/.exec(f) || [])[1], info: 'wird nicht gebraucht (es zählen die Ergebnisse)' };
+    if (/^Kampfrichterstatistik/i.test(f)) {
+      var kr = until(after('Kampfrichter')).map(function (r) { return { n: r[0], v: r[1] || '', w: +r[3] || 0, a: +r[4] || 0 }; });
+      return { kind: 'kr', label: 'Kampfrichterstatistik', year: (/Saison\s+(\d{4})/.exec(f) || [])[1], data: kr, info: kr.length + ' Kampfrichter' };
+    }
+    if (/^Gruppenauslastung/i.test(f)) {
+      var gp = after('Gruppe').filter(function (r) { return r[0]; }).map(function (r) { return { g: r[0] === 'Wettkampf Gruppe' ? 'Wettkampfgruppe' : r[0], sw: +r[1] || 0, tr: +r[2] || 0 }; });
+      return { kind: 'grp', label: 'Gruppenauslastung', data: gp, info: gp.length + ' Gruppen' };
+    }
+    if (/^Anzahl Personen nach Jahrg/i.test(f)) {
+      var jg = after('Jahrgang').filter(function (r) { return /^\d{4}$/.test(r[0]); }).map(function (r) { return [+r[0], +r[1] || 0, +r[2] || 0]; });
+      m = /(\d{2}\.\d{2}\.(\d{4}))\s*;?$/.exec(f);
+      return { kind: 'jg', label: 'Anzahl Personen nach Jahrgängen', data: { rows: jg, stand: m ? m[2] : '' }, info: jg.length + ' Jahrgänge, Stand ' + (m ? m[1] : '?') };
+    }
+    if (/^(Eintritte|Austritte) in einem Zeitraum/i.test(f)) {
+      var isE = /^Eintritte/i.test(f), l2 = after('Name').filter(function (r) { return r[0]; }).map(function (r) { return r[0]; });
+      m = /(\d{2}\.\d{2}\.(\d{4}))\s*-/.exec(f);
+      return { kind: isE ? 'ein' : 'aus', label: isE ? 'Eintritte im Zeitraum' : 'Austritte im Zeitraum', year: m ? m[2] : '', data: l2, info: l2.length + ' Personen' };
+    }
+    if (/^Mitgliederliste zum Stichtag/i.test(f)) {
+      var ml = after('Nr').filter(function (r) { return /^\d+$/.test(r[0]); }).map(function (r) { return [r[1], r[2], r[3], r[4], r[5]]; });
+      return { kind: 'mit', label: 'Mitgliederliste zum Stichtag', data: ml, info: ml.length + ' Personen' };
+    }
+    return null;
+  }
+  var WCU = null;
+  function wcRead() {
+    var fs = document.getElementById('wc_f').files, msg = document.getElementById('wc_msg'); if (!fs.length) { msg.textContent = 'Bitte Dateien auswählen.'; return; }
+    msg.textContent = 'Wird gelesen …'; var res = [], bad = [];
+    Promise.all(Array.prototype.map.call(fs, function (f) { return wcDec(f).then(function (t) { var p = parseWc(t); if (p) { p.file = f.name; res.push(p); } else bad.push(f.name); }); })).then(function () {
+      var yy = ''; res.forEach(function (p) { if (p.year && !yy) yy = p.year; }); yy = yy || String(year());
+      var old = M.find('saison', 'wc-' + yy) || {}; var mit = res.filter(function (p) { return p.kind === 'mit'; })[0];
+      var nr0 = mit ? mit.data.filter(function (r) { return r[3] === '0'; }).map(function (r) { var o = (old.nr0 || []).filter(function (x) { return x.n === r[0] + ' ' + r[1]; })[0]; return { n: r[0] + ' ' + r[1], gb: (r[2] || '').slice(-4), sx: o ? o.sx : 'W' }; }) : (old.nr0 || []);
+      WCU = { res: res, nr0: nr0, mit: !!mit };
+      M.openDlg('<div class="hub-dhead"><h3>WebClub-Dateien: Das wurde gefunden</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div>' +
+        (bad.length ? '<div class="hub-err">Nicht erkannt: ' + bad.map(esc).join(', ') + '. Die erste Zeile der Datei muss der WebClub-Titel sein.</div>' : '') +
+        '<div class="m-fgrid"><label class="m-f"><span>Für Saison</span><input type="number" id="wc_y" value="' + esc(yy) + '" min="2000" max="2100"></label></div>' +
+        '<table class="m-table"><tr><th>Datei</th><th>Erkannt als</th><th>Inhalt</th></tr>' + res.map(function (p) { return '<tr><td>' + esc(p.file) + '</td><td>' + esc(p.label) + '</td><td>' + esc(p.info || '') + '</td></tr>'; }).join('') + '</table>' +
+        (nr0.length ? '<p class="wm-note"><b>Personen mit Mitgliedsnummer 0</b> zählen nicht mit. Damit sie aus der Jahrgangs-Statistik herausgerechnet werden, braucht die App ihr Geschlecht (steht in der Liste nicht drin). Bitte prüfen:</p><table class="m-table">' + nr0.map(function (x, i) { return '<tr><td>' + esc(x.n) + '</td><td>Jg. ' + esc(x.gb) + '</td><td><select id="wc_s' + i + '"><option value="W"' + (x.sx === 'W' ? ' selected' : '') + '>weiblich</option><option value="M"' + (x.sx === 'M' ? ' selected' : '') + '>männlich</option></select></td></tr>'; }).join('') + '</table>' : '') +
+        '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="wcsave"' + (res.filter(function (p) { return p.kind !== 'skip'; }).length ? '' : ' disabled') + '>Übernehmen</button></div>');
+    }, function (e) { msg.textContent = 'Fehler: ' + (e && e.message || e); });
+  }
+  function wcSave() {
+    if (!WCU) return; var y = (document.getElementById('wc_y') || {}).value || String(year()); var it = Object.assign({}, M.find('saison', 'wc-' + y) || { id: 'wc-' + y, jahr: String(y), kind: 'wc' });
+    WCU.nr0.forEach(function (x, i) { var e = document.getElementById('wc_s' + i); if (e) x.sx = e.value; });
+    WCU.res.forEach(function (p) {
+      if (p.kind === 'abs') it.abs = p.data; else if (p.kind === 'ev') it.ev = p.data; else if (p.kind === 'kr') it.kr = p.data; else if (p.kind === 'grp') it.grp = p.data; else if (p.kind === 'jg') it.jg = p.data;
+      else if (p.kind === 'ein') it.ein = p.data; else if (p.kind === 'aus') it.aus = p.data; else if (p.kind === 'mit') it.mit = p.data.filter(function (r) { return r[3] !== '0'; }).map(function (r) { return [r[0], r[1], '', r[3], r[4]]; });
+    });
+    it.nr0 = WCU.nr0; it.title = 'WebClub-Daten ' + y; it.stand = M.today();
+    // Wettkämpfe ohne Datum (zeigen in der Liste „?“) anhand der Veranstaltungsübersicht ergänzen: Datum, Ort und Bahnlänge
+    var fixed = 0;
+    if (it.ev && it.ev.length) {
+      var nz = function (t) { return String(t || '').toLowerCase().replace(/[^a-z0-9äöüß]+/g, ' ').trim(); };
+      M.items('wettkaempfe').filter(function (wk) { return !/^\d{4}-\d{2}-\d{2}/.test(String(wk.date || '')); }).forEach(function (wk) {
+        var wt = nz(wk.title), c = it.ev.filter(function (e) { var et = nz(e.t); return wt && et && (wt === et || wt.indexOf(et) >= 0 || et.indexOf(wt) >= 0); });
+        if (c.length !== 1) return; var e = c[0];
+        var u = Object.assign({}, wk, { date: e.d }); if (!u.ort && e.o) u.ort = e.o; if (!bahnOf(u) && /^(kurz|lang)/i.test(e.b)) u.bahn = /^kurz/i.test(e.b) ? '25' : '50';
+        M.op({ op: 'set', coll: 'wettkaempfe', item: u }); fixed++;
+      });
+    }
+    M.closeDlg(); M.op({ op: 'set', coll: 'saison', item: it }); sub().sj = String(y); M.toast('WebClub-Daten für ' + y + ' übernommen.' + (fixed ? ' Bei ' + fixed + ' Wettkämpfen wurde das fehlende Datum ergänzt.' : '')); WCU = null;
+  }
+  function wcCard() {
+    var yy = year(), wc = wcOf(yy);
+    var have = wc ? [['Statistik der Saison', wc.abs], ['Übersicht anhand Ergebnissen', wc.ev], ['Kampfrichterstatistik', wc.kr], ['Gruppenauslastung', wc.grp], ['Anzahl Personen nach Jahrgängen', wc.jg], ['Eintritte', wc.ein], ['Austritte', wc.aus], ['Mitgliederliste', wc.mit]].map(function (x) { return '<span class="m-chip' + (x[1] ? ' on' : '') + '">' + (x[1] ? '✓ ' : '✗ ') + x[0] + '</span>'; }).join(' ') : '<span class="wm-sub">Für ' + esc(yy) + ' ist noch nichts eingelesen.</span>';
+    return '<section class="wm-card"><div class="wm-bar"><h3>WebClub-Dateien für die Statistik</h3></div>' +
+      '<p class="wm-note">Hier lädst du die Exporte aus WebClub hoch, aus denen die Seiten „Statistik“ (Veranstaltungen, Kampfrichter, Ergebnisse, Mitglieder) entstehen. Alle Dateien (CSV) auf einmal auswählen; die App erkennt an der ersten Zeile, was es ist. Abgesagte Veranstaltungen und Personen mit Mitgliedsnummer 0 werden ignoriert.</p>' +
+      '<div class="m-fgrid"><label class="m-f wide"><span>CSV-Dateien</span><input type="file" id="wc_f" multiple accept=".csv,.txt,text/csv,text/plain"></label></div><div class="m-btns"><button type="button" class="wm-amber" data-ma="wcread">Einlesen</button></div><div id="wc_msg" class="wm-sub" style="margin-top:8px"></div>' +
+      '<div class="m-chips" style="margin-top:8px">' + have + '</div>' +
+      '<details class="wm-note" style="margin-top:8px"><summary><b>Wo bekomme ich welche Datei? (einmal im Jahr, nach dem Jahreswechsel)</b></summary>' +
+      '<table class="m-table" style="margin-top:6px"><tr><th>Erste Zeile der Datei</th><th>Wird gebraucht für</th></tr>' +
+      '<tr><td>Statistik, Saison …</td><td>Platz 1 bis 3 (Einzel und Staffel)</td></tr>' +
+      '<tr><td>Übersicht anhand Ergebnissen, Saison …</td><td>Tabelle der Veranstaltungen mit Schwimmern, Starts und Meldegeld</td></tr>' +
+      '<tr><td>Kampfrichterstatistik, Saison …</td><td>Kampfrichter mit Stammverein, Veranstaltungen und Abschnitten</td></tr>' +
+      '<tr><td>Gruppenauslastung</td><td>Schwimmer je Gruppe</td></tr>' +
+      '<tr><td>Anzahl Personen nach Jahrgängen …</td><td>Weiblich/Männlich und Altersgruppen</td></tr>' +
+      '<tr><td>Eintritte / Austritte in einem Zeitraum …</td><td>Zahl der Ein- und Austritte (Zeitraum: 01.01. bis 31.12.)</td></tr>' +
+      '<tr><td>Mitgliederliste zum Stichtag …</td><td>Jubiläen (aus dem Eintrittsdatum) und die Personen mit Mitgliedsnummer 0</td></tr></table>' +
+      '<p style="margin:6px 0 0">In WebClub heißen die Bereiche nach den Dateinamen der Exporte „Auswertungen“, „Listen“ und „Statistik“. Die erste Zeile jeder Datei sagt dir, welche Liste es ist. Mitglieder-Zahlen gelten zum Stand der Mitgliederliste und der Jahrgangs-Statistik (Stichtag 01.01.).</p>' +
+      '<p style="margin:6px 0 0"><b>Die Zeiten der Schwimmer</b> (Rangliste, Einzelblätter, World-Aquatics-Punkte) kommen nicht von hier, sondern aus den Wettkämpfen: unter „Wettkämpfe › 📦 Mehrere CSV“ die „Meldungen“- und „Ergebnisse“-CSV jedes Wettkampfs importieren.</p></details></section>';
+  }
+
+  var UP = null;
+  function hochladen() {
+    if (!M.anyCan(['auswertung.upload'])) return '<section class="wm-card"><p class="wm-note">Zum Hochladen fehlt dir die Berechtigung.</p></section>';
+    var yy = new Date().getFullYear();
+    var have = all().sort(function (a, b) { return (b.jahr + b.bahn) < (a.jahr + a.bahn) ? -1 : 1; });
+    var ws = waSets().sort(function (a, b) { return a.von < b.von ? 1 : -1; });
+    return wcCard() + '<section class="wm-card"><div class="wm-bar"><h3>Basiszeiten World Aquatics</h3></div>' + waExpired() +
+      '<p class="wm-note">Mit den Basiszeiten (Zeit für 1000 Punkte) rechnet das Intranet die Punkte jeder Zeit aus den Wettkampfergebnissen selbst aus, für Kurzbahn und Langbahn. Eine Datei je Jahr mit Kurzbahn und Langbahn genügt. Wie in WebClub gilt für alle Wettkämpfe eines Jahres die Tabelle dieses Jahres.</p>' +
+      '<div class="m-fgrid"><label class="m-f wide"><span>Datei(en)</span><input type="file" id="wa_f" multiple accept=".csv,.txt,text/csv,text/plain,application/pdf,.pdf"></label></div><div class="m-btns"><button type="button" class="wm-amber" data-ma="waread">Einlesen</button></div><div id="wa_msg" class="wm-sub" style="margin-top:8px"></div>' +
+      '<details class="wm-note" style="margin-top:8px"><summary><b>So aktualisierst du die Zeiten (einmal im Jahr)</b></summary><ol style="margin:6px 0 0 18px;padding:0"><li>Auf worldaquatics.com unter „Swimming › Points“ die Punktetabellen des neuen Jahres laden. Das sind sechs PDFs: Männer, Frauen und Staffeln, jeweils für Kurzbahn und Langbahn.</li><li>Hier alle PDFs auf einmal auswählen und auf „Einlesen“ tippen. Gelesen wird nur die Zeile für 1000 Punkte.</li><li>Die Vorschau prüfen: Gültigkeit und Anzahl der Zeiten stimmen, dann „Übernehmen“.</li></ol><p style="margin:6px 0 0">Alternativ geht eine CSV-Datei ohne Kopfzeile. Jede Zeile hat die Form <code>Jahr;Bahn;Geschlecht;Anzahl;Strecke;Lage;Zeit;Sekunden</code>, zum Beispiel <code>2026;SCM;F;1;100;FREE;49.93;49,93</code>. Bahn ist SCM oder LCM, Geschlecht M, F oder X (Mixed), Lage FREE, BACK, BREAST, FLY oder MEDLEY. Die Spalte „Sekunden“ darf fehlen. Wenn sie da ist, wird sie mit der Zeit abgeglichen.</p><p style="margin:6px 0 0"><a href="https://www.worldaquatics.com/swimming/points" target="_blank" rel="noopener">worldaquatics.com/swimming/points</a></p></details>' +
+      (ws.length ? '<div style="margin-top:10px">' + ws.map(function (x) { return '<div class="m-chk" data-id="' + esc(x.id) + '"><span style="flex:1"><b>' + (x.bahn === 'Lang' ? 'Langbahn' : 'Kurzbahn') + ' ' + esc(x.jahr) + '</b> <span class="wm-sub">gültig ' + esc(M.fmtDate(x.von)) + ' bis ' + esc(M.fmtDate(x.bis)) + ' · ' + Object.keys(x.t || {}).length + ' Zeiten · eingelesen ' + esc(M.fmtDate(x.stand)) + '</span></span><button type="button" class="wm-btn m-danger" data-ma="wadel">🗑️</button></div>'; }).join('') + '</div>' : '<p class="wm-note">Noch keine Basiszeiten eingelesen.</p>') + '</section>' +
+      '<section class="wm-card"><div class="wm-bar"><h3>Punkteliste aus WebClub (optional)</h3></div><p class="wm-note">Liste „Punktbeste Leistung nach World Aquatics“ aus WebClub als CSV (besser) oder PDF. Die Bahn (Lang oder Kurz) wählst du unten aus, denn sie steht nicht in der Datei. Die Liste ergänzt die Punkte aus den Wettkampfergebnissen um frühere Starts, die nicht im Intranet stehen. Je Strecke zählt die bessere Punktzahl. Eine neue Liste ersetzt die alte derselben Saison und Bahn.</p>' +
+      '<div class="m-fgrid"><label class="m-f"><span>Saison</span><input type="number" id="au_j" value="' + yy + '" min="2000" max="2100"></label><label class="m-f"><span>Bahn</span><select id="au_b"><option value="Lang">Langbahn (50 m)</option><option value="Kurz">Kurzbahn (25 m)</option></select></label><label class="m-f wide"><span>Datei (CSV oder PDF)</span><input type="file" id="au_f" accept=".csv,.txt,text/csv,application/pdf,.pdf"></label></div><div class="m-btns"><button type="button" class="wm-amber" data-ma="ausread">Vorschau erstellen</button></div><div id="au_msg" class="wm-sub" style="margin-top:8px"></div></section>' +
+      '<section class="wm-card"><div class="wm-bar"><h3>Jubiläumsliste hochladen</h3></div><p class="wm-note">WebClub: Stammdaten › Personen › Statistiken/Listen › „Jubiläum im aktuellen Jahr“. Die Liste gilt für die Saison, die oben bei der Rangliste gewählt ist (' + esc(year()) + ').</p><div class="m-fgrid"><label class="m-f wide"><span>PDF-Datei</span><input type="file" id="au_jf" accept="application/pdf,.pdf"></label></div><div class="m-btns"><button type="button" class="wm-amber" data-ma="ausjub">Jubiläen einlesen</button></div></section>' +
+      '<section class="wm-card"><div class="wm-bar"><h3>Gruppen festlegen</h3><span class="m-actions"><button type="button" class="wm-btn" data-ma="ausbands">✏️ Jahrgangsgruppen</button></span></div><p class="wm-note">Hier legst du fest, welche Jahrgänge zu einer Gruppe zählen und ab welchem Alter jemand zu den Masters gehört (jetzt ab ' + mastersAb() + ' Jahren). Das gilt für alle Schwimmer der Punkteliste.</p></section>' +
+      '<section class="wm-card"><div class="wm-bar"><h3>Vorhandene Listen</h3></div>' + (have.length ? have.map(function (x) { return '<div class="m-chk" data-id="' + esc(x.id) + '"><span style="flex:1"><b>' + esc(x.jahr) + ' · ' + (x.bahn === 'Lang' ? 'Langbahn' : 'Kurzbahn') + '</b> <span class="wm-sub">' + (x.rows || []).length + ' Schwimmer · hochgeladen ' + M.fmtDate(x.stand) + '</span></span>' + (M.anyCan(['auswertung.upload']) ? '<button type="button" class="wm-btn m-danger" data-ma="ausdel">🗑️</button>' : '') + '</div>'; }).join('') : '<p class="wm-note">Noch nichts hochgeladen.</p>') + '</section>';
+  }
+  // WebClub-Punkteliste als CSV: Kopfzeile „Schwimmer;Jg;M/W;50S;…;Gesamt“, Titelzeile mit „Saison 2026“
+  function parsePunkteCsv(text) {
+    var rows = [], warnings = [], saison = '', head = null, cols = [];
+    String(text || '').replace(/^\uFEFF/, '').split(/\r?\n/).forEach(function (raw, i) {
+      if (!raw.trim()) return; var f = raw.split(';').map(function (x) { return x.trim(); });
+      if (!head) {
+        var m = /Saison\s+(\d{4})/.exec(raw); if (m) saison = m[1];
+        if (/^Schwimmer$/i.test(f[0])) { head = f; f.forEach(function (c, k) { if (k >= 3 && c && !/^Gesamt$/i.test(c)) { if (/^\d+[SRBFL]$/.test(c)) cols.push([k, c]); else warnings.push('Unbekannte Spalte „' + c + '“ wird ignoriert.'); } }); }
+        return;
+      }
+      if (!f[0]) return; var jg = +f[1], sx = (f[2] || '').toUpperCase();
+      if (!(jg > 1900 && jg < 2100)) { warnings.push('Zeile ' + (i + 1) + ' (' + f[0] + '): Jahrgang „' + f[1] + '“ ist nicht lesbar.'); }
+      if (sx !== 'M' && sx !== 'W') { warnings.push('Zeile ' + (i + 1) + ' (' + f[0] + '): Geschlecht „' + f[2] + '“ ist nicht M oder W.'); }
+      var o = { name: f[0], jg: jg || 0, sex: sx, p: {}, ges: 0 };
+      cols.forEach(function (c) { var v = +(f[c[0]] || 0); if (v > 0) { o.p[c[1]] = v; o.ges += v; } });
+      var gi = head.map(function (c) { return /^Gesamt$/i.test(c); }).indexOf(true);
+      if (gi >= 0 && f[gi] !== '' && +f[gi] !== o.ges) warnings.push(f[0] + ': Gesamt ' + f[gi] + ' passt nicht zur Summe der Strecken (' + o.ges + ').');
+      rows.push(o);
+    });
+    if (!head) warnings.push('Die Kopfzeile „Schwimmer;Jg;M/W;…“ wurde nicht gefunden. Ist das die Liste „Punktbeste Leistung nach World Aquatics“?');
+    return { rows: rows, warnings: warnings, saison: saison };
+  }
+  function read() {
+    var f = document.getElementById('au_f').files[0], msg = document.getElementById('au_msg'); if (!f) { msg.textContent = 'Bitte zuerst eine Datei auswählen.'; return; }
+    var j = document.getElementById('au_j').value, b = document.getElementById('au_b').value;
+    msg.textContent = 'Wird gelesen … (beim ersten Mal wird der PDF-Leser geladen)';
+    (/\.(csv|txt)$/i.test(f.name) ? HubPdf.text(f).then(parsePunkteCsv) : HubPdf.read(f).then(function (r) { return P.parsePunkte(r.pages); })).then(function (p) {
+      if (!p.rows.length) { msg.innerHTML = '<span class="m-over">' + esc(p.warnings.join(' ')) + '</span>'; return; }
+      UP = { j: j, b: b, p: p, f: f }; var top = p.rows.slice().sort(function (a, c) { return c.ges - a.ges; })[0]; var have = !!pset(j, b);
+      M.openDlg('<div class="hub-dhead"><h3>Das wurde gefunden</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div>' + (p.warnings.length ? '<div class="hub-err">' + p.warnings.slice(0, 6).map(esc).join('<br>') + '</div>' : '') +
+        '<p class="wm-note"><b>' + p.rows.length + '</b> Schwimmer · Saison in der Datei: <b>' + esc(p.saison || '?') + '</b> · gewählt: <b>' + esc(j) + ' ' + (b === 'Lang' ? 'Langbahn' : 'Kurzbahn') + '</b><br>Beste Punktzahl: ' + esc(top.name) + ' (' + top.ges + ')</p>' + (p.saison && p.saison !== String(j) ? '<div class="hub-err">Die Datei gehört zur Saison ' + esc(p.saison) + ', gewählt ist ' + esc(j) + '. Bitte prüfen.</div>' : '') + (have ? '<p class="wm-note">Für diese Saison und Bahn gibt es schon eine Liste. Sie wird ersetzt.</p>' : '') +
+        '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="aussave">Übernehmen</button></div>');
+    }, function (e) { msg.innerHTML = '<span class="m-over">' + esc(e.message || String(e)) + '</span>'; });
+  }
+  function save() {
+    if (!UP) return; var u = UP; UP = null; M.closeDlg();
+    M.op({ op: 'set', coll: 'saison', item: { id: 'ps-' + u.j + '-' + u.b.toLowerCase(), jahr: String(u.j), bahn: u.b, rows: u.p.rows, stand: M.today(), datei: u.f.name } });
+    var s = sub(); s.sj = String(u.j); M.toast('Punkteliste übernommen.');
+  }
+  var WU = null;
+  function waRead() {
+    var fl = document.getElementById('wa_f').files, msg = document.getElementById('wa_msg'); if (!fl.length) { msg.textContent = 'Bitte zuerst Datei(en) auswählen.'; return; }
+    msg.textContent = 'Wird gelesen … (bei PDFs wird beim ersten Mal der PDF-Leser geladen)';
+    var names = [], jobs = Array.prototype.map.call(fl, function (f) {
+      names.push(f.name);
+      if (/\.pdf$/i.test(f.name) || f.type === 'application/pdf') return HubPdf.read(f).then(function (r) { var o = WAPunkte.out(); WAPunkte.addPdf(o, WAPunkte.parsePdf(r.lines, f.name), f.name); return WAPunkte.finish(o); });
+      return HubPdf.text(f).then(function (t) { return WAPunkte.parseCsv(t); });
+    });
+    Promise.all(jobs).then(function (rs) {
+      var m = WAPunkte.merge(rs); WU = { m: m, names: names }; msg.textContent = '';
+      var ex = {}; waSets().forEach(function (x) { ex[x.id] = 1; });
+      var body = '<div class="hub-dhead"><h3>Das wurde gefunden</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div>';
+      if (m.errors.length) body += '<div class="hub-err"><b>Das stimmt nicht, deshalb wird nichts übernommen:</b><br>' + m.errors.slice(0, 12).map(esc).join('<br>') + (m.errors.length > 12 ? '<br>… und ' + (m.errors.length - 12) + ' weitere' : '') + '</div>';
+      if (m.warnings.length) body += '<div class="hub-err">' + m.warnings.map(esc).join('<br>') + '</div>';
+      if (m.list.length && !m.errors.length) body += m.list.map(function (s, i) {
+        var id = 'wa-' + s.course.toLowerCase() + '-' + s.jahr;
+        return '<div class="m-chk" style="display:block"><b>' + WAPunkte.CN[s.course] + ' ' + esc(s.jahr) + '</b> <span class="wm-sub">' + s.count + ' Zeiten' + (ex[id] ? ' · ersetzt die vorhandenen' : '') + '</span><div class="m-fgrid" style="margin-top:6px"><label class="m-f"><span>Gültig ab</span><input type="date" id="wa_v' + i + '" value="' + esc(s.von) + '"></label><label class="m-f"><span>Gültig bis</span><input type="date" id="wa_b' + i + '" value="' + esc(s.bis) + '"></label></div></div>';
+      }).join('');
+      else if (!m.errors.length) body += '<p class="wm-note">Keine Basiszeiten gefunden.</p>';
+      body += '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">' + (m.errors.length ? 'Schließen' : 'Abbrechen') + '</button>' + (m.errors.length || !m.list.length ? '' : '<button type="button" class="hub-btn hub-gold" data-ma="wasave">Übernehmen</button>') + '</div>';
+      M.openDlg(body);
+    }, function (e) { msg.innerHTML = '<span class="m-over">' + esc(e.message || String(e)) + '</span>'; });
+  }
+  function waSave() {
+    if (!WU) return; var w = WU, ops = [];
+    for (var i = 0; i < w.m.list.length; i++) {
+      var s = w.m.list[i], v = document.getElementById('wa_v' + i).value, b = document.getElementById('wa_b' + i).value;
+      if (!v || !b || v > b) { M.toast('Bitte bei ' + WAPunkte.CN[s.course] + ' ' + s.jahr + ' das Gültigkeitsdatum prüfen (ab muss vor bis liegen).'); return; }
+      ops.push({ op: 'set', coll: 'saison', item: { id: 'wa-' + s.course.toLowerCase() + '-' + s.jahr, kind: 'wa', bahn: s.course === 'SCM' ? 'Kurz' : 'Lang', jahr: s.jahr, von: v, bis: b, t: s.t, stand: M.today(), datei: w.names.join(', ') } });
+    }
+    WU = null; M.closeDlg(); M.ops(ops); M.toast('Basiszeiten übernommen.');
+  }
+
+  // ---------- Excel-Export (eine .xlsx mit allen Blättern, ohne Fremdbibliothek) ----------
+  var XL = (function () {
+    var CT = null;
+    function crc(u) { if (!CT) { CT = []; for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; CT[n] = c >>> 0; } } var c2 = 0xFFFFFFFF; for (var i = 0; i < u.length; i++) c2 = CT[(c2 ^ u[i]) & 255] ^ (c2 >>> 8); return (c2 ^ 0xFFFFFFFF) >>> 0; }
+    function enc(t) { return new TextEncoder().encode(t); }
+    function ex(t) { return String(t).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    function cn(i) { var s = ''; i++; while (i > 0) { var m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
+    function sheetXml(sh) {
+      var rows = sh.rows, merges = [], widths = [], x = '';
+      rows.forEach(function (r, ri) {
+        var col = 0, cx = '', single = r.filter(Boolean).length === 1;
+        r.forEach(function (c) {
+          if (c) {
+            var ref = cn(col) + (ri + 1), st = c.s ? ' s="' + c.s + '"' : '';
+            if (typeof c.v === 'number') cx += '<c r="' + ref + '"' + st + '><v>' + c.v + '</v></c>';
+            else if (c.v !== '' && c.v !== undefined) cx += '<c r="' + ref + '"' + st + ' t="inlineStr"><is><t xml:space="preserve">' + ex(c.v) + '</t></is></c>';
+            else if (c.s) cx += '<c r="' + ref + '"' + st + '/>';
+            var cs = c.cs || 1; if (cs > 1) { merges.push(ref + ':' + cn(col + cs - 1) + (ri + 1)); for (var q = 1; q < cs; q++) if (c.s) cx += '<c r="' + cn(col + q) + (ri + 1) + '" s="' + c.s + '"/>'; }
+            else if (!single) { var l = String(c.v === undefined ? '' : c.v).length; widths[col] = Math.max(widths[col] || 0, Math.min(l, 42)); }
+            col += cs;
+          } else col++;
+        });
+        x += '<row r="' + (ri + 1) + '">' + cx + '</row>';
+      });
+      var cols = widths.map(function (w, i) { return w ? '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + Math.max(8, w * 1.15 + 2) + '" customWidth="1"/>' : ''; }).join('');
+      return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0" showGridLines="0"/></sheetViews><sheetFormatPr defaultRowHeight="15"/>' + (cols ? '<cols>' + cols + '</cols>' : '') + '<sheetData>' + x + '</sheetData>' + (merges.length ? '<mergeCells count="' + merges.length + '">' + merges.map(function (m) { return '<mergeCell ref="' + m + '"/>'; }).join('') + '</mergeCells>' : '') + '<pageMargins left="0.5" right="0.5" top="0.6" bottom="0.6" header="0.3" footer="0.3"/><pageSetup paperSize="9" orientation="portrait" fitToHeight="0"/></worksheet>';
+    }
+    var STY = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="4"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font><font><b/><i/><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="13"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color auto="1"/></left><right style="thin"><color auto="1"/></right><top style="thin"><color auto="1"/></top><bottom style="thin"><color auto="1"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="9">' +
+      '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="0" fontId="2" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' +
+      '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="right"/></xf>' +
+      '<xf numFmtId="0" fontId="1" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf><xf numFmtId="0" fontId="1" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right"/></xf>' +
+      '<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="left"/></xf></cellXfs></styleSheet>';
+    function zip(files) {
+      var parts = [], cen = [], off = 0;
+      files.forEach(function (f) {
+        var nm = enc(f.n), d = f.d, c = crc(d), h = new Uint8Array(30 + nm.length), v = new DataView(h.buffer);
+        v.setUint32(0, 0x04034b50, true); v.setUint16(4, 20, true); v.setUint16(6, 0x0800, true); v.setUint16(8, 0, true); v.setUint16(10, 0, true); v.setUint16(12, 0x21, true); v.setUint32(14, c, true); v.setUint32(18, d.length, true); v.setUint32(22, d.length, true); v.setUint16(26, nm.length, true); h.set(nm, 30);
+        var ch = new Uint8Array(46 + nm.length), cv = new DataView(ch.buffer);
+        cv.setUint32(0, 0x02014b50, true); cv.setUint16(4, 20, true); cv.setUint16(6, 20, true); cv.setUint16(8, 0x0800, true); cv.setUint16(12, 0, true); cv.setUint16(14, 0x21, true); cv.setUint32(16, c, true); cv.setUint32(20, d.length, true); cv.setUint32(24, d.length, true); cv.setUint16(28, nm.length, true); cv.setUint32(42, off, true); ch.set(nm, 46);
+        parts.push(h, d); cen.push(ch); off += h.length + d.length;
+      });
+      var cl = cen.reduce(function (a, b) { return a + b.length; }, 0), e = new Uint8Array(22), ev = new DataView(e.buffer);
+      ev.setUint32(0, 0x06054b50, true); ev.setUint16(8, files.length, true); ev.setUint16(10, files.length, true); ev.setUint32(12, cl, true); ev.setUint32(16, off, true);
+      return new Blob(parts.concat(cen, [e]), { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    }
+    function build(sheets) {
+      var names = {}; sheets.forEach(function (s) { var n = String(s.name).replace(/[\\\/?*\[\]:]/g, ' ').trim().slice(0, 31) || 'Blatt', b = n, k = 2; while (names[n.toLowerCase()]) n = b.slice(0, 28) + ' ' + (k++); names[n.toLowerCase()] = 1; s.name = n; });
+      var files = [{ n: '[Content_Types].xml', d: enc('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' + sheets.map(function (s, i) { return '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'; }).join('') + '</Types>') },
+        { n: '_rels/.rels', d: enc('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>') },
+        { n: 'xl/workbook.xml', d: enc('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>' + sheets.map(function (s, i) { return '<sheet name="' + ex(s.name) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>'; }).join('') + '</sheets></workbook>') },
+        { n: 'xl/_rels/workbook.xml.rels', d: enc('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + sheets.map(function (s, i) { return '<Relationship Id="rId' + (i + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>'; }).join('') + '<Relationship Id="rId' + (sheets.length + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>') },
+        { n: 'xl/styles.xml', d: enc(STY) }];
+      sheets.forEach(function (s, i) { files.push({ n: 'xl/worksheets/sheet' + (i + 1) + '.xml', d: enc(sheetXml(s)) }); });
+      return zip(files);
+    }
+    // HTML der Auswertung -> Zeilen
+    function width(r) { return r.reduce(function (a, c) { return a + (c && c.cs ? c.cs : 1); }, 0); }
+    function tbl(t) {
+      var rows = [];
+      Array.prototype.forEach.call(t.querySelectorAll('tr'), function (tr) {
+        if (tr.classList.contains('no-print')) return; var tot = tr.classList.contains('tot'), row = [];
+        Array.prototype.forEach.call(tr.children, function (td) {
+          if (td.classList.contains('no-print')) return; var tx = td.textContent.replace(/\s+/g, ' ').trim(), isH = td.tagName === 'TH', cs = +td.getAttribute('colspan') || 1;
+          var bold = !!td.querySelector('b') || tot, v = /^-?\d{1,9}$/.test(tx) && !/^0\d/.test(tx) ? +tx : tx, right = td.classList.contains('r'), left = td.classList.contains('l') || td.parentNode.classList.contains('ausk');
+          var st = isH ? 2 : bold ? (right ? 6 : 5) : right ? 4 : left ? 8 : 3; if (td.parentNode.classList.contains('ausk')) st = 8;
+          var c = { v: v, s: st }; if (cs > 1) c.cs = cs; row.push(c);
+        });
+        if (row.length) rows.push(row);
+      });
+      return rows;
+    }
+    function blocks(el) {
+      var out = [];
+      Array.prototype.forEach.call(el.children, function (c) {
+        if (c.classList.contains('no-print') || c.tagName === 'BUTTON' || (c.tagName === 'P') || c.tagName === 'SCRIPT') return;
+        var tg = c.tagName;
+        if (tg === 'H1' || tg === 'H2') { if (out.length) out.push([]); out.push([{ v: c.textContent.trim(), s: 7 }]); }
+        else if (tg === 'TABLE') { out = out.concat(tbl(c)); out.push([]); }
+        else if (c.classList.contains('xs')) { var sp = c.querySelector('span'), val = c.querySelector('b,i'); out.push([{ v: sp ? sp.textContent.trim() : '', cs: 5, s: 0 }, { v: val ? (isNaN(+val.textContent) ? val.textContent : +val.textContent) : '', s: 6 }]); }
+        else if (c.classList.contains('xl-row')) {
+          var cols = Array.prototype.map.call(c.children, function (d) { return blocks(d); }), res = [], off = 0;
+          cols.forEach(function (cb, ci) {
+            var w = cb.reduce(function (a, r) { return Math.max(a, width(r)); }, 0);
+            cb.forEach(function (r, ri) { var pre = res[ri] || []; var pw = width(pre); while (pw < off) { pre.push(null); pw++; } res[ri] = pre.concat(r); });
+            off += w + 1;
+          });
+          out = out.concat(res); out.push([]);
+        }
+        else out = out.concat(blocks(c));
+      });
+      return out;
+    }
+    function fromHtml(h) { var d = document.createElement('div'); d.innerHTML = h; return blocks(d); }
+    return { build: build, fromHtml: fromHtml };
+  })();
+  function exportXlsx() {
+    var x = pj(), j = x.j, l = table(j, 'best'), sheets = [];
+    reportParts(j, l).forEach(function (p) { sheets.push({ name: p.name, rows: XL.fromHtml(p.html) }); });
+    sheets.push({ name: 'Mitgliederstatistik', rows: XL.fromHtml(mitHtml(j)) });
+    sheets.push({ name: 'Veranstaltungsstatistik', rows: XL.fromHtml(statHtml(j, true)) });
+    sheets.push({ name: 'Übersicht für JHV', rows: XL.fromHtml(jhvHtml(j, l)) });
+    sheets.push({ name: 'Pokale und Medaillen', rows: XL.fromHtml(ehrHtml(j, l).replace(/^<h2 class="aus-h">Jubiläen[\s\S]*?<\/table>/, '')) });
+    l.slice().sort(function (a, b) { return a.name.localeCompare(b.name, 'de'); }).forEach(function (o) { sheets.push({ name: o.name, rows: XL.fromHtml(sheetHtml(o, j)) }); });
+    var blob = XL.build(sheets), a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'Jahresauswertung_' + j + '.xlsx'; document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000); M.toast('Excel-Datei mit ' + sheets.length + ' Blättern erstellt.');
+  }
+
+  var PCSS = '.aus-h{font-size:14px;font-weight:700;margin:14px 0 4px;break-after:avoid}.aus-t{border-collapse:collapse;width:100%;margin-bottom:6px;border:2px solid #000;font-family:Calibri,Carlito,Arial,sans-serif}.aus-t th,.aus-t td{border:1px solid #000;padding:1px 5px;font-size:11px;text-align:center;color:#000}.aus-t th{font-weight:700;font-style:italic;padding:5px}.aus-t td.l,.aus-t th.l{text-align:left}.aus-t td.r{text-align:right}.aus-t tr{break-inside:avoid}.aus-r td:nth-child(2){text-align:left}.aus-r td:first-child{text-align:right}.aus-s tr.ausk td{font-size:13px;padding:3px 5px;color:#333}.aus-s tr.hd th{text-align:center}.tot td{border-top:2px solid #000}.xs{display:flex;justify-content:flex-end;gap:12px;font-size:13px;margin-top:6px}.xs b,.xs i{display:inline-block;min-width:90px;text-align:right;border-bottom:1px solid #000;font-style:normal;font-size:14px}.xs2{font-size:12px}.no-print,.no-prt{display:none}.xl-row{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start}.xl-row .aus-t{width:auto}'
+  function pj() { var s = sub(); return { j: year(), s: s, l: table(year(), s.sb) }; }
+  function lead(j, s) { return '<h1>Jahresauswertung ' + esc(j) + '</h1><div class="sub">' + (s.sb === 'best' ? 'Punktbeste Leistung aus Lang- und Kurzbahn' : s.sb === 'Lang' ? 'Langbahn' : 'Kurzbahn') + '</div>'; }
+  function printRang() { var x = pj(); M.print('Jahresauswertung ' + x.j, lead(x.j, x.s) + report(x.j, x.l), { css: PCSS }); }
+  function printStat() { var j = year(); M.print('Statistik ' + j, '<h1>Statistik ' + esc(j) + '</h1><div class="sub">Jahresauswertung</div>' + statHtml(j), { css: PCSS }); }
+  function printEhr() { var x = pj(); M.print('Ehrungen ' + x.j, '<h1>Ehrungen ' + esc(x.j) + '</h1><div class="sub">Jahresauswertung</div>' + ehrAll(x.j, table(x.j, 'best')), { css: PCSS }); }
+  function printSheets(list, j) {
+    var body = list.map(function (o, i) { return '<div style="' + (i ? 'page-break-before:always' : '') + '">' + sheetHtml(o, j) + '</div>'; }).join('');
+    M.print('Jahresauswertung ' + j, body, { t2: 'Jahresauswertung ' + j, t3: '', css: PCSS });
+  }
+  // Komplett: Ranglisten, Statistik, Ehrungen und für jeden Schwimmer ein Einzelblatt, wie die Papierauswertung
+  function printAll() {
+    var x = pj(), l = table(x.j, 'best'), br = '<div style="page-break-before:always"></div>';
+    var body = lead(x.j, x.s) + report(x.j, x.l) + br + '<h1 style="font-size:18px">Statistik ' + esc(x.j) + '</h1>' + statHtml(x.j) + br + '<h1 style="font-size:18px">Ehrungen ' + esc(x.j) + '</h1>' + ehrAll(x.j, l) +
+      l.slice().sort(function (a, b) { return a.name.localeCompare(b.name, 'de'); }).map(function (o) { return br + sheetHtml(o, x.j); }).join('');
+    M.print('Jahresauswertung ' + x.j, body, { css: PCSS });
+  }
+  M.register('auswertung', {
+    onChange: function (ev) { },
+    onInput: function (ev) { if (ev.target && ev.target.id === 'au_q') { var s0 = sub(); s0.q = ev.target.value; var c = document.getElementById('au_nl'); if (c) c.innerHTML = namesHtml(table(year(), 'best').sort(function (a, b) { return a.name.localeCompare(b.name, 'de'); }), s0.sp, s0.q); } },
+    title: 'Jahresauswertung', icon: '🏆', colls: ['saison', 'wgMitglieder', 'wettkaempfe'],
+    tabs: [{ id: 'rang', label: 'Rangliste', view: ['auswertung.view'], render: rangliste }, { id: 'stat', label: 'Statistik', view: ['auswertung.view'], render: statistik }, { id: 'ehr', label: 'Ehrungen', view: ['auswertung.view'], render: ehrungen }, { id: 'einzel', label: 'Einzelblatt', view: ['auswertung.view'], render: einzel }, { id: 'up', label: 'Hochladen', view: ['auswertung.upload'], render: hochladen }],
+    actions: {
+      ausj: function (it, el) { sub().sj = el.getAttribute('data-v'); M.render(true); },
+      ausb: function (it, el) { sub().sb = el.getAttribute('data-v'); M.render(true); },
+      ausausr: function (it, el) { var k = el.getAttribute('data-k'), l = ausrEx().slice(), i = l.indexOf(k); if (i >= 0) l.splice(i, 1); else l.push(k); M.op({ op: 'set', coll: 'saison', item: { id: 'ausr', keys: l, title: 'Wir waren Ausrichter' } }); },
+      auskr: function (it, el) { var n = el.getAttribute('data-n'), l = krEx().slice(), i = l.indexOf(n); if (i >= 0) l.splice(i, 1); else l.push(n); M.op({ op: 'set', coll: 'saison', item: { id: 'krx', names: l, title: 'Kampfrichter ausgeschlossen' } }); },
+      ausprintmit: function () { var j = year(); M.print('Mitglieder ' + j, '<h1>Mitglieder ' + esc(j) + '</h1><div class="sub">Jahresauswertung</div>' + mitHtml(j), { css: PCSS }); },
+      ausxlsx: function () { exportXlsx(); },
+      wcread: function () { wcRead(); },
+      wcsave: function () { wcSave(); },
+      ausstep: function (it, el) { var s0 = sub(), al = table(year(), 'best').sort(function (a, b) { return a.name.localeCompare(b.name, 'de'); }); var i = al.findIndex(function (x) { return x.name === s0.sp; }) + (+el.getAttribute('data-d')); if (al[i]) { s0.sp = al[i].name; M.render(true); } },
+      ausp: function (it, el) { sub().sp = el.getAttribute('data-n'); M.render(true); },
+      ausbahn: function (it, el) { M.op({ op: 'patch', coll: 'wettkaempfe', id: el.getAttribute('data-id'), fields: { bahn: el.getAttribute('data-b') } }); },
+      ausg: function (it, el) { sub().sg = el.getAttribute('data-v'); M.render(true); },
+      ausread: read, aussave: save,
+      waread: waRead, wasave: waSave,
+      wadel: function (it, el, ev, c) { var id = c.id || el.closest('[data-id]').getAttribute('data-id'); M.confirm('Diese Basiszeiten löschen? Die Punkte für Wettkämpfe in diesem Zeitraum entfallen dann.', 'Löschen', function () { M.op({ op: 'del', coll: 'saison', id: id }); }); },
+      ausjub: function () {
+        var f = document.getElementById('au_jf').files[0]; var j = year(); if (!f) { M.toast('Bitte zuerst eine PDF-Datei auswählen.'); return; }
+        HubPdf.read(f).then(function (r) {
+          var rows = []; r.lines.forEach(function (l) { var m = /^\s*(\d{1,2})\s+([A-Za-zäöüÄÖÜß-]+)\s+(\S.*?)\s*$/.exec(l); if (m && +m[1] > 0) rows.push({ jahre: +m[1], art: m[2], name: m[3] }); });
+          if (!rows.length) { M.toast('Keine Jubilare gefunden. Ist das die Liste „Jubiläum im aktuellen Jahr“?'); return; }
+          M.op({ op: 'set', coll: 'saison', item: { id: 'jub-' + j, jahr: String(j), rows: rows, stand: M.today() } }); M.toast(rows.length + ' Jubilare für ' + j + ' übernommen.');
+        }, function (e) { M.toast(e.message || 'Datei konnte nicht gelesen werden.'); });
+      },
+      ausbands: function () {
+        var j = year();
+        function txtOf(sx) { return bandList(j, sx).map(function (b) { return b[0] + ' | ' + b[4].map(function (r) { return r[0] === r[1] ? r[0] : (r[0] || '') + '-' + (r[1] >= 9999 ? '' : r[1]); }).join(' + '); }).join('\n'); }
+        function parseTxt(t) {
+          var out = []; String(t || '').split(/\n/).forEach(function (l) {
+            var m = /^\s*(.+?)\s*\|\s*([^|]*?)\s*(?:\|\s*[MWmw]\s*)?$/.exec(l); if (!m) return;
+            var rs = []; m[2].split(/\s*[+,;]\s*/).forEach(function (t2) { var q = /^(\d{0,4})\s*(-\s*(\d{0,4}))?$/.exec(t2); if (!q || (q[2] === undefined && !q[1])) return; rs.push([q[1] ? +q[1] : 0, q[2] === undefined ? +q[1] : (q[3] ? +q[3] : 9999)]); });
+            if (!rs.length) return; out.push({ l: m[1], von: rs[0][0], bis: rs[0][1], r: rs, sx: '' });
+          }); return out;
+        }
+        var hint = 'Eine Gruppe pro Zeile: Name | Jahrgang von-bis, bei einem einzelnen Jahrgang nur Name | Jahrgang. Mehrere Bereiche mit + verbinden, zum Beispiel Jahrgang 2012-2015 | 2012-2013 + 2014-2015. Leer lassen = Standard (Junioren, dann jeder Jahrgang einzeln). Gruppen mit wenigen Personen werden nach der Einstellung oben automatisch zusammengelegt (nur innerhalb des Geschlechts, Junioren ausgenommen).';
+        M.openForm({ title: 'Jahrgangsgruppen ' + j, fields: [{ k: 'masters', t: 'num', label: 'Masters ab Alter' }, { k: 'mergeMax', t: 'num', label: 'Gruppen zusammenlegen bei … Personen oder weniger (0 = nie)' }, { k: 'txtW', t: 'area', rows: 8, label: 'Weiblich', hint: hint }, { k: 'txtM', t: 'area', rows: 8, label: 'Männlich' }], item: { masters: mastersAb(), mergeMax: mergeMax(), txtW: txtOf('W'), txtM: txtOf('M') }, onSave: function (v) {
+          var c = Object.assign({}, cfg(), { id: 'cfg', masters: +v.masters || 25, mergeMax: Math.max(0, Math.min(9, +v.mergeMax || 0)) });
+          c.bandsW = Object.assign({}, c.bandsW || {}); c.bandsM = Object.assign({}, c.bandsM || {}); c.bands = Object.assign({}, c.bands || {}); delete c.bands[j];
+          var w = parseTxt(v.txtW), m = parseTxt(v.txtM);
+          var dw = JSON.stringify(w.map(function (x) { return [x.l, x.r]; })) === JSON.stringify(defBands(j).map(function (x) { return [x[0], [[x[1], x[2]]]]; }));
+          var dm = JSON.stringify(m.map(function (x) { return [x.l, x.r]; })) === JSON.stringify(defBands(j).map(function (x) { return [x[0], [[x[1], x[2]]]]; }));
+          if (w.length && !dw) c.bandsW[j] = w; else delete c.bandsW[j]; if (m.length && !dm) c.bandsM[j] = m; else delete c.bandsM[j];
+          M.op({ op: 'set', coll: 'saison', item: c }); M.toast('Gruppen gespeichert.');
+        } });
+      },
+      ausdel: function (it, el, ev, c) { var id = c.id || el.closest('[data-id]').getAttribute('data-id'); M.confirm('Diese Punkteliste löschen?', 'Löschen', function () { M.op({ op: 'del', coll: 'saison', id: id }); }); },
+      ausprint: printRang, ausprintall: printAll, ausprintehr: printEhr, ausprintstat: printStat,
+      ausone: function () { var j = year(), s = sub(); var o = table(j, 'best').filter(function (x) { return x.name === s.sp; })[0]; if (o) printSheets([o], j); },
+      ausallsheets: function () { var j = year(); printSheets(table(j, 'best').slice().sort(function (a, b) { return a.name.localeCompare(b.name, 'de'); }), j); }
+    }
+  });
+})();
