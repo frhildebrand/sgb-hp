@@ -237,8 +237,8 @@ templateEngineOverride: false
       },
       ausbands: function () {
         var j = year(); var txt = bandList(j).map(function (b) { return b[0] + ' | ' + (b[1] || '') + '-' + (b[2] >= 9999 ? '' : b[2]); }).join('\n');
-        M.openForm({ title: 'Jahrgangsgruppen ' + j, fields: [{ k: 'masters', t: 'num', label: 'Masters ab Alter' }, { k: 'txt', t: 'area', rows: 9, label: 'Eine Gruppe pro Zeile', hint: 'Schreibweise: Name | Jahrgang von - bis. Offen lassen heißt „und älter“ bzw. „und jünger“. Beispiel: Jahrgang 2013/2014 | 2013-2014' }], item: { masters: mastersAb(), txt: txt }, onSave: function (v) {
-          var out = []; String(v.txt || '').split(/\n/).forEach(function (l) { var m = /^\s*(.+?)\s*\|\s*(\d{0,4})\s*-\s*(\d{0,4})\s*$/.exec(l); if (m) out.push({ l: m[1], von: m[2] ? +m[2] : 0, bis: m[3] ? +m[3] : 9999 }); });
+        M.openForm({ title: 'Jahrgangsgruppen ' + j, fields: [{ k: 'masters', t: 'num', label: 'Masters ab Alter' }, { k: 'txt', t: 'area', rows: 9, label: 'Eine Gruppe pro Zeile', hint: 'Schreibweise: Name | Jahrgang von - bis, bei einem einzelnen Jahrgang nur Name | Jahrgang. Offen lassen heißt „und älter“ bzw. „und jünger“. Beispiel: Jahrgang 2013/2014 | 2013-2014' }], item: { masters: mastersAb(), txt: txt }, onSave: function (v) {
+          var out = []; String(v.txt || '').split(/\n/).forEach(function (l) { var m = /^\s*(.+?)\s*\|\s*(\d{4})\s*$/.exec(l); if (m) { out.push({ l: m[1], von: +m[2], bis: +m[2] }); return; } m = /^\s*(.+?)\s*\|\s*(\d{0,4})\s*-\s*(\d{0,4})\s*$/.exec(l); if (m) out.push({ l: m[1], von: m[2] ? +m[2] : 0, bis: m[3] ? +m[3] : 9999 }); });
           var c = Object.assign({}, cfg(), { id: 'cfg', masters: +v.masters || 25 }); c.bands = Object.assign({}, c.bands || {}); if (out.length) c.bands[j] = out; else delete c.bands[j];
           M.op({ op: 'set', coll: 'saison', item: c }); M.toast('Gruppen gespeichert.');
         } });
