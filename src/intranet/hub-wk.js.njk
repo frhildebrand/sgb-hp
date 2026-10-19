@@ -31,10 +31,6 @@ templateEngineOverride: false
   }
   function resOf(wk, s) { return (wk.res || {})[key(s)] || null; }
   function openDuties(wk) { return (wk.gericht || []).filter(function (g) { return /^N\s?N$/i.test(g.name || '') || !g.name; }).length; }
-  function timeRange(wk) {
-    var st = sortStarts(wk); if (!st.length) return '';
-    var a = st[0].t, b = st[st.length - 1].t; return a === b ? 'ca. ' + a + ' Uhr' : 'ca. ' + a + ' – ' + b + ' Uhr';
-  }
   function diffHtml(wk, s) {
     var r = resOf(wk, s); if (!r) return '';
     if (r.st) return '<span class="m-over">' + esc(r.st) + '</span>';
@@ -97,13 +93,13 @@ templateEngineOverride: false
     var up = all.filter(function (w) { return (w.date || '9999') >= t; });
     var past = all.filter(function (w) { return (w.date || '9999') < t; }).reverse();
     var canImp = M.anyCan(['wettkaempfe.import', 'wettkaempfe.anlegen']);
-    var out = '<section class="wm-card"><div class="wm-bar"><h3>Wettkämpfe</h3><span class="m-actions">' + viewSwitch(lv) + (canImp ? '<button type="button" class="wm-btn" data-ma="wkneu">➕ Termin</button><button type="button" class="wm-amber" data-ma="wkaus">📄 Neu aus Ausschreibung</button><button type="button" class="wm-btn" data-ma="wkbulk">📦 Mehrere CSV</button><button type="button" class="wm-btn" data-ma="wkneumeld">📋 Neu aus Meldedatei</button><button type="button" class="wm-btn" data-ma="wkneuprot">🏁 Neu aus Protokoll</button>' : '') + '</span></div>';
+    var out = '<section class="wm-card"><div class="wm-bar"><span class="m-actions" style="margin-right:auto"><h3 style="margin:0 10px 0 0">Wettkämpfe</h3>' + viewSwitch(lv) + '</span><span class="m-actions" style="margin-left:auto">' + (canImp ? '<button type="button" class="wm-btn" data-ma="wkneu">➕ Termin</button><button type="button" class="wm-amber" data-ma="wkaus">📄 Neu aus Ausschreibung</button><button type="button" class="wm-btn" data-ma="wkbulk">📦 Mehrere CSV</button><button type="button" class="wm-btn" data-ma="wkneumeld">📋 Neu aus Meldedatei</button>' : '') + '</span></div>';
     if (lv === 'tabelle') {
       var rows = M.S.sub.allRows ? all : up.concat(past.filter(function (w) { return M.daysTo(w.date) >= -45; }));
       out += tableHtml(rows) + '<p class="wm-note"><button type="button" class="m-chip' + (M.S.sub.allRows ? ' on' : '') + '" data-ma="allrows">Auch ältere zeigen</button> Tippe auf ein Feld, um es abzuhaken.</p></section>';
       return out;
     }
-    if (!up.length) out += '<p class="wm-note">Keine anstehenden Wettkämpfe. ' + (canImp ? 'Lege einen Termin an oder erstelle einen Wettkampf aus Ausschreibung, Meldedatei oder Protokoll.' : '') + '</p>';
+    if (!up.length) out += '<p class="wm-note">Keine anstehenden Wettkämpfe. ' + (canImp ? 'Lege einen Termin an oder erstelle einen Wettkampf aus Ausschreibung, Meldedatei.' : '') + '</p>';
     up.forEach(function (w) { out += wkCard(w, false); });
     out += '</section>';
     if (past.length) {
@@ -293,11 +289,11 @@ templateEngineOverride: false
       readCsv(f).then(function (txt) {
         if (kind === 'meld') { imp = { kind: kind, p: P.parseCsvMeld(txt), file: f.name, club: c, target: target }; prevMeld(); return; }
         imp = { kind: kind, p: P.parseCsvErg(txt), file: f.name, target: target };
-        if (!tgt) { prevNewProt(); return; } prevProt(tgt);
+        if (!tgt) { fail(new Error('Ergebnisse werden zu einem bestehenden Wettkampf gelesen.')); return; } prevProt(tgt);
       }, fail); return;
     }
     if (kind === 'prot' && !/\.pdf$/i.test(f.name)) {
-      HubPdf.text(f).then(function (txt) { imp = { kind: kind, p: P.parseErgDsv7(txt, c || club()), file: f.name, target: target, meta: txt }; if (!tgt) { prevNewProt(); return; } prevProt(tgt); }, fail); return;
+      HubPdf.text(f).then(function (txt) { imp = { kind: kind, p: P.parseErgDsv7(txt, c || club()), file: f.name, target: target, meta: txt }; if (!tgt) { fail(new Error('Ergebnisse werden zu einem bestehenden Wettkampf gelesen.')); return; } prevProt(tgt); }, fail); return;
     }
     if (kind === 'meld' && !/\.pdf$/i.test(f.name)) {
       HubPdf.text(f).then(function (txt) { imp = { kind: kind, p: P.parseDsv7(txt), file: f.name, club: c, target: target }; prevMeld(); }, fail); return;
@@ -377,28 +373,6 @@ templateEngineOverride: false
       '<label class="m-f m-fchk" style="margin-top:10px"><input type="checkbox" id="pr_over"><span>Vorhandene Zeiten überschreiben</span></label>' +
       '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="wksaveprot"' + (ok ? '' : ' disabled') + '>Zeiten eintragen</button></div>');
   }
-  function prevNewProt() {
-    var p = imp.p; var m = {}; p.found.forEach(function (x) { m[x.name] = (m[x.name] || 0) + 1; });
-    M.openDlg('<div class="hub-dhead"><h3>Neu aus Protokoll: Das wurde gefunden</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div>' + (p.warnings.length ? '<div class="hub-err">' + p.warnings.map(esc).join('<br>') + '</div>' : '') +
-      '<div class="m-fgrid">' + fld('np_t', 'Titel', p.title, 'text', true) + fld('np_d', 'Datum', p.date, 'date') + fld('np_o', 'Ort', p.ort) + '</div>' +
-      '<p class="wm-note"><b>' + Object.keys(m).length + '</b> Schwimmer · <b>' + p.found.length + '</b> Zeiten' + (p.relays.length ? ' · <b>' + p.relays.length + '</b> Staffeln' : '') + '</p>' +
-      '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="wksavenewprot"' + (p.found.length ? '' : ' disabled') + '>Wettkampf anlegen</button></div>');
-  }
-  function saveNewProt() {
-    var p = imp.p; var abx = {}; var evs = {}; var starts = []; var res = {}; var cnt = {};
-    p.found.forEach(function (x) {
-      evs[x.e] = x.evn || ('Wettkampf ' + x.e); abx[x.e] = x.ab || 1; cnt[x.e] = (cnt[x.e] || 0) + 1;
-      var st = { e: x.e, l: 1, lt: 1, b: cnt[x.e], n: x.orig || x.name, s: x.sx || '', j: x.jg || '', m: '' }; starts.push(st);
-      var r = { t: x.t, sp: x.sp || [], st: x.st || '' }; if (x.pl) r.pl = x.pl; if (x.ak) r.ak = x.ak; res[key(st)] = r;
-    });
-    (p.relays || []).forEach(function (r) { if (!evs[r.e]) evs[r.e] = r.evn || ('Wettkampf ' + r.e); });
-    var events = Object.keys(evs).map(Number).sort(function (a, b) { return a - b; }).map(function (n) { return { no: n, name: evs[n], ab: abx[n] || 1 }; });
-    var af = {}; if (p.relays && p.relays.length) { af.staffeln = p.relays.map(function (r) { return { e: r.e, evn: r.evn, pl: r.pl, t: r.t, st: r.st }; }); af.staffel = P.relayText(p.relays); af.w = ['staffel']; }
-    if (p.kr && p.kr.length) af.kr = P.krText(p.kr);
-    var wk = { id: M.uid(), title: v('np_t') || 'Wettkampf', date: v('np_d'), ort: v('np_o'), bahn: /50/.test(p.bahn || '') ? '50' : /25/.test(p.bahn || '') ? '25' : '', club: club(), abschnitte: [], events: events, starts: starts, gericht: [], res: res, chk: {}, docs: { prot: { name: imp.file, at: M.today(), by: M.userName() } } };
-    if (Object.keys(af).length) wk.art = af;
-    M.closeDlg(); M.op({ op: 'set', coll: 'wettkaempfe', item: wk }); M.S.sub.wk = wk.id; M.S.sub.v = 'uebersicht'; M.S.sub.vSet = true; M.toast('Wettkampf aus Protokoll angelegt.'); M.render(true);
-  }
 
   /* ---------- Sammel-Import: viele WebClub-CSVs (Meldungen + Ergebnisse) auf einmal ---------- */
   var bulk = null;
@@ -408,7 +382,14 @@ templateEngineOverride: false
       '<div class="m-fgrid"><label class="m-f wide"><span>CSV-Dateien</span><input type="file" id="wkbfiles" multiple accept=".csv,.txt,text/csv"></label></div><div id="wkmsg" class="wm-note"></div>' +
       '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="wkbulkread">Auslesen</button></div>');
   }
-  function sameWk(wk, g) { var t = String(wk.title || '').toLowerCase().trim(), u = String(g.title || '').toLowerCase().trim(); return wk.date === g.date && (!t || !u || t === u || t.indexOf(u) >= 0 || u.indexOf(t) >= 0); }
+  // Gleicher Wettkampf: ähnlicher Titel und gleiches Datum, bei mehrtägigen Wettkämpfen auch bis zu 3 Tage Abstand
+  function dayNo(d) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d || '')); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) / 864e5 : null; }
+  function sameWk(wk, g) {
+    var t = String(wk.title || '').toLowerCase().trim(), u = String(g.title || '').toLowerCase().trim(), a = dayNo(wk.date), b = dayNo(g.date);
+    var near = a !== null && b !== null && Math.abs(a - b) <= 3 && wk.date !== g.date;
+    if (wk.date === g.date) return !t || !u || t === u || t.indexOf(u) >= 0 || u.indexOf(t) >= 0;
+    return near && !!t && !!u && (t === u || t.indexOf(u) >= 0 || u.indexOf(t) >= 0);
+  }
   function bulkRead() {
     var fs = document.getElementById('wkbfiles').files, msg = document.getElementById('wkmsg');
     if (!fs.length) { msg.textContent = 'Bitte Dateien auswählen.'; return; }
@@ -539,24 +520,6 @@ templateEngineOverride: false
     st.forEach(function (s) { var a = ev(wk, s.e).ab || 1; if (a !== lastAb && (wk.abschnitte || []).length > 1) { out += '<tr><td colspan="4" style="background:rgba(148,163,184,.18);font-weight:900">Abschnitt ' + a + '</td></tr>'; } lastAb = a; out += startLine(wk, s, true); });
     return out + '</table></section>';
   }
-  function viewZeiten(wk) {
-    var can = M.can('wettkaempfe.zeiten'); var s = sub();
-    var sw = swimmers(wk);
-    var out = '<section class="wm-card"><div class="wm-bar"><h3>Zeiten eintragen</h3></div><p class="wm-note">Zeit z. B. <b>31,20</b> oder <b>1:05,85</b>. Zwischenzeiten mit Leerzeichen oder Semikolon trennen. Es wird automatisch gespeichert.</p>' +
-      '<div class="m-chips"><select class="m-search" style="width:auto;margin:0" data-wkswf="1"><option value="">Alle Schwimmer</option>' + sw.map(function (x) { var k = swimmerKey(x.starts[0]); return '<option value="' + esc(k) + '"' + (s.swf === k ? ' selected' : '') + '>' + esc(x.n) + '</option>'; }).join('') + '</select><button type="button" class="m-chip' + (s.onlyOpen ? ' on' : '') + '" data-ma="onlyopen">Nur ohne Zeit</button></div>';
-    var st = sortStarts(wk).filter(function (x) { return (!s.swf || swimmerKey(x) === s.swf) && (!s.onlyOpen || !(resOf(wk, x) && (resOf(wk, x).t || resOf(wk, x).st))); });
-    if (!st.length) return out + '<p class="wm-note">Nichts zu zeigen.</p></section>';
-    out += '<div class="wk-zrows">';
-    st.forEach(function (x) {
-      var r = resOf(wk, x) || {}; var e = ev(wk, x.e);
-      out += '<div class="wk-z" data-k="' + esc(key(x)) + '"><div class="wk-zh"><b>' + esc(x.n) + '</b> <span class="wm-sub">(' + esc(x.j) + ')</span><div class="wm-sub">WK ' + x.e + ' · ' + esc(e.name) + ' · Lauf ' + x.l + ' · Bahn ' + x.b + ' · ca. ' + esc(x.t) + (x.m ? ' · Meldezeit ' + esc(x.m) : '') + '</div></div>' +
-        '<div class="wk-zi"><input class="m-time" data-wkt="t" inputmode="decimal" placeholder="Endzeit" value="' + esc(r.t || '') + '"' + (can ? '' : ' disabled') + ' autocomplete="off">' +
-        '<input class="m-split" data-wkt="sp" placeholder="Zwischenzeiten" value="' + esc((r.sp || []).join('; ')) + '"' + (can ? '' : ' disabled') + ' autocomplete="off">' +
-        '<select data-wkt="st" class="m-time" style="width:auto"' + (can ? '' : ' disabled') + '><option value="">–</option>' + ['DQ', 'nicht angetreten', 'abgemeldet'].map(function (o) { return '<option' + (r.st === o ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select><span class="wk-diff">' + diffHtml(wk, x) + '</span></div></div>';
-    });
-    return out + '</div></section>';
-  }
-
   /* ---------- Vor Ort: wer schwimmt wann wo, Zeiten, Zwischenzeiten, Stoppuhr ---------- */
   function splitCount(wk, e) {
     var name = ev(wk, e).name || ''; if (/^\d+\s*x/.test(name)) return 0;
@@ -749,8 +712,6 @@ templateEngineOverride: false
       wkbulkread: function () { bulkRead(); },
       wkbulksave: function () { bulkSave(); },
       wkneumeld: function () { docDialog('meld', ''); },
-      wkneuprot: function () { docDialog('prot', ''); },
-      wksavenewprot: function () { saveNewProt(); },
       wkdoc: function (it, el) { docDialog(el.getAttribute('data-kind'), M.S.sub.wk); },
       wkneu: function () { M.openForm({ title: 'Wettkampf-Termin anlegen', fields: NEW_FIELDS, item: {}, onSave: function (v) { var wk = { id: M.uid(), title: v.title, date: v.date, ort: v.ort, meldeschluss: v.meldeschluss, intMs: v.intMs, bahn: v.bahn || '', club: club(), abschnitte: [], events: [], starts: [], gericht: [], res: {}, chk: {} }; M.op({ op: 'set', coll: 'wettkaempfe', item: wk }); M.S.sub.wk = wk.id; M.S.sub.v = 'check'; M.S.sub.vSet = true; M.render(true); } }); },
       wkread: function (it, el) { doRead(el.getAttribute('data-kind') || 'erg', el.getAttribute('data-target') || ''); },
