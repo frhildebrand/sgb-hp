@@ -101,10 +101,12 @@ templateEngineOverride: false
   // ---------- Punkte ----------
   // sets: gespeicherte Einträge { bahn:'Kurz'|'Lang', von, bis, t }
   function pick(sets, bahn, date) {
-    var best = null; (sets || []).forEach(function (s) { if (s.bahn !== bahn) return; if (date && s.von && date < s.von) return; if (date && s.bis && date > s.bis) return; if (!best || s.von > best.von) best = s; });
+    // Wie in WebClub gilt für das ganze Wettkampfjahr die Tabelle dieses Jahres (Kurzbahn und Langbahn getrennt).
+    var yr = String(date || '').slice(0, 4), best = null;
+    (sets || []).forEach(function (s) { if (s.bahn === bahn && String(s.jahr) === yr) best = s; });
     if (best) return best;
-    // sonst gilt die Tabelle des Jahres, in dem der Wettkampf stattfand (eine Datei je Jahr mit Kurz- und Langbahn)
-    var yr = String(date || '').slice(0, 4); (sets || []).forEach(function (s) { if (s.bahn === bahn && String(s.jahr) === yr) best = s; });
+    // Gibt es für das Jahr keine Tabelle, gilt die, deren Gültigkeitszeitraum das Datum enthält.
+    (sets || []).forEach(function (s) { if (s.bahn !== bahn) return; if (date && s.von && date < s.von) return; if (date && s.bis && date > s.bis) return; if (!best || s.von > best.von) best = s; });
     return best;
   }
   // sex: 'M' | 'W' | 'F' | 'X'; code: '50F' (Strecke + Lage S/R/B/F/L); ms: Zeit in Millisekunden

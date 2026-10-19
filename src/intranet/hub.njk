@@ -675,8 +675,19 @@ permalink: /intranet/
   html #hubRoot .ha-acc { border-radius: 10px; background: rgba(255,255,255,.55); } html.dark #hubRoot .ha-acc { background: rgba(255,255,255,.03); }
   html #hubRoot .ha-perm { border-radius: 8px; } html #hubRoot .ha-perm:has(input:checked) span { font-weight: 800; }
   html #hubRoot .ha-perm input { accent-color: var(--cc, #2563eb); }
+
+    /* Jahresauswertung: Überschriften und Tabellen */
+    html #hubRoot .aus-h { margin: 18px 0 6px; font-size: 15px; font-weight: 800; }
+    html #hubRoot .aus-t th { font-size: 11px; line-height: 1.2; vertical-align: bottom; }
+    html #hubRoot .aus-t th { white-space: normal; overflow-wrap: anywhere; font-size: 10px; line-height: 1.2; }
+    html #hubRoot .aus-t td { overflow-wrap: anywhere; }
+    html #hubRoot .aus-t { table-layout: fixed; width: 100%; min-width: 720px; }
+    html #hubRoot .aus-t th:nth-child(1) { width: 7%; } html #hubRoot .aus-t th:nth-child(2) { width: 22%; } html #hubRoot .aus-t th:nth-child(3) { width: 9%; } html #hubRoot .aus-t th:nth-child(4) { width: 8%; }
+    html #hubRoot .aus-t td:nth-child(n+3), html #hubRoot .aus-t th:nth-child(n+3) { text-align: center; }
+    html #hubRoot .aus-t td:nth-child(2), html #hubRoot .aus-t th:nth-child(2) { text-align: left; }
+    html #hubRoot .aus-j { border-collapse: collapse; } html #hubRoot .aus-j td { padding: 4px 10px 4px 0; vertical-align: top; }
 </style>
 <div id="hubRoot" data-system=""><noscript><p style="padding:24px">Dafür wird JavaScript gebraucht.</p></noscript></div>
-<script src="/intranet/js/hub-config.js?v=10191220" defer></script>
-<script src="/intranet/js/hub-common.js?v=10191220" defer></script>
-<script src="/intranet/js/hub.js?v=10191220" defer></script>
+<script src="/intranet/js/hub-config.js?v=10191247" defer></script>
+<script src="/intranet/js/hub-common.js?v=10191247" defer></script>
+<script src="/intranet/js/hub.js?v=10191247" defer></script>

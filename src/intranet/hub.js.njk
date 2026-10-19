@@ -30,7 +30,7 @@ templateEngineOverride: false
     return '<a class="hub-t2" href="' + esc(s.url) + '" style="--acc:' + esc(color || s.color || '#94a3b8') + '"><span class="hub-t2ic">' + esc(s.icon || '•') + '</span><span class="hub-t2n">' + esc(s.name) + '</span><span class="hub-t2d">' + esc(s.desc || '') + '</span>' + hintOf(s) + '</a>';
   }
   function groupsHtml(systems) {
-    var by = {}; systems.forEach(function (s) { var g = SH.catName(s.group); (by[g] = by[g] || []).push(s); });
+    var by = {}; systems.forEach(function (s) { var g = SH.catOf(s); (by[g] = by[g] || []).push(s); });
     var names = SH.CATS.map(function (c) { return c.name; }).filter(function (g) { return by[g]; }).concat(Object.keys(by).filter(function (g) { return !SH.CATS.some(function (c) { return c.name === g; }); }));
     return names.map(function (g) { var ci = SH.catInfo(g); return '<section class="hub-sec" style="--cat:' + esc(ci.color) + '"><h3 class="hub-sech"><span class="hub-sechi">' + ci.icon + '</span>' + esc(g) + '</h3><div class="hub-tiles">' + by[g].map(function (x) { return tile(x, ci.color); }).join('') + '</div></section>'; }).join('');
   }

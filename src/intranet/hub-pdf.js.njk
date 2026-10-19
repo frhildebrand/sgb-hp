@@ -198,6 +198,73 @@ var WKParse = (function () {
   }
 
 
+
+  // ---------- WebClub-CSV (Meldungen / Ergebnisse) ----------
+  var PART = { van: 1, von: 1, de: 1, der: 1, den: 1, ter: 1, zu: 1, da: 1, di: 1, du: 1, la: 1, le: 1, el: 1, al: 1 };
+  function toNN(name) {
+    var t = String(name || '').trim().split(/\s+/); if (t.length < 2 || /^\d+\.|Mannschaft|Staffel/i.test(name)) return String(name || '').trim();
+    var i = t.length - 1; while (i > 1 && PART[t[i - 1].toLowerCase()]) i--;
+    return t.slice(i).join(' ') + ', ' + t.slice(0, i).join(' ');
+  }
+  function csvRows(text) {
+    var lines = String(text || '').replace(/^﻿/, '').split(/\r?\n/).filter(function (l) { return l.trim(); });
+    return lines.map(function (l) { return l.replace(/;\s*$/, '').split(';').map(function (x) { return x.trim(); }); });
+  }
+  function csvHead(rows, out, prefix) {
+    out.title = (rows[0][0] || '').replace(new RegExp('^' + prefix + '\\s+', 'i'), '').trim();
+    var m = /^(\d{2}\.\d{2}\.\d{4})\s*,\s*([^,]*?)\s*,\s*(.*)$/.exec(rows[1] ? rows[1].join(';') : '');
+    if (m) { out.date = dateDe(m[1]); out.bahn = /lang/i.test(m[2]) ? '50 m' : /kurz/i.test(m[2]) ? '25 m' : ''; out.ort = m[3].trim(); }
+    else out.warnings.push('Zeile 2 sollte „Datum, Bahn, Ort“ enthalten (z. B. 30.05.2026, Langbahn, Diepholz).');
+  }
+  function csvEvent(str, sx) {
+    var t = String(str || '').trim(); var mm = /^(?:(\d+)\s*x\s*)?(\d+)\s*([A-Za-z])$/.exec(t); if (!mm) return null;
+    var rel = mm[1] ? +mm[1] : 1; var letter = mm[3].toUpperCase(); var stroke = STROKE[letter] || (letter === 'X' ? 'Lagen' : letter);
+    if (letter === 'X') stroke = 'Lagen';
+    return { relay: rel > 1, name: (rel > 1 ? rel + ' x ' : '') + mm[2] + ' m ' + stroke + (sexLabel(sx) ? ' ' + sexLabel(sx) : '') };
+  }
+  function parseCsvMeld(text) {
+    var out = { title: '', ort: '', bahn: '', date: '', zeit: '', abschnitte: [], events: [], verein: '', kontakt: '', email: '', swimmers: [], starts: [], kari: [], warnings: [], csv: true };
+    var rows = csvRows(text); if (rows.length < 4) { out.warnings.push('Die Datei ist leer oder kein WebClub-Export.'); out.swimmerCount = 0; return out; }
+    csvHead(rows, out, 'Meldungen');
+    var h = rows[2].map(function (x) { return x.toLowerCase(); }); var ix = function (n) { return h.indexOf(n); };
+    var cN = ix('name'), cJ = ix('jg'), cS = ix('m/f'), cE = ix('wknr'), cD = ix('strecke'), cA = ix('abs.'), cZ = ix('meldezeit');
+    if (cN < 0 || cE < 0 || cD < 0) { out.warnings.push('Das ist keine WebClub-Meldungsliste (Spalten Name, WkNr, Strecke fehlen).'); out.swimmerCount = 0; return out; }
+    var evBy = {}, abs = {}, sw = {};
+    rows.slice(3).forEach(function (r) {
+      var no = +r[cE]; if (!no) return; var ev = csvEvent(r[cD], r[cS]); if (!ev) return;
+      var ab = +r[cA] || 1; abs[ab] = 1;
+      if (!evBy[no]) { evBy[no] = { no: no, ab: ab, name: ev.name, staffel: ev.relay }; out.events.push(evBy[no]); }
+      var mt = ''; var z = fmtTime(String(r[cZ] || '').replace(/^(\d{1,2}):(\d{2}),(\d{2})$/, '$1:$2,$3')); if (z && !/^0*:?0*,?0*$/.test(z) && !/^00:00,00$/.test(z)) mt = z;
+      var nn = ev.relay ? r[cN] : toNN(r[cN]);
+      out.starts.push({ e: no, n: nn, s: r[cS] || '', j: ev.relay ? 'Staffel' : r[cJ] || '', m: mt });
+      if (!ev.relay) sw[nn] = 1;
+    });
+    out.events.sort(function (a, b) { return a.no - b.no; });
+    out.abschnitte = Object.keys(abs).map(Number).sort(function (a, b) { return a - b; }).map(function (n) { return { no: n, date: out.date, beginn: '' }; });
+    out.swimmerCount = Object.keys(sw).length;
+    if (!out.starts.length) out.warnings.push('Keine Meldungen in der Datei gefunden.');
+    return out;
+  }
+  function parseCsvErg(text) {
+    var out = { title: '', ort: '', date: '', bahn: '', found: [], all: 0, warnings: [], kr: [], relays: [], csv: true };
+    var rows = csvRows(text); if (rows.length < 4) { out.warnings.push('Die Datei ist leer oder kein WebClub-Export.'); return out; }
+    csvHead(rows, out, 'Ergebnisse');
+    var h = rows[2].map(function (x) { return x.toLowerCase(); }); var ix = function (n) { return h.indexOf(n); };
+    var cN = ix('name'), cJ = ix('jg'), cS = ix('m/f'), cE = ix('wknr'), cD = ix('strecke'), cA = ix('abs.'), cZ = ix('zeit'), cP = ix('platz');
+    if (cN < 0 || cE < 0 || cZ < 0) { out.warnings.push('Das ist keine WebClub-Ergebnisliste (Spalten Name, WkNr, Zeit fehlen).'); return out; }
+    rows.slice(3).forEach(function (r) {
+      var no = +r[cE]; if (!no) return; var ev = csvEvent(r[cD], r[cS]); if (!ev) return; out.all++;
+      var z = String(r[cZ] || '').trim(); var t = ''; var st = '';
+      if (/^\d{1,2}:\d{2},\d{2}$/.test(z)) t = fmtTime(z) || ''; else if (/n\.?\s?a/i.test(z)) st = 'nicht angetreten'; else if (/abgem/i.test(z)) st = 'abgemeldet'; else if (/dis|dq/i.test(z)) st = 'DQ'; else if (z) { var f2 = fmtTime(z); if (f2) t = f2; else st = z; }
+      var pl = +r[cP] || 0; var ab = +r[cA] || 1;
+      if (ev.relay) { out.relays.push({ e: no, evn: ev.name, pl: pl, t: t, st: st, name: r[cN] }); return; }
+      var nn = toNN(r[cN]);
+      out.found.push({ e: no, nn: nn.toLowerCase(), orig: nn, sx: r[cS] || '', name: r[cN], t: t, sp: [], st: st, pl: pl, ak: '', jg: r[cJ] || '', evn: ev.name, ab: ab });
+    });
+    if (!out.found.length && !out.relays.length) out.warnings.push('Keine Ergebnisse in der Datei gefunden.');
+    return out;
+  }
+
   // Zeit aus Ziffern: 13852 -> 01:38,52, 3120 -> 00:31,20
   function digitTime(v) {
     var d = String(v || '').trim(); if (!/^\d{3,6}$/.test(d)) return fmtTime(d);
@@ -226,7 +293,7 @@ var WKParse = (function () {
       if (String(f[11] || '').toLowerCase().indexOf(cl) < 0) return;
       var t = dsvTime(f[13]); var st = ''; if (!t) st = /NA|NT/i.test(f[4]) ? 'nicht angetreten' : /AB/i.test(f[4]) ? 'abgemeldet' : 'DQ';
       var sp = (spl[f[7] + '|' + f[0]] || []).filter(function (z) { return z.t && z.d < (dist[f[0]] || 9999); }).sort(function (a, b) { return a.d - b.d; }).map(function (z) { return z.t; });
-      out.found.push({ e: +f[0], nn: f[5].toLowerCase(), name: f[5].replace(/^([^,]+),\s*(.+)$/, '$2 $1'), t: t, sp: sp, st: st, pl: +f[3] || 0, ak: wer[f[0] + '|' + f[2]] || '', jg: f[9] || '', evn: evName[f[0]] || '' });
+      out.found.push({ e: +f[0], nn: f[5].toLowerCase(), orig: f[5], sx: f[6] || '', evAll: evName, name: f[5].replace(/^([^,]+),\s*(.+)$/, '$2 $1'), t: t, sp: sp, st: st, pl: +f[3] || 0, ak: wer[f[0] + '|' + f[2]] || '', jg: f[9] || '', evn: evName[f[0]] || '' });
     });
     out.relays.forEach(function (r) { r.evn = evName[r.e] || ''; });
     if (!out.found.length) out.warnings.push('Keine Ergebnisse für „' + club + '“ gefunden.');
@@ -615,7 +682,7 @@ var WKParse = (function () {
     first = first.replace(/\s+(und|sowie)\s+(ist|sind|wird)\b.*$/i, '').replace(/(Einzel\w*|Staffel\w*):?\s*([\d,.]+ €)/g, '$2 pro $1').replace(/(pro \w+)\s+(?=[\d,.]+ €)/g, '$1, ');
     return first || t;
   }
-  return { articleBrief: articleBrief, cleanGeld: cleanGeld, parse: parse, parseDsv7: parseDsv7, parseAusschreibung: parseAusschreibung, parseProtokoll: parseProtokoll, parseErgDsv7: parseErgDsv7, articleText: articleText, articleHints: articleHints, STIMM: STIMM, krText: krText, relayText: relayText, showT: showT, digitTime: digitTime, parseAnwesenheit: parseAnwesenheit, parsePunkte: parsePunkte, krFor: krFor, dateDe: dateDe, linesFromItems: linesFromItems, fmtTime: fmtTime, timeMs: timeMs, diffStr: diffStr, isoDate: isoDate, toMin: toMin };
+  return { articleBrief: articleBrief, cleanGeld: cleanGeld, parse: parse, parseDsv7: parseDsv7, parseAusschreibung: parseAusschreibung, parseProtokoll: parseProtokoll, parseErgDsv7: parseErgDsv7, parseCsvMeld: parseCsvMeld, parseCsvErg: parseCsvErg, toNN: toNN, articleText: articleText, articleHints: articleHints, STIMM: STIMM, krText: krText, relayText: relayText, showT: showT, digitTime: digitTime, parseAnwesenheit: parseAnwesenheit, parsePunkte: parsePunkte, krFor: krFor, dateDe: dateDe, linesFromItems: linesFromItems, fmtTime: fmtTime, timeMs: timeMs, diffStr: diffStr, isoDate: isoDate, toMin: toMin };
 })();
 
 /* Gemeinsamer PDF-Leser (pdf.js wird erst bei Bedarf geladen) und Dateihilfen für Wettkämpfe und Wettkampfgruppe. */

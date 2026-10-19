@@ -115,7 +115,7 @@ templateEngineOverride: false
     var ab = byId.abrechnung, fa = byId.fahrten;
     if (ab) { ab.title = '🧾 Abrechnung'; ab.hint = 'Jeder sieht nur seine eigenen Einträge, außer er hat „Alle …“.'; ab.groups = ab.groups.map(function (g) { return { title: 'Trainerabrechnung · ' + g.title.replace(/^Trainerabrechnung\s*·?\s*/, ''), perms: g.perms }; }); if (fa) { fa.groups.forEach(function (g) { ab.groups.push({ title: 'Fahrtenformular · ' + g.title.replace(/^Fahrtenformular\s*·?\s*/, ''), perms: g.perms }); }); byId.fahrten = null; } }
     var TIT = { training: '🦈 Gruppen (Wettkampfgruppe)', auswertung: '📈 Jahresauswertung', hub: '🌐 Menü: wer welchen Bereich sieht' };
-    var ORD = [['Startseite', ['brett']], ['Mein Bereich', ['aufgaben', 'wettkaempfe', 'abrechnung']], ['Verein', ['mitglieder', 'training', 'trainer', 'anwesenheit', 'jugend', 'auswertung', 'vorstand', 'material', 'dokumente']], ['Aktionen', ['veranstaltungen', 'weihnachtsmarkt']], ['Verwaltung', ['hub']]];
+    var ORD = [['Startseite', ['brett']], ['Wettkampf', ['wettkaempfe', 'auswertung']], ['Training', ['training', 'trainer', 'anwesenheit']], ['Verein', ['mitglieder', 'jugend', 'vorstand', 'dokumente']], ['Organisation', ['aufgaben', 'abrechnung', 'material']], ['Aktionen', ['veranstaltungen', 'weihnachtsmarkt']], ['Verwaltung', ['hub']]];
     var res = [], used = {};
     ORD.forEach(function (c) { c[1].forEach(function (id) { var x = byId[id]; if (!x) return; used[id] = 1; if (TIT[id]) x.title = TIT[id]; x.cat = c[0]; res.push(x); }); });
     out.forEach(function (x) { if (byId[x.id] && !used[x.id]) { x.cat = 'Weitere'; res.push(x); } });

@@ -105,11 +105,16 @@ window.HubShell = (function () {
   function initials(n) { var p = String(n || '?').trim().split(/\s+/); return ((p[0] || '?').charAt(0) + (p.length > 1 ? p[p.length - 1].charAt(0) : '')).toUpperCase(); }
   // Kategorien der Systeme (Name, Symbol, Farbe). Alte Namen aus dem Zwischenspeicher werden umgedeutet.
   var CATS = [
-    { name: 'Mein Bereich', icon: '🧭', color: '#14b8a6' },
-    { name: 'Verein', icon: '🏊', color: '#3b82f6' },
+    { name: 'Wettkampf', icon: '🏁', color: '#6366f1' },
+    { name: 'Training', icon: '🦈', color: '#06b6d4' },
+    { name: 'Verein', icon: '🏛️', color: '#3b82f6' },
+    { name: 'Organisation', icon: '🗂️', color: '#14b8a6' },
     { name: 'Aktionen', icon: '🎉', color: '#f59e0b' }
   ];
-  var CAT_ALIAS = { 'Meine Arbeit': 'Mein Bereich', 'Weihnachtsmarkt': 'Aktionen' };
+  var CAT_ALIAS = { 'Meine Arbeit': 'Verein', 'Mein Bereich': 'Verein', 'Weihnachtsmarkt': 'Aktionen' };
+  // Zuordnung nach Seite (ohne Code.gs-Änderung): „Mein Bereich“ ist aufgelöst
+  var SLUG_CAT = { wettkaempfe: 'Wettkampf', auswertung: 'Wettkampf', training: 'Training', trainer: 'Training', anwesenheit: 'Training', mitglieder: 'Verein', jugend: 'Verein', vorstand: 'Verein', dokumente: 'Verein', aufgaben: 'Organisation', abrechnung: 'Organisation', fahrten: 'Organisation', material: 'Organisation', veranstaltungen: 'Aktionen', weihnachtsmarkt: 'Aktionen' };
+  function catOf(s) { var m = /\/intranet\/([\w-]+)\/?$/.exec(s && s.url || ''); return (m && SLUG_CAT[m[1]]) || catName(s && s.group); }
   function catName(g) { g = CAT_ALIAS[g] || g || 'Verein'; return g; }
   function catInfo(g) { g = catName(g); for (var i = 0; i < CATS.length; i++) if (CATS[i].name === g) return CATS[i]; return { name: g, icon: '📁', color: '#64748b' }; }
   // Kontoknopf in der Kopfzeile: Kreis mit Initialen und grünem Punkt; ohne Anmeldung goldenes „Anmelden“.
@@ -121,11 +126,11 @@ window.HubShell = (function () {
   }
   function groupsOf(systems) {
     var by = {};
-    systems.forEach(function (s) { var g = catName(s.group); (by[g] = by[g] || []).push(s); });
+    systems.forEach(function (s) { var g = catOf(s); (by[g] = by[g] || []).push(s); });
     var names = CATS.map(function (c) { return c.name; }).filter(function (g) { return by[g]; }).concat(Object.keys(by).filter(function (g) { return !CATS.some(function (c) { return c.name === g; }); }));
-    var ORD = ['mitglieder', 'training', 'trainer', 'anwesenheit', 'jugend', 'auswertung', 'vorstand', 'material', 'dokumente'];
+    var ORD = ['wettkaempfe', 'auswertung', 'training', 'trainer', 'anwesenheit', 'mitglieder', 'jugend', 'vorstand', 'dokumente', 'aufgaben', 'abrechnung', 'material'];
     function rk(x) { var m = /\/intranet\/([\w-]+)\/?$/.exec(x.url || ''); var i = m ? ORD.indexOf(m[1]) : -1; return i < 0 ? 99 : i; }
-    if (by['Verein']) by['Verein'] = by['Verein'].map(function (x, i) { return [x, i]; }).sort(function (a, b) { return rk(a[0]) - rk(b[0]) || a[1] - b[1]; }).map(function (x) { return x[0]; });
+    Object.keys(by).forEach(function (k) { if (by[k]) by[k] = by[k].map(function (x, i) { return [x, i]; }).sort(function (a, b) { return rk(a[0]) - rk(b[0]) || a[1] - b[1]; }).map(function (x) { return x[0]; }); });
     return names.map(function (g) { return { name: g, items: by[g], info: catInfo(g) }; });
   }
   function hereOf(path) { return String(path || '').replace(/\/?$/, '/'); }
@@ -380,7 +385,7 @@ window.HubShell = (function () {
     }
     return false;
   }
-  return { S: S, CATS: CATS, catInfo: catInfo, catName: catName, API: API, DIAG: DIAG, esc: esc, initials: initials, lsGet: lsGet, lsSet: lsSet, token: token, has: has, canAdmin: canAdmin, get: get, post: post, loadAccount: loadAccount, restore: restore, header: header, overlay: overlay, click: click, submit: submit, HUB_URL: HUB_URL };
+  return { S: S, CATS: CATS, catInfo: catInfo, catName: catName, catOf: catOf, API: API, DIAG: DIAG, esc: esc, initials: initials, lsGet: lsGet, lsSet: lsSet, token: token, has: has, canAdmin: canAdmin, get: get, post: post, loadAccount: loadAccount, restore: restore, header: header, overlay: overlay, click: click, submit: submit, HUB_URL: HUB_URL };
 })();
 
 /* App-Symbol für den Home-Bildschirm (iPad/iPhone): Vereinslogo auf weißem Grund */
