@@ -211,19 +211,28 @@ templateEngineOverride: false
         if (rel) sta++; else { ein++; sw[flip(s.n)] = 1; }
         var p = +r.pl || 0; if (p > 0) pl[rel ? 's' : 'e'][p <= 3 ? p - 1 : 3]++;
       });
-      var rl = (wk.art && wk.art.staffeln) || []; if (!sta && rl.length) { sta = rl.length; rl.forEach(function (r) { var p = +r.pl || 0; if (p > 0) pl.s[p <= 3 ? p - 1 : 3]++; }); }
+      var rl = (wk.art && wk.art.staffeln) || []; if (!sta && rl.length) { rl.forEach(function (r) { var p = +r.pl || 0; if (p > 0) pl.s[p <= 3 ? p - 1 : 3]++; }); } sta = Math.max(sta, rl.length);
       var bw = bahnOf(wk); vr.push({ d: wk.date, t: wk.title || '', o: wk.ort || '', b: bw === 25 ? 'Kurz' : bw === 50 ? 'Lang' : '–', sw: Object.keys(sw).length, e: ein, s: sta, g: geld(wk, ein, sta), wid: wk.id, bw: bw }); tot.sw += Object.keys(sw).length; tot.e += ein; tot.s += sta;
       (wk.gericht || []).forEach(function (g) { var n = String(g.name || '').trim(); if (!n || /^N\s?N$/i.test(n)) return; var k = (kr[n] = kr[n] || { n: n, w: {}, a: {}, v: '' }); if (g.v && !/protokoll/i.test(g.v)) k.v = g.v; k.w[wk.id] = 1; k.a[wk.id + '|' + g.a] = 1; k.e = k.e || {}; var ee = k.e[wk.id] = k.e[wk.id] || { d: wk.date, t: wk.title || '', a: [] }; if (g.a && ee.a.indexOf(g.a) < 0) ee.a.push(g.a); });
     });
     return { vr: vr, tot: tot, kr: Object.keys(kr).map(function (n) { return { n: n, ex: krEx().indexOf(n) >= 0, v: kr[n].v, w: Object.keys(kr[n].w).length, a: Object.keys(kr[n].a).length, ev: Object.keys(kr[n].e || {}).map(function (id) { return kr[n].e[id]; }).sort(function (p, q) { return p.d < q.d ? -1 : 1; }) }; }).sort(function (a, b) { return b.a - a.a || a.n.localeCompare(b.n, 'de'); }), pl: pl, n: wks.length };
   }
   function wcOf(j) { return M.find('saison', 'wc-' + j) || null; }
-  function statWc(wc) {
+  function statWc(wc, own) {
     var vr = (wc.ev || []).filter(function (x) { return !/abgesagt/i.test(x.t || ''); }).map(function (x) { return { d: x.d, t: x.t, o: x.o, bw: /lang/i.test(x.b) ? 50 : /kurz/i.test(x.b) ? 25 : 0, sw: x.sw, e: x.e, s: x.s, g: x.g, wid: '' }; });
+    var wkl = M.items('wettkaempfe'); var allOwn = true, used = {};
+    vr.forEach(function (x, i) {
+      var w = matchWk(x, wkl), o = w && own.vr.filter(function (q) { return q.wid === w.id; })[0];
+      if (o && (o.e || o.s)) { used[w.id] = 1; vr[i] = { d: o.d, t: o.t, o: o.o, bw: o.bw || x.bw, sw: o.sw, e: o.e, s: o.s, g: o.g !== null && o.g !== undefined ? o.g : x.g, wid: o.wid }; }
+      else allOwn = false;
+    });
+    own.vr.forEach(function (o) { if (!used[o.wid] && (o.e || o.s) && !vr.some(function (x) { return x.wid === o.wid; })) { var dup = vr.some(function (x) { var w = matchWk(x, wkl); return w && w.id === o.wid; }); if (!dup) vr.push(o); } });
+    vr.sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; });
     var tot = { sw: 0, e: 0, s: 0 }; vr.forEach(function (x) { tot.sw += x.sw; tot.e += x.e; tot.s += x.s; });
     var ab = wc.abs || {}; var pe = [ab.e1 || 0, ab.e2 || 0, ab.e3 || 0], ps = [ab.s1 || 0, ab.s2 || 0, ab.s3 || 0];
     var ex = krEx();
     var kr = (wc.kr || []).map(function (x) { return { n: x.n, v: x.v, w: x.w, a: x.a, ex: ex.indexOf(x.n) >= 0 }; });
+    if (allOwn && own.n) return own;
     return { vr: vr, tot: tot, kr: kr, n: vr.length, pl: { e: pe.concat([Math.max(0, tot.e - pe[0] - pe[1] - pe[2])]), s: ps.concat([Math.max(0, tot.s - ps[0] - ps[1] - ps[2])]) }, wc: true };
   }
   // Einsätze eines Kampfrichters: Datum, Wettkampf, Abschnitte (aus den Kampfgerichten der Wettkämpfe)
@@ -235,7 +244,7 @@ templateEngineOverride: false
   }
   function statHtml(j, noMit) {
     OWN_KR = null;
-    var wc = wcOf(j); var s = wc && wc.ev && wc.ev.length ? statWc(wc) : stat(j); if (!s.n) return '<p class="wm-note">Für ' + esc(j) + ' gibt es noch keine Veranstaltungen mit Ergebnissen.</p>';
+    var wc = wcOf(j); var s = wc && wc.ev && wc.ev.length ? statWc(wc, stat(j)) : stat(j); if (s.wc) s.kr = stat(j).kr; if (!s.n) return '<p class="wm-note">Für ' + esc(j) + ' gibt es noch keine Veranstaltungen mit Ergebnissen.</p>';
     var miss = s.vr.filter(function (x) { return !x.bw; });
     var warn = miss.length ? '<div class="hub-err no-print">Bei ' + miss.map(function (x) { return '<b>' + esc(x.t) + '</b> <button type="button" class="wm-btn" data-ma="ausbahn" data-id="' + esc(x.wid) + '" data-b="50">Langbahn</button> <button type="button" class="wm-btn" data-ma="ausbahn" data-id="' + esc(x.wid) + '" data-b="25">Kurzbahn</button>'; }).join('<br>') + '<br>fehlt die Bahnlänge. Ohne sie werden für diese Veranstaltung keine Punkte berechnet.</div>' : '';
     var ausr = ausrEx(), tg = s.vr.reduce(function (a, x) { return x.g === null || x.g === undefined || ausr.indexOf(ausrKey(x)) >= 0 ? a : a + x.g; }, 0), anyG = s.vr.some(function (x) { return x.g !== null && x.g !== undefined; });
@@ -245,7 +254,7 @@ templateEngineOverride: false
     var kin = s.kr.filter(function (x) { return !x.ex; });
     var k = '<h2 class="aus-h">Kampfrichterstatistik, Saison ' + esc(j) + '</h2>' + (s.kr.length ? '<table class="aus-t aus-k"><tr><th>Kampfrichter</th><th>Stammverein</th><th>Veranstaltungen</th><th>Abschnitte</th><th class="no-print">Wettkämpfe</th><th class="no-print">Zählt</th></tr>' + s.kr.map(function (x) { return '<tr class="' + (x.ex ? 'ex no-print' : '') + '"' + (x.ex ? ' style="opacity:.45"' : '') + '><td class="l">' + esc(x.n) + '</td><td class="l">' + esc(x.v) + '</td><td class="r">' + x.w + '</td><td class="r">' + x.a + '</td><td class="l no-print">' + krEvText(x, j) + '</td><td class="no-print"><button type="button" class="wm-btn" data-ma="auskr" data-n="' + esc(x.n) + '">' + (x.ex ? '✗ nein' : '✓ ja') + '</button></td></tr>'; }).join('') + '<tr class="tot"><td colspan="2" class="l"><b>Gesamt für ' + kin.length + ' Kampfrichter</b></td><td class="r"><b>' + kin.reduce(function (a, x) { return a + x.w; }, 0) + '</b></td><td class="r"><b>' + kin.reduce(function (a, x) { return a + x.a; }, 0) + '</b></td><td class="no-print"></td><td class="no-print"></td></tr></table><p class="wm-note no-print">Mit „Zählt“ legst du fest, wer als offizieller Kampfrichter in die Statistik kommt (z. B. nicht bei vereinsinternen Wettkämpfen).</p>' : '<p class="wm-note">Bei den Veranstaltungen ist kein Kampfgericht eingetragen.</p>');
     function pt(lab, a) { var L = ['Platz 1', 'Platz 2', 'Platz 3', 'Andere']; return '<h2 class="aus-h">Ergebnisse, Saison ' + esc(j) + '</h2><table class="aus-t aus-p"><tr><th class="l">' + lab + '</th><th class="l">Platzierung</th><th class="l">Anzahl</th></tr>' + L.map(function (x, i) { return '<tr><td></td><td class="l">' + x + '</td><td class="r">' + a[i] + '</td></tr>'; }).join('') + '<tr class="tot"><td></td><td class="l"><b>Gesamt</b></td><td class="r"><b>' + (a[0] + a[1] + a[2] + a[3]) + '</b></td></tr></table>'; }
-    return warn + v + k + pt('Einzelstarts', s.pl.e).replace('<h2 class="aus-h">Ergebnisse, Saison ' + esc(j) + '</h2>', '<h2 class="aus-h">Ergebnisse, Saison ' + esc(j) + '</h2>') + '<div style="height:10px"></div>' + pt('Staffelstarts', s.pl.s).replace(/<h2 class="aus-h">.*?<\/h2>/, '') + '<p class="wm-note no-print">' + (s.wc ? 'Die Zahlen stammen aus den WebClub-Dateien, die unter „Hochladen“ eingelesen wurden (abgesagte Veranstaltungen sind weggelassen).' : 'Platzierungen und Staffelstarts zählen nur, wo sie in den eingelesenen Ergebnissen stehen. Das Meldegeld wird aus dem Text der Ausschreibung berechnet; fehlt er, steht „–“. Wo wir Ausrichter waren, gibt es kein Meldegeld: dort „Ausrichter“ auf „ja“ stellen. Mit den WebClub-Auswertungen unter „Hochladen“ werden diese Zahlen vollständig.') + '</p>' + (noMit ? '' : mitHtml(j));
+    return warn + v + k + pt('Einzelstarts', s.pl.e).replace('<h2 class="aus-h">Ergebnisse, Saison ' + esc(j) + '</h2>', '<h2 class="aus-h">Ergebnisse, Saison ' + esc(j) + '</h2>') + '<div style="height:10px"></div>' + pt('Staffelstarts', s.pl.s).replace(/<h2 class="aus-h">.*?<\/h2>/, '') + '<p class="wm-note no-print">' + (s.wc ? 'Wo für eine Veranstaltung Ergebnisse eingelesen sind, zählen diese. Nur wo sie fehlen, gelten die WebClub-Dateien aus „Hochladen“ (abgesagte Veranstaltungen sind weggelassen). Die Kampfrichter kommen nur aus den eingelesenen Protokollen.' : 'Platzierungen und Staffelstarts zählen nur, wo sie in den eingelesenen Ergebnissen stehen. Das Meldegeld wird aus dem Text der Ausschreibung berechnet; fehlt er, steht „–“. Wo wir Ausrichter waren, gibt es kein Meldegeld: dort „Ausrichter“ auf „ja“ stellen. Mit den WebClub-Auswertungen unter „Hochladen“ werden diese Zahlen vollständig.') + '</p>' + (noMit ? '' : mitHtml(j));
   }
   // ---------- Datenprüfung: welche Starts fließen nicht in die Auswertung? ----------
   function evNames(wk) { var n = {}; (wk.events || []).forEach(function (e) { n[e.no] = e.name; }); return n; }
@@ -318,7 +327,7 @@ templateEngineOverride: false
     ks.sort(function (a, b) { return skey(a) - skey(b); });
     var out = '<table class="aus-t aus-s"><tr><td colspan="3" class="l"><b>' + esc(o.name) + '</b> &nbsp;&nbsp;&nbsp; <b>Jg. ' + o.jg + '</b></td><td colspan="3" class="r"><b>Jahresauswertung ' + esc(j) + '</b></td></tr><tr class="hd"><th>Datum</th><th>Ort</th><th>Bahntyp</th><th>Zeit</th><th>Differenz</th><th>World Aquatics</th></tr>';
     ks.forEach(function (k) {
-      out += '<tr class="ausk"><td colspan="6" class="l">' + slabel(k) + '</td></tr>';
+      out += '<tr class="ausk"><td colspan="6" class="l"><b>' + slabel(k) + '</b></td></tr>';
       var rs = st.filter(function (x) { return x.k === k; }), bst = {}, bt = null, bp = 0;
       rs.forEach(function (x) { var t = tms(x.t); if (t !== null) { if (bst[x.b] === undefined || t < bst[x.b]) bst[x.b] = t; if (bt === null || t < bt) bt = t; } if (x.pt > bp) bp = x.pt; });
       rs.forEach(function (x) {
@@ -654,11 +663,11 @@ templateEngineOverride: false
       var cols = widths.map(function (w, i) { return w ? '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + Math.max(8, w * 1.15 + 2) + '" customWidth="1"/>' : ''; }).join('');
       return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0" showGridLines="0"/></sheetViews><sheetFormatPr defaultRowHeight="15"/>' + (cols ? '<cols>' + cols + '</cols>' : '') + '<sheetData>' + x + '</sheetData>' + (merges.length ? '<mergeCells count="' + merges.length + '">' + merges.map(function (m) { return '<mergeCell ref="' + m + '"/>'; }).join('') + '</mergeCells>' : '') + '<pageMargins left="0.5" right="0.5" top="0.6" bottom="0.6" header="0.3" footer="0.3"/><pageSetup paperSize="9" orientation="portrait" fitToHeight="0"/></worksheet>';
     }
-    var STY = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="4"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font><font><b/><i/><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="13"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color auto="1"/></left><right style="thin"><color auto="1"/></right><top style="thin"><color auto="1"/></top><bottom style="thin"><color auto="1"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="11">' +
+    var STY = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="4"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font><font><b/><i/><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="13"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="3"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color auto="1"/></left><right style="thin"><color auto="1"/></right><top style="thin"><color auto="1"/></top><bottom style="thin"><color auto="1"/></bottom><diagonal/></border><border><left/><right/><top/><bottom style="thin"><color auto="1"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="14">' +
       '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="0" fontId="2" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' +
       '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="right"/></xf>' +
       '<xf numFmtId="0" fontId="1" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf><xf numFmtId="0" fontId="1" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right"/></xf>' +
-      '<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="left"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="right"/></xf><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="right"/></xf></cellXfs></styleSheet>';
+      '<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="left"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="right"/></xf><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="right"/></xf><xf numFmtId="0" fontId="1" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left"/></xf><xf numFmtId="0" fontId="1" fillId="0" borderId="2" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="2" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="right"/></xf></cellXfs></styleSheet>';
     function zip(files) {
       var parts = [], cen = [], off = 0;
       files.forEach(function (f) {
@@ -691,7 +700,7 @@ templateEngineOverride: false
         Array.prototype.forEach.call(tr.children, function (td) {
           if (td.classList.contains('no-print')) return; var tx = td.textContent.replace(/\s+/g, ' ').trim(), isH = td.tagName === 'TH', cs = +td.getAttribute('colspan') || 1;
           var bold = !!td.querySelector('b') || tot, v = /^-?\d{1,9}$/.test(tx) && !/^0\d/.test(tx) ? +tx : tx, right = td.classList.contains('r'), left = td.classList.contains('l') || td.parentNode.classList.contains('ausk');
-          var st = isH ? 2 : bold ? (right ? 6 : 5) : right ? 4 : left ? 8 : 3; if (td.parentNode.classList.contains('ausk')) st = 8;
+          var st = isH ? 2 : bold ? (right ? 6 : 5) : right ? 4 : left ? 8 : 3; if (td.parentNode.classList.contains('ausk')) st = 11;
           var c = { v: v, s: st }; if (cs > 1) c.cs = cs; row.push(c);
         });
         if (row.length) rows.push(row);
@@ -705,7 +714,7 @@ templateEngineOverride: false
         var tg = c.tagName;
         if (tg === 'H1' || tg === 'H2') { if (out.length) out.push([]); out.push([{ v: c.textContent.trim(), s: 7 }]); }
         else if (tg === 'TABLE') { out = out.concat(tbl(c)); out.push([]); }
-        else if (c.classList.contains('xs')) { var sp = c.querySelector('span'), val = c.querySelector(':scope > b, :scope > i'); out.push([{ v: sp ? sp.textContent.trim() : '', cs: 5, s: sp && sp.querySelector('b') ? 10 : 9 }, { v: val ? (isNaN(+val.textContent) ? val.textContent : +val.textContent) : '', s: 6 }]); }
+        else if (c.classList.contains('xs')) { var sp = c.querySelector('span'), val = c.querySelector(':scope > b, :scope > i'); out.push([{ v: sp ? sp.textContent.trim() : '', cs: 5, s: sp && sp.querySelector('b') ? 10 : 9 }, { v: val ? (isNaN(+val.textContent) ? val.textContent : +val.textContent) : '', s: val && val.tagName === 'B' ? 12 : 13 }]); }
         else if (c.classList.contains('xl-row')) {
           var cols = Array.prototype.map.call(c.children, function (d) { return blocks(d); }), res = [], off = 0;
           cols.forEach(function (cb, ci) {

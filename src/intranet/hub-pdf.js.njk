@@ -569,7 +569,7 @@ var WKParse = (function () {
       var t = l.trim(); var mk = /^Kampfgericht\s+(?:Abschnitt\s*)?(\d+)\b/i.exec(t) || (/^Kampfgericht\s*$/i.test(t) ? [0, curAb] : null);
       if (mk) { inKG = true; curAb = +mk[1]; out.dbg.heads++; return; }
       var m = /^Wettkampf\s+(\d+)\b(?:\s*[-–]\s*(.+))?/i.exec(t) || /^WK\s*(\d+)\b/i.exec(t);
-      if (m) { inKG = false; curE = +m[1]; if (m[2]) { evName[curE] = m[2].trim(); relay = /^\d+\s*x\s*\d+/i.test(m[2].trim()); } return; }
+      if (m) { inKG = false; curE = +m[1]; if (m[2]) { evName[curE] = m[2].trim(); relay = /^\d+\s*x\s*\d+|staffel|team\s*-?\s*race/i.test(m[2].trim()); } return; }
       if (/^Wettkampffolge/i.test(t)) { inKG = false; return; }
       if (inKG) {
         if (/^(Position\s+Name|Zielgericht|Zeitgericht|Wendegericht)\b/i.test(t)) return;
