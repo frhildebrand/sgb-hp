@@ -15,7 +15,12 @@ templateEngineOverride: false
   function sub() { var s = M.S.sub; if (!s.sj) s.sj = ''; if (!s.sb) s.sb = 'best'; if (!s.sg) s.sg = 'Gesamt'; return s; }
   function all() { return M.items('saison').filter(function (x) { return /^ps-/.test(x.id); }); }
   function cfg() { return M.find('saison', 'cfg') || { id: 'cfg' }; }
-  function years() { var y = {}; all().forEach(function (x) { y[x.jahr] = 1; }); return Object.keys(y).sort().reverse(); }
+  function waSets() { return M.items('saison').filter(function (x) { return /^wa-/.test(x.id); }); }
+  function years() {
+    var y = {}; all().forEach(function (x) { y[x.jahr] = 1; });
+    if (waSets().length) M.items('wettkaempfe').forEach(function (wk) { if (wk.date && wk.res && Object.keys(wk.res).length) y[String(wk.date).slice(0, 4)] = 1; });
+    return Object.keys(y).sort().reverse();
+  }
   function year() { var s = sub(), ys = years(); if (!s.sj || ys.indexOf(s.sj) < 0) s.sj = ys[0] || String(new Date().getFullYear()); return s.sj; }
   function pset(j, b) { return all().filter(function (x) { return x.jahr === j && x.bahn === b; })[0]; }
   // Je Schwimmer die Punkte je Strecke; bahn: 'best' | 'Lang' | 'Kurz'
@@ -28,13 +33,23 @@ templateEngineOverride: false
         Object.keys(r.p).forEach(function (s) { (bn === 'Lang' ? o.l : o.k)[s] = r.p[s]; if (!(o.p[s] >= r.p[s])) o.p[s] = r.p[s]; });
       });
     });
+    // Punkte, die das Intranet selbst aus den Wettkampfergebnissen und den World-Aquatics-Basiszeiten errechnet
+    var sc = starts(j);
+    Object.keys(sc).forEach(function (n) {
+      sc[n].forEach(function (x) {
+        if (!(x.pt > 0)) return; var bn = x.b === 50 ? 'Lang' : x.b === 25 ? 'Kurz' : ''; if (!bn || (b !== 'best' && b !== bn)) return;
+        var o = by[n] || (by[n] = { name: x.nm, jg: x.jg, sex: x.sx, p: {}, l: {}, k: {} }); var tg = bn === 'Lang' ? o.l : o.k;
+        if (!(tg[x.k] >= x.pt)) tg[x.k] = x.pt; if (!(o.p[x.k] >= x.pt)) o.p[x.k] = x.pt;
+      });
+    });
     var l = Object.keys(by).map(function (k) { var o = by[k]; o.n = Object.keys(o.p).length; o.ges = 0; Object.keys(o.p).forEach(function (s) { o.ges += o.p[s]; }); o.avg = o.n ? Math.round(o.ges / o.n) : 0; return o; });
     l.sort(function (a, b2) { return b2.ges - a.ges || a.name.localeCompare(b2.name, 'de'); });
     return l;
   }
   // Zeiten aus den angelegten Wettkämpfen (Meldeergebnis + Ergebnisse)
   var STR = { schmetterling: 'S', rücken: 'R', ruecken: 'R', brust: 'B', freistil: 'F', lagen: 'L' };
-  function flip(n) { return String(n || '').replace(/^([^,]+),\s*(.+)$/, '$2 $1').trim().toLowerCase(); }
+  function flipN(n) { return String(n || '').replace(/^([^,]+),\s*(.+)$/, '$2 $1').trim(); }
+  function flip(n) { return flipN(n).toLowerCase(); }
   function streckeOf(name) { var m = /^\s*(\d+)\s*m\s+([A-Za-zäöüÄÖÜ]+)/.exec(name || ''); if (!m) return ''; var c = STR[m[2].toLowerCase()]; return c ? m[1] + c : ''; }
   function bahnOf(wk) { if (wk.bahn === '25' || wk.bahn === '50') return +wk.bahn; var m = /à\s*(\d+)\s*m/.exec(wk.becken || ''); return m ? +m[1] : 0; }
   function tms(t) { var m = /^(\d+):(\d{2}),(\d{2})$/.exec(t || ''); return m ? (+m[1]) * 60000 + (+m[2]) * 1000 + (+m[3]) * 10 : null; }
@@ -47,7 +62,7 @@ templateEngineOverride: false
       if (String(wk.date || '').slice(0, 4) !== String(j)) return; var names = {}; (wk.events || []).forEach(function (e) { names[e.no] = e.name; });
       (wk.starts || []).forEach(function (s) {
         var r = (wk.res || {})[s.e + '-' + s.l + '-' + s.b]; if (!r || !r.t) return; var k = streckeOf(names[s.e]); if (!k) return; var n = flip(s.n);
-        (by[n] = by[n] || []).push({ d: wk.date, ort: wk.ort || wk.title || '', b: bahnOf(wk), k: k, t: r.t, wk: wk.id });
+        var bw = bahnOf(wk); var pts = window.WAPunkte ? WAPunkte.points(waSets(), s.s, bw === 25 ? 'Kurz' : bw === 50 ? 'Lang' : '', k, wk.date, tms(r.t)) : null; (by[n] = by[n] || []).push({ d: wk.date, ort: wk.ort || wk.title || '', b: bw, k: k, t: r.t, wk: wk.id, nm: flipN(s.n), jg: +s.j || 0, sx: s.s, pt: pts });
       });
     });
     Object.keys(by).forEach(function (n) { by[n].sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; }); var last = {}; by[n].forEach(function (x) { var lk = x.k + '|' + x.b; var pv = last[lk]; x.diff = pv !== undefined && tms(x.t) !== null ? tms(x.t) - pv : null; if (tms(x.t) !== null) last[lk] = tms(x.t); }); });
@@ -67,14 +82,24 @@ templateEngineOverride: false
   var HEAD = '<tr><th>Platz</th><th>Schwimmer</th><th>Jg.</th><th>M/W</th><th>Veranst.</th><th>Starts</th><th>Strecken</th><th>Punkte</th><th>Ø</th></tr>';
   function bahnSel(s) { return '<div class="m-chips">' + [['best', 'Beste Wertung'], ['Lang', 'Langbahn'], ['Kurz', 'Kurzbahn']].map(function (x) { return '<button type="button" class="m-chip' + (s.sb === x[0] ? ' on' : '') + '" data-ma="ausb" data-v="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>'; }
   function yearSel(j) { var ys = years(); if (!ys.length) return ''; return '<div class="m-chips">' + ys.map(function (y) { return '<button type="button" class="m-chip' + (y === j ? ' on' : '') + '" data-ma="ausj" data-v="' + y + '">' + y + '</button>'; }).join('') + '</div>'; }
-  function leer() { return '<section class="wm-card"><p class="wm-note">Es ist noch keine Punkteliste hochgeladen. Im Reiter „Hochladen“ die Liste „Punktbeste Leistung nach World Aquatics“ aus WebClub einlesen, getrennt für Langbahn und Kurzbahn.</p></section>'; }
+  function leer() { return '<section class="wm-card"><p class="wm-note">Es gibt noch keine Punkte. Im Reiter „Hochladen“ zuerst die World-Aquatics-Basiszeiten einlesen. Dann rechnet das Intranet die Punkte aus den eingelesenen Wettkampfergebnissen selbst aus. Alternativ kannst du die WebClub-Liste „Punktbeste Leistung nach World Aquatics“ hochladen.</p></section>'; }
+  function waInfo() {
+    var ss = waSets(); if (!ss.length) return ''; var t = M.today();
+    return ss.sort(function (a, b) { return a.von < b.von ? -1 : 1; }).map(function (x) { return (x.bahn === 'Lang' ? 'Langbahn' : 'Kurzbahn') + ' ' + x.jahr + ' (gültig bis ' + M.fmtDate(x.bis) + (x.bis < t ? ', abgelaufen' : '') + ')'; }).join(', ');
+  }
+  // Hinweis, wenn die vorhandenen Basiszeiten aus einem früheren Jahr stammen als dem laufenden
+  function waExpired() {
+    var ss = waSets(); if (!ss.length) return ''; var cur = +String(M.today()).slice(0, 4), last = 0; ss.forEach(function (x) { if (+x.jahr > last) last = +x.jahr; });
+    if (last >= cur) return '';
+    return '<div class="hub-err"><b>Die Basiszeiten sind veraltet.</b> Die Punkte beruhen auf den World-Aquatics-Tabellen von ' + last + '. Für ' + cur + ' wurde noch keine neue Datei eingelesen' + (M.anyCan(['auswertung.upload']) ? '. Bitte im Reiter „Hochladen“ die Datei mit Kurzbahn und Langbahn für ' + cur + ' einlesen.' : '. Bitte bei den Verantwortlichen melden.') + '</div>';
+  }
   function rangliste() {
     if (!years().length) return leer(); var s = sub(), j = year(); var l = table(j, s.sb);
     var d = []; ['Lang', 'Kurz'].forEach(function (b) { var x = pset(j, b); if (x) d.push((b === 'Lang' ? 'Langbahn' : 'Kurzbahn') + ' vom ' + M.fmtDate(x.stand)); });
     var g = groups(j); var cur = filt(l, j, s.sg);
     return '<section class="wm-card"><div class="wm-bar"><h3>Rangliste ' + esc(j) + '</h3><span class="m-actions"><button type="button" class="wm-btn" data-ma="ausprint">🖨️ Auswertung drucken</button></span></div>' + yearSel(j) + bahnSel(s) +
       '<div class="m-chips">' + g.map(function (x) { return '<button type="button" class="m-chip' + (s.sg === x[0] ? ' on' : '') + '" data-ma="ausg" data-v="' + esc(x[0]) + '">' + esc(x[0]) + '</button>'; }).join('') + '</div>' +
-      '<p class="wm-sub">Stand: ' + (d.join(' · ') || '–') + '. Gewertet wird je Strecke die punktbeste Leistung.</p>' +
+      waExpired() + '<p class="wm-sub">Stand der WebClub-Listen: ' + (d.join(' · ') || 'keine hochgeladen') + '.' + (waInfo() ? '<br>Punkte aus Wettkampfergebnissen mit den Basiszeiten: ' + esc(waInfo()) + '.' : '') + '<br>Gewertet wird je Strecke die punktbeste Leistung.</p>' +
       (cur.length ? '<div class="m-twrap"><table>' + HEAD + rows(cur) + '</table></div>' : '<p class="wm-note">In dieser Gruppe gibt es keine Schwimmer.</p>') + '</section>';
   }
   function sheetTable(o, j) {
@@ -83,7 +108,7 @@ templateEngineOverride: false
     var out = '<table><tr><th>Datum</th><th>Ort</th><th>Bahn</th><th>Zeit</th><th>Differenz</th><th>Punkte</th></tr>';
     ks.forEach(function (k) {
       out += '<tr class="ausk"><td colspan="6"><b>' + slabel(k) + '</b></td></tr>';
-      st.filter(function (x) { return x.k === k; }).forEach(function (x) { out += '<tr><td class="nowrap">' + esc(M.fmtDate(x.d, true)) + '</td><td>' + esc(x.ort) + '</td><td>' + (x.b === 25 ? 'Kurzbahn' : x.b === 50 ? 'Langbahn' : '–') + '</td><td>' + esc(tshow(x.t)) + '</td><td>' + (x.diff === null ? '–' : dshow(x.diff)) + '</td><td></td></tr>'; });
+      st.filter(function (x) { return x.k === k; }).forEach(function (x) { out += '<tr><td class="nowrap">' + esc(M.fmtDate(x.d, true)) + '</td><td>' + esc(x.ort) + '</td><td>' + (x.b === 25 ? 'Kurzbahn' : x.b === 50 ? 'Langbahn' : '–') + '</td><td>' + esc(tshow(x.t)) + '</td><td>' + (x.diff === null ? '–' : dshow(x.diff)) + '</td><td>' + (x.pt > 0 ? x.pt : '') + '</td></tr>'; });
       out += '<tr><td colspan="3" class="wm-sub">Punktbeste Leistung (Langbahn ' + (o.l[k] || '–') + ' · Kurzbahn ' + (o.k[k] || '–') + ')</td><td colspan="2"></td><td><b>' + (o.p[k] || '–') + '</b></td></tr>';
     });
     return out + '</table>';
@@ -94,7 +119,7 @@ templateEngineOverride: false
   function einzel() {
     if (!years().length) return leer(); var s = sub(), j = year(); var l = table(j, 'best'); if (!s.sp || !l.some(function (o) { return o.name === s.sp; })) s.sp = l[0] && l[0].name;
     var o = l.filter(function (x) { return x.name === s.sp; })[0]; var plat = l.indexOf(o) + 1;
-    return '<section class="wm-card"><div class="wm-bar"><h3>Einzelblatt ' + esc(j) + '</h3><span class="m-actions"><button type="button" class="wm-btn" data-ma="ausone">🖨️ Dieses Blatt</button><button type="button" class="wm-btn" data-ma="ausallsheets">🖨️ Alle Blätter</button></span></div>' + yearSel(j) +
+    return '<section class="wm-card"><div class="wm-bar"><h3>Einzelblatt ' + esc(j) + '</h3><span class="m-actions"><button type="button" class="wm-btn" data-ma="ausone">🖨️ Dieses Blatt</button><button type="button" class="wm-btn" data-ma="ausallsheets">🖨️ Alle Blätter</button></span></div>' + waExpired() + yearSel(j) +
       '<label class="m-f"><span>Schwimmer</span><select id="au_sp">' + l.map(function (x) { return '<option' + (x.name === s.sp ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select></label>' +
       (o ? '<p class="wm-sub">Platz ' + plat + ' von ' + l.length + ' in der Gesamtwertung</p><div class="m-twrap">' + sheetTable(o, j) + '</div>' +
         '<div class="m-stats">' + M.stat(o.ges, 'Punkte gesamt') + M.stat(o.n, 'Strecken') + M.stat(o.avg, 'Ø pro Strecke') + '</div>' : '') +
@@ -102,7 +127,7 @@ templateEngineOverride: false
   }
   function ehrungen() {
     if (!years().length) return leer(); var s = sub(), j = year(); var l = table(j, 'best');
-    var out = '<section class="wm-card"><div class="wm-bar"><h3>Ehrungen ' + esc(j) + '</h3></div>' + yearSel(j) + '<div>';
+    var out = '<section class="wm-card"><div class="wm-bar"><h3>Ehrungen ' + esc(j) + '</h3></div>' + waExpired() + yearSel(j) + '<div>';
     groups(j).forEach(function (g) {
       var t = filt(l, j, g[0]).slice(0, 3); if (!t.length) return;
       out += '<div style="margin-bottom:10px"><div class="m-sec" style="margin-top:6px">' + esc(g[0]) + '</div>' + t.map(function (o, i) { return '<div class="m-chk"><span style="flex:1;text-transform:none;letter-spacing:0">' + ['🥇', '🥈', '🥉'][i] + ' ' + esc(o.name) + ' <span class="wm-sub">Jg. ' + o.jg + '</span></span><b>' + o.ges + '</b></div>'; }).join('') + '</div>';
@@ -119,7 +144,13 @@ templateEngineOverride: false
     if (!M.anyCan(['auswertung.upload'])) return '<section class="wm-card"><p class="wm-note">Zum Hochladen fehlt dir die Berechtigung.</p></section>';
     var yy = new Date().getFullYear();
     var have = all().sort(function (a, b) { return (b.jahr + b.bahn) < (a.jahr + a.bahn) ? -1 : 1; });
-    return '<section class="wm-card"><div class="wm-bar"><h3>Punkteliste hochladen</h3></div><p class="wm-note">Liste „Punktbeste Leistung nach World Aquatics“ aus WebClub als PDF. Für die Kurzbahn gilt: WebClub kennt keine 25-m-Strecken, die Punkte müssen aus den aktuellen World-Aquatics-Punkten errechnet und als Liste hochgeladen werden. Eine neue Liste ersetzt die alte derselben Saison und Bahn.</p>' +
+    var ws = waSets().sort(function (a, b) { return a.von < b.von ? 1 : -1; });
+    return '<section class="wm-card"><div class="wm-bar"><h3>Basiszeiten World Aquatics</h3></div>' + waExpired() +
+      '<p class="wm-note">Mit den Basiszeiten (Zeit für 1000 Punkte) rechnet das Intranet die Punkte jeder Zeit aus den Wettkampfergebnissen selbst aus, für Kurzbahn und Langbahn. Eine Datei je Jahr mit Kurzbahn und Langbahn genügt. Für einen Wettkampf gilt die Tabelle, deren Gültigkeit sein Datum enthält, sonst die Tabelle des Wettkampfjahres.</p>' +
+      '<div class="m-fgrid"><label class="m-f wide"><span>Datei(en)</span><input type="file" id="wa_f" multiple accept=".csv,.txt,text/csv,text/plain,application/pdf,.pdf"></label></div><div class="m-btns"><button type="button" class="wm-amber" data-ma="waread">Einlesen</button></div><div id="wa_msg" class="wm-sub" style="margin-top:8px"></div>' +
+      '<details class="wm-note" style="margin-top:8px"><summary><b>So aktualisierst du die Zeiten (einmal im Jahr)</b></summary><ol style="margin:6px 0 0 18px;padding:0"><li>Auf worldaquatics.com unter „Swimming › Points“ die Punktetabellen des neuen Jahres laden. Das sind sechs PDFs: Männer, Frauen und Staffeln, jeweils für Kurzbahn und Langbahn.</li><li>Hier alle PDFs auf einmal auswählen und auf „Einlesen“ tippen. Gelesen wird nur die Zeile für 1000 Punkte.</li><li>Die Vorschau prüfen: Gültigkeit und Anzahl der Zeiten stimmen, dann „Übernehmen“.</li></ol><p style="margin:6px 0 0">Alternativ geht eine CSV-Datei ohne Kopfzeile. Jede Zeile hat die Form <code>Jahr;Bahn;Geschlecht;Anzahl;Strecke;Lage;Zeit;Sekunden</code>, zum Beispiel <code>2026;SCM;F;1;100;FREE;49.93;49,93</code>. Bahn ist SCM oder LCM, Geschlecht M, F oder X (Mixed), Lage FREE, BACK, BREAST, FLY oder MEDLEY. Die Spalte „Sekunden“ darf fehlen. Wenn sie da ist, wird sie mit der Zeit abgeglichen.</p><p style="margin:6px 0 0"><a href="https://www.worldaquatics.com/swimming/points" target="_blank" rel="noopener">worldaquatics.com/swimming/points</a></p></details>' +
+      (ws.length ? '<div style="margin-top:10px">' + ws.map(function (x) { return '<div class="m-chk" data-id="' + esc(x.id) + '"><span style="flex:1"><b>' + (x.bahn === 'Lang' ? 'Langbahn' : 'Kurzbahn') + ' ' + esc(x.jahr) + '</b> <span class="wm-sub">gültig ' + esc(M.fmtDate(x.von)) + ' bis ' + esc(M.fmtDate(x.bis)) + ' · ' + Object.keys(x.t || {}).length + ' Zeiten · eingelesen ' + esc(M.fmtDate(x.stand)) + '</span></span><button type="button" class="wm-btn m-danger" data-ma="wadel">🗑️</button></div>'; }).join('') + '</div>' : '<p class="wm-note">Noch keine Basiszeiten eingelesen.</p>') + '</section>' +
+      '<section class="wm-card"><div class="wm-bar"><h3>Punkteliste aus WebClub (optional)</h3></div><p class="wm-note">Liste „Punktbeste Leistung nach World Aquatics“ aus WebClub als PDF. Sie ergänzt die Punkte aus den Wettkampfergebnissen um frühere Starts, die nicht im Intranet stehen. Je Strecke zählt die bessere Punktzahl. Eine neue Liste ersetzt die alte derselben Saison und Bahn.</p>' +
       '<div class="m-fgrid"><label class="m-f"><span>Saison</span><input type="number" id="au_j" value="' + yy + '" min="2000" max="2100"></label><label class="m-f"><span>Bahn</span><select id="au_b"><option value="Lang">Langbahn (50 m)</option><option value="Kurz">Kurzbahn (25 m)</option></select></label><label class="m-f wide"><span>PDF-Datei</span><input type="file" id="au_f" accept="application/pdf,.pdf"></label></div><div class="m-btns"><button type="button" class="wm-amber" data-ma="ausread">Vorschau erstellen</button></div><div id="au_msg" class="wm-sub" style="margin-top:8px"></div></section>' +
       '<section class="wm-card"><div class="wm-bar"><h3>Jubiläumsliste hochladen</h3></div><p class="wm-note">WebClub: Stammdaten › Personen › Statistiken/Listen › „Jubiläum im aktuellen Jahr“. Die Liste gilt für die Saison, die oben bei der Rangliste gewählt ist (' + esc(year()) + ').</p><div class="m-fgrid"><label class="m-f wide"><span>PDF-Datei</span><input type="file" id="au_jf" accept="application/pdf,.pdf"></label></div><div class="m-btns"><button type="button" class="wm-amber" data-ma="ausjub">Jubiläen einlesen</button></div></section>' +
       '<section class="wm-card"><div class="wm-bar"><h3>Gruppen festlegen</h3><span class="m-actions"><button type="button" class="wm-btn" data-ma="ausbands">✏️ Jahrgangsgruppen</button></span></div><p class="wm-note">Hier legst du fest, welche Jahrgänge zu einer Gruppe zählen und ab welchem Alter jemand zu den Masters gehört (jetzt ab ' + mastersAb() + ' Jahren). Das gilt für alle Schwimmer der Punkteliste.</p></section>' +
@@ -142,6 +173,39 @@ templateEngineOverride: false
     M.op({ op: 'set', coll: 'saison', item: { id: 'ps-' + u.j + '-' + u.b.toLowerCase(), jahr: String(u.j), bahn: u.b, rows: u.p.rows, stand: M.today(), datei: u.f.name } });
     var s = sub(); s.sj = String(u.j); M.toast('Punkteliste übernommen.');
   }
+  var WU = null;
+  function waRead() {
+    var fl = document.getElementById('wa_f').files, msg = document.getElementById('wa_msg'); if (!fl.length) { msg.textContent = 'Bitte zuerst Datei(en) auswählen.'; return; }
+    msg.textContent = 'Wird gelesen … (bei PDFs wird beim ersten Mal der PDF-Leser geladen)';
+    var names = [], jobs = Array.prototype.map.call(fl, function (f) {
+      names.push(f.name);
+      if (/\.pdf$/i.test(f.name) || f.type === 'application/pdf') return HubPdf.read(f).then(function (r) { var o = WAPunkte.out(); WAPunkte.addPdf(o, WAPunkte.parsePdf(r.lines, f.name), f.name); return WAPunkte.finish(o); });
+      return HubPdf.text(f).then(function (t) { return WAPunkte.parseCsv(t); });
+    });
+    Promise.all(jobs).then(function (rs) {
+      var m = WAPunkte.merge(rs); WU = { m: m, names: names }; msg.textContent = '';
+      var ex = {}; waSets().forEach(function (x) { ex[x.id] = 1; });
+      var body = '<div class="hub-dhead"><h3>Das wurde gefunden</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div>';
+      if (m.errors.length) body += '<div class="hub-err"><b>Das stimmt nicht, deshalb wird nichts übernommen:</b><br>' + m.errors.slice(0, 12).map(esc).join('<br>') + (m.errors.length > 12 ? '<br>… und ' + (m.errors.length - 12) + ' weitere' : '') + '</div>';
+      if (m.warnings.length) body += '<div class="hub-err">' + m.warnings.map(esc).join('<br>') + '</div>';
+      if (m.list.length && !m.errors.length) body += m.list.map(function (s, i) {
+        var id = 'wa-' + s.course.toLowerCase() + '-' + s.jahr;
+        return '<div class="m-chk" style="display:block"><b>' + WAPunkte.CN[s.course] + ' ' + esc(s.jahr) + '</b> <span class="wm-sub">' + s.count + ' Zeiten' + (ex[id] ? ' · ersetzt die vorhandenen' : '') + '</span><div class="m-fgrid" style="margin-top:6px"><label class="m-f"><span>Gültig ab</span><input type="date" id="wa_v' + i + '" value="' + esc(s.von) + '"></label><label class="m-f"><span>Gültig bis</span><input type="date" id="wa_b' + i + '" value="' + esc(s.bis) + '"></label></div></div>';
+      }).join('');
+      else if (!m.errors.length) body += '<p class="wm-note">Keine Basiszeiten gefunden.</p>';
+      body += '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">' + (m.errors.length ? 'Schließen' : 'Abbrechen') + '</button>' + (m.errors.length || !m.list.length ? '' : '<button type="button" class="hub-btn hub-gold" data-ma="wasave">Übernehmen</button>') + '</div>';
+      M.openDlg(body);
+    }, function (e) { msg.innerHTML = '<span class="m-over">' + esc(e.message || String(e)) + '</span>'; });
+  }
+  function waSave() {
+    if (!WU) return; var w = WU, ops = [];
+    for (var i = 0; i < w.m.list.length; i++) {
+      var s = w.m.list[i], v = document.getElementById('wa_v' + i).value, b = document.getElementById('wa_b' + i).value;
+      if (!v || !b || v > b) { M.toast('Bitte bei ' + WAPunkte.CN[s.course] + ' ' + s.jahr + ' das Gültigkeitsdatum prüfen (ab muss vor bis liegen).'); return; }
+      ops.push({ op: 'set', coll: 'saison', item: { id: 'wa-' + s.course.toLowerCase() + '-' + s.jahr, kind: 'wa', bahn: s.course === 'SCM' ? 'Kurz' : 'Lang', jahr: s.jahr, von: v, bis: b, t: s.t, stand: M.today(), datei: w.names.join(', ') } });
+    }
+    WU = null; M.closeDlg(); M.ops(ops); M.toast('Basiszeiten übernommen.');
+  }
   function printRang() {
     var j = year(), s = sub(), l = table(j, s.sb);
     var body = '<h1>Jahresauswertung ' + esc(j) + '</h1><div class="sub">' + (s.sb === 'best' ? 'Punktbeste Leistung aus Lang- und Kurzbahn' : s.sb === 'Lang' ? 'Langbahn' : 'Kurzbahn') + '</div>';
@@ -161,6 +225,8 @@ templateEngineOverride: false
       ausb: function (it, el) { sub().sb = el.getAttribute('data-v'); M.render(true); },
       ausg: function (it, el) { sub().sg = el.getAttribute('data-v'); M.render(true); },
       ausread: read, aussave: save,
+      waread: waRead, wasave: waSave,
+      wadel: function (it, el, ev, c) { var id = c.id || el.closest('[data-id]').getAttribute('data-id'); M.confirm('Diese Basiszeiten löschen? Die Punkte für Wettkämpfe in diesem Zeitraum entfallen dann.', 'Löschen', function () { M.op({ op: 'del', coll: 'saison', id: id }); }); },
       ausjub: function () {
         var f = document.getElementById('au_jf').files[0]; var j = year(); if (!f) { M.toast('Bitte zuerst eine PDF-Datei auswählen.'); return; }
         HubPdf.read(f).then(function (r) {

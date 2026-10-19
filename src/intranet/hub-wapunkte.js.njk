@@ -1,0 +1,117 @@
+---
+permalink: /intranet/js/hub-wapunkte.js
+layout: false
+eleventyExcludeFromCollections: true
+templateEngineOverride: false
+---
+/* World-Aquatics-Punkte: Basiszeiten einlesen (CSV oder die offiziellen PDF-Tabellen) und Punkte aus einer Zeit errechnen.
+   Formel: Punkte = abgerundet 1000 x (Basiszeit / Zeit)^3. Die Basiszeit ist die Zeit für 1000 Punkte. */
+(function () {
+  'use strict';
+  var STK = { FREE: 'F', BACK: 'R', BREAST: 'B', FLY: 'S', MEDLEY: 'L' };
+  var CSTK = { F: 'FREE', R: 'BACK', B: 'BREAST', S: 'FLY', L: 'MEDLEY' };
+  var STKN = { FREE: 'Freistil', BACK: 'Rücken', BREAST: 'Brust', FLY: 'Schmetterling', MEDLEY: 'Lagen' };
+  var CN = { SCM: 'Kurzbahn', LCM: 'Langbahn' };
+  // erwartete Anzahl Einzelstrecken je Geschlecht (zur Vollständigkeitsprüfung)
+  var EXPECT = { SCM: 18, LCM: 17 };
+
+  function key(g, n, d, st) { return g + '|' + n + '|' + d + '|' + st; }
+  // "1:38.61", "01:38,61", "19.90" -> Hundertstel
+  function parseTime(s) {
+    var m = /^(?:(\d{1,2}):)?(\d{1,2})[.,](\d{2})$/.exec(String(s || '').trim());
+    if (!m) return null; return ((+(m[1] || 0)) * 60 + (+m[2])) * 100 + (+m[3]);
+  }
+  function showTime(h) { var m = Math.floor(h / 6000), r = h - m * 6000; var s = Math.floor(r / 100), c = r % 100; return (m ? m + ':' + ('0' + s).slice(-2) : String(s)) + ',' + ('0' + c).slice(-2); }
+  function defaults(course, year) {
+    year = +year; return course === 'SCM' ? { von: year + '-09-01', bis: (year + 1) + '-08-31' } : { von: year + '-01-01', bis: year + '-12-31' };
+  }
+  function out() { return { sets: {}, errors: [], warnings: [] }; }
+  function setOf(o, course, year) {
+    var id = course + '-' + year; if (!o.sets[id]) { var d = defaults(course, year); o.sets[id] = { course: course, jahr: String(year), von: d.von, bis: d.bis, t: {} }; } return o.sets[id];
+  }
+  function dups(o, st, k, label) { if (st.t[k] !== undefined) { o.errors.push(label + ': ' + k.replace(/\|/g, ' ') + ' kommt doppelt vor.'); return true; } return false; }
+
+  // ---------- CSV: Jahr;Bahn(SCM/LCM);Geschlecht(M/F/X);Anzahl;Strecke;Lage;Zeit[;Sekunden] ----------
+  function parseCsv(text) {
+    var o = out(); var lines = String(text || '').replace(/^﻿/, '').split(/\r?\n/);
+    lines.forEach(function (raw, i) {
+      var ln = i + 1; if (!raw.trim()) return; var f = raw.split(/;|\t/).map(function (x) { return x.trim(); });
+      if (!/^\d{4}$/.test(f[0])) { if (i === 0 || ln === 1) return; o.errors.push('Zeile ' + ln + ': beginnt nicht mit einem Jahr.'); return; }
+      if (f.length < 7) { o.errors.push('Zeile ' + ln + ': zu wenige Spalten (erwartet: Jahr;Bahn;Geschlecht;Anzahl;Strecke;Lage;Zeit).'); return; }
+      var course = f[1].toUpperCase(), g = f[2].toUpperCase(); if (g === 'W') g = 'F';
+      var n = +f[3], d = +f[4], st = f[5].toUpperCase(), h = parseTime(f[6]);
+      if (!CN[course]) { o.errors.push('Zeile ' + ln + ': Bahn „' + f[1] + '“ ist unbekannt (SCM oder LCM).'); return; }
+      if (['M', 'F', 'X'].indexOf(g) < 0) { o.errors.push('Zeile ' + ln + ': Geschlecht „' + f[2] + '“ ist unbekannt (M, F oder X).'); return; }
+      if (!(n >= 1 && n <= 4) || !(d >= 25 && d <= 1500)) { o.errors.push('Zeile ' + ln + ': Anzahl oder Strecke ist ungültig.'); return; }
+      if (!STK[st]) { o.errors.push('Zeile ' + ln + ': Lage „' + f[5] + '“ ist unbekannt.'); return; }
+      if (h === null) { o.errors.push('Zeile ' + ln + ': Zeit „' + f[6] + '“ ist nicht lesbar.'); return; }
+      if (f[7]) { var sec = parseFloat(String(f[7]).replace(',', '.')); if (isFinite(sec) && Math.abs(sec * 100 - h) > 1.5) { o.errors.push('Zeile ' + ln + ' (' + f[2] + ' ' + (n > 1 ? n + 'x' : '') + d + ' ' + f[5] + '): Zeit ' + f[6] + ' und Sekunden ' + f[7] + ' passen nicht zusammen. Bitte in der World-Aquatics-Tabelle bei 1000 Punkten nachsehen.'); return; } }
+      var set = setOf(o, course, f[0]); var k = key(g, n, d, st); if (dups(o, set, k, 'Zeile ' + ln)) return; set.t[k] = h;
+    });
+    return finish(o);
+  }
+
+  // ---------- PDF: offizielle Tabellen von World Aquatics, gelesen wird nur die Zeile „1000“ ----------
+  function cols(course, kind, g) {
+    if (kind === 'ind') {
+      var c = []; [50, 100, 200, 400, 800, 1500].forEach(function (d) { c.push(['FREE', d]); });
+      [50, 100, 200].forEach(function (d) { c.push(['BACK', d]); }); [50, 100, 200].forEach(function (d) { c.push(['BREAST', d]); }); [50, 100, 200].forEach(function (d) { c.push(['FLY', d]); });
+      (course === 'SCM' ? [100, 200, 400] : [200, 400]).forEach(function (d) { c.push(['MEDLEY', d]); });
+      return c.map(function (x) { return [g, 1, x[1], x[0]]; });
+    }
+    if (course === 'SCM') return [['F', 4, 50, 'FREE'], ['F', 4, 100, 'FREE'], ['F', 4, 200, 'FREE'], ['F', 4, 50, 'MEDLEY'], ['F', 4, 100, 'MEDLEY'], ['M', 4, 50, 'FREE'], ['M', 4, 100, 'FREE'], ['M', 4, 200, 'FREE'], ['M', 4, 50, 'MEDLEY'], ['M', 4, 100, 'MEDLEY'], ['X', 4, 50, 'FREE'], ['X', 4, 50, 'MEDLEY']];
+    return [['F', 4, 100, 'FREE'], ['F', 4, 200, 'FREE'], ['F', 4, 100, 'MEDLEY'], ['M', 4, 100, 'FREE'], ['M', 4, 200, 'FREE'], ['M', 4, 100, 'MEDLEY'], ['X', 4, 100, 'FREE'], ['X', 4, 100, 'MEDLEY']];
+  }
+  function iso(dmy) { var m = /(\d{2})\/(\d{2})\/(\d{4})/.exec(dmy); return m ? m[3] + '-' + m[2] + '-' + m[1] : ''; }
+  // Liefert { course, year, von, bis, entries:[{k,h}] } oder { error }
+  function parsePdfOne(lines, name) {
+    var txt = lines.join('\n'); var yr = /Point Scoring\s+(\d{4})/i.exec(txt); var cm = /(Short|Long)\s+Course/i.exec(txt);
+    if (!yr || !cm) return { error: (name || 'Die Datei') + ' ist keine World-Aquatics-Punktetabelle.' };
+    var course = /short/i.test(cm[1]) ? 'SCM' : 'LCM'; var kind = /Relay\s*-/i.test(txt) ? 'rel' : 'ind'; var g = '';
+    if (kind === 'ind') { if (/Women\s+Individual/i.test(txt)) g = 'F'; else if (/Men\s+Individual/i.test(txt)) g = 'M'; else return { error: (name || 'Die Datei') + ': Geschlecht nicht erkannt.' }; }
+    var row = null; lines.forEach(function (l) { var m = /^\s*1000\s+(.+?)\s+1000\s*$/.exec(l); if (m && !row) row = m[1].match(/\d{1,2}:\d{2}\.\d{2}|\d+\.\d{2}/g); });
+    if (!row) return { error: (name || 'Die Datei') + ': Die Zeile für 1000 Punkte wurde nicht gefunden.' };
+    var cs = cols(course, kind, g); if (row.length !== cs.length) return { error: (name || 'Die Datei') + ': ' + row.length + ' Zeiten in der 1000-Punkte-Zeile gefunden, erwartet waren ' + cs.length + '.' };
+    var v = /Validity\s*-\s*\(\s*(\d{2}\/\d{2}\/\d{4})\s*-\s*(\d{2}\/\d{2}\/\d{4})/i.exec(txt);
+    return { course: course, year: yr[1], von: v ? iso(v[1]) : '', bis: v ? iso(v[2]) : '', entries: cs.map(function (c, i) { return { k: key(c[0], c[1], c[2], c[3]), h: parseTime(row[i]) }; }) };
+  }
+  function addPdf(o, p, name) {
+    if (p.error) { o.errors.push(p.error); return; }
+    var set = setOf(o, p.course, p.year); if (p.von) set.von = p.von; if (p.bis) set.bis = p.bis;
+    p.entries.forEach(function (e) { if (e.h === null) { o.errors.push((name || 'PDF') + ': eine Zeit ist nicht lesbar.'); return; } if (!dups(o, set, e.k, name || 'PDF')) set.t[e.k] = e.h; });
+  }
+
+  function finish(o) {
+    var list = Object.keys(o.sets).sort().map(function (id) {
+      var s = o.sets[id]; var n = { M: 0, F: 0 }; Object.keys(s.t).forEach(function (k) { var a = k.split('|'); if (a[1] === '1' && n[a[0]] !== undefined) n[a[0]]++; });
+      ['M', 'F'].forEach(function (g) { if (n[g] && n[g] < EXPECT[s.course]) o.warnings.push(CN[s.course] + ' ' + s.jahr + ': für ' + (g === 'M' ? 'Männer' : 'Frauen') + ' nur ' + n[g] + ' von ' + EXPECT[s.course] + ' Einzelstrecken.'); if (!n[g]) o.warnings.push(CN[s.course] + ' ' + s.jahr + ': keine Einzelstrecken für ' + (g === 'M' ? 'Männer' : 'Frauen') + '.'); });
+      s.id = id; s.count = Object.keys(s.t).length; return s;
+    });
+    o.list = list; return o;
+  }
+  // mehrere Ergebnisse (je Datei) zusammenführen
+  function merge(results) {
+    var o = out(); results.forEach(function (r) {
+      r.errors.forEach(function (e) { o.errors.push(e); });
+      (r.list || []).forEach(function (s) { var t = setOf(o, s.course, s.jahr); t.von = s.von; t.bis = s.bis; Object.keys(s.t).forEach(function (k) { if (t.t[k] !== undefined && t.t[k] !== s.t[k]) o.errors.push('Widerspruch bei ' + CN[s.course] + ' ' + s.jahr + ': ' + k.replace(/\|/g, ' ') + ' steht mit zwei Zeiten in den Dateien.'); t.t[k] = s.t[k]; }); });
+    });
+    return finish(o);
+  }
+
+  // ---------- Punkte ----------
+  // sets: gespeicherte Einträge { bahn:'Kurz'|'Lang', von, bis, t }
+  function pick(sets, bahn, date) {
+    var best = null; (sets || []).forEach(function (s) { if (s.bahn !== bahn) return; if (date && s.von && date < s.von) return; if (date && s.bis && date > s.bis) return; if (!best || s.von > best.von) best = s; });
+    if (best) return best;
+    // sonst gilt die Tabelle des Jahres, in dem der Wettkampf stattfand (eine Datei je Jahr mit Kurz- und Langbahn)
+    var yr = String(date || '').slice(0, 4); (sets || []).forEach(function (s) { if (s.bahn === bahn && String(s.jahr) === yr) best = s; });
+    return best;
+  }
+  // sex: 'M' | 'W' | 'F' | 'X'; code: '50F' (Strecke + Lage S/R/B/F/L); ms: Zeit in Millisekunden
+  function points(sets, sex, bahn, code, date, ms) {
+    var m = /^(\d+)([SRBFL])$/.exec(code || ''); if (!m || !(ms > 0)) return null; var g = sex === 'W' ? 'F' : sex; if (g !== 'M' && g !== 'F') return null;
+    var s = pick(sets, bahn, date); if (!s) return null; var base = s.t[key(g, 1, +m[1], CSTK[m[2]])]; if (!base) return null;
+    return Math.floor(1000 * Math.pow(base / (ms / 10), 3) + 1e-9);
+  }
+  window.WAPunkte = { parseCsv: parseCsv, parsePdf: parsePdfOne, addPdf: addPdf, finish: finish, merge: merge, out: out, pick: pick, points: points, defaults: defaults, showTime: showTime, CN: CN };
+})();
