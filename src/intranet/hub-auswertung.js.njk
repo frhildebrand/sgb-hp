@@ -105,10 +105,15 @@ templateEngineOverride: false
   function sheetTable(o, j) {
     var st = (starts(j)[o.name.toLowerCase()] || []); var ks = Object.keys(o.p); st.forEach(function (x) { if (ks.indexOf(x.k) < 0) ks.push(x.k); });
     ks.sort(function (a, b) { return skey(a) - skey(b); });
-    var out = '<table><tr><th>Datum</th><th>Ort</th><th>Bahn</th><th>Zeit</th><th>Differenz</th><th>Punkte</th></tr>';
+    var out = '<table><tr><th>Datum</th><th>Ort</th><th>Bahn</th><th>Zeit</th><th>Zur Bestzeit</th><th>Punkte</th></tr>';
     ks.forEach(function (k) {
       out += '<tr class="ausk"><td colspan="6"><b>' + slabel(k) + '</b></td></tr>';
-      st.filter(function (x) { return x.k === k; }).forEach(function (x) { out += '<tr><td class="nowrap">' + esc(M.fmtDate(x.d, true)) + '</td><td>' + esc(x.ort) + '</td><td>' + (x.b === 25 ? 'Kurzbahn' : x.b === 50 ? 'Langbahn' : '–') + '</td><td>' + esc(tshow(x.t)) + '</td><td>' + (x.diff === null ? '–' : dshow(x.diff)) + '</td><td>' + (x.pt > 0 ? x.pt : '') + '</td></tr>'; });
+      var rs = st.filter(function (x) { return x.k === k; }), bst = {};
+      rs.forEach(function (x) { var t = tms(x.t); if (t !== null && (bst[x.b] === undefined || t < bst[x.b])) bst[x.b] = t; });
+      rs.forEach(function (x) {
+        var t = tms(x.t), best = t !== null && t === bst[x.b], dd = t !== null && !best ? dshow(t - bst[x.b]) : '–';
+        out += '<tr><td class="nowrap">' + esc(M.fmtDate(x.d, true)) + '</td><td>' + esc(x.ort) + '</td><td>' + (x.b === 25 ? 'Kurzbahn' : x.b === 50 ? 'Langbahn' : '–') + '</td><td>' + (best ? '<b>' + esc(tshow(x.t)) + '</b>' : esc(tshow(x.t))) + '</td><td>' + dd + '</td><td>' + (x.pt > 0 ? (best ? '<b>' + x.pt + '</b>' : x.pt) : '') + '</td></tr>';
+      });
       out += '<tr><td colspan="3" class="wm-sub">Punktbeste Leistung (Langbahn ' + (o.l[k] || '–') + ' · Kurzbahn ' + (o.k[k] || '–') + ')</td><td colspan="2"></td><td><b>' + (o.p[k] || '–') + '</b></td></tr>';
     });
     return out + '</table>';
@@ -150,18 +155,40 @@ templateEngineOverride: false
       '<div class="m-fgrid"><label class="m-f wide"><span>Datei(en)</span><input type="file" id="wa_f" multiple accept=".csv,.txt,text/csv,text/plain,application/pdf,.pdf"></label></div><div class="m-btns"><button type="button" class="wm-amber" data-ma="waread">Einlesen</button></div><div id="wa_msg" class="wm-sub" style="margin-top:8px"></div>' +
       '<details class="wm-note" style="margin-top:8px"><summary><b>So aktualisierst du die Zeiten (einmal im Jahr)</b></summary><ol style="margin:6px 0 0 18px;padding:0"><li>Auf worldaquatics.com unter „Swimming › Points“ die Punktetabellen des neuen Jahres laden. Das sind sechs PDFs: Männer, Frauen und Staffeln, jeweils für Kurzbahn und Langbahn.</li><li>Hier alle PDFs auf einmal auswählen und auf „Einlesen“ tippen. Gelesen wird nur die Zeile für 1000 Punkte.</li><li>Die Vorschau prüfen: Gültigkeit und Anzahl der Zeiten stimmen, dann „Übernehmen“.</li></ol><p style="margin:6px 0 0">Alternativ geht eine CSV-Datei ohne Kopfzeile. Jede Zeile hat die Form <code>Jahr;Bahn;Geschlecht;Anzahl;Strecke;Lage;Zeit;Sekunden</code>, zum Beispiel <code>2026;SCM;F;1;100;FREE;49.93;49,93</code>. Bahn ist SCM oder LCM, Geschlecht M, F oder X (Mixed), Lage FREE, BACK, BREAST, FLY oder MEDLEY. Die Spalte „Sekunden“ darf fehlen. Wenn sie da ist, wird sie mit der Zeit abgeglichen.</p><p style="margin:6px 0 0"><a href="https://www.worldaquatics.com/swimming/points" target="_blank" rel="noopener">worldaquatics.com/swimming/points</a></p></details>' +
       (ws.length ? '<div style="margin-top:10px">' + ws.map(function (x) { return '<div class="m-chk" data-id="' + esc(x.id) + '"><span style="flex:1"><b>' + (x.bahn === 'Lang' ? 'Langbahn' : 'Kurzbahn') + ' ' + esc(x.jahr) + '</b> <span class="wm-sub">gültig ' + esc(M.fmtDate(x.von)) + ' bis ' + esc(M.fmtDate(x.bis)) + ' · ' + Object.keys(x.t || {}).length + ' Zeiten · eingelesen ' + esc(M.fmtDate(x.stand)) + '</span></span><button type="button" class="wm-btn m-danger" data-ma="wadel">🗑️</button></div>'; }).join('') + '</div>' : '<p class="wm-note">Noch keine Basiszeiten eingelesen.</p>') + '</section>' +
-      '<section class="wm-card"><div class="wm-bar"><h3>Punkteliste aus WebClub (optional)</h3></div><p class="wm-note">Liste „Punktbeste Leistung nach World Aquatics“ aus WebClub als PDF. Sie ergänzt die Punkte aus den Wettkampfergebnissen um frühere Starts, die nicht im Intranet stehen. Je Strecke zählt die bessere Punktzahl. Eine neue Liste ersetzt die alte derselben Saison und Bahn.</p>' +
-      '<div class="m-fgrid"><label class="m-f"><span>Saison</span><input type="number" id="au_j" value="' + yy + '" min="2000" max="2100"></label><label class="m-f"><span>Bahn</span><select id="au_b"><option value="Lang">Langbahn (50 m)</option><option value="Kurz">Kurzbahn (25 m)</option></select></label><label class="m-f wide"><span>PDF-Datei</span><input type="file" id="au_f" accept="application/pdf,.pdf"></label></div><div class="m-btns"><button type="button" class="wm-amber" data-ma="ausread">Vorschau erstellen</button></div><div id="au_msg" class="wm-sub" style="margin-top:8px"></div></section>' +
+      '<section class="wm-card"><div class="wm-bar"><h3>Punkteliste aus WebClub (optional)</h3></div><p class="wm-note">Liste „Punktbeste Leistung nach World Aquatics“ aus WebClub als CSV (besser) oder PDF. Die Bahn (Lang oder Kurz) wählst du unten aus, denn sie steht nicht in der Datei. Die Liste ergänzt die Punkte aus den Wettkampfergebnissen um frühere Starts, die nicht im Intranet stehen. Je Strecke zählt die bessere Punktzahl. Eine neue Liste ersetzt die alte derselben Saison und Bahn.</p>' +
+      '<div class="m-fgrid"><label class="m-f"><span>Saison</span><input type="number" id="au_j" value="' + yy + '" min="2000" max="2100"></label><label class="m-f"><span>Bahn</span><select id="au_b"><option value="Lang">Langbahn (50 m)</option><option value="Kurz">Kurzbahn (25 m)</option></select></label><label class="m-f wide"><span>Datei (CSV oder PDF)</span><input type="file" id="au_f" accept=".csv,.txt,text/csv,application/pdf,.pdf"></label></div><div class="m-btns"><button type="button" class="wm-amber" data-ma="ausread">Vorschau erstellen</button></div><div id="au_msg" class="wm-sub" style="margin-top:8px"></div></section>' +
       '<section class="wm-card"><div class="wm-bar"><h3>Jubiläumsliste hochladen</h3></div><p class="wm-note">WebClub: Stammdaten › Personen › Statistiken/Listen › „Jubiläum im aktuellen Jahr“. Die Liste gilt für die Saison, die oben bei der Rangliste gewählt ist (' + esc(year()) + ').</p><div class="m-fgrid"><label class="m-f wide"><span>PDF-Datei</span><input type="file" id="au_jf" accept="application/pdf,.pdf"></label></div><div class="m-btns"><button type="button" class="wm-amber" data-ma="ausjub">Jubiläen einlesen</button></div></section>' +
       '<section class="wm-card"><div class="wm-bar"><h3>Gruppen festlegen</h3><span class="m-actions"><button type="button" class="wm-btn" data-ma="ausbands">✏️ Jahrgangsgruppen</button></span></div><p class="wm-note">Hier legst du fest, welche Jahrgänge zu einer Gruppe zählen und ab welchem Alter jemand zu den Masters gehört (jetzt ab ' + mastersAb() + ' Jahren). Das gilt für alle Schwimmer der Punkteliste.</p></section>' +
       '<section class="wm-card"><div class="wm-bar"><h3>Vorhandene Listen</h3></div>' + (have.length ? have.map(function (x) { return '<div class="m-chk" data-id="' + esc(x.id) + '"><span style="flex:1"><b>' + esc(x.jahr) + ' · ' + (x.bahn === 'Lang' ? 'Langbahn' : 'Kurzbahn') + '</b> <span class="wm-sub">' + (x.rows || []).length + ' Schwimmer · hochgeladen ' + M.fmtDate(x.stand) + '</span></span>' + (M.anyCan(['auswertung.upload']) ? '<button type="button" class="wm-btn m-danger" data-ma="ausdel">🗑️</button>' : '') + '</div>'; }).join('') : '<p class="wm-note">Noch nichts hochgeladen.</p>') + '</section>';
   }
+  // WebClub-Punkteliste als CSV: Kopfzeile „Schwimmer;Jg;M/W;50S;…;Gesamt“, Titelzeile mit „Saison 2026“
+  function parsePunkteCsv(text) {
+    var rows = [], warnings = [], saison = '', head = null, cols = [];
+    String(text || '').replace(/^\uFEFF/, '').split(/\r?\n/).forEach(function (raw, i) {
+      if (!raw.trim()) return; var f = raw.split(';').map(function (x) { return x.trim(); });
+      if (!head) {
+        var m = /Saison\s+(\d{4})/.exec(raw); if (m) saison = m[1];
+        if (/^Schwimmer$/i.test(f[0])) { head = f; f.forEach(function (c, k) { if (k >= 3 && c && !/^Gesamt$/i.test(c)) { if (/^\d+[SRBFL]$/.test(c)) cols.push([k, c]); else warnings.push('Unbekannte Spalte „' + c + '“ wird ignoriert.'); } }); }
+        return;
+      }
+      if (!f[0]) return; var jg = +f[1], sx = (f[2] || '').toUpperCase();
+      if (!(jg > 1900 && jg < 2100)) { warnings.push('Zeile ' + (i + 1) + ' (' + f[0] + '): Jahrgang „' + f[1] + '“ ist nicht lesbar.'); }
+      if (sx !== 'M' && sx !== 'W') { warnings.push('Zeile ' + (i + 1) + ' (' + f[0] + '): Geschlecht „' + f[2] + '“ ist nicht M oder W.'); }
+      var o = { name: f[0], jg: jg || 0, sex: sx, p: {}, ges: 0 };
+      cols.forEach(function (c) { var v = +(f[c[0]] || 0); if (v > 0) { o.p[c[1]] = v; o.ges += v; } });
+      var gi = head.map(function (c) { return /^Gesamt$/i.test(c); }).indexOf(true);
+      if (gi >= 0 && f[gi] !== '' && +f[gi] !== o.ges) warnings.push(f[0] + ': Gesamt ' + f[gi] + ' passt nicht zur Summe der Strecken (' + o.ges + ').');
+      rows.push(o);
+    });
+    if (!head) warnings.push('Die Kopfzeile „Schwimmer;Jg;M/W;…“ wurde nicht gefunden. Ist das die Liste „Punktbeste Leistung nach World Aquatics“?');
+    return { rows: rows, warnings: warnings, saison: saison };
+  }
   function read() {
-    var f = document.getElementById('au_f').files[0], msg = document.getElementById('au_msg'); if (!f) { msg.textContent = 'Bitte zuerst eine PDF-Datei auswählen.'; return; }
+    var f = document.getElementById('au_f').files[0], msg = document.getElementById('au_msg'); if (!f) { msg.textContent = 'Bitte zuerst eine Datei auswählen.'; return; }
     var j = document.getElementById('au_j').value, b = document.getElementById('au_b').value;
     msg.textContent = 'Wird gelesen … (beim ersten Mal wird der PDF-Leser geladen)';
-    HubPdf.read(f).then(function (r) {
-      var p = P.parsePunkte(r.pages); if (!p.rows.length) { msg.innerHTML = '<span class="m-over">' + esc(p.warnings.join(' ')) + '</span>'; return; }
+    (/\.(csv|txt)$/i.test(f.name) ? HubPdf.text(f).then(parsePunkteCsv) : HubPdf.read(f).then(function (r) { return P.parsePunkte(r.pages); })).then(function (p) {
+      if (!p.rows.length) { msg.innerHTML = '<span class="m-over">' + esc(p.warnings.join(' ')) + '</span>'; return; }
       UP = { j: j, b: b, p: p, f: f }; var top = p.rows.slice().sort(function (a, c) { return c.ges - a.ges; })[0]; var have = !!pset(j, b);
       M.openDlg('<div class="hub-dhead"><h3>Das wurde gefunden</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div>' + (p.warnings.length ? '<div class="hub-err">' + p.warnings.slice(0, 6).map(esc).join('<br>') + '</div>' : '') +
         '<p class="wm-note"><b>' + p.rows.length + '</b> Schwimmer · Saison in der Datei: <b>' + esc(p.saison || '?') + '</b> · gewählt: <b>' + esc(j) + ' ' + (b === 'Lang' ? 'Langbahn' : 'Kurzbahn') + '</b><br>Beste Punktzahl: ' + esc(top.name) + ' (' + top.ges + ')</p>' + (p.saison && p.saison !== String(j) ? '<div class="hub-err">Die Datei gehört zur Saison ' + esc(p.saison) + ', gewählt ist ' + esc(j) + '. Bitte prüfen.</div>' : '') + (have ? '<p class="wm-note">Für diese Saison und Bahn gibt es schon eine Liste. Sie wird ersetzt.</p>' : '') +
