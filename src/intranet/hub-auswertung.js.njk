@@ -11,7 +11,7 @@ templateEngineOverride: false
   var SO = { S: 'Schmetterling', R: 'Rücken', B: 'Brust', F: 'Freistil', L: 'Lagen' };
   var ORDER = ['S', 'R', 'B', 'F', 'L'];
   function skey(k) { var m = /^(\d+)([SRBFL])$/.exec(k); return ORDER.indexOf(m[2]) * 10000 + (+m[1]); }
-  function slabel(k) { var m = /^(\d+)([SRBFL])$/.exec(k); return m[1] + ' m ' + SO[m[2]]; }
+  function slabel(k) { var m = /^(\d+)([SRBFL])$/.exec(k); return m[1] + 'm ' + SO[m[2]]; }
   function sub() { var s = M.S.sub; if (!s.sj) s.sj = ''; if (!s.sb) s.sb = 'best'; if (!s.sg) s.sg = 'Alle'; return s; }
   function all() { return M.items('saison').filter(function (x) { return /^ps-/.test(x.id); }); }
   function cfg() { return M.find('saison', 'cfg') || { id: 'cfg' }; }
@@ -87,10 +87,10 @@ templateEngineOverride: false
     var d = (top ? l.slice(0, top) : l).map(function (o) { var st = sc[o.name.toLowerCase()] || []; var w = {}; st.forEach(function (x) { w[x.wk] = 1; }); return { o: o, pl: (top ? l.indexOf(o) : base.indexOf(o)) + 1, v: st.length ? Object.keys(w).length : 0, s: st.length }; });
     var mx = { v: 0, s: 0, n: 0, g: 0, a: 0 }; d.forEach(function (x) { mx.v = Math.max(mx.v, x.v); mx.s = Math.max(mx.s, x.s); mx.n = Math.max(mx.n, x.o.n); mx.g = Math.max(mx.g, x.o.ges); mx.a = Math.max(mx.a, x.o.avg); });
     function c(v, m, txt) { return '<td>' + (v === m && m > 0 ? '<b>' + txt + '</b>' : txt) + '</td>'; }
-    return HEAD + d.map(function (x) { var o = x.o; return '<tr><td>' + x.pl + '</td><td class="nowrap">' + esc(o.name) + '</td><td>' + o.jg + '</td><td>' + esc(o.sex) + '</td>' + c(x.v, mx.v, x.s ? x.v : '–') + c(x.s, mx.s, x.s || '–') + c(o.n, mx.n, o.n) + c(o.ges, mx.g, o.ges) + c(o.avg, mx.a, o.avg) + '</tr>'; }).join('');
+    return HEAD + d.map(function (x) { var o = x.o; return '<tr><td class="r">' + x.pl + '</td><td class="l">' + esc(o.name) + '</td><td>' + o.jg + '</td><td>' + esc(o.sex) + '</td>' + c(x.v, mx.v, x.s ? x.v : '–') + c(x.s, mx.s, x.s || '–') + c(o.n, mx.n, o.n) + c(o.ges, mx.g, o.ges) + c(o.avg, mx.a, o.avg) + '</tr>'; }).join('');
   }
   var HEAD = '<tr><th>Platz</th><th>Schwimmer</th><th>Jahrgang</th><th>M/W/D</th><th>Veranstaltungen</th><th>Starts</th><th>Anzahl Strecken</th><th>Erreichte Punkte</th><th>Durchschnitt Punkte</th></tr>';
-  function sec(title, l, j, base, top) { if (!l.length) return ''; return '<h2 class="aus-h">' + esc(title) + '</h2><div class="m-twrap"><table class="aus-t">' + tbl(l, j, base, top) + '</table></div>'; }
+  function sec(title, l, j, base, top) { if (!l.length) return ''; return '<h2 class="aus-h">' + esc(title) + '</h2><table class="aus-t aus-r">' + tbl(l, j, base, top) + '</table>'; }
   // Gesamt, Weiblich und Männlich, jeweils mit Masters und den Jahrgangsgruppen (Platznummern wie in der Gesamtliste des Geschlechts)
   function report(j, l) {
     var out = sec('Gesamt', l, j);
@@ -123,13 +123,24 @@ templateEngineOverride: false
     var g = [['Alle']].concat(groups(j)); if (!g.some(function (x) { return x[0] === s.sg; })) s.sg = 'Alle';
     var body;
     if (s.sg === 'Alle') body = report(j, l) || '<p class="wm-note">Es gibt noch keine Schwimmer mit Punkten.</p>';
-    else { var cur = filt(l, j, s.sg); body = cur.length ? '<div class="m-twrap"><table class="aus-t">' + tbl(cur, j) + '</table></div>' : '<p class="wm-note">In dieser Gruppe gibt es keine Schwimmer.</p>'; }
+    else { var cur = filt(l, j, s.sg); body = cur.length ? '<h2 class="aus-h">' + esc(s.sg) + '</h2><table class="aus-t aus-r">' + tbl(cur, j) + '</table>' : '<p class="wm-note">In dieser Gruppe gibt es keine Schwimmer.</p>'; }
     return '<section class="wm-card">' + head('Rangliste ' + esc(j), pbtn('ausprint', 'Rangliste') + pbtn('ausprintall', 'Komplette Auswertung')) + yearSel(j) + bahnSel(s) +
       '<div class="m-chips">' + g.map(function (x) { return '<button type="button" class="m-chip' + (s.sg === x[0] ? ' on' : '') + '" data-ma="ausg" data-v="' + esc(x[0]) + '">' + esc(x[0]) + '</button>'; }).join('') + '</div>' +
-      waExpired() + '<p class="wm-sub">Stand der WebClub-Listen: ' + (d.join(' · ') || 'keine hochgeladen') + '.' + (waInfo() ? '<br>Punkte aus Wettkampfergebnissen mit den Basiszeiten: ' + esc(waInfo()) + '.' : '') + '<br>Gewertet wird je Strecke die punktbeste Leistung. Fett ist je Tabelle der höchste Wert einer Spalte.</p>' + body + '</section>';
+      waExpired() + '<p class="wm-sub">Stand der WebClub-Listen: ' + (d.join(' · ') || 'keine hochgeladen') + '.' + (waInfo() ? '<br>Punkte aus Wettkampfergebnissen mit den Basiszeiten: ' + esc(waInfo()) + '.' : '') + '<br>Gewertet wird je Strecke die punktbeste Leistung. Fett ist je Tabelle der höchste Wert einer Spalte.</p><div class="xl">' + body + '</div></section>';
   }
   // ---------- Statistik (Veranstaltungen, Kampfrichter, Ergebnisse) ----------
   function wkOfYear(j) { return M.items('wettkaempfe').filter(function (wk) { return String(wk.date || '').slice(0, 4) === String(j) && wk.res && Object.keys(wk.res).length; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }); }
+  // Meldegeld aus dem Text der Ausschreibung („x € pro Einzelstart, y € pro Staffelstart“); sonst unbekannt
+  function num(z) { return parseFloat(String(z).replace(/\./g, '').replace(',', '.')); }
+  function geld(wk, e, st) {
+    var t = String(wk.meldegeld || ''); if (!t) return null;
+    var pe = /([\d.]+,\d{1,2}|\d+)\s*(?:€|EUR|Euro)\s*(?:pro|je|für)?\s*Einzel/i.exec(t) || /Einzel\w*\s*:?\s*([\d.]+,\d{1,2}|\d+)\s*(?:€|EUR|Euro)/i.exec(t);
+    var ps = /([\d.]+,\d{1,2}|\d+)\s*(?:€|EUR|Euro)\s*(?:pro|je|für)?\s*Staffel/i.exec(t) || /Staffel\w*\s*:?\s*([\d.]+,\d{1,2}|\d+)\s*(?:€|EUR|Euro)/i.exec(t);
+    if (pe) return e * num(pe[1]) + st * (ps ? num(ps[1]) : num(pe[1]));
+    var m = /([\d.]+,\d{1,2}|\d+)\s*(?:€|EUR|Euro)/i.exec(t); return m ? (e + st) * num(m[1]) : null;
+  }
+  function eur(v) { return v === null || v === undefined ? '–' : v.toFixed(2).replace('.', ',') + ' €'; }
+  function dd(d) { d = String(d || ''); return d.length >= 10 ? d.slice(8, 10) + '.' + d.slice(5, 7) + '.' + d.slice(2, 4) : d; }
   function stat(j) {
     var wks = wkOfYear(j), vr = [], kr = {}, pl = { e: [0, 0, 0, 0], s: [0, 0, 0, 0] }, tot = { sw: 0, e: 0, s: 0 };
     wks.forEach(function (wk) {
@@ -139,50 +150,55 @@ templateEngineOverride: false
         if (rel) sta++; else { ein++; sw[flip(s.n)] = 1; }
         var p = +r.pl || 0; if (p > 0) pl[rel ? 's' : 'e'][p <= 3 ? p - 1 : 3]++;
       });
-      var bw = bahnOf(wk); vr.push({ d: wk.date, t: wk.title || '', o: wk.ort || '', b: bw === 25 ? 'Kurz' : bw === 50 ? 'Lang' : '–', sw: Object.keys(sw).length, e: ein, s: sta }); tot.sw += Object.keys(sw).length; tot.e += ein; tot.s += sta;
-      (wk.gericht || []).forEach(function (g) { var n = String(g.name || '').trim(); if (!n || /^N\s?N$/i.test(n)) return; var k = (kr[n] = kr[n] || { n: n, w: {}, a: {} }); k.w[wk.id] = 1; k.a[wk.id + '|' + g.a] = 1; });
+      var bw = bahnOf(wk); vr.push({ d: wk.date, t: wk.title || '', o: wk.ort || '', b: bw === 25 ? 'Kurz' : bw === 50 ? 'Lang' : '–', sw: Object.keys(sw).length, e: ein, s: sta, g: geld(wk, ein, sta), wid: wk.id, bw: bw }); tot.sw += Object.keys(sw).length; tot.e += ein; tot.s += sta;
+      (wk.gericht || []).forEach(function (g) { var n = String(g.name || '').trim(); if (!n || /^N\s?N$/i.test(n)) return; var k = (kr[n] = kr[n] || { n: n, w: {}, a: {}, v: '' }); if (g.v && !/protokoll/i.test(g.v)) k.v = g.v; k.w[wk.id] = 1; k.a[wk.id + '|' + g.a] = 1; });
     });
-    return { vr: vr, tot: tot, kr: Object.keys(kr).map(function (n) { return { n: n, w: Object.keys(kr[n].w).length, a: Object.keys(kr[n].a).length }; }).sort(function (a, b) { return b.a - a.a || a.n.localeCompare(b.n, 'de'); }), pl: pl, n: wks.length };
+    return { vr: vr, tot: tot, kr: Object.keys(kr).map(function (n) { return { n: n, v: kr[n].v, w: Object.keys(kr[n].w).length, a: Object.keys(kr[n].a).length }; }).sort(function (a, b) { return b.a - a.a || a.n.localeCompare(b.n, 'de'); }), pl: pl, n: wks.length };
   }
   function statHtml(j) {
     var s = stat(j); if (!s.n) return '<p class="wm-note">Für ' + esc(j) + ' gibt es noch keine Veranstaltungen mit Ergebnissen.</p>';
-    var v = '<h2 class="aus-h">Veranstaltungen, Saison ' + esc(j) + '</h2><div class="m-twrap"><table class="aus-t"><tr><th>Datum</th><th>Veranstaltung</th><th>Ort</th><th>Bahn</th><th>Schwimmer</th><th>Einzel</th><th>Staffel</th></tr>' +
-      s.vr.map(function (x) { return '<tr><td class="nowrap">' + esc(M.fmtDate(x.d, true)) + '</td><td>' + esc(x.t) + '</td><td>' + esc(x.o) + '</td><td>' + x.b + '</td><td>' + x.sw + '</td><td>' + x.e + '</td><td>' + x.s + '</td></tr>'; }).join('') +
-      '<tr><td colspan="4"><b>Gesamt für ' + s.n + ' Veranstaltungen mit Ergebnissen</b></td><td><b>' + s.tot.sw + '</b></td><td><b>' + s.tot.e + '</b></td><td><b>' + s.tot.s + '</b></td></tr></table></div>';
-    var k = '<h2 class="aus-h">Kampfrichterstatistik, Saison ' + esc(j) + '</h2>' + (s.kr.length ? '<div class="m-twrap"><table class="aus-t"><tr><th>Kampfrichter</th><th>Veranstaltungen</th><th>Abschnitte</th></tr>' + s.kr.map(function (x) { return '<tr><td>' + esc(x.n) + '</td><td>' + x.w + '</td><td>' + x.a + '</td></tr>'; }).join('') + '<tr><td><b>Gesamt für ' + s.kr.length + ' Kampfrichter</b></td><td><b>' + s.kr.reduce(function (a, x) { return a + x.w; }, 0) + '</b></td><td><b>' + s.kr.reduce(function (a, x) { return a + x.a; }, 0) + '</b></td></tr></table></div>' : '<p class="wm-note">Bei den Veranstaltungen ist kein Kampfgericht eingetragen.</p>');
-    function pt(lab, a) { return '<h2 class="aus-h">' + lab + ', Saison ' + esc(j) + '</h2><div class="m-twrap"><table class="aus-t"><tr><th>Platzierung</th><th>Anzahl</th></tr><tr><td>Platz 1</td><td>' + a[0] + '</td></tr><tr><td>Platz 2</td><td>' + a[1] + '</td></tr><tr><td>Platz 3</td><td>' + a[2] + '</td></tr><tr><td>Andere</td><td>' + a[3] + '</td></tr><tr><td><b>Gesamt</b></td><td><b>' + (a[0] + a[1] + a[2] + a[3]) + '</b></td></tr></table></div>'; }
-    return v + k + pt('Ergebnisse Einzelstarts', s.pl.e) + pt('Ergebnisse Staffelstarts', s.pl.s) + '<p class="wm-note">Platzierungen zählen nur, wo sie in den eingelesenen Ergebnissen (Protokoll) stehen.</p>';
+    var miss = s.vr.filter(function (x) { return !x.bw; });
+    var warn = miss.length ? '<div class="hub-err no-print">Bei ' + miss.map(function (x) { return '<b>' + esc(x.t) + '</b> <button type="button" class="wm-btn" data-ma="ausbahn" data-id="' + esc(x.wid) + '" data-b="50">Langbahn</button> <button type="button" class="wm-btn" data-ma="ausbahn" data-id="' + esc(x.wid) + '" data-b="25">Kurzbahn</button>'; }).join('<br>') + '<br>fehlt die Bahnlänge. Ohne sie werden für diese Veranstaltung keine Punkte berechnet.</div>' : '';
+    var tg = s.vr.reduce(function (a, x) { return x.g === null ? a : a + x.g; }, 0), anyG = s.vr.some(function (x) { return x.g !== null; });
+    var v = '<h2 class="aus-h">Veranstaltungen, Saison ' + esc(j) + '</h2><table class="aus-t aus-v"><tr><th>Datum</th><th>Veranstaltung</th><th>Ort</th><th>Bahn</th><th>Schwimmer</th><th>Einzel</th><th>Staffel</th><th>Meldegeld</th></tr>' +
+      s.vr.map(function (x) { return '<tr><td class="r">' + esc(dd(x.d)) + '</td><td class="l">' + esc(x.t) + '</td><td class="l">' + esc(x.o) + '</td><td class="l">' + (x.bw === 25 ? 'Kurz' : x.bw === 50 ? 'Lang' : '–') + '</td><td class="r">' + x.sw + '</td><td class="r">' + x.e + '</td><td class="r">' + x.s + '</td><td class="r">' + eur(x.g) + '</td></tr>'; }).join('') +
+      '<tr class="tot"><td colspan="4" class="l"><b>Gesamt für ' + s.n + ' Veranstaltungen mit Ergebnissen</b></td><td class="r"><b>' + s.tot.sw + '</b></td><td class="r"><b>' + s.tot.e + '</b></td><td class="r"><b>' + s.tot.s + '</b></td><td class="r"><b>' + (anyG ? eur(tg) : '–') + '</b></td></tr></table>';
+    var k = '<h2 class="aus-h">Kampfrichterstatistik, Saison ' + esc(j) + '</h2>' + (s.kr.length ? '<table class="aus-t aus-k"><tr><th>Kampfrichter</th><th>Stammverein</th><th>Veranstaltungen</th><th>Abschnitte</th></tr>' + s.kr.map(function (x) { return '<tr><td class="l">' + esc(x.n) + '</td><td class="l">' + esc(x.v) + '</td><td class="r">' + x.w + '</td><td class="r">' + x.a + '</td></tr>'; }).join('') + '<tr class="tot"><td colspan="2" class="l"><b>Gesamt für ' + s.kr.length + ' Kampfrichter</b></td><td class="r"><b>' + s.kr.reduce(function (a, x) { return a + x.w; }, 0) + '</b></td><td class="r"><b>' + s.kr.reduce(function (a, x) { return a + x.a; }, 0) + '</b></td></tr></table>' : '<p class="wm-note">Bei den Veranstaltungen ist kein Kampfgericht eingetragen.</p>');
+    function pt(lab, a) { var L = ['Platz 1', 'Platz 2', 'Platz 3', 'Andere']; return '<h2 class="aus-h">Ergebnisse, Saison ' + esc(j) + '</h2><table class="aus-t aus-p"><tr><th class="l">' + lab + '</th><th class="l">Platzierung</th><th class="l">Anzahl</th></tr>' + L.map(function (x, i) { return '<tr><td></td><td class="l">' + x + '</td><td class="r">' + a[i] + '</td></tr>'; }).join('') + '<tr class="tot"><td></td><td class="l"><b>Gesamt</b></td><td class="r"><b>' + (a[0] + a[1] + a[2] + a[3]) + '</b></td></tr></table>'; }
+    return warn + v + k + pt('Einzelstarts', s.pl.e).replace('<h2 class="aus-h">Ergebnisse, Saison ' + esc(j) + '</h2>', '<h2 class="aus-h">Ergebnisse, Saison ' + esc(j) + '</h2>') + '<div style="height:10px"></div>' + pt('Staffelstarts', s.pl.s).replace(/<h2 class="aus-h">.*?<\/h2>/, '') + '<p class="wm-note no-print">Platzierungen und Staffelstarts zählen nur, wo sie in den eingelesenen Ergebnissen stehen. Die WebClub-Ergebnis-CSV enthält keine Staffeln; Staffel-Plätze kommen aus der DSV7-Ergebnisdatei oder dem Protokoll. Das Meldegeld wird aus dem Text der Ausschreibung berechnet; fehlt er, steht „–“.</p>';
   }
   function statistik() {
     if (!years().length) return leer(); var j = year();
-    return '<section class="wm-card">' + head('Statistik ' + esc(j), pbtn('ausprintstat', 'Statistik')) + yearSel(j) + statHtml(j) + '</section>';
+    return '<section class="wm-card">' + head('Statistik ' + esc(j), pbtn('ausprintstat', 'Statistik')) + yearSel(j) + '<div class="xl">' + statHtml(j) + '</div></section>';
   }
   function sheetTable(o, j) {
     var st = (starts(j)[o.name.toLowerCase()] || []); var ks = Object.keys(o.p); st.forEach(function (x) { if (ks.indexOf(x.k) < 0) ks.push(x.k); });
     ks.sort(function (a, b) { return skey(a) - skey(b); });
-    var out = '<table><tr><th>Datum</th><th>Ort</th><th>Bahntyp</th><th>Zeit</th><th>Differenz</th><th>World Aquatics</th></tr>';
+    var out = '<table class="aus-t aus-s"><tr><td colspan="3" class="l"><b>' + esc(o.name) + '</b> &nbsp;&nbsp;&nbsp; <b>Jg. ' + o.jg + '</b></td><td colspan="3" class="r"><b>Jahresauswertung ' + esc(j) + '</b></td></tr><tr class="hd"><th>Datum</th><th>Ort</th><th>Bahntyp</th><th>Zeit</th><th>Differenz</th><th>World Aquatics</th></tr>';
     ks.forEach(function (k) {
-      out += '<tr class="ausk"><td colspan="6"><b>' + slabel(k) + '</b></td></tr>';
+      out += '<tr class="ausk"><td colspan="6" class="l">' + slabel(k) + '</td></tr>';
       var rs = st.filter(function (x) { return x.k === k; }), bst = {};
       rs.forEach(function (x) { var t = tms(x.t); if (t !== null && (bst[x.b] === undefined || t < bst[x.b])) bst[x.b] = t; });
       rs.forEach(function (x) {
-        var t = tms(x.t), best = t !== null && t === bst[x.b], dd = t !== null && !best ? dshow(t - bst[x.b]) : '–';
-        out += '<tr><td class="nowrap">' + esc(M.fmtDate(x.d, true)) + '</td><td>' + esc(x.ort) + '</td><td>' + (x.b === 25 ? 'Kurzbahn' : x.b === 50 ? 'Langbahn' : '–') + '</td><td>' + (best ? '<b>' + esc(tshow(x.t)) + '</b>' : esc(tshow(x.t))) + '</td><td>' + dd + '</td><td>' + (x.pt > 0 ? (best ? '<b>' + x.pt + '</b>' : x.pt) : '') + '</td></tr>';
+        var t = tms(x.t), best = t !== null && t === bst[x.b], df = t !== null && !best ? dshow(t - bst[x.b]) : '--:--,--';
+        out += '<tr><td class="r">' + esc(dd(x.d)) + '</td><td class="l">' + esc(x.ort) + '</td><td class="l">' + (x.b === 25 ? 'Kurzbahn' : x.b === 50 ? 'Langbahn' : '–') + '</td><td class="r">' + (best ? '<b>' + esc(tshow(x.t)) + '</b>' : esc(tshow(x.t))) + '</td><td class="l">' + df + '</td><td class="r">' + (x.pt > 0 ? (best ? '<b>' + x.pt + '</b>' : x.pt) : '') + '</td></tr>';
       });
-      out += '<tr><td colspan="3" class="wm-sub">Punktbeste Leistung (Langbahn ' + (o.l[k] || '–') + ' · Kurzbahn ' + (o.k[k] || '–') + ')</td><td colspan="2"></td><td><b>' + (o.p[k] || '–') + '</b></td></tr>';
     });
     return out + '</table>';
   }
   function sheetHtml(o, j) {
-    return '<h1>' + esc(o.name) + ' · Jg. ' + o.jg + '</h1><div class="sub">Jahresauswertung ' + esc(j) + '</div>' + sheetTable(o, j) + '<p><b>Summe der punktbesten Leistungen aller Strecken: ' + o.ges + '</b><br>Anzahl der gewerteten Strecken: ' + o.n + '<br>Durchschnittlich erreichte Punktzahl pro Strecke: ' + o.avg + '</p>';
+    return '<div class="xl-sheet">' + sheetTable(o, j) + '<div class="xs"><span>Summe der punktbesten Leistungen aller Strecken:</span><b>' + o.ges + '</b></div><div class="xs xs2"><span>Anzahl der gewerteten Strecken:</span><i>' + o.n + '</i></div><div class="xs"><span><b>Durchschnittlich erreichte Punktzahl pro Strecke:</b></span><b>' + o.avg + '</b></div></div>';
+  }
+  function pickList(l, sel, q) {
+    var ql = String(q || '').toLowerCase();
+    return '<div class="aus-pick"><input type="search" class="aus-q" id="au_q" placeholder="🔎 Schwimmer suchen …" value="' + esc(q || '') + '" autocomplete="off"><div class="aus-chips">' + l.filter(function (x) { return !ql || x.name.toLowerCase().indexOf(ql) >= 0; }).map(function (x) { return '<button type="button" class="aus-chip' + (x.name === sel ? ' on' : '') + '" data-ma="ausp" data-n="' + esc(x.name) + '">' + esc(x.name) + '</button>'; }).join('') + '</div></div>';
   }
   function einzel() {
     if (!years().length) return leer(); var s = sub(), j = year(); var l = table(j, 'best'); if (!s.sp || !l.some(function (o) { return o.name === s.sp; })) s.sp = l[0] && l[0].name;
     var o = l.filter(function (x) { return x.name === s.sp; })[0]; var plat = l.indexOf(o) + 1;
     return '<section class="wm-card">' + head('Einzelblatt ' + esc(j), pbtn('ausone', 'Dieses Blatt') + pbtn('ausallsheets', 'Alle Blätter')) + waExpired() + yearSel(j) +
-      '<label class="m-f"><span>Schwimmer</span><select id="au_sp">' + l.map(function (x) { return '<option' + (x.name === s.sp ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select></label>' +
-      (o ? '<p class="wm-sub">Platz ' + plat + ' von ' + l.length + ' in der Gesamtwertung</p><div class="m-twrap">' + sheetTable(o, j) + '</div>' +
-        '<div class="m-stats">' + M.stat(o.ges, 'Punkte gesamt') + M.stat(o.n, 'Strecken') + M.stat(o.avg, 'Ø pro Strecke') + '</div>' : '') +
+      pickList(l, s.sp, s.q) +
+      (o ? '<p class="wm-sub">Platz ' + plat + ' von ' + l.length + ' in der Gesamtwertung</p><div class="xl">' + sheetHtml(o, j) + '</div>' : '') +
       '<p class="wm-note">Die Zeiten kommen aus den Wettkämpfen dieser Saison, bei denen Ergebnisse eingelesen sind. Die Bahnlänge liest die App aus dem Meldeergebnis. Wo sie fehlt, trägst du sie im Wettkampf unter „Bahnlänge“ ein.</p></section>';
   }
   // Jubiläen: Mitgliedschaftsjubiläen 10, 25, 40 und 50 Jahre
@@ -194,7 +210,7 @@ templateEngineOverride: false
     return ys.map(function (y) { return { y: y, n: (by[y] || []).sort(function (a, b) { return a.localeCompare(b, 'de'); }) }; });
   }
   function jubHtml(j) {
-    return '<h2 class="aus-h">Jubiläen ' + esc(j) + '</h2><table class="aus-j">' + jubList(j).map(function (x) { return '<tr><td class="nowrap"><b>' + x.y + ' Jahre</b></td><td>' + (x.n.length ? esc(x.n.join(', ')) : '–') + '</td></tr>'; }).join('') + '</table>';
+    return '<h2 class="aus-h">Jubiläen ' + esc(j) + '</h2><table class="aus-t aus-jb"><tr><th>Jahre</th><th>Name</th></tr>' + jubList(j).map(function (x) { return x.n.length ? x.n.map(function (n) { return '<tr><td class="r">' + x.y + '</td><td class="l">' + esc(n) + '</td></tr>'; }).join('') : '<tr><td class="r">' + x.y + '</td><td class="l">–</td></tr>'; }).join('') + '</table>';
   }
   // Ehrungen: Jugend und Gesamt, jeweils weiblich und männlich, dann die eingestellten Jahrgangsgruppen (je die ersten drei)
   function ehrHtml(j, l) {
@@ -207,7 +223,7 @@ templateEngineOverride: false
   }
   function ehrungen() {
     if (!years().length) return leer(); var j = year(); var l = table(j, 'best');
-    return '<section class="wm-card">' + head('Ehrungen ' + esc(j), pbtn('ausprintehr', 'Ehrungen')) + waExpired() + yearSel(j) + ehrHtml(j, l) + (M.find('saison', 'jub-' + j) ? '' : '<p class="wm-note">Die Jubiläen kommen aus dem Eintrittsdatum der Mitglieder. Genauer geht es mit der Liste „Jubiläum im aktuellen Jahr“ aus WebClub im Reiter „Hochladen“.</p>') + '</section>';
+    return '<section class="wm-card">' + head('Ehrungen ' + esc(j), pbtn('ausprintehr', 'Ehrungen')) + waExpired() + yearSel(j) + '<div class="xl">' + ehrHtml(j, l) + '</div>' + (M.find('saison', 'jub-' + j) ? '' : '<p class="wm-note">Die Jubiläen kommen aus dem Eintrittsdatum der Mitglieder. Genauer geht es mit der Liste „Jubiläum im aktuellen Jahr“ aus WebClub im Reiter „Hochladen“.</p>') + '</section>';
   }
   var UP = null;
   function hochladen() {
@@ -298,7 +314,7 @@ templateEngineOverride: false
     }
     WU = null; M.closeDlg(); M.ops(ops); M.toast('Basiszeiten übernommen.');
   }
-  var PCSS = '.aus-h{font-size:14px;margin:14px 0 4px;break-after:avoid}.aus-t,.aus-j{border-collapse:collapse;width:100%;margin-bottom:6px;break-inside:auto}.aus-t th,.aus-t td{border:1px solid #333;padding:2px 5px;font-size:11px}.aus-t th{background:#f3f4f6}.aus-t tr{break-inside:avoid}.aus-j td{padding:2px 5px;font-size:12px}.ausk td{background:#eef1f6}';
+  var PCSS = '.aus-h{font-size:14px;font-weight:700;margin:14px 0 4px;break-after:avoid}.aus-t{border-collapse:collapse;width:100%;margin-bottom:6px;border:2px solid #000;font-family:Calibri,Carlito,Arial,sans-serif}.aus-t th,.aus-t td{border:1px solid #000;padding:1px 5px;font-size:11px;text-align:center;color:#000}.aus-t th{font-weight:700;font-style:italic;padding:5px}.aus-t td.l,.aus-t th.l{text-align:left}.aus-t td.r{text-align:right}.aus-t tr{break-inside:avoid}.aus-r td:nth-child(2){text-align:left}.aus-r td:first-child{text-align:right}.aus-s tr.ausk td{font-size:13px;padding:3px 5px;color:#333}.aus-s tr.hd th{text-align:center}.tot td{border-top:2px solid #000}.xs{display:flex;justify-content:flex-end;gap:12px;font-size:13px;margin-top:6px}.xs b,.xs i{display:inline-block;min-width:90px;text-align:right;border-bottom:1px solid #000;font-style:normal;font-size:14px}.xs2{font-size:12px}.no-print{display:none}'
   function pj() { var s = sub(); return { j: year(), s: s, l: table(year(), s.sb) }; }
   function lead(j, s) { return '<h1>Jahresauswertung ' + esc(j) + '</h1><div class="sub">' + (s.sb === 'best' ? 'Punktbeste Leistung aus Lang- und Kurzbahn' : s.sb === 'Lang' ? 'Langbahn' : 'Kurzbahn') + '</div>'; }
   function printRang() { var x = pj(); M.print('Jahresauswertung ' + x.j, lead(x.j, x.s) + report(x.j, x.l), { css: PCSS }); }
@@ -316,12 +332,15 @@ templateEngineOverride: false
     M.print('Jahresauswertung ' + x.j, body, { css: PCSS });
   }
   M.register('auswertung', {
-    onChange: function (ev) { if (ev.target && ev.target.id === 'au_sp') { sub().sp = ev.target.value; M.render(true); } },
+    onChange: function (ev) { },
+    onInput: function (ev) { if (ev.target && ev.target.id === 'au_q') { var s0 = sub(); s0.q = ev.target.value; var c = document.querySelector('.aus-chips'); if (c) { var tmp = document.createElement('div'); tmp.innerHTML = pickList(table(year(), 'best'), s0.sp, s0.q); c.innerHTML = tmp.querySelector('.aus-chips').innerHTML; } } },
     title: 'Jahresauswertung', icon: '🏆', colls: ['saison', 'wgMitglieder', 'wettkaempfe'],
     tabs: [{ id: 'rang', label: 'Rangliste', view: ['auswertung.view'], render: rangliste }, { id: 'stat', label: 'Statistik', view: ['auswertung.view'], render: statistik }, { id: 'ehr', label: 'Ehrungen', view: ['auswertung.view'], render: ehrungen }, { id: 'einzel', label: 'Einzelblatt', view: ['auswertung.view'], render: einzel }, { id: 'up', label: 'Hochladen', view: ['auswertung.upload'], render: hochladen }],
     actions: {
       ausj: function (it, el) { sub().sj = el.getAttribute('data-v'); M.render(true); },
       ausb: function (it, el) { sub().sb = el.getAttribute('data-v'); M.render(true); },
+      ausp: function (it, el) { sub().sp = el.getAttribute('data-n'); M.render(true); },
+      ausbahn: function (it, el) { M.op({ op: 'patch', coll: 'wettkaempfe', id: el.getAttribute('data-id'), fields: { bahn: el.getAttribute('data-b') } }); },
       ausg: function (it, el) { sub().sg = el.getAttribute('data-v'); M.render(true); },
       ausread: read, aussave: save,
       waread: waRead, wasave: waSave,

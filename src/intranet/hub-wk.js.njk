@@ -350,6 +350,7 @@ templateEngineOverride: false
     }
     var docs = Object.assign({}, tgt.docs || {}); docs.meld = { name: imp.file, at: M.today(), by: M.userName() };
     var f = { docs: docs };
+    if (p && !tgt.bahn && /(25|50)/.test(p.bahn || '')) f.bahn = /50/.test(p.bahn) ? '50' : '25';
     if (p) {
       if (p.csv && !(tgt.starts || []).length) f.starts = mkStarts(p.starts);
       f.meld = { n: p.swimmerCount, kari: p.kari || [], starts: p.starts.map(function (s) { return { e: s.e, n: s.n, s: s.s, j: s.j, m: s.m }; }) };
@@ -394,7 +395,7 @@ templateEngineOverride: false
     var events = Object.keys(evs).map(Number).sort(function (a, b) { return a - b; }).map(function (n) { return { no: n, name: evs[n], ab: abx[n] || 1 }; });
     var af = {}; if (p.relays && p.relays.length) { af.staffeln = p.relays.map(function (r) { return { e: r.e, evn: r.evn, pl: r.pl, t: r.t, st: r.st }; }); af.staffel = P.relayText(p.relays); af.w = ['staffel']; }
     if (p.kr && p.kr.length) af.kr = P.krText(p.kr);
-    var wk = { id: M.uid(), title: v('np_t') || 'Wettkampf', date: v('np_d'), ort: v('np_o'), bahn: '', club: club(), abschnitte: [], events: events, starts: starts, gericht: [], res: res, chk: {}, docs: { prot: { name: imp.file, at: M.today(), by: M.userName() } } };
+    var wk = { id: M.uid(), title: v('np_t') || 'Wettkampf', date: v('np_d'), ort: v('np_o'), bahn: /50/.test(p.bahn || '') ? '50' : /25/.test(p.bahn || '') ? '25' : '', club: club(), abschnitte: [], events: events, starts: starts, gericht: [], res: res, chk: {}, docs: { prot: { name: imp.file, at: M.today(), by: M.userName() } } };
     if (Object.keys(af).length) wk.art = af;
     M.closeDlg(); M.op({ op: 'set', coll: 'wettkaempfe', item: wk }); M.S.sub.wk = wk.id; M.S.sub.v = 'uebersicht'; M.S.sub.vSet = true; M.toast('Wettkampf aus Protokoll angelegt.'); M.render(true);
   }
@@ -426,6 +427,7 @@ templateEngineOverride: false
     if (chg) list.push({ op: 'patch', coll: 'wettkaempfe', id: tgt.id, fields: { starts: startsNow } });
     if (n) list.push({ op: 'patch', coll: 'wettkaempfe', id: tgt.id, merge: true, fields: { res: res } });
     var kf = krFields(imp.p, tgt); if (kf) list.push({ op: 'patch', coll: 'wettkaempfe', id: tgt.id, fields: kf });
+    var bf = {}; if (!tgt.bahn && /(25|50)/.test(imp.p.bahn || '')) list.push({ op: 'patch', coll: 'wettkaempfe', id: tgt.id, fields: { bahn: /50/.test(imp.p.bahn) ? '50' : '25' } });
     var af = {}; if (imp.p.kr && imp.p.kr.length && !(tgt.art && tgt.art.kr)) af.kr = P.krText(imp.p.kr);
     if (imp.p.relays && imp.p.relays.length) { af.staffeln = imp.p.relays.map(function (r) { return { e: r.e, evn: r.evn, pl: r.pl, t: r.t, st: r.st }; }); if (!(tgt.art && tgt.art.staffel)) af.staffel = P.relayText(imp.p.relays); var w0 = ((tgt.art && tgt.art.w) || []).slice(); if (w0.indexOf('staffel') < 0) { w0.push('staffel'); af.w = w0; } }
     if (Object.keys(af).length) list.push({ op: 'patch', coll: 'wettkaempfe', id: tgt.id, merge: true, fields: { art: af } });
