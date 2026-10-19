@@ -101,18 +101,23 @@ templateEngineOverride: false
   // ---------- Punkte ----------
   // sets: gespeicherte Einträge { bahn:'Kurz'|'Lang', von, bis, t }
   function pick(sets, bahn, date) {
-    // Wie in WebClub gilt für das ganze Wettkampfjahr die Tabelle dieses Jahres (Kurzbahn und Langbahn getrennt).
-    var yr = String(date || '').slice(0, 4), best = null;
+    // Zuerst die Tabelle, deren Gültigkeitszeitraum das Datum enthält (Kurzbahn: September bis August, Langbahn: Kalenderjahr).
+    var best = null, yr = String(date || '').slice(0, 4);
+    (sets || []).forEach(function (s) { if (s.bahn !== bahn) return; if (!date || (s.von && date < s.von) || (s.bis && date > s.bis)) return; if (!best || String(s.von) > String(best.von)) best = s; });
+    if (best) return best;
+    // Sonst die Tabelle des Wettkampfjahres, zuletzt die zeitlich nächste.
     (sets || []).forEach(function (s) { if (s.bahn === bahn && String(s.jahr) === yr) best = s; });
     if (best) return best;
-    // Gibt es für das Jahr keine Tabelle, gilt die, deren Gültigkeitszeitraum das Datum enthält.
-    (sets || []).forEach(function (s) { if (s.bahn !== bahn) return; if (date && s.von && date < s.von) return; if (date && s.bis && date > s.bis) return; if (!best || s.von > best.von) best = s; });
+    (sets || []).forEach(function (s) { if (s.bahn === bahn && (!best || Math.abs(Date.parse(s.von) - Date.parse(date)) < Math.abs(Date.parse(best.von) - Date.parse(date)))) best = s; });
     return best;
   }
   // sex: 'M' | 'W' | 'F' | 'X'; code: '50F' (Strecke + Lage S/R/B/F/L); ms: Zeit in Millisekunden
   function points(sets, sex, bahn, code, date, ms) {
     var m = /^(\d+)([SRBFL])$/.exec(code || ''); if (!m || !(ms > 0)) return null; var g = sex === 'W' ? 'F' : sex; if (g !== 'M' && g !== 'F') return null;
-    var s = pick(sets, bahn, date); if (!s) return null; var base = s.t[key(g, 1, +m[1], CSTK[m[2]])]; if (!base) return null;
+    var s = pick(sets, bahn, date); if (!s) return null; var base = s.t[key(g, 1, +m[1], CSTK[m[2]])];
+    // 25-m-Strecken gibt es bei World Aquatics nicht: Strecke und Zeit verdoppeln, die Punkte der 50-m-Strecke halbieren und runden (wie in der Auswertung 2025)
+    if (!base && +m[1] === 25 && m[2] !== 'L') { var p50 = points(sets, sex, bahn, '50' + m[2], date, ms * 2); return p50 === null ? null : Math.floor(p50 / 2 + 0.5); }
+    if (!base) return null;
     return Math.floor(1000 * Math.pow(base / (ms / 10), 3) + 1e-9);
   }
   window.WAPunkte = { parseCsv: parseCsv, parsePdf: parsePdfOne, addPdf: addPdf, finish: finish, merge: merge, out: out, pick: pick, points: points, defaults: defaults, showTime: showTime, CN: CN };

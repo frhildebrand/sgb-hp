@@ -472,6 +472,9 @@ templateEngineOverride: false
     });
     var docs = Object.assign({}, tgt.docs || {}); docs.prot = { name: imp.file, at: M.today(), by: M.userName() };
     var list = [];
+    var evs = {}; (tgt.events || []).forEach(function (e) { evs[e.no] = e; }); var chgE = false, okN = /\d+\s*m?\s*[-–]?\s*(Schmetterling|Delphin|R[üu]e?cken|Brust|Freistil|Kraul|Lagen|[SRBFL])\b/i;
+    imp.rows.forEach(function (r) { var nm = r.x.evn; if (!nm || /\d\s*x\s*\d/i.test(nm)) return; var cur = evs[r.x.e]; if (!cur || !okN.test(cur.name || '')) { evs[r.x.e] = { no: r.x.e, name: nm, ab: cur && cur.ab }; chgE = true; } });
+    if (chgE) list.push({ op: 'patch', coll: 'wettkaempfe', id: tgt.id, fields: { events: Object.keys(evs).map(Number).sort(function (a, b) { return a - b; }).map(function (k) { return evs[k]; }) } });
     if (chg) list.push({ op: 'patch', coll: 'wettkaempfe', id: tgt.id, fields: { starts: startsNow } });
     if (n) list.push({ op: 'patch', coll: 'wettkaempfe', id: tgt.id, merge: true, fields: { res: res } });
     var kf = krFields(imp.p, tgt); if (kf) list.push({ op: 'patch', coll: 'wettkaempfe', id: tgt.id, fields: kf });

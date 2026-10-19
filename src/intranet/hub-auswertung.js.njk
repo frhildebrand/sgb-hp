@@ -273,6 +273,7 @@ templateEngineOverride: false
     var l = [], wks = M.items('wettkaempfe').filter(function (wk) { return String(wk.date || '').slice(0, 4) === String(j) && !cancelled(wk); }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
     wks.forEach(function (wk) {
       if (!(wk.starts || []).length || wk.date > M.today()) return; var d = diagWk(wk), t = [];
+      var bw0 = bahnOf(wk); if (bw0 && window.WAPunkte && Object.keys(wk.res || {}).length && !WAPunkte.pick(waSets(), bw0 === 25 ? 'Kurz' : 'Lang', wk.date)) t.push('keine World-Aquatics-Tabelle für ' + (bw0 === 25 ? 'Kurzbahn' : 'Langbahn') + ' vorhanden, deshalb keine Punkte (unter „Hochladen“ einlesen)');
       if (d.noRes) t.push(d.noRes + ' von ' + d.n + ' Starts ohne Ergebnis');
       if (d.noEv) t.push(d.noEv + ' Starts mit nicht erkannter Strecke (Wettkampf-Nr. ' + Object.keys(d.ev).join(', ') + '; ' + (d.smp ? 'Name im Wettkampf zum Beispiel „' + d.smp + '“' : 'im Wettkampf sind keine Streckennamen hinterlegt, bitte die Meldedatei neu hochladen') + ')');
       if (t.length) l.push('<li><b>' + esc(wk.title || 'Wettkampf') + '</b> (' + esc(M.fmtDate(wk.date)) + '): ' + esc(t.join(', ')) + '. Diese Zeiten fehlen in der Auswertung.</li>');
