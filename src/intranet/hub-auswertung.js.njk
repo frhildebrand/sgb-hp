@@ -63,7 +63,7 @@ templateEngineOverride: false
       if (String(wk.date || '').slice(0, 4) !== String(j) || cancelled(wk)) return; var names = {}; (wk.events || []).forEach(function (e) { names[e.no] = e.name; });
       (wk.starts || []).forEach(function (s) {
         var r = (wk.res || {})[s.e + '-' + s.l + '-' + s.b]; if (!r || !r.t) return; var k = streckeOf(names[s.e]); if (!k) return; var n = flip(s.n);
-        var bw = bahnOf(wk); var pts = window.WAPunkte ? WAPunkte.points(waSets(), s.s, bw === 25 ? 'Kurz' : bw === 50 ? 'Lang' : '', k, wk.date, tms(r.t)) : null; (by[n] = by[n] || []).push({ d: wk.date, ort: wk.ort || wk.title || '', b: bw, k: k, t: r.t, wk: wk.id, nm: flipN(s.n), jg: +s.j || 0, sx: s.s, pt: pts });
+        var bw = bahnOf(wk); var pts = window.WAPunkte ? WAPunkte.points(waSets(), s.s, bw === 25 ? 'Kurz' : bw === 50 ? 'Lang' : '', k, wk.date, tms(r.t)) : null; if ((by[n] || []).some(function (x) { return x.d === wk.date && x.k === k && x.b === bw && x.t === r.t; })) return; (by[n] = by[n] || []).push({ d: wk.date, ort: wk.ort || wk.title || '', b: bw, k: k, t: r.t, wk: wk.id, nm: flipN(s.n), jg: +s.j || 0, sx: s.s, pt: pts });
       });
     });
     Object.keys(by).forEach(function (n) { by[n].sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; }); var last = {}; by[n].forEach(function (x) { var lk = x.k + '|' + x.b; var pv = last[lk]; x.diff = pv !== undefined && tms(x.t) !== null ? tms(x.t) - pv : null; if (tms(x.t) !== null) last[lk] = tms(x.t); }); });
@@ -163,7 +163,6 @@ templateEngineOverride: false
   }
   function head(t, act) { return '<div class="wm-bar"><h3>' + t + '</h3><span class="m-actions">' + (act || '') + '</span></div>'; }
   function xbtn() { return '<button type="button" class="wm-btn" data-ma="ausxlsx">📥 Excel</button>'; }
-  function pbtn(a, t) { return '<button type="button" class="wm-btn" data-ma="' + a + '">🖨️ ' + t + '</button>'; }
   function chipRow(label, chips) { return '<div class="aus-fr"><span class="aus-fl">' + label + '</span><div class="m-chips">' + chips + '</div></div>'; }
   function rangliste() {
     if (!years().length) return leer(); var s = sub(), j = year(); var l = table(j, s.sb);
@@ -178,7 +177,7 @@ templateEngineOverride: false
     var filter = '<div class="aus-filter">' + (ys.length > 1 ? chipRow('Jahr', ys.map(function (y) { return chip(y === j, 'ausj', y, y); }).join('')) : '') +
       chipRow('Bahn', bahn.map(function (x) { return chip(s.sb === x[0], 'ausb', x[0], x[1]); }).join('')) +
       chipRow('Wertung', g.map(function (x) { return chip(s.sg === x[0], 'ausg', x[0], x[0]); }).join('')) + '</div>';
-    return '<section class="wm-card">' + head('Rangliste ' + esc(j), pbtn('ausprint', 'Rangliste') + pbtn('ausprintall', 'Komplette Auswertung') + xbtn()) + filter +
+    return '<section class="wm-card">' + head('Rangliste ' + esc(j), xbtn()) + filter +
       waExpired() + '<p class="wm-sub">Stand der WebClub-Listen: ' + (d.join(' · ') || 'keine hochgeladen') + '.' + (waInfo() ? '<br>Punkte aus Wettkampfergebnissen mit den Basiszeiten: ' + esc(waInfo()) + '.' : '') + '<br>Gewertet wird je Strecke die punktbeste Leistung. Fett ist je Tabelle der höchste Wert einer Spalte. Jahrgangsgruppen mit nur 1 Person werden je Geschlecht automatisch mit der kleineren Nachbargruppe zusammengelegt.</p><div class="xl">' + body + '</div></section>';
   }
   // ---------- Statistik (Veranstaltungen, Kampfrichter, Ergebnisse) ----------
@@ -238,7 +237,7 @@ templateEngineOverride: false
       s.vr.map(function (x) { return '<tr><td class="r">' + esc(dd(x.d)) + '</td><td class="l">' + esc(x.t) + '</td><td class="l">' + esc(x.o) + '</td><td class="l">' + (x.bw === 25 ? 'Kurz' : x.bw === 50 ? 'Lang' : '–') + '</td><td class="r">' + x.sw + '</td><td class="r">' + x.e + '</td><td class="r">' + x.s + '</td><td class="r">' + (ausr.indexOf(ausrKey(x)) >= 0 ? 'Ausrichter' : eur(x.g)) + '</td><td class="no-print"><button type="button" class="wm-btn" data-ma="ausausr" data-k="' + esc(ausrKey(x)) + '">' + (ausr.indexOf(ausrKey(x)) >= 0 ? '✓ ja' : 'nein') + '</button></td></tr>'; }).join('') +
       '<tr class="tot"><td colspan="4" class="l"><b>Gesamt für ' + s.n + ' Veranstaltungen mit Ergebnissen</b></td><td class="r"><b>' + s.tot.sw + '</b></td><td class="r"><b>' + s.tot.e + '</b></td><td class="r"><b>' + s.tot.s + '</b></td><td class="r"><b>' + (anyG ? eur(tg) : '–') + '</b></td><td class="no-print"></td></tr></table>';
     var kin = s.kr.filter(function (x) { return !x.ex; });
-    var k = '<h2 class="aus-h">Kampfrichterstatistik, Saison ' + esc(j) + '</h2>' + (s.kr.length ? '<table class="aus-t aus-k"><tr><th>Kampfrichter</th><th>Stammverein</th><th>Veranstaltungen</th><th>Abschnitte</th><th class="no-prt">Wettkämpfe</th><th class="no-print">Zählt</th></tr>' + s.kr.map(function (x) { return '<tr class="' + (x.ex ? 'ex no-print' : '') + '"' + (x.ex ? ' style="opacity:.45"' : '') + '><td class="l">' + esc(x.n) + '</td><td class="l">' + esc(x.v) + '</td><td class="r">' + x.w + '</td><td class="r">' + x.a + '</td><td class="l no-prt">' + krEvText(x, j) + '</td><td class="no-print"><button type="button" class="wm-btn" data-ma="auskr" data-n="' + esc(x.n) + '">' + (x.ex ? '✗ nein' : '✓ ja') + '</button></td></tr>'; }).join('') + '<tr class="tot"><td colspan="2" class="l"><b>Gesamt für ' + kin.length + ' Kampfrichter</b></td><td class="r"><b>' + kin.reduce(function (a, x) { return a + x.w; }, 0) + '</b></td><td class="r"><b>' + kin.reduce(function (a, x) { return a + x.a; }, 0) + '</b></td><td class="no-prt"></td><td class="no-print"></td></tr></table><p class="wm-note no-print">Mit „Zählt“ legst du fest, wer als offizieller Kampfrichter in die Statistik kommt (z. B. nicht bei vereinsinternen Wettkämpfen).</p>' : '<p class="wm-note">Bei den Veranstaltungen ist kein Kampfgericht eingetragen.</p>');
+    var k = '<h2 class="aus-h">Kampfrichterstatistik, Saison ' + esc(j) + '</h2>' + (s.kr.length ? '<table class="aus-t aus-k"><tr><th>Kampfrichter</th><th>Stammverein</th><th>Veranstaltungen</th><th>Abschnitte</th><th class="no-print">Wettkämpfe</th><th class="no-print">Zählt</th></tr>' + s.kr.map(function (x) { return '<tr class="' + (x.ex ? 'ex no-print' : '') + '"' + (x.ex ? ' style="opacity:.45"' : '') + '><td class="l">' + esc(x.n) + '</td><td class="l">' + esc(x.v) + '</td><td class="r">' + x.w + '</td><td class="r">' + x.a + '</td><td class="l no-print">' + krEvText(x, j) + '</td><td class="no-print"><button type="button" class="wm-btn" data-ma="auskr" data-n="' + esc(x.n) + '">' + (x.ex ? '✗ nein' : '✓ ja') + '</button></td></tr>'; }).join('') + '<tr class="tot"><td colspan="2" class="l"><b>Gesamt für ' + kin.length + ' Kampfrichter</b></td><td class="r"><b>' + kin.reduce(function (a, x) { return a + x.w; }, 0) + '</b></td><td class="r"><b>' + kin.reduce(function (a, x) { return a + x.a; }, 0) + '</b></td><td class="no-print"></td><td class="no-print"></td></tr></table><p class="wm-note no-print">Mit „Zählt“ legst du fest, wer als offizieller Kampfrichter in die Statistik kommt (z. B. nicht bei vereinsinternen Wettkämpfen).</p>' : '<p class="wm-note">Bei den Veranstaltungen ist kein Kampfgericht eingetragen.</p>');
     function pt(lab, a) { var L = ['Platz 1', 'Platz 2', 'Platz 3', 'Andere']; return '<h2 class="aus-h">Ergebnisse, Saison ' + esc(j) + '</h2><table class="aus-t aus-p"><tr><th class="l">' + lab + '</th><th class="l">Platzierung</th><th class="l">Anzahl</th></tr>' + L.map(function (x, i) { return '<tr><td></td><td class="l">' + x + '</td><td class="r">' + a[i] + '</td></tr>'; }).join('') + '<tr class="tot"><td></td><td class="l"><b>Gesamt</b></td><td class="r"><b>' + (a[0] + a[1] + a[2] + a[3]) + '</b></td></tr></table>'; }
     return warn + v + k + pt('Einzelstarts', s.pl.e).replace('<h2 class="aus-h">Ergebnisse, Saison ' + esc(j) + '</h2>', '<h2 class="aus-h">Ergebnisse, Saison ' + esc(j) + '</h2>') + '<div style="height:10px"></div>' + pt('Staffelstarts', s.pl.s).replace(/<h2 class="aus-h">.*?<\/h2>/, '') + '<p class="wm-note no-print">' + (s.wc ? 'Die Zahlen stammen aus den WebClub-Dateien, die unter „Hochladen“ eingelesen wurden (abgesagte Veranstaltungen sind weggelassen).' : 'Platzierungen und Staffelstarts zählen nur, wo sie in den eingelesenen Ergebnissen stehen. Das Meldegeld wird aus dem Text der Ausschreibung berechnet; fehlt er, steht „–“. Wo wir Ausrichter waren, gibt es kein Meldegeld: dort „Ausrichter“ auf „ja“ stellen. Mit den WebClub-Auswertungen unter „Hochladen“ werden diese Zahlen vollständig.') + '</p>' + (noMit ? '' : mitHtml(j));
   }
@@ -305,7 +304,7 @@ templateEngineOverride: false
   }
   function statistik() {
     if (!years().length) return leer(); var j = year();
-    return '<section class="wm-card">' + head('Statistik ' + esc(j), pbtn('ausprintstat', 'Statistik') + xbtn()) + yearSel(j) + fehltHtml(j) + '<div class="xl">' + statHtml(j) + '</div></section>';
+    return '<section class="wm-card">' + head('Statistik ' + esc(j), xbtn()) + yearSel(j) + fehltHtml(j) + '<div class="xl">' + statHtml(j) + '</div></section>';
   }
   function sheetTable(o, j) {
     var st = (starts(j)[o.name.toLowerCase()] || []); var ks = Object.keys(o.p); st.forEach(function (x) { if (ks.indexOf(x.k) < 0) ks.push(x.k); });
@@ -337,7 +336,7 @@ templateEngineOverride: false
     if (!years().length) return leer(); var s = sub(), j = year(); var l = table(j, 'best'); if (!s.sp || !l.some(function (o) { return o.name === s.sp; })) s.sp = l[0] && l[0].name;
     var al = l.slice().sort(function (a, b) { return a.name.localeCompare(b.name, 'de'); });
     var o = l.filter(function (x) { return x.name === s.sp; })[0]; var plat = l.indexOf(o) + 1; var ix = al.indexOf(o);
-    return '<section class="wm-card">' + head('Einzelblatt ' + esc(j), pbtn('ausone', 'Dieses Blatt') + pbtn('ausallsheets', 'Alle Blätter') + xbtn()) + waExpired() + yearSel(j) +
+    return '<section class="wm-card">' + head('Einzelblatt ' + esc(j), xbtn()) + waExpired() + yearSel(j) +
       '<div class="aus-split"><div class="aus-names"><input type="search" id="au_q" placeholder="Suchen …" value="' + esc(s.q || '') + '" autocomplete="off"><div id="au_nl">' + namesHtml(al, s.sp, s.q) + '</div></div><div>' +
       '<div class="aus-nav"><button type="button" class="wm-btn" data-ma="ausstep" data-d="-1"' + (ix <= 0 ? ' disabled' : '') + '>‹ Zurück</button><button type="button" class="wm-btn" data-ma="ausstep" data-d="1"' + (ix >= al.length - 1 ? ' disabled' : '') + '>Weiter ›</button><span class="wm-sub">' + (o ? 'Platz ' + plat + ' von ' + l.length + ' in der Gesamtwertung' : '') + '</span></div>' +
       (o ? diagSw(o, j) + '<div class="xl">' + sheetHtml(o, j) + '</div>' : '') + '</div></div>' +
@@ -392,7 +391,7 @@ templateEngineOverride: false
   function ehrAll(j, l) { return ehrHtml(j, l) + '<h1 style="font-size:18px;margin:22px 0 0">Übersicht für die JHV</h1>' + jhvHtml(j, l); }
   function ehrungen() {
     if (!years().length) return leer(); var j = year(); var l = table(j, 'best');
-    return '<section class="wm-card">' + head('Ehrungen ' + esc(j), pbtn('ausprintehr', 'Ehrungen') + xbtn()) + waExpired() + yearSel(j) + '<div class="xl">' + ehrAll(j, l) + '</div>' + (M.find('saison', 'jub-' + j) ? '' : '<p class="wm-note">Die Jubiläen kommen aus dem Eintrittsdatum der Mitglieder. Genauer geht es mit der Liste „Jubiläum im aktuellen Jahr“ aus WebClub im Reiter „Hochladen“.</p>') + '</section>';
+    return '<section class="wm-card">' + head('Ehrungen ' + esc(j), xbtn()) + waExpired() + yearSel(j) + '<div class="xl">' + ehrAll(j, l) + '</div>' + (M.find('saison', 'jub-' + j) ? '' : '<p class="wm-note">Die Jubiläen kommen aus dem Eintrittsdatum der Mitglieder. Genauer geht es mit der Liste „Jubiläum im aktuellen Jahr“ aus WebClub im Reiter „Hochladen“.</p>') + '</section>';
   }
   // ---------- Mitglieder (Mitgliederzahlen, Statistik, Gruppenauslastung, Jubiläen) ----------
   function yr(v) { var m = /(\d{4})/.exec(String(v || '')); return m ? +m[1] : 0; }
@@ -426,7 +425,7 @@ templateEngineOverride: false
     var right = '<div><h2 class="aus-h">Jubiläum ' + esc(j) + '</h2>' + jt + '</div>';
     return '<div class="xl-row">' + left + mid + right + '</div>' + (src ? '' : '<p class="wm-note no-print">Diese Zahlen kommen aus dem Bereich Mitglieder. Genauer wird es mit den WebClub-Dateien unter „Hochladen“.</p>');
   }
-  function mitglieder() { var j = year(); return '<section class="wm-card">' + head('Mitglieder ' + esc(j), pbtn('ausprintmit', 'Mitglieder')) + yearSel(j) + '<div class="xl">' + mitHtml(j) + '</div></section>'; }
+  function mitglieder() { var j = year(); return '<section class="wm-card">' + head('Mitglieder ' + esc(j), '') + yearSel(j) + '<div class="xl">' + mitHtml(j) + '</div></section>'; }
 
   // ---------- WebClub-Dateien einlesen (Auswertungen, Listen, Statistiken, Mitglieder) ----------
   function wcDec(f) {
@@ -728,23 +727,7 @@ templateEngineOverride: false
     setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000); M.toast('Excel-Datei mit ' + sheets.length + ' Blättern erstellt.');
   }
 
-  var PCSS = '.aus-h{font-size:14px;font-weight:700;margin:14px 0 4px;break-after:avoid}.aus-t{border-collapse:collapse;width:100%;margin-bottom:6px;border:2px solid #000;font-family:Calibri,Carlito,Arial,sans-serif}.aus-t th,.aus-t td{border:1px solid #000;padding:1px 5px;font-size:11px;text-align:center;color:#000}.aus-t th{font-weight:700;font-style:italic;padding:5px}.aus-t td.l,.aus-t th.l{text-align:left}.aus-t td.r{text-align:right}.aus-t tr{break-inside:avoid}.aus-r td:nth-child(2){text-align:left}.aus-r td:first-child{text-align:right}.aus-s tr.ausk td{font-size:13px;padding:3px 5px;color:#333}.aus-s tr.hd th{text-align:center}.tot td{border-top:2px solid #000}.xs{display:flex;justify-content:flex-end;gap:12px;font-size:13px;margin-top:6px}.xs b,.xs i{display:inline-block;min-width:90px;text-align:right;border-bottom:1px solid #000;font-style:normal;font-size:14px}.xs2{font-size:12px}.no-print,.no-prt{display:none}.xl-row{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start}.xl-row .aus-t{width:auto}'
   function pj() { var s = sub(); return { j: year(), s: s, l: table(year(), s.sb) }; }
-  function lead(j, s) { return '<h1>Jahresauswertung ' + esc(j) + '</h1><div class="sub">' + (s.sb === 'best' ? 'Punktbeste Leistung aus Lang- und Kurzbahn' : s.sb === 'Lang' ? 'Langbahn' : 'Kurzbahn') + '</div>'; }
-  function printRang() { var x = pj(); M.print('Jahresauswertung ' + x.j, lead(x.j, x.s) + report(x.j, x.l), { css: PCSS }); }
-  function printStat() { var j = year(); M.print('Statistik ' + j, '<h1>Statistik ' + esc(j) + '</h1><div class="sub">Jahresauswertung</div>' + statHtml(j), { css: PCSS }); }
-  function printEhr() { var x = pj(); M.print('Ehrungen ' + x.j, '<h1>Ehrungen ' + esc(x.j) + '</h1><div class="sub">Jahresauswertung</div>' + ehrAll(x.j, table(x.j, 'best')), { css: PCSS }); }
-  function printSheets(list, j) {
-    var body = list.map(function (o, i) { return '<div style="' + (i ? 'page-break-before:always' : '') + '">' + sheetHtml(o, j) + '</div>'; }).join('');
-    M.print('Jahresauswertung ' + j, body, { t2: 'Jahresauswertung ' + j, t3: '', css: PCSS });
-  }
-  // Komplett: Ranglisten, Statistik, Ehrungen und für jeden Schwimmer ein Einzelblatt, wie die Papierauswertung
-  function printAll() {
-    var x = pj(), l = table(x.j, 'best'), br = '<div style="page-break-before:always"></div>';
-    var body = lead(x.j, x.s) + report(x.j, x.l) + br + '<h1 style="font-size:18px">Statistik ' + esc(x.j) + '</h1>' + statHtml(x.j) + br + '<h1 style="font-size:18px">Ehrungen ' + esc(x.j) + '</h1>' + ehrAll(x.j, l) +
-      l.slice().sort(function (a, b) { return a.name.localeCompare(b.name, 'de'); }).map(function (o) { return br + sheetHtml(o, x.j); }).join('');
-    M.print('Jahresauswertung ' + x.j, body, { css: PCSS });
-  }
   M.register('auswertung', {
     onChange: function (ev) { },
     onInput: function (ev) { if (ev.target && ev.target.id === 'au_q') { var s0 = sub(); s0.q = ev.target.value; var c = document.getElementById('au_nl'); if (c) c.innerHTML = namesHtml(table(year(), 'best').sort(function (a, b) { return a.name.localeCompare(b.name, 'de'); }), s0.sp, s0.q); } },
@@ -755,7 +738,6 @@ templateEngineOverride: false
       ausb: function (it, el) { sub().sb = el.getAttribute('data-v'); M.render(true); },
       ausausr: function (it, el) { var k = el.getAttribute('data-k'), l = ausrEx().slice(), i = l.indexOf(k); if (i >= 0) l.splice(i, 1); else l.push(k); M.op({ op: 'set', coll: 'saison', item: { id: 'ausr', keys: l, title: 'Wir waren Ausrichter' } }); },
       auskr: function (it, el) { var n = el.getAttribute('data-n'), l = krEx().slice(), i = l.indexOf(n); if (i >= 0) l.splice(i, 1); else l.push(n); M.op({ op: 'set', coll: 'saison', item: { id: 'krx', names: l, title: 'Kampfrichter ausgeschlossen' } }); },
-      ausprintmit: function () { var j = year(); M.print('Mitglieder ' + j, '<h1>Mitglieder ' + esc(j) + '</h1><div class="sub">Jahresauswertung</div>' + mitHtml(j), { css: PCSS }); },
       ausxlsx: function () { exportXlsx(); },
       wcread: function () { wcRead(); },
       wcsave: function () { wcSave(); },
@@ -795,10 +777,7 @@ templateEngineOverride: false
           M.op({ op: 'set', coll: 'saison', item: c }); M.toast('Gruppen gespeichert.');
         } });
       },
-      ausdel: function (it, el, ev, c) { var id = c.id || el.closest('[data-id]').getAttribute('data-id'); M.confirm('Diese Punkteliste löschen?', 'Löschen', function () { M.op({ op: 'del', coll: 'saison', id: id }); }); },
-      ausprint: printRang, ausprintall: printAll, ausprintehr: printEhr, ausprintstat: printStat,
-      ausone: function () { var j = year(), s = sub(); var o = table(j, 'best').filter(function (x) { return x.name === s.sp; })[0]; if (o) printSheets([o], j); },
-      ausallsheets: function () { var j = year(); printSheets(table(j, 'best').slice().sort(function (a, b) { return a.name.localeCompare(b.name, 'de'); }), j); }
+      ausdel: function (it, el, ev, c) { var id = c.id || el.closest('[data-id]').getAttribute('data-id'); M.confirm('Diese Punkteliste löschen?', 'Löschen', function () { M.op({ op: 'del', coll: 'saison', id: id }); }); }
     }
   });
 })();

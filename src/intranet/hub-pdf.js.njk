@@ -289,8 +289,10 @@ var WKParse = (function () {
       else if (key === 'PNERGEBNIS') { out.all++; res.push(f); }
       else if (key === 'PNZWISCHENZEIT') { var k = f[0] + '|' + f[1]; (spl[k] = spl[k] || []).push({ d: +f[3], t: dsvTime(f[4]) }); }
     });
+    var seenR = {};
     res.forEach(function (f) {
       if (String(f[11] || '').toLowerCase().indexOf(cl) < 0) return;
+      var dk = f[0] + '|' + f[5] + '|' + f[13]; if (seenR[dk]) return; seenR[dk] = 1;
       var t = dsvTime(f[13]); var st = ''; if (!t) st = /NA|NT/i.test(f[4]) ? 'nicht angetreten' : /AB/i.test(f[4]) ? 'abgemeldet' : 'DQ';
       var sp = (spl[f[7] + '|' + f[0]] || []).filter(function (z) { return z.t && z.d < (dist[f[0]] || 9999); }).sort(function (a, b) { return a.d - b.d; }).map(function (z) { return z.t; });
       out.found.push({ e: +f[0], nn: f[5].toLowerCase(), orig: f[5], sx: f[6] || '', evAll: evName, name: f[5].replace(/^([^,]+),\s*(.+)$/, '$2 $1'), t: t, sp: sp, st: st, pl: +f[3] || 0, ak: wer[f[0] + '|' + f[2]] || '', jg: f[9] || '', evn: evName[f[0]] || '' });
@@ -548,10 +550,12 @@ var WKParse = (function () {
   function krFor(kr, n) { for (var i = 0; i < (kr || []).length; i++) if (n >= kr[i].von && n <= kr[i].bis) return kr[i].n; return null; }
 
   // Protokoll (Ergebnisliste): Zeiten der eigenen Schwimmer den Starts zuordnen
-  function parseProtokoll(lines, starts) {
-    var out = { found: [], used: 0, warnings: [] }; var curE = null;
+  // Rollen im Kampfgericht (Protokoll-PDF)
+  var KRPOS = [[/^reserve\s*zeitnehmer/i, 'Zeitnehmer:in'], [/^zeitnehmer/i, 'Zeitnehmer:in'], [/^wenderichter/i, 'Wenderichter:in'], [/^zielrichter/i, 'Zielrichter:in'], [/^schiedsrichter/i, 'Schiedsrichter:in'], [/^starter/i, 'Starter:in'], [/^schwimmrichter/i, 'Schwimmrichter:in'], [/^sprecher/i, 'Sprecher:in'], [/^auswerter/i, 'Auswerter:in'], [/^protokollf/i, 'Protokollführer:in']];
+  function parseProtokoll(lines, starts, club) {
+    var out = { found: [], used: 0, warnings: [], kr: [], krAb: [], relays: [] }; var curE = null; var cl = String(club || '').toLowerCase();
     var names = {}; starts.forEach(function (s) { names[(s.n || '').toLowerCase()] = 1; });
-    var nameList = Object.keys(names);
+    var nameList = Object.keys(names), seen = {}, evName = {}, inKG = false, curAb = 1, relay = false;
     function match(line) {
       var l = line.toLowerCase();
       for (var i = 0; i < nameList.length; i++) {
@@ -562,16 +566,35 @@ var WKParse = (function () {
       return null;
     }
     lines.forEach(function (l) {
-      var t = l.trim(); var m = /^Wettkampf\s+(\d+)\b/i.exec(t) || /^WK\s*(\d+)\b/i.exec(t);
-      if (m) { curE = +m[1]; return; }
+      var t = l.trim(); var mk = /^Kampfgericht\s+Abschnitt\s+(\d+)/i.exec(t);
+      if (mk) { inKG = true; curAb = +mk[1]; return; }
+      var m = /^Wettkampf\s+(\d+)\b(?:\s*[-–]\s*(.+))?/i.exec(t) || /^WK\s*(\d+)\b/i.exec(t);
+      if (m) { inKG = false; curE = +m[1]; if (m[2]) { evName[curE] = m[2].trim(); relay = /^\d+\s*x\s*\d+/i.test(m[2].trim()); } return; }
+      if (/^Wettkampffolge/i.test(t)) { inKG = false; return; }
+      if (inKG) {
+        if (!cl || t.toLowerCase().indexOf(cl) < 0) return;
+        var parts = t.split(/\s{2,}/).map(function (x) { return x.trim(); }).filter(Boolean); if (parts.length < 3) return;
+        var pos = parts[0], nm = parts[1]; var ro = 'Kampfrichter:in'; KRPOS.some(function (k) { if (k[0].test(pos)) { ro = k[1]; return true; } });
+        if (!nm || nm.toLowerCase().indexOf(cl) >= 0) return;
+        var kx = out.kr.filter(function (z) { return z.name === nm; })[0]; if (!kx) out.kr.push(kx = { name: nm, rollen: [] }); if (kx.rollen.indexOf(ro) < 0) kx.rollen.push(ro);
+        if (!out.krAb.some(function (z) { return z.ab === curAb && z.name === nm && z.rolle === ro; })) out.krAb.push({ ab: curAb, name: nm, rolle: ro });
+        return;
+      }
       if (curE === null) return;
-      var nm = match(t); if (!nm) return;
+      if (relay) {
+        var rm = /^(\d+)\.\s+(.+?)\s{2,}\d{4}\s+(.+?)\s{2,}(\d{1,2}:\d{2},\d{2})\s*$/.exec(t);
+        if (rm && cl && rm[3].toLowerCase().indexOf(cl) >= 0) { var dupk = 'R' + curE + '|' + rm[2]; if (!seen[dupk]) { seen[dupk] = 1; out.relays.push({ e: curE, pl: +rm[1], t: fmtTime(rm[4]), st: '', name: rm[2] }); } }
+        return;
+      }
+      var nm2 = match(t); if (!nm2) return;
       var times = (t.match(/\b\d{1,2}:\d{2},\d{2}\b|\b\d{1,3},\d{2}\b/g) || []).map(fmtTime).filter(Boolean);
       var st = /\b(DQ|disq|disqualifiziert)/i.test(t) ? 'DQ' : /nicht angetreten|n\.a\./i.test(t) ? 'nicht angetreten' : /abgemeldet/i.test(t) ? 'abgemeldet' : '';
       if (!times.length && !st) return;
-      out.found.push({ e: curE, nn: nm, t: st ? '' : times[0] || '', sp: st ? [] : times.slice(1), st: st });
+      var dk = curE + '|' + nm2; if (seen[dk]) return; seen[dk] = 1;
+      out.found.push({ e: curE, nn: nm2, t: st ? '' : times[0] || '', sp: st ? [] : times.slice(1), st: st });
     });
-    if (!out.found.length) out.warnings.push('Keine Zeiten Ihrer Schwimmer gefunden. Ist das ein Protokoll mit Namen und Zeiten?');
+    out.relays.forEach(function (r) { r.evn = evName[r.e] || ''; });
+    if (!out.found.length) out.warnings.push('Keine Zeiten Ihrer Schwimmer gefunden. Ist das ein Protokoll mit Namen und Zeiten? Die Namen werden mit den Starts aus der Meldung abgeglichen.');
     return out;
   }
 
