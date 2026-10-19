@@ -50,7 +50,13 @@ templateEngineOverride: false
   var STR = { schmetterling: 'S', rücken: 'R', ruecken: 'R', brust: 'B', freistil: 'F', lagen: 'L' };
   function flipN(n) { return String(n || '').replace(/^([^,]+),\s*(.+)$/, '$2 $1').trim(); }
   function flip(n) { return flipN(n).toLowerCase(); }
-  function streckeOf(name) { var m = /^\s*(\d+)\s*m\s+([A-Za-zäöüÄÖÜ]+)/.exec(name || ''); if (!m) return ''; var c = STR[m[2].toLowerCase()]; return c ? m[1] + c : ''; }
+  function streckeOf(name) {
+    var t = String(name || '').replace(/^\s*(Wettkampf|WK)\s*\d+\s*[-–:.]?\s*/i, '').replace(/^\s*\d+\s*[.:]\s+(?=\d)/, '');
+    if (/\d\s*x\s*\d/i.test(t)) return '';
+    var m = /^\s*(\d{2,4})\s*m?\s*[-–]?\s*(Schmetterling|Delphin|R[üu]e?cken|Brust|Freistil|Kraul|Lagen|[SRBFL])\b/i.exec(t); if (!m) return '';
+    var w = m[2].toLowerCase(), c = STR[w] || (/^delphin/.test(w) ? 'S' : /^kraul/.test(w) ? 'F' : /^r/.test(w) ? 'R' : w.length === 1 ? w.toUpperCase() : '');
+    return c ? m[1] + c : '';
+  }
   function bahnOf(wk) { if (wk.bahn === '25' || wk.bahn === '50') return +wk.bahn; var m = /à\s*(\d+)\s*m/.exec(wk.becken || ''); return m ? +m[1] : 0; }
   function tms(t) { var m = /^(\d+):(\d{2}),(\d{2})$/.exec(t || ''); return m ? (+m[1]) * 60000 + (+m[2]) * 1000 + (+m[3]) * 10 : null; }
   function tshow(t) { var m = /^(\d+):(\d{2}),(\d{2})$/.exec(t || ''); if (!m) return t || ''; return (+m[1] ? (+m[1]) + ':' : '') + (+m[1] ? m[2] : String(+m[2])) + ',' + m[3]; }
@@ -254,7 +260,7 @@ templateEngineOverride: false
     var names = evNames(wk), d = { n: 0, ok: 0, noRes: 0, dns: 0, noEv: 0, ev: {} };
     (wk.starts || []).forEach(function (s) {
       if (s.j === 'Staffel') return; d.n++; var q = startReason(wk, s, names);
-      if (!q) d.ok++; else { d[q]++; if (q === 'noEv') d.ev[s.e] = 1; }
+      if (!q) d.ok++; else { d[q]++; if (q === 'noEv') { d.ev[s.e] = 1; if (d.smp === undefined) d.smp = names[s.e]; } }
     });
     return d;
   }
@@ -268,7 +274,7 @@ templateEngineOverride: false
     wks.forEach(function (wk) {
       if (!(wk.starts || []).length || wk.date > M.today()) return; var d = diagWk(wk), t = [];
       if (d.noRes) t.push(d.noRes + ' von ' + d.n + ' Starts ohne Ergebnis');
-      if (d.noEv) t.push(d.noEv + ' Starts mit nicht erkannter Strecke (Wettkampf-Nr. ' + Object.keys(d.ev).join(', ') + ')');
+      if (d.noEv) t.push(d.noEv + ' Starts mit nicht erkannter Strecke (Wettkampf-Nr. ' + Object.keys(d.ev).join(', ') + '; ' + (d.smp ? 'Name im Wettkampf zum Beispiel „' + d.smp + '“' : 'im Wettkampf sind keine Streckennamen hinterlegt, bitte die Meldedatei neu hochladen') + ')');
       if (t.length) l.push('<li><b>' + esc(wk.title || 'Wettkampf') + '</b> (' + esc(M.fmtDate(wk.date)) + '): ' + esc(t.join(', ')) + '. Diese Zeiten fehlen in der Auswertung.</li>');
     });
     var wc = wcOf(j);
