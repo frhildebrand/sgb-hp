@@ -352,7 +352,18 @@ templateEngineOverride: false
       else if (p.kind === 'ein') it.ein = p.data; else if (p.kind === 'aus') it.aus = p.data; else if (p.kind === 'mit') it.mit = p.data.filter(function (r) { return r[3] !== '0'; }).map(function (r) { return [r[0], r[1], '', r[3], r[4]]; });
     });
     it.nr0 = WCU.nr0; it.title = 'WebClub-Daten ' + y; it.stand = M.today();
-    M.closeDlg(); M.op({ op: 'set', coll: 'saison', item: it }); sub().sj = String(y); M.toast('WebClub-Daten für ' + y + ' übernommen.'); WCU = null;
+    // Wettkämpfe ohne Datum (zeigen in der Liste „?“) anhand der Veranstaltungsübersicht ergänzen: Datum, Ort und Bahnlänge
+    var fixed = 0;
+    if (it.ev && it.ev.length) {
+      var nz = function (t) { return String(t || '').toLowerCase().replace(/[^a-z0-9äöüß]+/g, ' ').trim(); };
+      M.items('wettkaempfe').filter(function (wk) { return !/^\d{4}-\d{2}-\d{2}/.test(String(wk.date || '')); }).forEach(function (wk) {
+        var wt = nz(wk.title), c = it.ev.filter(function (e) { var et = nz(e.t); return wt && et && (wt === et || wt.indexOf(et) >= 0 || et.indexOf(wt) >= 0); });
+        if (c.length !== 1) return; var e = c[0];
+        var u = Object.assign({}, wk, { date: e.d }); if (!u.ort && e.o) u.ort = e.o; if (!bahnOf(u) && /^(kurz|lang)/i.test(e.b)) u.bahn = /^kurz/i.test(e.b) ? '25' : '50';
+        M.op({ op: 'set', coll: 'wettkaempfe', item: u }); fixed++;
+      });
+    }
+    M.closeDlg(); M.op({ op: 'set', coll: 'saison', item: it }); sub().sj = String(y); M.toast('WebClub-Daten für ' + y + ' übernommen.' + (fixed ? ' Bei ' + fixed + ' Wettkämpfen wurde das fehlende Datum ergänzt.' : '')); WCU = null;
   }
   function wcCard() {
     var yy = year(), wc = wcOf(yy);
