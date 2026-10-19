@@ -371,7 +371,7 @@ templateEngineOverride: false
       '<p class="wm-note"><b>' + ok + '</b> von ' + rows.length + ' Zeiten konnten einem Start zugeordnet werden. Bitte kurz prüfen.</p>' + ((p.krAb || []).length ? '<p class="wm-note">Kampfgericht: ' + esc((p.kr || []).map(function (k) { return k.name + ' (' + k.rollen.join(', ') + ')'; }).join(', ')) + '</p>' : '') + ((p.relays || []).length ? '<p class="wm-note">' + p.relays.length + ' Staffel' + (p.relays.length > 1 ? 'n' : '') + ' gefunden.</p>' : '') + '<div style="max-height:34vh;overflow:auto"><table class="m-table"><tr><th>Schwimmer</th><th>WK</th><th>Zeit</th><th></th></tr>' +
       rows.map(function (r) { return '<tr><td>' + esc(r.x.orig || r.x.nn) + '</td><td>' + r.x.e + '</td><td class="nowrap"><b>' + esc(r.x.st || r.x.t) + '</b></td><td>' + (r.hit ? '<span class="m-ok">✓</span>' : '<span class="m-over">kein Start</span>') + '</td></tr>'; }).join('') + '</table></div>' +
       '<label class="m-f m-fchk" style="margin-top:10px"><input type="checkbox" id="pr_over"><span>Vorhandene Zeiten überschreiben</span></label>' +
-      '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="wksaveprot"' + (ok ? '' : ' disabled') + '>Zeiten eintragen</button></div>');
+      '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="wksaveprot"' + (ok || (p.krAb || []).length || (p.relays || []).length ? '' : ' disabled') + '>Zeiten eintragen</button></div>');
   }
 
   /* ---------- Sammel-Import: viele WebClub-CSVs (Meldungen + Ergebnisse) auf einmal ---------- */
