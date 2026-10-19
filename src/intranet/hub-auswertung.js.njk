@@ -276,7 +276,7 @@ templateEngineOverride: false
   function ownRelays(wk) { var n = 0; (wk.starts || []).forEach(function (s) { if (s.j === 'Staffel') { var r = (wk.res || {})[s.e + '-' + s.l + '-' + s.b]; if (r && r.t) n++; } }); return Math.max(n, ((wk.art && wk.art.staffeln) || []).length); }
   function nzT(t) { return String(t || '').toLowerCase().replace(/[^a-z0-9äöüß]+/g, ' ').trim(); }
   function matchWk(e, wks) {
-    var et = nzT(e.t); return wks.filter(function (wk) { var wt = nzT(wk.title); var dn = Math.abs((Date.parse(wk.date) - Date.parse(e.d)) / 864e5); return dn <= 3 && wt && et && (wt === et || wt.indexOf(et) >= 0 || et.indexOf(wt) >= 0 || (nzT(wk.ort) && nzT(wk.ort) === nzT(e.o))); })[0] || null;
+    var et = nzT(e.t), ec = et.replace(/ /g, ''), eo = nzT(e.o).replace(/ /g, ''); return wks.filter(function (wk) { var wt = nzT(wk.title), wc2 = wt.replace(/ /g, ''), wo = nzT(wk.ort).replace(/ /g, ''); var dn = Math.abs((Date.parse(wk.date) - Date.parse(e.d)) / 864e5); if (!(dn <= 3 && wt && et)) return false; return wt === et || wc2 === ec || wt.indexOf(et) >= 0 || et.indexOf(wt) >= 0 || wc2.indexOf(ec) >= 0 || ec.indexOf(wc2) >= 0 || (wo && wo === eo) || (dn <= 1 && wo && eo && (wo.indexOf(eo) >= 0 || eo.indexOf(wo) >= 0)); })[0] || null;
   }
   function diagList(j) {
     var l = [], wks = M.items('wettkaempfe').filter(function (wk) { return String(wk.date || '').slice(0, 4) === String(j) && !cancelled(wk); }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
