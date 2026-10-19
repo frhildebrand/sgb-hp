@@ -553,7 +553,7 @@ var WKParse = (function () {
   // Rollen im Kampfgericht (Protokoll-PDF)
   var KRPOS = [[/^reserve\s*zeitnehmer/i, 'Zeitnehmer:in'], [/^zeitnehmer/i, 'Zeitnehmer:in'], [/^wenderichter/i, 'Wenderichter:in'], [/^zielrichter/i, 'Zielrichter:in'], [/^schiedsrichter/i, 'Schiedsrichter:in'], [/^starter/i, 'Starter:in'], [/^schwimmrichter/i, 'Schwimmrichter:in'], [/^sprecher/i, 'Sprecher:in'], [/^auswerter/i, 'Auswerter:in'], [/^protokollf/i, 'Protokollführer:in']];
   function parseProtokoll(lines, starts, club) {
-    var out = { found: [], used: 0, warnings: [], kr: [], krAb: [], relays: [] }; var curE = null; var cl = String(club || '').toLowerCase();
+    var out = { found: [], used: 0, warnings: [], kr: [], krAb: [], relays: [], dbg: { heads: 0, kg: 0 } }; var curE = null; var cl = String(club || '').toLowerCase();
     var names = {}; starts.forEach(function (s) { names[(s.n || '').toLowerCase()] = 1; });
     var nameList = Object.keys(names), seen = {}, evName = {}, inKG = false, curAb = 1, relay = false;
     function match(line) {
@@ -566,16 +566,18 @@ var WKParse = (function () {
       return null;
     }
     lines.forEach(function (l) {
-      var t = l.trim(); var mk = /^Kampfgericht\s+Abschnitt\s+(\d+)/i.exec(t);
-      if (mk) { inKG = true; curAb = +mk[1]; return; }
+      var t = l.trim(); var mk = /^Kampfgericht\s+(?:Abschnitt\s*)?(\d+)\b/i.exec(t) || (/^Kampfgericht\s*$/i.test(t) ? [0, curAb] : null);
+      if (mk) { inKG = true; curAb = +mk[1]; out.dbg.heads++; return; }
       var m = /^Wettkampf\s+(\d+)\b(?:\s*[-–]\s*(.+))?/i.exec(t) || /^WK\s*(\d+)\b/i.exec(t);
       if (m) { inKG = false; curE = +m[1]; if (m[2]) { evName[curE] = m[2].trim(); relay = /^\d+\s*x\s*\d+/i.test(m[2].trim()); } return; }
       if (/^Wettkampffolge/i.test(t)) { inKG = false; return; }
       if (inKG) {
-        if (!cl || t.toLowerCase().indexOf(cl) < 0) return;
-        var parts = t.split(/\s{2,}/).map(function (x) { return x.trim(); }).filter(Boolean); if (parts.length < 3) return;
-        var pos = parts[0], nm = parts[1]; var ro = 'Kampfrichter:in'; KRPOS.some(function (k) { if (k[0].test(pos)) { ro = k[1]; return true; } });
-        if (!nm || nm.toLowerCase().indexOf(cl) >= 0) return;
+        if (/^(Position\s+Name|Zielgericht|Zeitgericht|Wendegericht)\b/i.test(t)) return;
+        if (/\S\s{2,}\S/.test(t) || /(Richter|Starter|Sprecher|Auswerter|Protokollf|Zeitnehmer)/i.test(t)) out.dbg.kg++;
+        var ci = cl ? t.toLowerCase().lastIndexOf(cl) : -1; if (ci < 0) return;
+        var left = t.slice(0, ci).trim(); var pm = /^(\S+(?:\s+(?:Obmann|Bahn\s*\d+(?:\s*\+\s*\d+)?|\d+))*)\s+(.+)$/.exec(left); if (!pm) return;
+        var pos = pm[1], nm = pm[2].trim(); var ro = ''; KRPOS.some(function (k) { if (k[0].test(pos)) { ro = k[1]; return true; } }); if (!ro && /^(kampfrichter|beisitzer|hilfs)/i.test(pos)) ro = 'Kampfrichter:in';
+        if (!nm || !ro) return;
         var kx = out.kr.filter(function (z) { return z.name === nm; })[0]; if (!kx) out.kr.push(kx = { name: nm, rollen: [] }); if (kx.rollen.indexOf(ro) < 0) kx.rollen.push(ro);
         if (!out.krAb.some(function (z) { return z.ab === curAb && z.name === nm && z.rolle === ro; })) out.krAb.push({ ab: curAb, name: nm, rolle: ro });
         return;
