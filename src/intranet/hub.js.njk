@@ -53,39 +53,18 @@ templateEngineOverride: false
     return '<section class="hub-hero"><div class="hub-hero-t"><div class="hub-hdate">' + esc(longDate()) + '</div><h2 class="hub-hello">' + (S.me ? greet() + ', ' + esc(first) + ' 👋' : 'Willkommen') + '</h2></div>' + line + '</section>';
   }
   function fristHtml() {
-    var n = state.next; if (!n || n.token !== SH.token() || !(n.fr || []).length) return '';
-    return '<section class="hub-fr"><h3 class="hub-frh">⏰ Fristen &amp; Hinweise</h3><div class="hub-frl">' + n.fr.map(function (f) { return '<a class="hub-fchip ' + esc(f.c || '') + '" href="' + esc(f.href || '/intranet/') + '"><b>' + esc(f.t) + '</b><span>' + esc(f.s || '') + '</span></a>'; }).join('') + '</div></section>';
-  }
-  // Schnellzugriff: jeder wählt seine Lieblingsbereiche selbst (bleibt in diesem Browser gespeichert).
-  // Speichert den Schnellzugriff im eigenen Profil, damit er auf jedem Gerät gleich ist.
-  function pidOf(n) { return 'p-' + String(n || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 36); }
-  function saveQuick(l) {
-    var u = SH.S.me && SH.S.me.user; if (!u) return; var id = pidOf(u);
-    var o = state.hasProfile ? { op: 'patch', coll: 'profile', id: id, fields: { quick: l } } : { op: 'set', coll: 'profile', item: { id: id, owner: u, quick: l } };
-    SH.post({ action: 'dataOps', token: SH.token(), ops: [o] }).then(function (r) { if (r && r.status === 'success') state.hasProfile = true; });
-  }
-  function quickList() {
-    var sys = SH.S.systems || []; var sel = Array.isArray(state.quick) ? state.quick : SH.lsGet('hubquick_' + (SH.S.me && SH.S.me.user || ''), null);
-    if (!Array.isArray(sel)) sel = sys.slice(0, 4).map(function (x) { return x.url; });
-    return sel.map(function (u) { return sys.filter(function (x) { return x.url === u; })[0]; }).filter(Boolean);
-  }
-  function quickHtml() {
-    var sys = SH.S.systems || []; if (!sys.length) return '';
-    var sel = quickList().map(function (x) { return x.url; });
-    if (state.qedit) return '<section class="hub-fr"><div class="hub-tkh"><h3>⚡ Schnellzugriff bearbeiten</h3><button type="button" class="hub-btn hub-gold" data-act="qdone">Fertig</button></div><p class="hub-sub" style="margin:2px 0 10px">Tippe die Bereiche an, die du oben haben willst. Das gilt nur für dieses Gerät.</p><div class="hub-frl">' + sys.map(function (x) { var on = sel.indexOf(x.url) >= 0; return '<button type="button" class="hub-fchip' + (on ? ' ok' : '') + '" data-act="qtog" data-u="' + esc(x.url) + '" style="cursor:pointer">' + (on ? '✓ ' : '') + esc(x.icon || '') + ' ' + esc(x.name) + '</button>'; }).join('') + '</div></section>';
-    return '<section class="hub-sec" style="--cat:#d6a23a"><h3 class="hub-sech"><span class="hub-sechi">⚡</span>Schnellzugriff <button type="button" class="hub-btn hub-ghost" data-act="qedit" style="margin-left:auto;padding:4px 10px;font-size:12px">✏️ Ändern</button></h3><div class="hub-tiles">' + (quickList().map(function (x) { return tile(x, '#d6a23a'); }).join('') || '<p class="hub-sub">Noch nichts ausgewählt. Mit „Ändern“ legst du deine Lieblingsbereiche fest.</p>') + '</div></section>';
+    var n = state.next && state.next.token === SH.token() ? state.next : null; if (!n) return '';
+    var fr = n.fr || [];
+    return '<section class="hub-card2"><div class="hub-c2h"><h3>⏰ Fristen &amp; Hinweise</h3></div>' + (fr.length ? fr.map(function (f) { return '<a class="hub-ti" href="' + esc(f.href || '/intranet/') + '"><span class="hub-dbx hub-fb ' + esc(f.c || '') + '"><b>' + (f.c === 'bad' ? '⚠️' : f.c === 'warn' ? '⏳' : 'ℹ️') + '</b></span><span class="hub-tit"><b>' + esc(f.t) + '</b>' + (f.s ? '<i>' + esc(f.s) + '</i>' : '') + '</span></a>'; }).join('') : '<p class="hub-sub" style="margin:6px 0 0">Keine Fristen in Sicht.</p>') + '</section>';
   }
   // ---------- Startseite: zwei Spalten ----------
   function dayBox(iso) { var d = new Date(iso + 'T12:00:00'); return '<span class="hub-dbx"><b>' + ('0' + d.getDate()).slice(-2) + '</b><i>' + ['JAN', 'FEB', 'MÄR', 'APR', 'MAI', 'JUN', 'JUL', 'AUG', 'SEP', 'OKT', 'NOV', 'DEZ'][d.getMonth()] + '</i></span>'; }
-  function banner() {
-    var l = (state.brett || []).filter(function (b) { return b.wichtig; }).sort(function (a, b) { return String(b.date || '') < String(a.date || '') ? -1 : 1; });
-    return l.length ? '<div class="hub-wichtig"><b>Wichtig:</b> ' + esc(l[0].title) + (l[0].text ? ' – ' + esc(l[0].text) : '') + '</div>' : '';
-  }
   function brettHtml() {
-    var can = SH.has('startseite.brett'); if (!SH.has('brett.view') && !can) return ''; var l = (state.brett || []).slice().sort(function (a, b) { return String(b.date || '') < String(a.date || '') ? -1 : String(b.date || '') > String(a.date || '') ? 1 : 0; });
-    var cut = function (t) { t = String(t || ''); return t.length > 110 ? t.slice(0, 108) + ' …' : t; };
-    return '<section class="hub-card2" id="brett"><div class="hub-c2h"><h3>📌 Schwarzes Brett</h3><a class="hub-btn hub-ghost" href="/intranet/brett/" style="padding:4px 10px;font-size:12px">' + (can ? 'Verwalten →' : 'Alle ansehen →') + '</a></div>' +
-      (l.length ? l.slice(0, 4).map(function (b) { return '<a class="hub-bi" href="/intranet/brett/" style="text-decoration:none;color:inherit"><span class="hub-bic">' + (b.wichtig ? '📣' : '📌') + '</span><div class="hub-bit"><b>' + esc(b.title) + '</b>' + (b.text ? '<p>' + esc(cut(b.text)) + '</p>' : '') + '<i>' + esc(b.by || '') + (b.date ? ' · ' + esc(fmtDMY(b.date).slice(0, 5)) : '') + '</i></div></a>'; }).join('') : '<p class="hub-sub" style="margin:6px 0 0">Zurzeit gibt es keine Mitteilungen.</p>') + '</section>';
+    var can = SH.has('startseite.brett'), del = SH.has('brett.loeschen'); if (!SH.has('brett.view') && !can) return '';
+    var l = (state.brett || []).slice().sort(function (a, b) { return (b.wichtig ? 1 : 0) - (a.wichtig ? 1 : 0) || (String(b.date || '') < String(a.date || '') ? -1 : String(b.date || '') > String(a.date || '') ? 1 : 0); });
+    var form = state.bform ? '<form class="hub-bf" data-bf="1"><input type="text" name="title" placeholder="Überschrift" maxlength="120" required><textarea name="text" rows="4" placeholder="Mitteilung (Zeilenumbrüche bleiben erhalten)"></textarea><label class="hub-bfc"><input type="checkbox" name="wichtig"> Als „Wichtig“ markieren (erscheint oben als Hinweisband)</label><div class="hub-bfb"><button type="button" class="hub-btn hub-ghost" data-act="bcancel">Abbrechen</button><button type="submit" class="hub-btn hub-gold">Eintragen</button></div></form>' : '';
+    return '<section class="hub-card2" id="brett"><div class="hub-c2h"><h3>📌 Schwarzes Brett</h3><span style="display:flex;gap:8px">' + (can && !state.bform ? '<button type="button" class="hub-btn hub-gold" data-act="bnew" style="padding:4px 12px;font-size:13px">+ Eintragen</button>' : '') + '<a class="hub-btn hub-ghost" href="/intranet/brett/" style="padding:4px 10px;font-size:12px">' + (can ? 'Verwalten →' : 'Alle ansehen →') + '</a></span></div>' + form +
+      (l.length ? '<div class="hub-bwrap"><table class="hub-bt"><tr><th>Von</th><th>Datum</th><th>Mitteilung</th>' + (del ? '<th></th>' : '') + '</tr>' + l.slice(0, 5).map(function (b) { return '<tr' + (b.wichtig ? ' class="imp"' : '') + '><td>' + esc(b.by || '') + '</td><td>' + esc(fmtDMY(b.date)) + '</td><td class="m"><b>' + (b.wichtig ? '📣 ' : '') + esc(b.title) + '</b>' + (b.text ? '<p>' + esc(b.text) + '</p>' : '') + '</td>' + (del ? '<td><button type="button" class="hub-bx" data-act="bdel" data-id="' + esc(b.id) + '" aria-label="Löschen">🗑️</button></td>' : '') + '</tr>'; }).join('') + '</table></div>' + (l.length > 5 ? '<p class="hub-sub" style="margin:8px 0 0">Weitere ' + (l.length - 5) + ' Mitteilungen unter „' + (can ? 'Verwalten' : 'Alle ansehen') + '“.</p>' : '') : '<p class="hub-sub" style="margin:6px 0 0">Zurzeit gibt es keine Mitteilungen.</p>') + '</section>';
   }
   function termineHtml() {
     var n = state.next && state.next.token === SH.token() ? state.next : null; var items = [];
@@ -97,37 +76,25 @@ templateEngineOverride: false
     items.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
     return '<section class="hub-card2"><div class="hub-c2h"><h3>📅 Nächste Termine</h3></div>' + (items.length ? items.slice(0, 5).map(function (x) { return '<a class="hub-ti" href="' + x.href + '">' + dayBox(x.date) + '<span class="hub-tit"><b>' + esc(x.t) + '</b>' + (x.s ? '<i>' + esc(x.s) + '</i>' : '') + '</span></a>'; }).join('') : '<p class="hub-sub" style="margin:6px 0 0">Keine Termine in Sicht.</p>') + '</section>';
   }
-  function quickCompact() {
-    var sys = SH.S.systems || []; if (!sys.length) return '';
-    var sel = quickList().map(function (x) { return x.url; });
-    if (state.qedit) return '<section class="hub-card2"><div class="hub-c2h"><h3>⚡ Schnellzugriffe</h3><button type="button" class="hub-btn hub-gold" data-act="qdone" style="padding:4px 12px;font-size:13px">Fertig</button></div><p class="hub-sub" style="margin:0 0 8px">Tippe an, was du hier haben willst. Das gilt für dein Konto auf allen Geräten.</p><div class="hub-qg">' + sys.map(function (x) { var on = sel.indexOf(x.url) >= 0; return '<button type="button" class="hub-q' + (on ? ' on' : '') + '" data-act="qtog" data-u="' + esc(x.url) + '">' + (on ? '✓ ' : '') + esc(x.icon || '') + ' ' + esc(x.name) + '</button>'; }).join('') + '</div></section>';
-    return '<section class="hub-card2"><div class="hub-c2h"><h3>⚡ Meine Schnellzugriffe</h3><button type="button" class="hub-btn hub-ghost" data-act="qedit" style="padding:4px 10px;font-size:12px">✏️ Bearbeiten</button></div><div class="hub-qg">' + (quickList().map(function (x) { return '<a class="hub-q" href="' + esc(x.url) + '">' + esc(x.icon || '') + ' ' + esc(x.name) + '</a>'; }).join('') || '<p class="hub-sub">Noch nichts ausgewählt.</p>') + '</div></section>';
-  }
   function aufgabenCard() {
     var n = state.next && state.next.token === SH.token() ? state.next : null; if (!n) return '';
-    var l = (n.tasks || []).slice(0, 5); var t = todayIso();
-    return '<section class="hub-card2"><div class="hub-c2h"><h3>✅ ' + (n.mine ? 'Meine Aufgaben' : 'Offene Aufgaben') + '</h3><a href="/intranet/aufgaben/" class="hub-sub">' + (n.tasks || []).length + ' offen →</a></div>' + (l.length ? l.map(function (x) { var d = x.due ? daysTo(x.due) : null; var bc = d === null ? '' : d < 0 ? 'bad' : d === 0 ? 'bad' : d <= 7 ? 'warn' : 'info'; return '<a class="hub-ai" href="/intranet/aufgaben/"><span>' + esc(x.title || x.t || '') + '</span>' + (x.due ? '<em class="hub-ab ' + bc + '">' + (d === 0 ? 'heute' : d < 0 ? 'überfällig' : 'bis ' + esc(fmtDMY(x.due).slice(0, 6))) + '</em>' : '') + '</a>'; }).join('') : '<p class="hub-sub" style="margin:6px 0 0">Alles erledigt.</p>') + '</section>';
+    var l = (n.tasks || []).slice(0, 10); var tot = n.open !== undefined ? n.open : (n.tasks || []).length;
+    return '<section class="hub-card2 hub-big"><div class="hub-c2h"><h3>✅ ' + (n.mine ? 'Meine Aufgaben' : 'Offene Aufgaben') + '</h3><a href="/intranet/aufgaben/" class="hub-sub">' + tot + ' offen →</a></div>' + (l.length ? l.map(function (x) { var d = x.due ? daysTo(x.due) : null; var bc = d === null ? '' : d < 0 ? 'bad' : d === 0 ? 'bad' : d <= 7 ? 'warn' : 'info'; return '<a class="hub-ai" href="/intranet/aufgaben/"><span>' + (x.prio === 'hoch' ? '❗ ' : '') + esc(x.title || x.t || '') + '</span>' + (x.due ? '<em class="hub-ab ' + bc + '">' + (d === 0 ? 'heute' : d < 0 ? 'überfällig' : 'bis ' + esc(fmtDMY(x.due).slice(0, 6))) + '</em>' : '') + '</a>'; }).join('') + (tot > l.length ? '<p class="hub-sub" style="margin:8px 0 0">und ' + (tot - l.length) + ' weitere</p>' : '') : '<p class="hub-sub" style="margin:6px 0 0">Alles erledigt.</p>') + '</section>';
   }
   function blickHtml() {
     var n = state.next && state.next.token === SH.token() ? state.next : null; if (!n || !n.cnt) return '';
-    return '<section class="hub-card2"><div class="hub-c2h"><h3>📊 Verein auf einen Blick</h3></div><div class="hub-bl"><div><i>Mitglieder</i><b>' + n.cnt.mem + '</b></div><div><i>Wettkampfgruppe</i><b>' + n.cnt.wg + '</b></div>' + (n.nstarts ? '<div><i>Nächste Starts</i><b>' + n.nstarts + '</b></div>' : '') + '</div></section>';
+    return '<section class="hub-stats"><div class="hub-stt"><i>👥 Mitglieder</i><b>' + n.cnt.mem + '</b></div>' + (n.cnt.gr ? '<div class="hub-stt"><i>🦈 Gruppen</i><b>' + n.cnt.gr + '</b></div>' : '') + (n.cnt.tr ? '<div class="hub-stt"><i>🎓 Trainer:innen</i><b>' + n.cnt.tr + '</b></div>' : '') + '<div class="hub-stt"><i>🏊 Wettkampfgruppe</i><b>' + n.cnt.wg + '</b></div>' + (n.nstarts ? '<div class="hub-stt"><i>🏁 Nächste Starts</i><b>' + n.nstarts + '</b></div>' : '') + '</section>';
   }
   function greetRow() { var nm = SH.S.me ? String(SH.S.me.user || '').split(/\s+/)[0] : ''; return '<div class="hub-greet"><h2>' + (nm ? 'Hallo ' + esc(nm) + ' 👋' : 'Willkommen') + '</h2><span>' + esc(longDate()) + '</span></div>'; }
   function body() {
     var S = SH.S;
     if (!state.loaded) return '<section class="hub-tiles"><div class="hub-skel"></div><div class="hub-skel"></div><div class="hub-skel"></div></section>';
     if (S.offline) return '<section class="hub-card hub-offline"><h2>Keine Verbindung</h2><p class="hub-sub">Das Konto-System ist gerade nicht erreichbar. Bitte prüfe das Internet und versuche es nochmal.</p><button type="button" class="hub-btn hub-gold" data-act="retry">Nochmal versuchen</button><details class="hub-diag"><summary>Technische Details</summary><pre>' + esc(SH.DIAG.length ? SH.DIAG.join('\n') : 'Keine Angaben.') + '</pre></details></section>';
-    var out = greetRow() + banner();
-    if (S.me) out += '<div class="hub-home"><div class="hub-hcol">' + brettHtml() + termineHtml() + fristHtml() + '</div><div class="hub-hcol">' + quickCompact() + aufgabenCard() + blickHtml() + '</div></div>';
+    var out = greetRow();
+    if (S.me) out += blickHtml() + '<div class="hub-home2"><div class="hub-stack">' + brettHtml() + termineHtml() + fristHtml() + '</div><div class="hub-stack">' + aufgabenCard() + '</div></div>';
     else out += hero();
     out += S.systems.length ? '<div class="hub-narrow">' + groupsHtml(S.systems) + '</div>' : '<section class="hub-card"><p class="hub-sub">Für dein Konto sind noch keine Systeme freigeschaltet.</p></section>';
     return out;
-  }
-  // Kompakte Aufgabenübersicht direkt unter dem Kopfbereich
-  function tasksHtml() {
-    var n = state.next; if (!n || n.token !== SH.token() || !(n.tasks || []).length) return '';
-    var t0 = todayIso();
-    return '<section class="hub-tk"><div class="hub-tkh"><h3>✅ ' + (n.mine ? 'Meine Aufgaben' : 'Offene Aufgaben') + '</h3><a href="/intranet/aufgaben/">Alle ansehen →</a></div><div class="hub-tkl">' + n.tasks.map(function (t) { var over = t.due && t.due < t0; return '<a class="hub-tki' + (over ? ' hub-over' : '') + (t.prio === 'hoch' ? ' hub-hi' : '') + '" href="/intranet/aufgaben/"><span>' + esc(t.title) + '</span>' + (t.due ? '<em>' + (over ? '⚠️ ' : '') + esc(fmtD(t.due)) + '</em>' : '') + '</a>'; }).join('') + '</div></section>';
   }
   function wkProgress(w) {
     var KEYS = ['webclub', 'krabfrage', 'bekWA', 'lizenzen', 'geprueft', 'versendet', 'bestaetigung', 'waGruppe', 'meWA', 'urkGedruckt', 'urkVerteilt', 'artikel'];
@@ -160,7 +127,7 @@ templateEngineOverride: false
       if (!mine && me) { var m2 = tasks.filter(function (x) { return (x.who || []).some(function (w) { return String(w).toLowerCase() === me; }); }); if (m2.length) { tasks = m2; mine = true; } }
       var overdue = tasks.filter(function (x) { return x.due && x.due < t; }).length;
       var open = tasks.length;
-      tasks = tasks.sort(function (a, b) { var pa = a.prio === 'hoch' ? 0 : 1, pb = b.prio === 'hoch' ? 0 : 1; if (pa !== pb) return pa - pb; return (a.due || '9999') < (b.due || '9999') ? -1 : 1; }).slice(0, 6).map(function (x) { return { title: x.title, due: x.due, prio: x.prio }; });
+      tasks = tasks.sort(function (a, b) { var pa = a.prio === 'hoch' ? 0 : 1, pb = b.prio === 'hoch' ? 0 : 1; if (pa !== pb) return pa - pb; return (a.due || '9999') < (b.due || '9999') ? -1 : 1; }).slice(0, 10).map(function (x) { return { title: x.title, due: x.due, prio: x.prio }; });
       var evs = (d.veranstaltungen || []).filter(function (e) { return (e.date || '') >= t && e.status !== 'Abgeschlossen'; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
       var ev = evs.slice(0, 3).map(function (e) { var c = e.check || []; var dn = c.filter(function (x) { return x.d; }).length; return { date: e.date, title: e.title, prog: c.length ? dn + '/' + c.length + ' erledigt' : '' }; });
       var hints = {};
@@ -171,7 +138,7 @@ templateEngineOverride: false
       if (d.vorstandAntraege) { var oa = d.vorstandAntraege.filter(function (x) { return x.status === 'Eingereicht'; }).length; hints.vorstand = oa ? { t: oa + (oa > 1 ? ' Anträge' : ' Antrag') + ' offen', c: 'warn' } : { t: 'Keine offenen Anträge', c: 'none' }; }
       if (d.abrechnungen || d.fahrten) { var ent = (d.abrechnungen || []).filter(function (x) { return x.status === 'entwurf' || x.status === 'eingereicht'; }).length; var fo = (d.fahrten || []).filter(function (x) { return x.status !== 'abgerechnet'; }).length; var parts = []; if (ent) parts.push(ent + ' in Arbeit'); if (fo) parts.push(fo + (fo === 1 ? ' Fahrt' : ' Fahrten') + ' offen'); hints.abrechnung = parts.length ? { t: parts.join(', '), c: 'warn' } : { t: 'Alles abgerechnet', c: 'none' }; }
       if (d.trainingTage) { var last = d.trainingTage.slice().sort(function (a, b) { return String(b.date) < String(a.date) ? -1 : 1; }).filter(function (x) { return (x.date || '') <= t; })[0]; if (last) { var an = Object.keys(last.anw || {}).filter(function (k) { return last.anw[k] === 'a'; }).length; hints.training = { t: 'Zuletzt ' + fmtD(last.date) + ', ' + an + ' da', c: 'none' }; } }
-      var warn = []; var pf = (d.profile || [])[0]; state.hasProfile = !!pf; if (pf && Array.isArray(pf.quick)) state.quick = pf.quick;
+      var warn = []; var pf = (d.profile || [])[0]; state.hasProfile = !!pf; 
       if (pf) [['lizBis', 'Trainerlizenz'], ['ersteHilfeBis', 'Erste Hilfe'], ['rettungBis', 'Rettungsnachweis'], ['kariBis', 'Kampfrichter-Lizenz']].forEach(function (x) { var iso = pf[x[0]]; if (/^\d{4}-\d{2}-\d{2}$/.test(iso || '')) { var dd = daysTo(iso); if (dd !== null && dd <= 60) warn.push({ label: x[1], iso: iso, days: dd }); } });
       warn.sort(function (a, b) { return a.days - b.days; });
       var fr = [];
@@ -187,8 +154,8 @@ templateEngineOverride: false
       var mineAb = (d.abrechnungen || []).filter(function (x) { return x.status === 'entwurf' && x.ts && (Date.now() - x.ts) > 21 * 86400000; });
       if (mineAb.length) fr.push({ t: mineAb.length === 1 ? 'Abrechnung nicht eingereicht' : mineAb.length + ' Abrechnungen nicht eingereicht', s: 'Entwurf seit über 3 Wochen', c: 'warn', href: '/intranet/abrechnung/', k: 25 });
       fr.sort(function (a, b) { return a.k - b.k; });
-      state.brett = d.brett || state.brett || []; var memAct = (d.wgMitglieder || []).filter(function (m) { return m.status !== 'ausgetreten' && m.status !== 'pausiert'; }); var cnt = d.wgMitglieder ? { mem: memAct.length, wg: memAct.filter(function (m) { return !m.gruppen || !m.gruppen.length || m.gruppen.indexOf('Wettkampfgruppe') >= 0; }).length } : null; SH.lsSet('hubbrett', state.brett);
-      state.next = { token: SH.token(), cnt: cnt, nstarts: up[0] ? (up[0].starts || []).length : 0, wk: wk, tasks: tasks, ev: ev, mine: mine, hints: hints, warn: warn, fr: fr.slice(0, 6) }; SH.lsSet('hubnext', state.next); render();
+      state.brett = d.brett || state.brett || []; var memAct = (d.wgMitglieder || []).filter(function (m) { return m.status !== 'ausgetreten' && m.status !== 'pausiert'; }); var grs = {}; memAct.forEach(function (m) { (m.gruppen || []).forEach(function (g) { grs[g] = 1; }); }); var cnt = d.wgMitglieder ? { mem: memAct.length, gr: Object.keys(grs).length, tr: memAct.filter(function (m) { return (m.trainerIn && m.trainerIn.length) || (m.rollen || []).some(function (r) { return /trainer/i.test(r); }); }).length, wg: memAct.filter(function (m) { return !m.gruppen || !m.gruppen.length || m.gruppen.indexOf('Wettkampfgruppe') >= 0; }).length } : null; SH.lsSet('hubbrett', state.brett);
+      state.next = { token: SH.token(), cnt: cnt, nstarts: up[0] ? (up[0].starts || []).length : 0, wk: wk, tasks: tasks, open: open, ev: ev, mine: mine, hints: hints, warn: warn, fr: fr.slice(0, 6) }; SH.lsSet('hubnext', state.next); render();
     });
   }
   function loadWm() {
@@ -208,9 +175,6 @@ templateEngineOverride: false
     else if (a === 'bnew') { state.bform = true; render(); }
     else if (a === 'bcancel') { state.bform = false; render(); }
     else if (a === 'bdel') { var bid = t.getAttribute('data-id'); state.brett = (state.brett || []).filter(function (b) { return b.id !== bid; }); SH.lsSet('hubbrett', state.brett); SH.post({ action: 'dataOps', token: SH.token(), ops: [{ op: 'del', coll: 'brett', id: bid }] }); render(); }
-    else if (a === 'qedit') { state.qedit = true; render(); }
-    else if (a === 'qdone') { state.qedit = false; render(); }
-    else if (a === 'qtog') { var u = t.getAttribute('data-u'); var l = quickList().map(function (x) { return x.url; }); var i = l.indexOf(u); if (i >= 0) l.splice(i, 1); else l.push(u); state.quick = l; SH.lsSet('hubquick_' + (SH.S.me && SH.S.me.user || ''), l); saveQuick(l); render(); }
   });
   root.addEventListener('submit', function (ev) {
     var f = ev.target; if (f && f.getAttribute && f.getAttribute('data-bf')) {
