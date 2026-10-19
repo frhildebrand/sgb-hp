@@ -275,7 +275,14 @@ templateEngineOverride: false
   }
   function ownRelays(wk) { var n = 0; (wk.starts || []).forEach(function (s) { if (s.j === 'Staffel') { var r = (wk.res || {})[s.e + '-' + s.l + '-' + s.b]; if (r && r.t) n++; } }); return Math.max(n, ((wk.art && wk.art.staffeln) || []).length); }
   function nzT(t) { return String(t || '').toLowerCase().replace(/[^a-z0-9äöüß]+/g, ' ').trim(); }
+  // feste Verknüpfung WebClub-Zeile -> Wettkampf (beim Übernehmen gespeichert); nur wenn keine da ist, wird geraten
+  function evKey(e) { return String(e.d || '') + '|' + nzT(e.t); }
   function matchWk(e, wks) {
+    var wc = M.find('saison', 'wc-' + String(e.d || '').slice(0, 4)), id = wc && wc.lnk && wc.lnk[evKey(e)];
+    if (id) { var h = wks.filter(function (w) { return w.id === id; })[0]; if (h) return h; }
+    return matchHeur(e, wks);
+  }
+  function matchHeur(e, wks) {
     var et = nzT(e.t), ec = et.replace(/ /g, ''), eo = nzT(e.o).replace(/ /g, ''); return wks.filter(function (wk) { var wt = nzT(wk.title), wc2 = wt.replace(/ /g, ''), wo = nzT(wk.ort).replace(/ /g, ''); var dn = Math.abs((Date.parse(wk.date) - Date.parse(e.d)) / 864e5); if (!(dn <= 3 && wt && et)) return false; return wt === et || wc2 === ec || wt.indexOf(et) >= 0 || et.indexOf(wt) >= 0 || wc2.indexOf(ec) >= 0 || ec.indexOf(wc2) >= 0 || (wo && wo === eo) || (dn <= 1 && wo && eo && (wo.indexOf(eo) >= 0 || eo.indexOf(wo) >= 0)); })[0] || null;
   }
   function diagList(j) {
@@ -523,6 +530,11 @@ templateEngineOverride: false
         var u = Object.assign({}, wk, { date: e.d }); if (!u.ort && e.o) u.ort = e.o; if (!bahnOf(u) && /^(kurz|lang)/i.test(e.b)) u.bahn = /^kurz/i.test(e.b) ? '25' : '50';
         M.op({ op: 'set', coll: 'wettkaempfe', item: u }); fixed++;
       });
+    }
+    if (it.ev && it.ev.length) {
+      var lnk = Object.assign({}, it.lnk || {}), taken = {}; Object.keys(lnk).forEach(function (k) { taken[lnk[k]] = 1; });
+      it.ev.forEach(function (e) { var k = evKey(e); if (lnk[k]) return; var w = matchHeur(e, M.items('wettkaempfe')); if (w && !taken[w.id]) { lnk[k] = w.id; taken[w.id] = 1; } });
+      it.lnk = lnk;
     }
     M.closeDlg(); M.op({ op: 'set', coll: 'saison', item: it }); sub().sj = String(y); M.toast('WebClub-Daten für ' + y + ' übernommen.' + (fixed ? ' Bei ' + fixed + ' Wettkämpfen wurde das fehlende Datum ergänzt.' : '')); WCU = null;
   }
