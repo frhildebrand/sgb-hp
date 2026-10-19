@@ -584,7 +584,7 @@ var WKParse = (function () {
       }
       if (curE === null) return;
       if (relay) {
-        var rm = /^(\d+)\.\s+(.+?)\s{2,}\d{4}\s+(.+?)\s{2,}(\d{1,2}:\d{2},\d{2})\s*$/.exec(t);
+        var rm = /^(\d+)\.\s+(.+?)\s{2,}(?:\d{4}|Offen)\s+(.+?)\s{2,}(\d{1,2}:\d{2},\d{2})(?:\s+\d{1,3})?\s*$/.exec(t);
         if (rm && cl && rm[3].toLowerCase().indexOf(cl) >= 0) { var dupk = 'R' + curE + '|' + rm[2]; if (!seen[dupk]) { seen[dupk] = 1; out.relays.push({ e: curE, pl: +rm[1], t: fmtTime(rm[4]), st: '', name: rm[2] }); } }
         return;
       }
