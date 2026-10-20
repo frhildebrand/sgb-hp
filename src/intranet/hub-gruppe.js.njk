@@ -51,13 +51,24 @@ templateEngineOverride: false
   function isActive(m) { return m.status !== 'ausgetreten' && m.status !== 'pausiert' && (!m.austritt || m.austritt >= M.today()); }
   function age(m) { return m.jg ? new Date().getFullYear() - Number(m.jg) : ''; }
   function sessions() { return M.items('trainingTage').slice().sort(function (a, b) { return (a.date + (a.time || '')) < (b.date + (b.time || '')) ? 1 : -1; }); }
+  // Wer in dieser Gruppe Trainer ist, zählt dort nur als Trainer – außer er wurde bei diesem Termin als Schwimmer markiert (t.schw)
+  function isTrOf(m, gs) { var ti = m.trainerIn || []; return ti.some(function (g) { return gs.indexOf(g) >= 0; }); }
+  function asSw(m, t) { if ((t.schw || []).indexOf(m.id) >= 0) return true; if (isTrOf(m, gsOf(t))) return false; var k = nk(m.name); return !(t.trainer || []).some(function (n) { return nk(n) === k; }); }   // Wer an diesem Termin als Trainer eingetragen ist, zählt dort nicht als Schwimmer
+  // Das Mitschwimmen als Trainer gibt es nur in der Wettkampfgruppe und Gruppe 1
+  function trainerSwimmers(t) { var ok = gsOf(t).some(function (g) { return g === 'Wettkampfgruppe' || g === 'Gruppe 1'; }); return !ok ? [] : members(gsOf(t)).filter(function (m) { return isTrOf(m, gsOf(t)) && inGroup(m, t.date); }); }
   function rosterFor(t) {
     var ms = members(gsOf(t)); var seen = {};
-    var r = ms.filter(function (m) { return inGroup(m, t.date) || (t.anw && t.anw[m.id]); });
+    var r = ms.filter(function (m) { return asSw(m, t) && (inGroup(m, t.date) || (t.anw && t.anw[m.id])); });
     r.forEach(function (m) { seen[m.id] = 1; });
     return r;
   }
-  function counts(t) { var c = { a: 0, e: 0, f: 0 }; var an = t.anw || {}; Object.keys(an).forEach(function (k) { if (c[an[k]] !== undefined) c[an[k]]++; }); return c; }
+  // „fehlt“ zählt mit: an einem vergangenen Termin mit Eintragungen gilt jeder aus der Gruppe ohne „anwesend/entschuldigt“ als fehlend
+  function counts(t) {
+    var c = { a: 0, e: 0, f: 0 }; var an = t.anw || {}; Object.keys(an).forEach(function (k) { if (c[an[k]] !== undefined && an[k] !== 'f') c[an[k]]++; });
+    if (t.date <= M.today() && Object.keys(an).length) rosterFor(t).forEach(function (m) { if (an[m.id] !== 'a' && an[m.id] !== 'e') c.f++; });
+    else Object.keys(an).forEach(function (k) { if (an[k] === 'f') c.f++; });
+    return c;
+  }
   function monthShift(m, n) { var p = m.split('-'); var d = new Date(+p[0], +p[1] - 1 + n, 1); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); }
   function curMonth() { var s = M.S.sub; if (!s.gm) s.gm = ym(M.today()); return s.gm; }
 
@@ -72,7 +83,7 @@ templateEngineOverride: false
       var mg = m.gruppen && m.gruppen.length ? m.gruppen : ['Wettkampfgruppe']; if (set && !mg.some(function (g) { return set.indexOf(g) >= 0; })) return;
       var streak = [];
       for (var i = 0; i < days.length; i++) {
-        var d = days[i]; if (!gsOf(d).some(function (g) { return mg.indexOf(g) >= 0; }) || !inGroup(m, d.date)) continue;
+        var d = days[i]; if (!gsOf(d).some(function (g) { return mg.indexOf(g) >= 0; }) || !inGroup(m, d.date) || !asSw(m, d)) continue;
         var c = (d.anw || {})[m.id]; if (c === 'a' || c === 'e') break; streak.push(d.date);
       }
       if (streak.length >= N && !(m.warnAck && m.warnAck >= streak[0])) out.push({ m: m, n: streak.length, dates: streak.slice(0, 6).reverse(), groups: mg });
@@ -126,7 +137,7 @@ templateEngineOverride: false
     return out + '<div class="wg-cal-w"><div class="wg-cal"><div class="wg-cal-r">' + head + '</div>' + (ad ? '<div class="wg-cal-r">' + ad + '</div>' : '') + '<div class="wg-cal-r">' + gut + cols + '</div></div></div>' + hidLine(nHid, showH) + '</section>';
   }
   function memberCard(g) {
-    var ms = members([g]), ed = M.can('training.mitglieder.edit'), open = !!M.S.sub.mo, n = ms.filter(isActive).length;
+    var ms = members([g]).filter(function (m) { return !isTrOf(m, [g]); }), ed = M.can('training.mitglieder.edit'), open = !!M.S.sub.mo, n = ms.filter(isActive).length;
     return '<section class="wm-card"><div class="wm-bar"><h3>👥 Mitglieder · ' + esc(g) + ' <span class="wm-sub">(' + n + ')</span></h3><span class="m-actions">' + (ed ? '<button type="button" class="wm-btn" data-ma="wgmadd" data-g="' + esc(g) + '">+ Hinzufügen</button>' : '') + '<button type="button" class="wm-btn" data-ma="wgmo">' + (open ? 'Ausblenden' : 'Anzeigen') + '</button></span></div>' +
       (open ? (ms.length ? '<table class="m-table wg-t"><tr><th>Name</th><th>Jahrgang</th><th>Gruppen</th>' + (ed ? '<th></th>' : '') + '</tr>' + ms.map(function (m) { return '<tr' + (isActive(m) ? '' : ' style="opacity:.5"') + '><td><b>' + esc(m.name) + '</b></td><td>' + esc(m.jg || '') + '</td><td>' + (m.gruppen && m.gruppen.length ? m.gruppen : ['Wettkampfgruppe']).map(gTag).join('') + '</td>' + (ed ? '<td style="text-align:right"><button type="button" class="wg-ic" data-ma="wgmgrp" data-id="' + esc(m.id) + '" title="Gruppen ändern" aria-label="Gruppen ändern">✎</button></td>' : '') + '</tr>'; }).join('') + '</table>' : '<p class="wm-note" style="margin:0">In dieser Gruppe sind noch keine Mitglieder eingetragen.</p>') : '') + '</section>';
   }
@@ -223,7 +234,7 @@ templateEngineOverride: false
       var ro = rosterFor(t);
       return '<div class="m-body">' + (t.inhalt ? '<div><b>Einheit:</b><pre>' + esc(t.inhalt) + '</pre></div>' : '') + (t.beob ? '<div><b>Beobachtungen:</b><pre>' + esc(t.beob) + '</pre></div>' : '') + (t.notiz ? '<div><b>Notiz:</b><pre>' + esc(t.notiz) + '</pre></div>' : '') +
         '<div class="m-sec">Anwesenheit' + (can ? ' – zum Ändern antippen' : '') + '</div><div class="wg-grid">' + (ro.length ? ro.map(function (m) { var cd = (t.anw || {})[m.id] || (t.date < M.today() || t.date === M.today() ? 'f' : ''); return '<button type="button" class="wg-p c-' + (cd || 'o') + '" data-ma="wgtap" data-m="' + esc(m.id) + '"' + (can ? '' : ' disabled') + '><i>' + CODE_TXT[cd] + '</i><span>' + esc(m.name) + '</span></button>'; }).join('') : '<p class="wm-note">Noch keine Mitglieder angelegt.</p>') + '</div>' +
-        '<p class="wm-sub">✓ anwesend · E entschuldigt · ✗ fehlt · · offen</p>' +
+        '<p class="wm-sub">✓ anwesend · E entschuldigt · ✗ fehlt · · offen</p>' + (function () { var tw = trainerSwimmers(t); return tw.length && can ? '<div class="m-sec">Trainer, die hier als Schwimmer mitgemacht haben</div><div class="m-chips">' + tw.map(function (m) { var on = (t.schw || []).indexOf(m.id) >= 0; return '<button type="button" class="m-chip' + (on ? ' on' : '') + '" data-ma="wgsw" data-m="' + esc(m.id) + '">' + esc(m.name) + '</button>'; }).join('') + '</div>' : ''; })() +
         '<div class="m-btns">' + (can ? '<button type="button" class="wm-btn" data-ma="wgall">Alle anwesend</button><button type="button" class="wm-btn" data-ma="wgtedit">✏️ Bearbeiten</button>' : '') + (M.anyCan(['training.tage.edit', 'training.tage.loeschen']) ? '<button type="button" class="wm-btn m-danger" data-ma="wgtdel">🗑️ Löschen</button>' : '') + '<button type="button" class="wm-btn" data-ma="wgprintd">🖨️ Liste</button></div></div>';
     }
     function isoWeek(d) { var x = new Date(d + 'T12:00:00'); x.setDate(x.getDate() + 4 - (x.getDay() || 7)); var y0 = new Date(x.getFullYear(), 0, 1); return [x.getFullYear(), Math.ceil(((x - y0) / 86400000 + 1) / 7)]; }
@@ -267,7 +278,7 @@ templateEngineOverride: false
     var out = '<section class="wm-card"><div class="wm-bar"><h3>Anwesenheit' + (set && set.length === 1 ? ' · ' + esc(set[0]) : '') + '</h3>' + M.seg([['3m', '3 Monate'], ['y', 'Dieses Jahr'], ['all', 'Alles']], per, 'wgper') + '</div><p class="wm-note">' + days.length + ' Trainingstage im Zeitraum. Prozent = anwesend im Verhältnis zu allen Terminen seit Eintritt.</p>';
     var rows = members(set).map(function (m) {
       var a = 0, e = 0, f = 0, n = 0;
-      days.forEach(function (d) { if (!inGroup(m, d.date)) return; var mgs = Array.isArray(m.gruppen) && m.gruppen.length ? m.gruppen : ['Wettkampfgruppe']; if (!gsOf(d).some(function (g) { return mgs.indexOf(g) >= 0; })) return; n++; var c = (d.anw || {})[m.id]; if (c === 'a') a++; else if (c === 'e') e++; else if (c === 'f') f++; });
+      days.forEach(function (d) { if (!inGroup(m, d.date) || !asSw(m, d)) return; var mgs = Array.isArray(m.gruppen) && m.gruppen.length ? m.gruppen : ['Wettkampfgruppe']; if (!gsOf(d).some(function (g) { return mgs.indexOf(g) >= 0; })) return; n++; var c = (d.anw || {})[m.id]; if (c === 'a') a++; else if (c === 'e') e++; else if (c === 'f') f++; });
       return { m: m, a: a, e: e, f: f, n: n, p: n ? Math.round(a * 100 / n) : null };
     }).filter(function (r) { return r.n > 0; }).sort(function (x, y) { return (y.p || 0) - (x.p || 0); });
     if (!rows.length) return out + '<p class="wm-note">Noch keine Daten.</p></section>';
@@ -290,7 +301,7 @@ templateEngineOverride: false
     d.wks = !d.wk ? [] : M.items('wettkaempfe').filter(function (w) { return String(w.date || '').slice(0, 4) === y; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
     d.starts = 0; d.best = 0; d.sw = {}; d.wks.forEach(function (w) { d.starts += (w.starts || []).length; d.best += bestzeiten(w); (w.starts || []).forEach(function (s) { d.sw[s.n] = 1; }); });
     d.abz = !d.wk ? [] : M.items('abzeichen').filter(function (x) { return String(x.date || '').slice(0, 4) === y; });
-    var top = ms.map(function (m) { var n = 0, p = 0; days.forEach(function (x) { if (!inGroup(m, x.date)) return; n++; if ((x.anw || {})[m.id] === 'a') p++; }); return { n: m.name, p: p, t: n }; }).filter(function (r) { return r.t >= 5; }).sort(function (x, y2) { return y2.p / y2.t - x.p / x.t; }).slice(0, 5);
+    var top = ms.map(function (m) { var n = 0, p = 0; days.forEach(function (x) { if (!inGroup(m, x.date) || !asSw(m, x)) return; n++; if ((x.anw || {})[m.id] === 'a') p++; }); return { n: m.name, p: p, t: n }; }).filter(function (r) { return r.t >= 5; }).sort(function (x, y2) { return y2.p / y2.t - x.p / x.t; }).slice(0, 5);
     d.top = top;
     return d;
   }
@@ -460,6 +471,7 @@ templateEngineOverride: false
         var past = t.date <= M.today(); var cyc = past ? ['f', 'a', 'e'] : CODES; var cur = (t.anw || {})[mid] || (past ? 'f' : ''); var nx = cyc[(cyc.indexOf(cur) + 1) % cyc.length]; var f = {}; f[mid] = (nx === 'f' && past) ? null : (nx || null);
         M.op({ op: 'patch', coll: 'trainingTage', id: t.id, merge: true, fields: { anw: f } });
       },
+      wgsw: function (it, el, ev, c) { var t = M.find('trainingTage', c.id); if (!t || !canTage()) return; var mid = el.getAttribute('data-m'); var l = (t.schw || []).slice(); var i = l.indexOf(mid); if (i >= 0) l.splice(i, 1); else l.push(mid); M.op({ op: 'patch', coll: 'trainingTage', id: t.id, fields: { schw: l } }); },
       wgall: function (it, el, ev, c) { var t = M.find('trainingTage', c.id); if (!t || !canTage()) return; var f = {}; rosterFor(t).forEach(function (m) { if (!(t.anw || {})[m.id]) f[m.id] = 'a'; }); M.op({ op: 'patch', coll: 'trainingTage', id: t.id, merge: true, fields: { anw: f } }); },
       wgprintd: function (it, el, ev, c) { var t = M.find('trainingTage', c.id); if (t) printSheet([t], 'Anwesenheit ' + M.fmtDate(t.date)); },
       wgprintm: function () { var days = sessions().filter(function (x) { return ym(x.date) === curMonth(); }).reverse(); if (!days.length) { M.toast('In diesem Monat gibt es keinen Trainingstag.'); return; } printSheet(days, 'Anwesenheit ' + M.monthLabel(curMonth())); },

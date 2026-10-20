@@ -224,7 +224,8 @@ templateEngineOverride: false
   function userDialog(id) {
     var u = id ? S.users.filter(function (x) { return x.id === id; })[0] : null;
     var fields = [
-      { key: 'name', label: 'Benutzername', type: 'text', value: u ? u.name : '', maxlength: 40 },
+      { key: 'name', label: 'Name (so erscheint er überall, z. B. Vor- und Nachname)', type: 'text', value: u ? u.name : '', maxlength: 40 },
+      { key: 'login', label: 'Kurzname für die Anmeldung (optional, z. B. nur der Vorname)', type: 'text', value: u ? (u.login || '') : '', maxlength: 40 },
       { key: 'roles', label: 'Rollen (eine oder mehrere)', type: 'checklist', options: S.roles.map(function (r) { return { value: r.id, label: r.name, hint: r.desc || '' }; }), value: u ? u.roles : (S.roles.some(function (r) { return r.id === 'helfer'; }) ? ['helfer'] : []) },
       { key: 'extras', label: 'Sonderrechte (zusätzlich zu den Rollen)', type: 'checklist', options: S.extras.map(function (x) { return { value: x.id, label: x.name, hint: x.desc || '' }; }), value: u ? u.extras : [], empty: 'Noch keine Sonderrechte angelegt.' }
     ];
@@ -235,7 +236,7 @@ templateEngineOverride: false
       var name = String(v.name || '').trim(); if (!name) return 'Bitte einen Benutzernamen eingeben.';
       if (!v.roles.length) return 'Bitte mindestens eine Rolle wählen.';
       var pw = String(v.password || '').trim(); if ((!u && pw.length < 4) || (pw && pw.length < 4)) return 'Das Passwort braucht mindestens 4 Zeichen.';
-      var op = { op: 'saveUser', user: { id: u ? u.id : undefined, name: name, roles: v.roles, extras: v.extras } };
+      var op = { op: 'saveUser', user: { id: u ? u.id : undefined, name: name, login: String(v.login || '').trim(), roles: v.roles, extras: v.extras } };
       if (u) op.user.disabled = !!v.disabled; if (pw) op.password = pw;
       return access([op]);
     }, action: function (a) {
