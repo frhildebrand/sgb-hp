@@ -334,7 +334,8 @@ templateEngineOverride: false
     if (cache && cache.token === SH.token()) { D.base = cache.base || {}; D.people = cache.people || []; S.loaded = true; }
     SH.S.restoredDone = false;
     var had = SH.restore(); SH.S.restoredDone = true; renderChrome(); renderMain(true);
-    SH.loadAccount().then(function () { SH.S.restoredDone = true; renderChrome(); renderMain(true); return reload(); }).then(function () { renderMain(); });
+    if (had && S.loaded) reload();                                        // Daten parallel zur Kontoprüfung holen
+    SH.loadAccount().then(function () { SH.S.restoredDone = true; renderChrome(); renderMain(true); return had && S.loaded ? null : reload(); }).then(function () { renderMain(); });
   }
   function boot() {
     root = document.getElementById('hubRoot'); if (!root || !SH) return;

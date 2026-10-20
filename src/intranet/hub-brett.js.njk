@@ -7,48 +7,63 @@ templateEngineOverride: false
 /* Schwarzes Brett: Mitteilungen für den ganzen Verein. Verfassen und pflegen nur mit dem Recht „startseite.brett“. */
 (function () {
   'use strict';
-  var M = window.HubMod; if (!M) return; var esc = M.esc;
+  var M = window.HubMod; if (!M) return; var esc = M.esc, HB = window.HubBrett, HR = window.HubRich;
   function can() { return M.anyCan(['startseite.brett']); }
-  function canDel() { return M.anyCan(['brett.loeschen']); }
+  function canDel() { return M.anyCan(['brett.loeschen']) || can(); }
   function fd(d) { return d ? M.fmtDate(d) : ''; }
-  var FIELDS = [
-    { k: 'title', t: 'text', label: 'Überschrift', req: true },
-    { k: 'text', t: 'area', label: 'Text', rows: 6, hint: 'Nur Text. Zeilenumbrüche bleiben erhalten.' },
-    { k: 'wichtig', t: 'chk', label: 'Als „Wichtig“ markieren (erscheint auf der Startseite als Hinweis)' }
-  ];
-  function list() { return M.items('brett').slice().sort(function (a, b) { var oa = typeof a.ord === 'number' ? a.ord : -1, ob = typeof b.ord === 'number' ? b.ord : -1; return (b.wichtig ? 1 : 0) - (a.wichtig ? 1 : 0) || oa - ob || String(b.date || '').localeCompare(String(a.date || '')); }); }
+  function sortAll(l) { return l.slice().sort(function (a, b) { var oa = typeof a.ord === 'number' ? a.ord : -1, ob = typeof b.ord === 'number' ? b.ord : -1; return (b.wichtig ? 1 : 0) - (a.wichtig ? 1 : 0) || oa - ob || String(b.date || '').localeCompare(String(a.date || '')); }); }
+  function live() { return sortAll(M.items('brett').filter(function (b) { return !HB.expired(b); })); }
+  function archive() { return sortAll(M.items('brett').filter(function (b) { return HB.expired(b); })); }
+  function groups() { var s = {}; M.items('wgMitglieder').forEach(function (m) { (m.gruppen || []).forEach(function (g) { s[g] = 1; }); }); return Object.keys(s).sort(function (a, b) { return a.localeCompare(b, 'de'); }); }
+  function acts(b, up, dn) {
+    return '<td class="a"><div>' + (up !== null ? '<button type="button" class="hub-bx" data-ma="bbup" data-id="' + esc(b.id) + '" aria-label="Nach oben"' + (up ? '' : ' disabled') + '>▲</button><button type="button" class="hub-bx" data-ma="bbdn" data-id="' + esc(b.id) + '" aria-label="Nach unten"' + (dn ? '' : ' disabled') + '>▼</button>' : '') +
+      '<button type="button" class="hub-bx" data-ma="bbedit" data-id="' + esc(b.id) + '" aria-label="Bearbeiten">✏️</button>' + (canDel() ? '<button type="button" class="hub-bx" data-ma="bbdel" data-id="' + esc(b.id) + '" aria-label="Löschen">🗑️</button>' : '') + '</div></td>';
+  }
+  function row(b, up, dn) {
+    var at = HB.audText(b);
+    return '<tr' + (b.wichtig ? ' class="imp"' : '') + '><td>' + esc(b.by || '') + '</td><td>' + esc(fd(b.date)) + '</td><td class="m"' + (HR.okBg(b.bg) ? ' style="background:' + HR.okBg(b.bg) + '"' : '') + '><b>' + (b.wichtig ? '📣 ' : '') + esc(b.title) + '</b>' + (HB.isNew(b) ? '<span class="hub-new">NEU</span>' : '') + (at ? '<span class="hub-lock">🔒 ' + esc(at) + '</span>' : '') + HR.show(b) + (b.until ? '<span class="hub-lock">sichtbar bis ' + esc(fd(b.until)) + '</span>' : '') + '</td>' + (can() ? acts(b, up, dn) : '') + '</tr>';
+  }
   function render() {
-    var l = list();
+    var l = live(), ar = can() ? archive() : [];
     var out = '<section class="wm-card"><div class="wm-bar"><h3>📌 Schwarzes Brett</h3>' + (can() ? '<button type="button" class="wm-amber" data-ma="bbnew">+ Neue Mitteilung</button>' : '') + '</div>' +
       '<p class="wm-note">Mitteilungen für den ganzen Verein. ' + (can() ? 'Du darfst Einträge verfassen und ändern' + (canDel() ? ' und löschen.' : '.') : 'Verfasst werden sie vom Vorstand und der Orga.') + '</p></section>';
-    if (!l.length) return out + '<section class="wm-card"><p class="wm-note">Zurzeit gibt es keine Mitteilungen.</p></section>';
-    return out + '<div class="bb-wall">' + l.map(function (b) {
-      return '<article class="bb-note' + (b.wichtig ? ' bb-imp' : '') + '" data-id="' + esc(b.id) + '"' + (HubRich.okBg(b.bg) ? ' style="background:' + HubRich.okBg(b.bg) + '"' : '') + '><div class="bb-pin"></div><h4>' + (b.wichtig ? '📣 ' : '') + esc(b.title) + '</h4>' + HubRich.show(b) +
-        '<div class="bb-foot"><span>' + esc(b.by || '') + (b.date ? ' · ' + esc(fd(b.date)) : '') + '</span>' + (can() || canDel() ? '<span class="bb-act">' + (can() ? '<button type="button" class="wm-btn" data-ma="bbedit">✏️</button>' : '') + (canDel() ? '<button type="button" class="wm-btn m-danger" data-ma="bbdel">🗑️</button>' : '') + '</span>' : '') + '</div></article>';
-    }).join('') + '</div>';
+    if (!l.length) out += '<section class="wm-card"><p class="wm-note">Zurzeit gibt es keine Mitteilungen.</p></section>';
+    else out += '<section class="wm-card"><div class="hub-bwrap"><table class="hub-bt"><tr><th>Von</th><th>Datum</th><th>Mitteilung</th>' + (can() ? '<th></th>' : '') + '</tr>' + l.map(function (b, i) {
+      return row(b, i > 0 && !!l[i - 1].wichtig === !!b.wichtig, i < l.length - 1 && !!l[i + 1].wichtig === !!b.wichtig);
+    }).join('') + '</table></div></section>';
+    if (ar.length) out += '<section class="wm-card"><details><summary style="cursor:pointer;font-weight:800">🗄️ Archiv · abgelaufen (' + ar.length + ')</summary><p class="wm-note">Nur für Verfasser:innen sichtbar. Mit ✏️ und neuem „Sichtbar bis“-Datum wieder hervorholen.</p><div class="hub-bwrap"><table class="hub-bt"><tr><th>Von</th><th>Datum</th><th>Mitteilung</th><th></th></tr>' + ar.map(function (b) { return row(b, null, null); }).join('') + '</table></div></details></section>';
+    return out;
   }
   function form(item, title) {
     var x = item || {}; M.openDlg('<div class="hub-dhead"><h3>' + esc(title) + '</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div>' +
       '<div class="m-fgrid"><label class="m-f"><span>Überschrift</span><input type="text" id="bb_t" maxlength="120" value="' + esc(x.title || '') + '"></label><label class="m-f"><span>Datum</span><input type="date" id="bb_d" value="' + esc(x.date || M.today()) + '"></label></div>' +
-      '<div style="margin-top:10px"><div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.7;margin-bottom:4px">Mitteilung</div>' + HubRich.editor(x.html || HubRich.plain(x.text || ''), x.bg) + '</div>' +
-      '<label class="m-chk" style="margin-top:8px"><input type="checkbox" id="bb_w"' + (x.wichtig ? ' checked' : '') + '> 📣 Wichtig (steht automatisch ganz oben)</label>' +
+      '<div style="margin-top:10px"><div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.7;margin-bottom:4px">Mitteilung</div>' + HR.editor(x.html || HR.plain(x.text || ''), x.bg) + '</div>' +
+      '<label class="m-chk" style="margin-top:8px"><input type="checkbox" id="bb_w"' + (x.wichtig ? ' checked' : '') + '> 📣 Wichtig (steht automatisch ganz oben)</label>' + HB.picker(x, groups()) +
       '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="bbsave" data-id="' + esc(x.id || '') + '">Speichern</button></div>');
   }
+  function openForm(item, title) { form(item, title); HB.loadRoles(function () { var d = document.getElementById('mDlg'), box = d && d.querySelector('.hub-aud'); if (box && !box.querySelector('input[data-bb=r]')) box.outerHTML = HB.picker(Object.assign({}, item || {}, HB.read(d) ), groups()); }); }
+  function move(id, dir) {
+    var l = live(), ix = l.map(function (b) { return b.id; }).indexOf(id), jx = ix + dir;
+    if (ix < 0 || jx < 0 || jx >= l.length || !!l[jx].wichtig !== !!l[ix].wichtig) return;
+    var t = l[ix]; l[ix] = l[jx]; l[jx] = t; M.op({ op: 'order', coll: 'brett', ids: l.map(function (b) { return b.id; }) });
+  }
   M.register('brett', {
-    title: 'Schwarzes Brett', icon: '📌', colls: ['brett'],
+    title: 'Schwarzes Brett', icon: '📌', colls: ['brett', 'wgMitglieder'],
     tabs: [{ id: 'brett', label: 'Mitteilungen', view: ['brett.view', 'startseite.brett'], render: render }],
     actions: {
-      bbnew: function () { form({}, 'Neue Mitteilung'); },
+      bbnew: function () { openForm({}, 'Neue Mitteilung'); },
       bbsave: function (it, el) {
         var t = (document.getElementById('bb_t') || {}).value || ''; t = t.trim(); if (!t) { M.toast('Bitte eine Überschrift eingeben.'); return; }
-        var rv = HubRich.val(document.getElementById('mDlg')), old = el.getAttribute('data-id') ? M.find('brett', el.getAttribute('data-id')) : null, d = (document.getElementById('bb_d') || {}).value;
-        var n = Object.assign({}, old || {}, { title: t, text: rv.text, html: rv.html, bg: rv.bg, wichtig: !!(document.getElementById('bb_w') || {}).checked, date: /^\d{4}-\d{2}-\d{2}$/.test(d || '') ? d : M.today() });
-        if (!n.id) n.id = M.uid(); if (!n.by) n.by = M.userName();
+        var dlg = document.getElementById('mDlg'), rv = HR.val(dlg), pk = HB.read(dlg), old = el.getAttribute('data-id') ? M.find('brett', el.getAttribute('data-id')) : null, d = (document.getElementById('bb_d') || {}).value;
+        var n = Object.assign({}, old || {}, { title: t, text: rv.text, html: rv.html, bg: rv.bg, wichtig: !!(document.getElementById('bb_w') || {}).checked, date: /^\d{4}-\d{2}-\d{2}$/.test(d || '') ? d : M.today(), until: pk.until, aud: pk.aud });
+        if (!n.id) { n.id = M.uid(); n.ts = Date.now(); } if (!n.by) n.by = M.userName();
         M.closeDlg(); M.op({ op: 'set', coll: 'brett', item: n });
       },
-      bbedit: function (it, el, ev, c) { var b = M.find('brett', c.id); if (b) form(b, 'Mitteilung bearbeiten'); },
+      bbedit: function (it, el, ev, c) { var b = M.find('brett', c.id); if (b) openForm(b, 'Mitteilung bearbeiten'); },
+      bbup: function (it, el, ev, c) { move(c.id, -1); },
+      bbdn: function (it, el, ev, c) { move(c.id, 1); },
       bbdel: function (it, el, ev, c) { var b = M.find('brett', c.id); if (b) M.confirm('„' + b.title + '“ löschen?', 'Löschen', function () { M.op({ op: 'del', coll: 'brett', id: b.id }); }); }
     }
   });
-  var st = document.createElement('style'); st.textContent = '#hubRoot .bb-wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;align-items:start}#hubRoot .bb-note{position:relative;padding:20px 16px 12px;border-radius:6px 6px 14px 14px;background:#fff8dc;color:#3b2f0b;box-shadow:0 4px 12px rgba(0,0,0,.14);border-top:4px solid #e0b53a}#hubRoot .bb-imp{background:#ffe8e6;border-top-color:#e11d48;color:#4a1013}#hubRoot .bb-pin{position:absolute;top:-9px;left:50%;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff8a80,#c62828);box-shadow:0 2px 4px rgba(0,0,0,.35)}#hubRoot .bb-note h4{margin:0 0 6px;font:800 16px/1.25 ui-rounded,system-ui,sans-serif}#hubRoot .bb-note .hub-rtc{margin:0 0 8px;font-size:14px;line-height:1.45}#hubRoot .bb-note p{margin:0 0 8px;white-space:pre-wrap;font-size:14px;line-height:1.45}#hubRoot .bb-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;opacity:.75}#hubRoot .bb-act{display:flex;gap:4px}html.dark #hubRoot .bb-note{background:#3a3214;color:#fdf1c4}html.dark #hubRoot .bb-imp{background:#4a1d20;color:#ffd9d6}'; document.head.appendChild(st);
+  setTimeout(HB.markSeen, 4000);            // „Neu“-Markierung bleibt für diesen Besuch sichtbar
 })();

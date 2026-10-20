@@ -24,7 +24,7 @@ window.HubTheme = (function () {
 
 /* Formatierbare Texte (Schwarzes Brett): kleine Werkzeugleiste, Bereinigung des HTML und Anzeige. */
 window.HubRich = (function () {
-  var TAGS = { B: 1, STRONG: 1, I: 1, EM: 1, U: 1, SPAN: 1, DIV: 1, P: 1, BR: 1 }, DROP = { SCRIPT: 1, STYLE: 1, IFRAME: 1, OBJECT: 1, EMBED: 1, TEMPLATE: 1, LINK: 1, META: 1 };
+  var TAGS = { B: 1, STRONG: 1, I: 1, EM: 1, U: 1, SPAN: 1, DIV: 1, P: 1, BR: 1, A: 1 }, OKHREF = /^(https?:\/\/|mailto:|tel:|\/intranet\/)/i, DROP = { SCRIPT: 1, STYLE: 1, IFRAME: 1, OBJECT: 1, EMBED: 1, TEMPLATE: 1, LINK: 1, META: 1 };
   var COL = /^(#[0-9a-f]{3,8}|rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(,\s*[\d.]+\s*)?\)|[a-z]{3,20})$/i;
   var PROP = { 'color': COL, 'background-color': COL, 'font-size': /^(x-small|small|medium|large|x-large|xx-large)$/i, 'text-align': /^(left|center|right|justify)$/i, 'font-weight': /^(bold|normal|[1-9]00)$/i, 'font-style': /^(italic|normal)$/i, 'text-decoration': /^(underline|none|line-through)( solid)?$/i, 'text-decoration-line': /^(underline|none|line-through)$/i };
   var TXT = ['#111827', '#dc2626', '#ea580c', '#16a34a', '#2563eb', '#7c3aed', '#db2777', '#6b7280'], MARK = ['#fef08a', '#bbf7d0', '#bfdbfe', '#fbcfe8', '#fed7aa', '#e9d5ff'], BG = ['#fff7d6', '#dcfce7', '#dbeafe', '#fce7f3', '#ffedd5', '#f3e8ff', '#e5e7eb'];
@@ -35,7 +35,8 @@ window.HubRich = (function () {
       if (c.nodeType === 3) return; if (c.nodeType !== 1) { n.removeChild(c); return; }
       var t = c.tagName; if (DROP[t]) { n.removeChild(c); return; }
       if (!TAGS[t]) { walk(c); while (c.firstChild) n.insertBefore(c.firstChild, c); n.removeChild(c); return; }
-      Array.prototype.slice.call(c.attributes).forEach(function (a) { if (a.name === 'style') { var s = cleanStyle(a.value); if (s) c.setAttribute('style', s); else c.removeAttribute('style'); } else c.removeAttribute(a.name); });
+      Array.prototype.slice.call(c.attributes).forEach(function (a) { if (t === 'A' && a.name === 'href') { if (!OKHREF.test(String(a.value).trim())) c.removeAttribute('href'); } else if (a.name === 'style') { var s = cleanStyle(a.value); if (s) c.setAttribute('style', s); else c.removeAttribute('style'); } else c.removeAttribute(a.name); });
+      if (t === 'A') { if (c.getAttribute('href')) { c.setAttribute('target', '_blank'); c.setAttribute('rel', 'noopener noreferrer'); } else { while (c.firstChild) n.insertBefore(c.firstChild, c); n.removeChild(c); return; } }
       walk(c);
     });
   }
@@ -51,7 +52,7 @@ window.HubRich = (function () {
       '<span class="hub-rpw"><button type="button" data-rtp="1" title="Textfarbe"><b style="border-bottom:3px solid #dc2626;line-height:1">A</b></button><span class="hub-rpp">' + sw('foreColor', TXT) + '</span></span>' +
       '<span class="hub-rpw"><button type="button" data-rtp="1" title="Textmarker">🖍️</button><span class="hub-rpp">' + sw('hiliteColor', MARK, 'transparent') + '</span></span>' +
       '<span class="hub-rpw"><button type="button" data-rtp="1" title="Hintergrundfarbe des Eintrags">🎨</button><span class="hub-rpp">' + sw('bg', BG, 'none') + '</span></span>' +
-      '<button type="button" data-rt="removeFormat" title="Formatierung entfernen">⌧</button></div>';
+      '<button type="button" data-rt="link" title="Link einfügen">🔗</button><button type="button" data-rt="removeFormat" title="Formatierung entfernen">⌧</button></div>';
   }
   function editor(html, bg) { bg = okBg(bg); return '<div class="hub-rtw">' + bar() + '<div class="hub-rte" contenteditable="true" data-ph="Mitteilung …" data-bg="' + esc(bg) + '"' + (bg ? ' style="background:' + bg + '"' : '') + '>' + clean(html) + '</div></div>'; }
   function val(root) { var ed = (root || document).querySelector('.hub-rte'); if (!ed) return { html: '', text: '', bg: '' }; var h = clean(ed.innerHTML), text = (ed.innerText || '').replace(/ /g, ' ').trim(); return { html: text ? h : '', text: text, bg: okBg(ed.getAttribute('data-bg')) }; }
@@ -74,13 +75,60 @@ window.HubRich = (function () {
     if (cmd === 'size') document.execCommand('fontSize', false, v);
     else if (cmd === 'hiliteColor') { if (!document.execCommand('hiliteColor', false, v)) document.execCommand('backColor', false, v); }
     else if (cmd === 'foreColor') document.execCommand('foreColor', false, v);
+    else if (cmd === 'link') { var sel = window.getSelection(); if (!sel || sel.isCollapsed) { alert('Erst den Text markieren, der ein Link werden soll.'); return; } var u = prompt('Adresse eingeben (z. B. https://…)', 'https://'); if (u && /^(https?:\/\/|mailto:|tel:)/i.test(u.trim())) document.execCommand('createLink', false, u.trim()); }
     else document.execCommand(cmd, false, null);
     closePop();
   });
   var st = document.createElement('style');
   st.textContent = '.hub-rtb{display:flex;flex-wrap:wrap;gap:3px;align-items:center;padding:5px;border:1px solid var(--line,#cbd5e1);border-radius:10px 10px 0 0;background:color-mix(in srgb,#94a3b8 10%,var(--card,#fff))}.hub-rtb>button,.hub-rpw>button{min-width:32px;height:30px;padding:0 6px;border:1px solid transparent;border-radius:7px;background:transparent;color:inherit;font:inherit;font-size:14px;cursor:pointer}.hub-rtb>button:hover,.hub-rpw>button:hover{background:color-mix(in srgb,#94a3b8 22%,transparent)}.hub-rsp{width:1px;height:20px;background:var(--line,#cbd5e1);margin:0 3px}.hub-rpw{position:relative}.hub-rpp{display:none;position:absolute;top:34px;left:0;z-index:30;gap:5px;flex-wrap:wrap;width:170px;padding:8px;border-radius:10px;background:var(--card,#fff);border:1px solid var(--line,#cbd5e1);box-shadow:0 6px 18px rgba(0,0,0,.18)}.hub-rpw.open .hub-rpp{display:flex}.hub-rsw{width:26px;height:26px;border-radius:50%;border:1px solid rgba(0,0,0,.25);cursor:pointer;padding:0;font-size:12px;color:#555}.hub-rno{background:#fff!important}.hub-rte{min-height:90px;padding:8px 10px;border:1px solid var(--line,#cbd5e1);border-top:0;border-radius:0 0 10px 10px;background:var(--card,#fff);outline:none;text-align:left;font-size:15px;line-height:1.4;overflow-wrap:anywhere}.hub-rte:empty:before{content:attr(data-ph);opacity:.5}.hub-rtc{overflow-wrap:anywhere}.hub-rtc.hub-pl{white-space:pre-line}.hub-rtc div,.hub-rtc p{margin:0}';
+  st.textContent += '.hub-rte a,.hub-rtc a{color:#1d4ed8;text-decoration:underline}';
   document.head.appendChild(st);
   return { clean: clean, bar: bar, editor: editor, val: val, show: show, plain: plainToHtml, okBg: okBg };
+})();
+
+// Schwarzes Brett: gemeinsame Hilfen für Startseite und Brett-Seite (Gültigkeit, Freigabe für Gruppen/Rollen, „Neu“)
+window.HubBrett = (function () {
+  var roles = null;
+  function sh() { return window.HubShell; }
+  function esc(s) { return String(s === undefined || s === null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function today() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function expired(b) { return !!(b && b.until && String(b.until) < today()); }
+  function seen() { return sh().lsGet('brettSeen', null); }
+  function markSeen() { sh().lsSet('brettSeen', Date.now()); }
+  // „Neu“ = nach dem letzten Öffnen der Brett-Seite angelegt und nicht von mir selbst
+  function isNew(b) { var s = seen(), me = sh().S.me && sh().S.me.user; if (s === null) { markSeen(); return false; } return !!(b && b.ts && b.ts > s && (!me || b.by !== me)); }
+  function loadRoles(done) {
+    if (roles && roles.fresh) { done(); return; }
+    rolesList();
+    sh().get('roles').then(function (r) { if (r && Array.isArray(r.roles)) { roles = r.roles.filter(function (x) { return x.id !== 'gast'; }).map(function (x) { return { id: x.id, name: x.name }; }); sh().lsSet('hubroles', roles); roles.fresh = true; } done(); });
+  }
+  function rolesList() { if (!roles) { var c = sh().lsGet('hubroles', null); if (Array.isArray(c)) roles = c; } return roles || []; }
+  function audText(b, groupsAll) {
+    var a = b && b.aud; if (!a) return '';
+    var rn = {}; rolesList().forEach(function (r) { rn[r.id] = r.name; });
+    var p = (a.g || []).concat((a.r || []).map(function (id) { return rn[id] || id; })); return p.length ? p.join(', ') : '';
+  }
+  function chk(kind, val, label, on) { return '<label class="hub-aud-c"><input type="checkbox" data-bb="' + kind + '" value="' + esc(val) + '"' + (on ? ' checked' : '') + '><span>' + esc(label) + '</span></label>'; }
+  function picker(b, groups) {
+    b = b || {}; var a = b.aud || {}, gs = (groups && groups.length ? groups : ['Wettkampfgruppe']).slice();
+    (a.g || []).forEach(function (g) { if (gs.indexOf(g) < 0) gs.push(g); });
+    var n = (a.g || []).length + (a.r || []).length;
+    return '<div class="hub-aud"><label class="hub-aud-u">Sichtbar bis <input type="date" data-bb="until" value="' + esc(b.until || '') + '"></label>' +
+      '<details' + (n ? ' open' : '') + '><summary>🔒 Nur für bestimmte Gruppen / Rollen <i>(nichts angehakt = alle)</i></summary>' +
+      '<div class="hub-aud-r"><b>Gruppen</b>' + gs.map(function (g) { return chk('g', g, g, (a.g || []).indexOf(g) >= 0); }).join('') + '</div>' +
+      '<div class="hub-aud-r"><b>Rollen</b>' + (rolesList().length ? rolesList().map(function (r) { return chk('r', r.id, r.name, (a.r || []).indexOf(r.id) >= 0); }).join('') : '<i>wird geladen …</i>') + '</div></details></div>';
+  }
+  function read(scope) {
+    scope = scope || document; var g = [], r = [];
+    Array.prototype.forEach.call(scope.querySelectorAll('input[data-bb=g]:checked'), function (x) { g.push(x.value); });
+    Array.prototype.forEach.call(scope.querySelectorAll('input[data-bb=r]:checked'), function (x) { r.push(x.value); });
+    var u = scope.querySelector('input[data-bb=until]'), uv = u && /^\d{4}-\d{2}-\d{2}$/.test(u.value) ? u.value : '';
+    return { until: uv, aud: (g.length || r.length) ? { g: g, r: r } : null };
+  }
+  var st = document.createElement('style');
+  st.textContent = '.hub-aud{margin:8px 0 12px;font-size:13px;text-align:left}.hub-aud-u input{margin-left:6px;padding:4px 6px;border-radius:8px;border:1px solid var(--line,#cbd5e1);background:var(--card,#fff);color:inherit;font:inherit;font-size:13px}.hub-aud details{margin-top:6px}.hub-aud summary{cursor:pointer;font-weight:700}.hub-aud summary i{font-weight:400;opacity:.7}.hub-aud-r{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;margin-top:5px}.hub-aud-c{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}.hub-aud-c input{width:16px;height:16px}.hub-new{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;background:#16a34a;color:#fff;font-size:11px;font-weight:800;vertical-align:middle}.hub-lock{display:block;margin-top:3px;font-size:12px;opacity:.75}';
+  document.head.appendChild(st);
+  return { today: today, expired: expired, isNew: isNew, markSeen: markSeen, loadRoles: loadRoles, picker: picker, read: read, audText: audText };
 })();
 
 window.HubShell = (function () {
@@ -129,6 +177,40 @@ window.HubShell = (function () {
   // Der zuletzt bekannte Stand liegt im Browser (hubcache). So erscheint die Seite beim Aktualisieren sofort mit
   // Name und Systemen; im Hintergrund wird nur noch geprüft. Abgemeldet wird nur, wenn das Script die Anmeldung
   // ausdrücklich für ungültig erklärt, nicht bei langsamem Netz.
+  var START_COLLS = 'wettkaempfe,aufgaben,material,veranstaltungen,vorstandAntraege,abrechnungen,fahrten,trainingTage,profile,brett';
+  // Daten der Startseite: direkt nach der Anmeldung liegen sie schon vor (max. 60 s alt), sonst frisch holen
+  function startData(colls) {
+    var h = lsGet('hubstart', null);
+    if (h && h.token === token() && h.r && Date.now() - h.ts < 60000) { lsSet('hubstart', null); return Promise.resolve(h.r); }
+    return get('data', { colls: colls, slim: '1', counts: '1' });
+  }
+  // Seitendaten aller sichtbaren Bereiche in EINER Anfrage vorladen und im Browser ablegen (nur Leerlauf, nie Fehler zeigen)
+  var PRE = { aufgaben: ['aufgaben', 'vorlagen', 'wettkaempfe'], wettkaempfe: ['wettkaempfe'], abrechnung: ['abrechnungen', 'saetze', 'profile', 'trainingTage', 'fahrten', 'anwesenheit'],
+    anwesenheit: ['anwesenheit', 'trainingTage', 'wgMitglieder', 'saetze'], auswertung: ['saison', 'wgMitglieder', 'wettkaempfe'], brett: ['brett'], dokumente: ['dokumente'],
+    training: ['wgMitglieder', 'trainingTage', 'saetze', 'wettkaempfe', 'abzeichen', 'fahrten'], jugend: ['abzeichen'],
+    mitglieder: ['wgMitglieder', 'trainer'], veranstaltungen: ['veranstaltungen', 'aufgaben', 'vorlagen'], vorstand: ['vorstandAntraege', 'vorstandProtokolle', 'vorstandBeschluesse', 'vorstandSitzungen', 'profile', 'aufgaben'],
+    material: ['material', 'abzListe'], trainer: ['trainer'], profil: ['profile'] };
+  function prefetch() {
+    if (!token() || !S.me) return;
+    var last = lsGet('prefetchTs', 0); if (Date.now() - last < 120000) return;       // höchstens alle 2 Minuten
+    var q = lsGet('modq', []); var open = Array.isArray(q) && q.length;                // ungesendete Änderungen nie überschreiben
+    var ids = Object.keys(PRE).filter(function (id) { return id === 'brett' || id === 'profil' || S.systems.some(function (x) { return x.id === id; }); });
+    var cl = {}; ids.forEach(function (id) { PRE[id].forEach(function (c) { cl[c] = 1; }); });
+    if (!Object.keys(cl).length || open) return;
+    lsSet('prefetchTs', Date.now());
+    get('data', { colls: Object.keys(cl).join(',') }).then(function (r) {
+      if (!r || r.status !== 'success') return;
+      ids.forEach(function (id) {
+        var old = lsGet('modbase_' + id, null), base = (old && old.token === token() && old.base) ? Object.assign({}, old.base) : {};
+        PRE[id].forEach(function (c) { if (r.data && r.data[c]) base[c] = r.data[c]; });
+        lsSet('modbase_' + id, { token: token(), base: base, people: r.people || (old && old.people) || [] });
+      });
+    });
+  }
+  // Beim Abmelden alles Gespeicherte dieses Kontos vom Gerät entfernen
+  function wipe() {
+    try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf('modbase_') === 0 || ['hubnext', 'hubbrett', 'hubstart', 'prefetchTs', 'hubcache', 'verwcache'].indexOf(k) >= 0) localStorage.removeItem(k); }); } catch (e) { /* egal */ }
+  }
   function saveCache() { lsSet('hubcache', { token: token(), me: S.me, systems: S.systems, loginRoles: S.loginRoles, ts: Date.now() }); }
   function restore() {
     var c = lsGet('hubcache', null);
@@ -154,7 +236,7 @@ window.HubShell = (function () {
         S.me = null; S.offline = true; S.systems = []; return;
       }
       S.stale = false; S.restored = false; S.offline = false;
-      if (h.authFailed) { S.session = { token: '', user: '' }; lsSet('session4', S.session); S.me = null; }
+      if (h.authFailed) { S.session = { token: '', user: '' }; lsSet('session4', S.session); S.me = null; wipe(); }
       else S.me = h.me && h.me.status === 'success' ? h.me : null;
       S.systems = h.systems || [];
       S.loginRoles = (h.roles || []).filter(function (r) { return r.id !== 'gast' && r.hasPw; }).sort(function (a, b) { return String(a.name || '').localeCompare(String(b.name || ''), 'de', { sensitivity: 'base' }); });
@@ -406,7 +488,7 @@ window.HubShell = (function () {
     if (a === 'logout') {
       var tk = token(); S.menu = false; S.dialog = null;
       S.session = { token: '', user: '' }; lsSet('session4', S.session); try { localStorage.setItem('userRole', 'gast'); } catch (e) { /* egal */ }
-      S.me = null; S.systems = []; S.restored = false; lsSet('hubcache', null); lsSet('verwcache', null); if (tk) post({ action: 'logout', token: tk });
+      S.me = null; S.systems = []; S.restored = false; wipe(); if (tk) post({ action: 'logout', token: tk });
       reload(); return true;
     }
     return false;
@@ -418,7 +500,7 @@ window.HubShell = (function () {
       var lk = f.elements.kind ? f.elements.kind.value : S.mode;
       var payload = { action: 'login', kind: lk };
       if (lk === 'user') payload.name = f.elements.name.value; else payload.role = f.elements.role.value;
-      payload.password = f.elements.password.value;
+      payload.password = f.elements.password.value; payload.colls = START_COLLS; payload.slim = 1; payload.counts = 1;
       S.busy = true; S.error = ''; rerender();
       post(payload).then(function (res) {
         S.busy = false;
@@ -426,6 +508,7 @@ window.HubShell = (function () {
         if (res.status !== 'success') { S.error = res.message || 'Falsche Anmeldedaten.'; rerender(); return; }
         S.session = { token: res.token, user: res.user || '', roles: res.roles || [], perms: res.user ? res.perms : [] }; lsSet('session4', S.session);
         try { localStorage.setItem('userRole', res.role.id); } catch (e) { /* egal */ }
+        if (res.start && res.start.status === 'success') lsSet('hubstart', { token: res.token, ts: Date.now(), r: res.start });
         S.me = { status: 'success', user: res.user || '', role: res.role, roles: res.roles || [], extras: [], perms: res.perms || [], mustChange: !!res.mustChange };
         if (res.systems) { S.systems = res.systems; S.offline = false; saveCache(); }
         S.dialog = null; reload();
@@ -448,7 +531,7 @@ window.HubShell = (function () {
     }
     return false;
   }
-  return { S: S, CATS: CATS, catInfo: catInfo, catName: catName, catOf: catOf, API: API, DIAG: DIAG, esc: esc, initials: initials, lsGet: lsGet, lsSet: lsSet, token: token, has: has, canAdmin: canAdmin, get: get, post: post, loadAccount: loadAccount, restore: restore, header: header, overlay: overlay, click: click, submit: submit, HUB_URL: HUB_URL };
+  return { startData: startData, prefetch: prefetch, S: S, CATS: CATS, catInfo: catInfo, catName: catName, catOf: catOf, API: API, DIAG: DIAG, esc: esc, initials: initials, lsGet: lsGet, lsSet: lsSet, token: token, has: has, canAdmin: canAdmin, get: get, post: post, loadAccount: loadAccount, restore: restore, header: header, overlay: overlay, click: click, submit: submit, HUB_URL: HUB_URL };
 })();
 
 /* App-Symbol für den Home-Bildschirm (iPad/iPhone): Vereinslogo auf weißem Grund */

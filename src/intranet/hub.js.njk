@@ -12,7 +12,7 @@ templateEngineOverride: false
   var SH = window.HubShell;
   if (!SH) { root.textContent = 'Der Grundbaustein hub-common.js fehlt.'; return; }
   var HUB_URL = '/intranet/';
-  var state = { loaded: false, next: SH.lsGet('hubnext', null), brett: SH.lsGet('hubbrett', []) };
+  var state = { loaded: false, next: SH.lsGet('hubnext', null), pgrp: ((SH.lsGet('hubnext', null) || {}).pgrp) || null, brett: SH.lsGet('hubbrett', []) };
   var esc = SH.esc;
 
   function todayIso() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
@@ -66,19 +66,20 @@ templateEngineOverride: false
       return String(b.date || '') < String(a.date || '') ? -1 : String(b.date || '') > String(a.date || '') ? 1 : 0;
     });
   }
+  function brettLive() { return brettSort((state.brett || []).filter(function (b) { return !window.HubBrett.expired(b); })); }
   function brettEditRow(ex) {
     ex = ex || {}; var d = ex.date || todayIso();
-    return '<tr class="ed"><td>' + esc(ex.by || (SH.S.me && SH.S.me.user) || '') + '</td><td><input type="date" name="date" form="bform" value="' + esc(d) + '"></td><td class="m"><input type="text" name="title" form="bform" placeholder="Überschrift" maxlength="120" required value="' + esc(ex.title || '') + '">' + window.HubRich.editor(ex.html || window.HubRich.plain(ex.text || ''), ex.bg) + '</td>' +
+    return '<tr class="ed"><td>' + esc(ex.by || (SH.S.me && SH.S.me.user) || '') + '</td><td><input type="date" name="date" form="bform" value="' + esc(d) + '"></td><td class="m"><input type="text" name="title" form="bform" placeholder="Überschrift" maxlength="120" required value="' + esc(ex.title || '') + '">' + window.HubRich.editor(ex.html || window.HubRich.plain(ex.text || ''), ex.bg) + window.HubBrett.picker(ex, state.next && state.next.grp ? state.next.grp.all.map(function (g) { return g.name; }) : null) + '</td>' +
       '<td class="a"><label class="hub-wch"><input type="checkbox" name="wichtig" form="bform"' + (ex.wichtig ? ' checked' : '') + '><span>📣 Wichtig</span></label><div><button type="submit" form="bform" class="hub-bx" aria-label="Speichern" title="Speichern">💾</button><button type="button" class="hub-bx" data-act="bcancel" aria-label="Abbrechen" title="Abbrechen">✕</button></div></td></tr>';
   }
   function brettHtml() {
     var can = SH.has('startseite.brett'), del = SH.has('brett.loeschen') || can; if (!SH.has('brett.view') && !can) return '';
-    var l = brettSort(state.brett), shown = l.slice(0, 6);
+    var l = brettLive(), shown = l.slice(0, 6);
     var head = '<tr><th>Von</th><th>Datum</th><th>Mitteilung</th>' + (can ? '<th></th>' : '') + '</tr>';
     var rows = (state.bform && !state.bedit ? brettEditRow(null) : '') + shown.map(function (b, i) {
       if (state.bform && state.bedit === b.id) return brettEditRow(b);
       var up = i > 0 && !!shown[i - 1].wichtig === !!b.wichtig, dn = i < shown.length - 1 && !!shown[i + 1].wichtig === !!b.wichtig;
-      return '<tr' + (b.wichtig ? ' class="imp"' : '') + '><td>' + esc(b.by || '') + '</td><td>' + esc(fmtDMY(b.date)) + '</td><td class="m"' + (window.HubRich.okBg(b.bg) ? ' style="background:' + window.HubRich.okBg(b.bg) + '"' : '') + '><b>' + (b.wichtig ? '📣 ' : '') + esc(b.title) + '</b>' + window.HubRich.show(b) + '</td>' +
+      return '<tr' + (b.wichtig ? ' class="imp"' : '') + '><td>' + esc(b.by || '') + '</td><td>' + esc(fmtDMY(b.date)) + '</td><td class="m"' + (window.HubRich.okBg(b.bg) ? ' style="background:' + window.HubRich.okBg(b.bg) + '"' : '') + '><b>' + (b.wichtig ? '📣 ' : '') + esc(b.title) + '</b>' + (window.HubBrett.isNew(b) ? '<span class="hub-new">NEU</span>' : '') + (window.HubBrett.audText(b) ? '<span class="hub-lock">🔒 ' + esc(window.HubBrett.audText(b)) + '</span>' : '') + window.HubRich.show(b) + (b.until ? '<span class="hub-lock">sichtbar bis ' + esc(fmtDMY(b.until)) + '</span>' : '') + '</td>' +
         (can ? '<td class="a"><div><button type="button" class="hub-bx" data-act="bmove" data-dir="-1" data-id="' + esc(b.id) + '" aria-label="Nach oben"' + (up ? '' : ' disabled') + '>▲</button><button type="button" class="hub-bx" data-act="bmove" data-dir="1" data-id="' + esc(b.id) + '" aria-label="Nach unten"' + (dn ? '' : ' disabled') + '>▼</button><button type="button" class="hub-bx" data-act="bedit" data-id="' + esc(b.id) + '" aria-label="Bearbeiten">✏️</button>' + (del ? '<button type="button" class="hub-bx" data-act="bdel" data-id="' + esc(b.id) + '" aria-label="Löschen">🗑️</button>' : '') + '</div></td>' : '') + '</tr>'; }).join('');
     return '<section class="hub-card2" id="brett"><div class="hub-c2h"><h3>📌 Schwarzes Brett</h3><span class="hub-c2b">' + (can && !state.bform ? '<button type="button" class="hub-btn hub-gold" data-act="bnew">+ Neue Mitteilung</button>' : '') + '<a class="hub-btn hub-ghost" href="/intranet/brett/">' + (can ? 'Verwalten →' : 'Alle ansehen →') + '</a></span></div>' +
       '<form id="bform" data-bf="1" data-id="' + esc(state.bedit || '') + '"></form>' +
@@ -103,11 +104,12 @@ templateEngineOverride: false
     var n = state.next && state.next.token === SH.token() ? state.next : null; if (!n || !n.cnt) return '';
     return '<section class="hub-stats"><div class="hub-stt"><i>👥 Mitglieder</i><b>' + n.cnt.mem + '</b></div>' + (n.cnt.gr ? '<div class="hub-stt"><i>🦈 Gruppen</i><b>' + n.cnt.gr + '</b></div>' : '') + (n.cnt.tr ? '<div class="hub-stt"><i>🎓 Trainer:innen</i><b>' + n.cnt.tr + '</b></div>' : '') + '</section>';
   }
+  function tip(msg, bad) { var d = document.createElement('div'); d.textContent = msg; d.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:9999;padding:10px 16px;border-radius:12px;font:600 14px system-ui,sans-serif;color:#fff;box-shadow:0 6px 20px rgba(0,0,0,.25);background:' + (bad ? '#b91c1c' : '#15803d'); document.body.appendChild(d); setTimeout(function () { d.remove(); }, 2200); }
   function pidOf(n) { return 'p-' + String(n || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 36); }
   function saveProf(f) {
     var u = SH.S.me && SH.S.me.user; if (!u) return; var id = pidOf(u);
     var o = state.hasProfile ? { op: 'patch', coll: 'profile', id: id, fields: f } : { op: 'set', coll: 'profile', item: Object.assign({ id: id, owner: u }, f) };
-    SH.post({ action: 'dataOps', token: SH.token(), ops: [o] }).then(function (r) { if (r && r.status === 'success') state.hasProfile = true; });
+    SH.post({ action: 'dataOps', token: SH.token(), ops: [o] }).then(function (r) { if (r && r.status === 'success') { state.hasProfile = true; tip('✓ Gruppenauswahl gespeichert'); } else tip('Speichern hat nicht geklappt. Bitte nochmal versuchen.', true); });
   }
   // Welche Gruppen auf der Startseite stehen: eigene Auswahl, sonst die Gruppen, in denen man Trainer ist, sonst die Wettkampfgruppe
   function groupSel(n) { return Array.isArray(state.pgrp) ? state.pgrp : (n.grp && n.grp.mine && n.grp.mine.length ? n.grp.mine : ['Wettkampfgruppe']); }
@@ -153,9 +155,8 @@ templateEngineOverride: false
     if (SH.has('training.tage.view')) want.push('trainingTage');
     if (SH.S.me && SH.S.me.user) want.push('profile');
     if (SH.S.me && SH.has('brett.view')) want.push('brett');
-    if (SH.has('mitglieder.view')) want.push('wgMitglieder');
     if (!want.length) { if (state.next) { state.next = null; SH.lsSet('hubnext', null); render(); } return; }
-    SH.get('data', { colls: want.join(','), slim: '1' }).then(function (r) {
+    SH.startData(want.join(',')).then(function (r) {
       if (!r || r.status !== 'success') return;
       var t = todayIso(); var d = r.data || {}; var me = (SH.S.me && (SH.S.me.user || '')).toLowerCase();
       var comps = d.wettkaempfe || [];
@@ -194,10 +195,9 @@ templateEngineOverride: false
       var mineAb = (d.abrechnungen || []).filter(function (x) { return x.status === 'entwurf' && x.ts && (Date.now() - x.ts) > 21 * 86400000; });
       if (mineAb.length) fr.push({ t: mineAb.length === 1 ? 'Abrechnung nicht eingereicht' : mineAb.length + ' Abrechnungen nicht eingereicht', s: 'Entwurf seit über 3 Wochen', c: 'warn', href: '/intranet/abrechnung/', k: 25 });
       fr.sort(function (a, b) { return a.k - b.k; });
-      state.brett = d.brett || state.brett || []; var memAct = (d.wgMitglieder || []).filter(function (m) { return m.status !== 'ausgetreten' && m.status !== 'pausiert'; }); var grp = null; if (d.wgMitglieder) { var nrm = function (x) { return String(x || '').toLowerCase().replace(/[,]/g, ' ').split(/\s+/).filter(Boolean).sort().join(' '); }; var meN = nrm(SH.S.me && SH.S.me.user), gcount = {}, mine = []; (d.wgMitglieder || []).forEach(function (m) { if (m.status === 'ausgetreten' || m.status === 'pausiert') return; (m.gruppen || []).forEach(function (g) { gcount[g] = (gcount[g] || 0) + 1; }); if (meN && nrm(m.name) === meN) mine = (m.trainerIn || []).slice(); }); grp = { all: Object.keys(gcount).sort(function (a, b) { return a.localeCompare(b, 'de'); }).map(function (g) { return { name: g, n: gcount[g] }; }), mine: mine }; }
-      var grs = {}; memAct.forEach(function (m) { (m.gruppen || []).forEach(function (g) { grs[g] = 1; }); }); var cnt = d.wgMitglieder ? { mem: memAct.length, gr: Object.keys(grs).length, tr: memAct.filter(function (m) { return (m.trainerIn && m.trainerIn.length) || (m.rollen || []).some(function (r) { return /trainer/i.test(r); }); }).length, wg: memAct.filter(function (m) { return !m.gruppen || !m.gruppen.length || m.gruppen.indexOf('Wettkampfgruppe') >= 0; }).length } : null; SH.lsSet('hubbrett', state.brett);
+      state.brett = d.brett || state.brett || []; var grp = r.counts ? { all: r.counts.all, mine: r.counts.mine } : null, cnt = r.counts ? r.counts.cnt : null; SH.lsSet('hubbrett', state.brett);
       var sw = null; if (up[0]) { var u0 = up[0], src = (u0.starts || []).length ? u0.starts : ((u0.meld && u0.meld.starts) || []), mp = {}; src.forEach(function (s0) { var k0 = s0.n || ''; if (k0) mp[k0] = (mp[k0] || 0) + 1; }); sw = { title: u0.title, date: u0.date, ort: u0.ort, m: src.length, names: Object.keys(mp).sort(function (a, b) { return a.localeCompare(b, 'de'); }).map(function (k0) { return { n: k0, c: mp[k0] }; }) }; }
-      state.next = { token: SH.token(), cnt: cnt, grp: grp, sw: sw, wk: wk, tasks: tasks, open: open, ev: ev, mine: mine, hints: hints, warn: warn, fr: fr.slice(0, 6) }; SH.lsSet('hubnext', state.next); render();
+      state.next = { token: SH.token(), pgrp: state.pgrp, cnt: cnt, grp: grp, sw: sw, wk: wk, tasks: tasks, open: open, ev: ev, mine: mine, hints: hints, warn: warn, fr: fr.slice(0, 6) }; SH.lsSet('hubnext', state.next); render(); setTimeout(SH.prefetch, 800);
     });
   }
   function loadWm() {
@@ -207,7 +207,7 @@ templateEngineOverride: false
     });
   }
   function render() { root.innerHTML = SH.header('SG Barnstorf · Intranet') + '<main class="hub-main">' + body() + '</main>' + SH.overlay(); }
-  function load() { var fast = SH.restore(); state.loaded = fast; state.wm = SH.lsGet('hubwm', null); render(); if (fast) { loadNext(); loadWm(); } return SH.loadAccount().then(function () { state.loaded = true; render(); if (!fast) { loadNext(); loadWm(); } }); }
+  function load() { var fast = SH.restore(); state.loaded = fast; state.wm = SH.lsGet('hubwm', null); render(); if (fast) { loadNext(); loadWm(); } setTimeout(function () { if (SH.has('startseite.brett')) window.HubBrett.loadRoles(function () { }); }, 1500); return SH.loadAccount().then(function () { state.loaded = true; render(); if (!fast) { loadNext(); loadWm(); } }); }
 
   root.addEventListener('click', function (ev) {
     if (SH.click(ev, render, load)) return;
@@ -218,11 +218,11 @@ templateEngineOverride: false
     else if (a === 'gdone') { state.gedit = false; render(); }
     else if (a === 'greset') { state.pgrp = null; saveProf({ grp: null }); render(); }
     else if (a === 'gtog') { var gg = t.getAttribute('data-g'), gcur = groupSel(state.next || {}).slice(), gi = gcur.indexOf(gg); if (gi >= 0) gcur.splice(gi, 1); else gcur.push(gg); state.pgrp = gcur; saveProf({ grp: gcur }); render(); }
-    else if (a === 'bnew') { state.bform = true; state.bedit = null; render(); }
-    else if (a === 'bedit') { state.bform = true; state.bedit = t.getAttribute('data-id'); render(); var bf = root.querySelector('tr.ed'); if (bf && bf.scrollIntoView) bf.scrollIntoView({ block: 'center' }); }
+    else if (a === 'bnew') { state.bform = true; state.bedit = null; render(); window.HubBrett.loadRoles(function () { var e1 = root.querySelector('tr.ed'); if (e1 && !e1.querySelector('input[data-bb=r]')) { var kp = e1.querySelector('.hub-rte'), h0 = kp ? kp.innerHTML : '', t0 = (e1.querySelector('input[name=title]') || {}).value || ''; render(); var n1 = root.querySelector('tr.ed'); if (n1) { var r1 = n1.querySelector('.hub-rte'); if (r1) r1.innerHTML = h0; var i1 = n1.querySelector('input[name=title]'); if (i1) i1.value = t0; } } }); }
+    else if (a === 'bedit') { state.bform = true; state.bedit = t.getAttribute('data-id'); render(); window.HubBrett.loadRoles(function () { var e1 = root.querySelector('tr.ed'); if (e1 && !e1.querySelector('input[data-bb=r]')) { var kp = e1.querySelector('.hub-rte'), h0 = kp ? kp.innerHTML : '', t0 = (e1.querySelector('input[name=title]') || {}).value || ''; render(); var n1 = root.querySelector('tr.ed'); if (n1) { var r1 = n1.querySelector('.hub-rte'); if (r1) r1.innerHTML = h0; var i1 = n1.querySelector('input[name=title]'); if (i1) i1.value = t0; } } }); var bf = root.querySelector('tr.ed'); if (bf && bf.scrollIntoView) bf.scrollIntoView({ block: 'center' }); }
     else if (a === 'bcancel') { state.bform = false; state.bedit = null; render(); }
     else if (a === 'bmove') {
-      var mid = t.getAttribute('data-id'), dir = +t.getAttribute('data-dir'), cur = brettSort(state.brett), ix = cur.map(function (b) { return b.id; }).indexOf(mid), jx = ix + dir;
+      var mid = t.getAttribute('data-id'), dir = +t.getAttribute('data-dir'), cur = brettLive(), ix = cur.map(function (b) { return b.id; }).indexOf(mid), jx = ix + dir;
       if (ix >= 0 && jx >= 0 && jx < cur.length && !!cur[jx].wichtig === !!cur[ix].wichtig) {
         var tmp = cur[ix]; cur[ix] = cur[jx]; cur[jx] = tmp; var ids = cur.map(function (b) { return b.id; });
         state.brett = cur.map(function (b, k) { return Object.assign({}, b, { ord: k }); }); SH.lsSet('hubbrett', state.brett); render();
@@ -236,8 +236,8 @@ templateEngineOverride: false
       ev.preventDefault(); var fd = new FormData(f); var title = String(fd.get('title') || '').trim(); if (!title) return;
       var eid = f.getAttribute('data-id'), old = eid ? (state.brett || []).filter(function (b) { return b.id === eid; })[0] : null;
       var dt = /^\d{4}-\d{2}-\d{2}$/.test(String(fd.get('date') || '')) ? String(fd.get('date')) : todayIso();
-      var rv = window.HubRich.val(root);
-      var it = old ? Object.assign({}, old, { title: title, text: rv.text, html: rv.html, bg: rv.bg, wichtig: !!fd.get('wichtig'), date: dt }) : { id: 'b-' + Date.now().toString(36), title: title, text: rv.text, html: rv.html, bg: rv.bg, wichtig: !!fd.get('wichtig'), by: SH.S.me && SH.S.me.user || '', date: dt };
+      var rv = window.HubRich.val(root), ex2 = window.HubBrett.read(root.querySelector('tr.ed'));
+      var it = old ? Object.assign({}, old, { title: title, text: rv.text, html: rv.html, bg: rv.bg, wichtig: !!fd.get('wichtig'), date: dt, until: ex2.until, aud: ex2.aud }) : { id: 'b-' + Date.now().toString(36), title: title, text: rv.text, html: rv.html, bg: rv.bg, wichtig: !!fd.get('wichtig'), by: SH.S.me && SH.S.me.user || '', date: dt, until: ex2.until, aud: ex2.aud, ts: Date.now() };
       var before = state.brett || []; state.brett = old ? before.map(function (b) { return b.id === eid ? it : b; }) : [it].concat(before); SH.lsSet('hubbrett', state.brett); state.bform = false; state.bedit = null;
       SH.post({ action: 'dataOps', token: SH.token(), ops: [{ op: 'set', coll: 'brett', item: it }] }).then(function (r) { if (!r || r.status !== 'success') { state.brett = before; SH.lsSet('hubbrett', before); render(); } });
       render(); return;
