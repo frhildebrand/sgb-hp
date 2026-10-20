@@ -54,11 +54,19 @@ window.HubRich = (function () {
       '<span class="hub-rpw"><button type="button" data-rtp="1" title="Hintergrundfarbe des Eintrags">🎨</button><span class="hub-rpp">' + sw('bg', BG, 'none') + '</span></span>' +
       '<button type="button" data-rt="link" title="Link einfügen">🔗</button><button type="button" data-rt="removeFormat" title="Formatierung entfernen">⌧</button></div>';
   }
-  function editor(html, bg) { bg = okBg(bg); return '<div class="hub-rtw">' + bar() + '<div class="hub-rte" contenteditable="true" data-ph="Mitteilung …" data-bg="' + esc(bg) + '"' + (bg ? ' style="background:' + bg + '"' : '') + '>' + clean(html) + '</div></div>'; }
-  function val(root) { var ed = (root || document).querySelector('.hub-rte'); if (!ed) return { html: '', text: '', bg: '' }; var h = clean(ed.innerHTML), text = (ed.innerText || '').replace(/ /g, ' ').trim(); return { html: text ? h : '', text: text, bg: okBg(ed.getAttribute('data-bg')) }; }
+  function editor(html, bg) { bg = okBg(bg); return '<div class="hub-rtw"><div class="hub-rte" contenteditable="true" data-ph="Mitteilung …" data-bg="' + esc(bg) + '"' + (bg ? ' style="background:' + bg + '"' : '') + '>' + clean(html) + '</div></div>'; }
+  function titleEditor(html) { return '<div class="hub-rtw"><div class="hub-rte hub-rtt" contenteditable="true" data-ph="Überschrift" role="textbox" aria-label="Überschrift">' + oneLine(clean(html)) + '</div></div>'; }
+  function oneLine(h) { return String(h || '').replace(/<br\s*\/?>/gi, ' ').replace(/<\/?(div|p)(\s[^>]*)?>/gi, ''); }
+  function val(root) { var ed = (root || document).querySelector('.hub-rte:not(.hub-rtt)'); if (!ed) return { html: '', text: '', bg: '' }; var h = clean(ed.innerHTML), text = (ed.innerText || '').replace(/ /g, ' ').trim(); return { html: text ? h : '', text: text, bg: okBg(ed.getAttribute('data-bg')) }; }
+  function valTitle(root) { var ed = (root || document).querySelector('.hub-rtt'); if (!ed) return { html: '', text: '' }; var text = (ed.innerText || '').replace(/\s+/g, ' ').trim(); return { html: text ? oneLine(clean(ed.innerHTML)) : '', text: text }; }
+  function showTitle(b) { return b && b.titleHtml ? oneLine(clean(b.titleHtml)) : esc(b ? b.title : ''); }
+  // Angeheftete Formatierleiste als Tabellenzeile (klebt unter den Spaltenüberschriften, solange bearbeitet wird)
+  function barRow(cols) { return '<tr class="hub-pin"><td colspan="' + cols + '">' + bar() + '</td></tr>'; }
   function plainToHtml(t) { return esc(t).replace(/\n/g, '<br>'); }
   function show(b) { return b.html ? '<div class="hub-rtc">' + clean(b.html) + '</div>' : (b.text ? '<div class="hub-rtc hub-pl">' + esc(b.text) + '</div>' : ''); }
-  var SEL = null;
+  var SEL = null, ACTIVE = null;
+  document.addEventListener('focusin', function (e) { var t = e.target; if (t && t.classList && t.classList.contains('hub-rte')) ACTIVE = t; });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target && e.target.classList && e.target.classList.contains('hub-rtt')) e.preventDefault(); });
   document.addEventListener('selectionchange', function () { var s = window.getSelection && window.getSelection(); if (!s || !s.rangeCount) return; var r = s.getRangeAt(0), n = r.commonAncestorContainer, el = n.nodeType === 1 ? n : n.parentNode; if (el && el.closest && el.closest('.hub-rte')) SEL = r.cloneRange(); });
   document.addEventListener('mousedown', function (e) { if (e.target.closest && e.target.closest('.hub-rtb')) e.preventDefault(); }, true);
   document.addEventListener('paste', function (e) { var t = e.target; if (t && t.closest && t.closest('.hub-rte')) { e.preventDefault(); var tx = (e.clipboardData || window.clipboardData).getData('text/plain'); document.execCommand('insertText', false, tx); } });
@@ -66,11 +74,12 @@ window.HubRich = (function () {
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('[data-rt],[data-rtp]');
     if (!b) { if (!(e.target.closest && e.target.closest('.hub-rpw'))) closePop(); return; }
-    var w = b.closest('.hub-rtw'), ed = w && w.querySelector('.hub-rte'); if (!ed) return;
+    var ed = ACTIVE && document.body.contains(ACTIVE) ? ACTIVE : document.querySelector('.hub-rte:not(.hub-rtt)'); if (!ed) return;
     if (b.hasAttribute('data-rtp')) { var p = b.parentNode, was = p.classList.contains('open'); closePop(); if (!was) p.classList.add('open'); return; }
     var cmd = b.getAttribute('data-rt'), v = b.getAttribute('data-v');
-    if (cmd === 'bg') { var c = v === 'none' ? '' : v; ed.setAttribute('data-bg', c); ed.style.background = c; closePop(); return; }
-    ed.focus(); if (SEL) { var s = window.getSelection(); s.removeAllRanges(); s.addRange(SEL); }
+    if (cmd === 'bg') { var be = document.querySelector('.hub-rte:not(.hub-rtt)'); if (be) { var c = v === 'none' ? '' : v; be.setAttribute('data-bg', c); be.style.background = c; } closePop(); return; }
+    ed.focus(); if (SEL && ed.contains(SEL.commonAncestorContainer)) { var s = window.getSelection(); s.removeAllRanges(); s.addRange(SEL); }
+    var s0 = window.getSelection(); if (ed.classList.contains('hub-rtt') && (!s0.rangeCount || s0.isCollapsed || !ed.contains(s0.anchorNode))) { var rg = document.createRange(); rg.selectNodeContents(ed); s0.removeAllRanges(); s0.addRange(rg); }   // Überschrift ohne Markierung: ganze Zeile
     try { document.execCommand('styleWithCSS', false, true); } catch (x) { }
     if (cmd === 'size') document.execCommand('fontSize', false, v);
     else if (cmd === 'hiliteColor') { if (!document.execCommand('hiliteColor', false, v)) document.execCommand('backColor', false, v); }
@@ -81,9 +90,9 @@ window.HubRich = (function () {
   });
   var st = document.createElement('style');
   st.textContent = '.hub-rtb{display:flex;flex-wrap:wrap;gap:3px;align-items:center;padding:5px;border:1px solid var(--line,#cbd5e1);border-radius:10px 10px 0 0;background:color-mix(in srgb,#94a3b8 10%,var(--card,#fff))}.hub-rtb>button,.hub-rpw>button{min-width:32px;height:30px;padding:0 6px;border:1px solid transparent;border-radius:7px;background:transparent;color:inherit;font:inherit;font-size:14px;cursor:pointer}.hub-rtb>button:hover,.hub-rpw>button:hover{background:color-mix(in srgb,#94a3b8 22%,transparent)}.hub-rsp{width:1px;height:20px;background:var(--line,#cbd5e1);margin:0 3px}.hub-rpw{position:relative}.hub-rpp{display:none;position:absolute;top:34px;left:0;z-index:30;gap:5px;flex-wrap:wrap;width:170px;padding:8px;border-radius:10px;background:var(--card,#fff);border:1px solid var(--line,#cbd5e1);box-shadow:0 6px 18px rgba(0,0,0,.18)}.hub-rpw.open .hub-rpp{display:flex}.hub-rsw{width:26px;height:26px;border-radius:50%;border:1px solid rgba(0,0,0,.25);cursor:pointer;padding:0;font-size:12px;color:#555}.hub-rno{background:#fff!important}.hub-rte{min-height:90px;padding:8px 10px;border:1px solid var(--line,#cbd5e1);border-top:0;border-radius:0 0 10px 10px;background:var(--card,#fff);outline:none;text-align:left;font-size:15px;line-height:1.4;overflow-wrap:anywhere}.hub-rte:empty:before{content:attr(data-ph);opacity:.5}.hub-rtc{overflow-wrap:anywhere}.hub-rtc.hub-pl{white-space:pre-line}.hub-rtc div,.hub-rtc p{margin:0}';
-  st.textContent += '.hub-rte a,.hub-rtc a{color:#1d4ed8;text-decoration:underline}';
+  st.textContent += '.hub-rte a,.hub-rtc a{color:#1d4ed8;text-decoration:underline}.hub-rtt{min-height:0;padding:9px 12px;border:1px solid var(--line,#cbd5e1);border-radius:10px;font-weight:800;font-size:16px;outline:none;background:var(--card,#fff);color:inherit}.hub-rtt:empty:before{content:attr(data-ph);opacity:.5;font-weight:400}';
   document.head.appendChild(st);
-  return { clean: clean, bar: bar, editor: editor, val: val, show: show, plain: plainToHtml, okBg: okBg };
+  return { clean: clean, bar: bar, barRow: barRow, editor: editor, titleEditor: titleEditor, valTitle: valTitle, showTitle: showTitle, val: val, show: show, plain: plainToHtml, okBg: okBg };
 })();
 
 // Schwarzes Brett: gemeinsame Hilfen für Startseite und Brett-Seite (Gültigkeit, Freigabe für Gruppen/Rollen, „Neu“)
@@ -126,9 +135,33 @@ window.HubBrett = (function () {
     return { until: uv, aud: (g.length || r.length) ? { g: g, r: r } : null };
   }
   var st = document.createElement('style');
-  st.textContent = '.hub-aud{margin:8px 0 12px;font-size:13px;text-align:left}.hub-aud-u input{margin-left:6px;padding:4px 6px;border-radius:8px;border:1px solid var(--line,#cbd5e1);background:var(--card,#fff);color:inherit;font:inherit;font-size:13px}.hub-aud details{margin-top:6px}.hub-aud summary{cursor:pointer;font-weight:700}.hub-aud summary i{font-weight:400;opacity:.7}.hub-aud-r{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;margin-top:5px}.hub-aud-c{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}.hub-aud-c input{width:16px;height:16px}.hub-new{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;background:#16a34a;color:#fff;font-size:11px;font-weight:800;vertical-align:middle}.hub-lock{display:block;margin-top:3px;font-size:12px;opacity:.75}';
+  st.textContent = '#hubRoot .hub-bt tr.hub-pin td{position:sticky;top:calc(var(--hh,60px) + var(--th,36px));z-index:5;padding:0;background:var(--card,#fff);text-align:left}#hubRoot .hub-bt.pin th{position:sticky;top:var(--hh,60px);z-index:6}#hubRoot .hub-bwrap.pin{overflow:visible}#hubRoot .hub-bt tr.hub-pin .hub-rtb{border-radius:0;box-shadow:0 3px 8px rgba(0,0,0,.12)}#hubRoot .hub-rte:not(.hub-rtt){border-radius:10px;margin-top:6px}#hubRoot .hub-bt tr.ed input[type=date]{padding:6px;border-radius:8px;border:1px solid var(--line,#cbd5e1);background:var(--card,#fff);color:inherit;font:inherit;font-size:13px;width:130px}.hub-aud{margin:8px 0 12px;font-size:13px;text-align:left}.hub-aud-u input{margin-left:6px;padding:4px 6px;border-radius:8px;border:1px solid var(--line,#cbd5e1);background:var(--card,#fff);color:inherit;font:inherit;font-size:13px}.hub-aud details{margin-top:6px}.hub-aud summary{cursor:pointer;font-weight:700}.hub-aud summary i{font-weight:400;opacity:.7}.hub-aud-r{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;margin-top:5px}.hub-aud-c{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}.hub-aud-c input{width:16px;height:16px}.hub-new{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;background:#16a34a;color:#fff;font-size:11px;font-weight:800;vertical-align:middle}.hub-lock{display:block;margin-top:3px;font-size:12px;opacity:.75}';
   document.head.appendChild(st);
-  return { today: today, expired: expired, isNew: isNew, markSeen: markSeen, loadRoles: loadRoles, picker: picker, read: read, audText: audText };
+  // Rollenliste nachträglich einsetzen (falls sie beim Öffnen noch nicht da war), angehakte Felder bleiben erhalten
+  function refreshPicker(scope, item, groups) {
+    loadRoles(function () { var box = scope && scope.querySelector('.hub-aud'); if (!box || box.querySelector('input[data-bb=r]')) return; var cur = read(scope); box.outerHTML = picker(Object.assign({}, item || {}, { until: cur.until, aud: cur.aud || (item && item.aud) || null }), groups); });
+  }
+  // Bearbeitungszeile (Startseite und Brett-Seite gleich). o: { attr: 'data-act'|'data-ma', save, cancel, groups, me }
+  function editRow(ex, o) {
+    ex = ex || {}; var R = window.HubRich, A = o.attr;
+    return '<tr class="ed"><td>' + esc(ex.by || o.me || '') + '</td><td><input type="date" data-bb="date" value="' + esc(ex.date || today()) + '"></td><td class="m">' + R.titleEditor(ex.titleHtml || esc(ex.title || '')) + R.editor(ex.html || R.plain(ex.text || ''), ex.bg) + picker(ex, o.groups) + '</td>' +
+      '<td class="a"><label class="hub-wch"><input type="checkbox" data-bb="wichtig"' + (ex.wichtig ? ' checked' : '') + '><span>📣 Wichtig</span></label><div><button type="button" class="hub-bx" ' + A + '="' + o.save + '" aria-label="Speichern" title="Speichern">💾</button><button type="button" class="hub-bx" ' + A + '="' + o.cancel + '" aria-label="Abbrechen" title="Abbrechen">✕</button></div></td></tr>';
+  }
+  // Werte der Bearbeitungszeile; null, wenn die Überschrift fehlt
+  function collect(scope) {
+    var R = window.HubRich, tt = R.valTitle(scope), bd = R.val(scope), pk = read(scope), d = scope.querySelector('input[data-bb=date]'), w = scope.querySelector('input[data-bb=wichtig]');
+    if (!tt.text) return null;
+    return { title: tt.text, titleHtml: /<[^>]+>/.test(tt.html) ? tt.html : '', text: bd.text, html: bd.html, bg: bd.bg, wichtig: !!(w && w.checked), date: d && /^\d{4}-\d{2}-\d{2}$/.test(d.value) ? d.value : today(), until: pk.until, aud: pk.aud };
+  }
+  // Abstände für die angeheftete Formatierleiste (unter Kopfzeile und Spaltenüberschriften)
+  function pin() {
+    var th = document.querySelector('table.hub-bt th'), r = document.documentElement.style;
+    r.setProperty('--th', (th ? th.offsetHeight : 36) + 'px'); pinTop();
+    if (!pin.on) { pin.on = true; window.addEventListener('scroll', pinTop, { passive: true }); window.addEventListener('resize', pinTop); }
+  }
+  // Oberkante der angehefteten Zeilen: unter der Kopfzeile, solange sie sichtbar ist, sonst ganz oben
+  function pinTop() { var h = document.querySelector('.hub-head'), b = h ? Math.max(0, Math.round(h.getBoundingClientRect().bottom)) : 0; document.documentElement.style.setProperty('--hh', b + 'px'); }
+  return { refreshPicker: refreshPicker, editRow: editRow, collect: collect, pin: pin, today: today, expired: expired, isNew: isNew, markSeen: markSeen, loadRoles: loadRoles, picker: picker, read: read, audText: audText };
 })();
 
 window.HubShell = (function () {

@@ -67,23 +67,19 @@ templateEngineOverride: false
     });
   }
   function brettLive() { return brettSort((state.brett || []).filter(function (b) { return !window.HubBrett.expired(b); })); }
-  function brettEditRow(ex) {
-    ex = ex || {}; var d = ex.date || todayIso();
-    return '<tr class="ed"><td>' + esc(ex.by || (SH.S.me && SH.S.me.user) || '') + '</td><td><input type="date" name="date" form="bform" value="' + esc(d) + '"></td><td class="m"><input type="text" name="title" form="bform" placeholder="Überschrift" maxlength="120" required value="' + esc(ex.title || '') + '">' + window.HubRich.editor(ex.html || window.HubRich.plain(ex.text || ''), ex.bg) + window.HubBrett.picker(ex, state.next && state.next.grp ? state.next.grp.all.map(function (g) { return g.name; }) : null) + '</td>' +
-      '<td class="a"><label class="hub-wch"><input type="checkbox" name="wichtig" form="bform"' + (ex.wichtig ? ' checked' : '') + '><span>📣 Wichtig</span></label><div><button type="submit" form="bform" class="hub-bx" aria-label="Speichern" title="Speichern">💾</button><button type="button" class="hub-bx" data-act="bcancel" aria-label="Abbrechen" title="Abbrechen">✕</button></div></td></tr>';
-  }
+  function grpNames() { return state.next && state.next.grp ? state.next.grp.all.map(function (g) { return g.name; }) : null; }
+  function brettEditRow(ex) { return window.HubBrett.editRow(ex, { attr: 'data-act', save: 'bsave', cancel: 'bcancel', me: SH.S.me && SH.S.me.user, groups: state.next && state.next.grp ? state.next.grp.all.map(function (g) { return g.name; }) : null }); }
   function brettHtml() {
     var can = SH.has('startseite.brett'), del = SH.has('brett.loeschen') || can; if (!SH.has('brett.view') && !can) return '';
     var l = brettLive(), shown = l.slice(0, 6);
-    var head = '<tr><th>Von</th><th>Datum</th><th>Mitteilung</th>' + (can ? '<th></th>' : '') + '</tr>';
+    var head = '<tr><th>Von</th><th>Datum</th><th>Mitteilung</th>' + (can ? '<th></th>' : '') + '</tr>' + (state.bform ? window.HubRich.barRow(can ? 4 : 3) : '');
     var rows = (state.bform && !state.bedit ? brettEditRow(null) : '') + shown.map(function (b, i) {
       if (state.bform && state.bedit === b.id) return brettEditRow(b);
       var up = i > 0 && !!shown[i - 1].wichtig === !!b.wichtig, dn = i < shown.length - 1 && !!shown[i + 1].wichtig === !!b.wichtig;
-      return '<tr' + (b.wichtig ? ' class="imp"' : '') + '><td>' + esc(b.by || '') + '</td><td>' + esc(fmtDMY(b.date)) + '</td><td class="m"' + (window.HubRich.okBg(b.bg) ? ' style="background:' + window.HubRich.okBg(b.bg) + '"' : '') + '><b>' + (b.wichtig ? '📣 ' : '') + esc(b.title) + '</b>' + (window.HubBrett.isNew(b) ? '<span class="hub-new">NEU</span>' : '') + (window.HubBrett.audText(b) ? '<span class="hub-lock">🔒 ' + esc(window.HubBrett.audText(b)) + '</span>' : '') + window.HubRich.show(b) + (b.until ? '<span class="hub-lock">sichtbar bis ' + esc(fmtDMY(b.until)) + '</span>' : '') + '</td>' +
+      return '<tr' + (b.wichtig ? ' class="imp"' : '') + '><td>' + esc(b.by || '') + '</td><td>' + esc(fmtDMY(b.date)) + '</td><td class="m"' + (window.HubRich.okBg(b.bg) ? ' style="background:' + window.HubRich.okBg(b.bg) + '"' : '') + '><b>' + (b.wichtig ? '📣 ' : '') + window.HubRich.showTitle(b) + '</b>' + (window.HubBrett.isNew(b) ? '<span class="hub-new">NEU</span>' : '') + (window.HubBrett.audText(b) ? '<span class="hub-lock">🔒 ' + esc(window.HubBrett.audText(b)) + '</span>' : '') + window.HubRich.show(b) + (b.until ? '<span class="hub-lock">sichtbar bis ' + esc(fmtDMY(b.until)) + '</span>' : '') + '</td>' +
         (can ? '<td class="a"><div><button type="button" class="hub-bx" data-act="bmove" data-dir="-1" data-id="' + esc(b.id) + '" aria-label="Nach oben"' + (up ? '' : ' disabled') + '>▲</button><button type="button" class="hub-bx" data-act="bmove" data-dir="1" data-id="' + esc(b.id) + '" aria-label="Nach unten"' + (dn ? '' : ' disabled') + '>▼</button><button type="button" class="hub-bx" data-act="bedit" data-id="' + esc(b.id) + '" aria-label="Bearbeiten">✏️</button>' + (del ? '<button type="button" class="hub-bx" data-act="bdel" data-id="' + esc(b.id) + '" aria-label="Löschen">🗑️</button>' : '') + '</div></td>' : '') + '</tr>'; }).join('');
     return '<section class="hub-card2" id="brett"><div class="hub-c2h"><h3>📌 Schwarzes Brett</h3><span class="hub-c2b">' + (can && !state.bform ? '<button type="button" class="hub-btn hub-gold" data-act="bnew">+ Neue Mitteilung</button>' : '') + '<a class="hub-btn hub-ghost" href="/intranet/brett/">' + (can ? 'Verwalten →' : 'Alle ansehen →') + '</a></span></div>' +
-      '<form id="bform" data-bf="1" data-id="' + esc(state.bedit || '') + '"></form>' +
-      (rows ? '<div class="hub-bwrap"><table class="hub-bt">' + head + rows + '</table></div>' + (l.length > shown.length ? '<p class="hub-sub" style="margin:8px 0 0">Weitere ' + (l.length - shown.length) + ' Mitteilungen unter „' + (can ? 'Verwalten' : 'Alle ansehen') + '“.</p>' : '') : '<p class="hub-sub" style="margin:6px 0 0">Zurzeit gibt es keine Mitteilungen.</p>') + '</section>';
+            (rows ? '<div class="hub-bwrap' + (state.bform ? ' pin' : '') + '"><table class="hub-bt' + (state.bform ? ' pin' : '') + '">' + head + rows + '</table></div>' + (l.length > shown.length ? '<p class="hub-sub" style="margin:8px 0 0">Weitere ' + (l.length - shown.length) + ' Mitteilungen unter „' + (can ? 'Verwalten' : 'Alle ansehen') + '“.</p>' : '') : '<p class="hub-sub" style="margin:6px 0 0">Zurzeit gibt es keine Mitteilungen.</p>') + '</section>';
   }
   function termineHtml() {
     var n = state.next && state.next.token === SH.token() ? state.next : null; var items = [];
@@ -197,16 +193,17 @@ templateEngineOverride: false
       fr.sort(function (a, b) { return a.k - b.k; });
       state.brett = d.brett || state.brett || []; var grp = r.counts ? { all: r.counts.all, mine: r.counts.mine } : null, cnt = r.counts ? r.counts.cnt : null; SH.lsSet('hubbrett', state.brett);
       var sw = null; if (up[0]) { var u0 = up[0], src = (u0.starts || []).length ? u0.starts : ((u0.meld && u0.meld.starts) || []), mp = {}; src.forEach(function (s0) { var k0 = s0.n || ''; if (k0) mp[k0] = (mp[k0] || 0) + 1; }); sw = { title: u0.title, date: u0.date, ort: u0.ort, m: src.length, names: Object.keys(mp).sort(function (a, b) { return a.localeCompare(b, 'de'); }).map(function (k0) { return { n: k0, c: mp[k0] }; }) }; }
-      state.next = { token: SH.token(), pgrp: state.pgrp, cnt: cnt, grp: grp, sw: sw, wk: wk, tasks: tasks, open: open, ev: ev, mine: mine, hints: hints, warn: warn, fr: fr.slice(0, 6) }; SH.lsSet('hubnext', state.next); render(); setTimeout(SH.prefetch, 800);
+      state.next = { token: SH.token(), pgrp: state.pgrp, cnt: cnt, grp: grp, sw: sw, wk: wk, tasks: tasks, open: open, ev: ev, mine: mine, hints: hints, warn: warn, fr: fr.slice(0, 6) }; SH.lsSet('hubnext', state.next); softRender(); setTimeout(SH.prefetch, 800);
     });
   }
   function loadWm() {
     SH.get('list', { name: 'aushang' }).then(function (r) {
       if (!r || !r.items) return; var c = r.items.filter(function (x) { return x.kind === 'countdown'; })[0];
-      state.wm = c ? { at: c.at, endAt: c.endAt, label: c.label } : null; SH.lsSet('hubwm', state.wm); render();
+      state.wm = c ? { at: c.at, endAt: c.endAt, label: c.label } : null; SH.lsSet('hubwm', state.wm); softRender();
     });
   }
-  function render() { root.innerHTML = SH.header('SG Barnstorf · Intranet') + '<main class="hub-main">' + body() + '</main>' + SH.overlay(); }
+  function render() { root.innerHTML = SH.header('SG Barnstorf · Intranet') + '<main class="hub-main">' + body() + '</main>' + SH.overlay(); if (state.bform) window.HubBrett.pin(); }
+  function softRender() { if (state.bform) return; render(); }
   function load() { var fast = SH.restore(); state.loaded = fast; state.wm = SH.lsGet('hubwm', null); render(); if (fast) { loadNext(); loadWm(); } setTimeout(function () { if (SH.has('startseite.brett')) window.HubBrett.loadRoles(function () { }); }, 1500); return SH.loadAccount().then(function () { state.loaded = true; render(); if (!fast) { loadNext(); loadWm(); } }); }
 
   root.addEventListener('click', function (ev) {
@@ -218,8 +215,17 @@ templateEngineOverride: false
     else if (a === 'gdone') { state.gedit = false; render(); }
     else if (a === 'greset') { state.pgrp = null; saveProf({ grp: null }); render(); }
     else if (a === 'gtog') { var gg = t.getAttribute('data-g'), gcur = groupSel(state.next || {}).slice(), gi = gcur.indexOf(gg); if (gi >= 0) gcur.splice(gi, 1); else gcur.push(gg); state.pgrp = gcur; saveProf({ grp: gcur }); render(); }
-    else if (a === 'bnew') { state.bform = true; state.bedit = null; render(); window.HubBrett.loadRoles(function () { var e1 = root.querySelector('tr.ed'); if (e1 && !e1.querySelector('input[data-bb=r]')) { var kp = e1.querySelector('.hub-rte'), h0 = kp ? kp.innerHTML : '', t0 = (e1.querySelector('input[name=title]') || {}).value || ''; render(); var n1 = root.querySelector('tr.ed'); if (n1) { var r1 = n1.querySelector('.hub-rte'); if (r1) r1.innerHTML = h0; var i1 = n1.querySelector('input[name=title]'); if (i1) i1.value = t0; } } }); }
-    else if (a === 'bedit') { state.bform = true; state.bedit = t.getAttribute('data-id'); render(); window.HubBrett.loadRoles(function () { var e1 = root.querySelector('tr.ed'); if (e1 && !e1.querySelector('input[data-bb=r]')) { var kp = e1.querySelector('.hub-rte'), h0 = kp ? kp.innerHTML : '', t0 = (e1.querySelector('input[name=title]') || {}).value || ''; render(); var n1 = root.querySelector('tr.ed'); if (n1) { var r1 = n1.querySelector('.hub-rte'); if (r1) r1.innerHTML = h0; var i1 = n1.querySelector('input[name=title]'); if (i1) i1.value = t0; } } }); var bf = root.querySelector('tr.ed'); if (bf && bf.scrollIntoView) bf.scrollIntoView({ block: 'center' }); }
+    else if (a === 'bnew') { state.bform = true; state.bedit = null; render(); window.HubBrett.refreshPicker(root.querySelector('tr.ed'), null, grpNames()); var te = root.querySelector('.hub-rtt'); if (te) te.focus(); }
+    else if (a === 'bedit') { state.bform = true; state.bedit = t.getAttribute('data-id'); render(); var cb = (state.brett || []).filter(function (b) { return b.id === state.bedit; })[0]; window.HubBrett.refreshPicker(root.querySelector('tr.ed'), cb, grpNames()); var bf = root.querySelector('tr.ed'); if (bf && bf.scrollIntoView) bf.scrollIntoView({ block: 'center' }); }
+    else if (a === 'bsave') {
+      var tr = root.querySelector('tr.ed'), v = tr ? window.HubBrett.collect(tr) : null; if (!v) { tip('Bitte eine Überschrift eingeben.', true); return; }
+      var eid = state.bedit, old = eid ? (state.brett || []).filter(function (b) { return b.id === eid; })[0] : null;
+      var it = old ? Object.assign({}, old, v) : Object.assign({ id: 'b-' + Date.now().toString(36), by: SH.S.me && SH.S.me.user || '', ts: Date.now() }, v);
+      if (!v.titleHtml) delete it.titleHtml;
+      var before = state.brett || []; state.brett = old ? before.map(function (b) { return b.id === eid ? it : b; }) : [it].concat(before); SH.lsSet('hubbrett', state.brett); state.bform = false; state.bedit = null;
+      SH.post({ action: 'dataOps', token: SH.token(), ops: [{ op: 'set', coll: 'brett', item: it }] }).then(function (r) { if (!r || r.status !== 'success') { state.brett = before; SH.lsSet('hubbrett', before); render(); tip('Speichern hat nicht geklappt.', true); } });
+      render();
+    }
     else if (a === 'bcancel') { state.bform = false; state.bedit = null; render(); }
     else if (a === 'bmove') {
       var mid = t.getAttribute('data-id'), dir = +t.getAttribute('data-dir'), cur = brettLive(), ix = cur.map(function (b) { return b.id; }).indexOf(mid), jx = ix + dir;
@@ -232,16 +238,6 @@ templateEngineOverride: false
     else if (a === 'bdel') { var bid = t.getAttribute('data-id'); state.brett = (state.brett || []).filter(function (b) { return b.id !== bid; }); SH.lsSet('hubbrett', state.brett); SH.post({ action: 'dataOps', token: SH.token(), ops: [{ op: 'del', coll: 'brett', id: bid }] }); render(); }
   });
   root.addEventListener('submit', function (ev) {
-    var f = ev.target; if (f && f.getAttribute && f.getAttribute('data-bf')) {
-      ev.preventDefault(); var fd = new FormData(f); var title = String(fd.get('title') || '').trim(); if (!title) return;
-      var eid = f.getAttribute('data-id'), old = eid ? (state.brett || []).filter(function (b) { return b.id === eid; })[0] : null;
-      var dt = /^\d{4}-\d{2}-\d{2}$/.test(String(fd.get('date') || '')) ? String(fd.get('date')) : todayIso();
-      var rv = window.HubRich.val(root), ex2 = window.HubBrett.read(root.querySelector('tr.ed'));
-      var it = old ? Object.assign({}, old, { title: title, text: rv.text, html: rv.html, bg: rv.bg, wichtig: !!fd.get('wichtig'), date: dt, until: ex2.until, aud: ex2.aud }) : { id: 'b-' + Date.now().toString(36), title: title, text: rv.text, html: rv.html, bg: rv.bg, wichtig: !!fd.get('wichtig'), by: SH.S.me && SH.S.me.user || '', date: dt, until: ex2.until, aud: ex2.aud, ts: Date.now() };
-      var before = state.brett || []; state.brett = old ? before.map(function (b) { return b.id === eid ? it : b; }) : [it].concat(before); SH.lsSet('hubbrett', state.brett); state.bform = false; state.bedit = null;
-      SH.post({ action: 'dataOps', token: SH.token(), ops: [{ op: 'set', coll: 'brett', item: it }] }).then(function (r) { if (!r || r.status !== 'success') { state.brett = before; SH.lsSet('hubbrett', before); render(); } });
-      render(); return;
-    }
     SH.submit(ev, render, load);
   });
   load();

@@ -158,6 +158,7 @@ templateEngineOverride: false
   var lastHtml = '';
   function renderMain(force) {
     var m = document.getElementById('mMain'); if (!m) return;
+    if (def.hold && def.hold()) { S.dirty = true; return; }
     if (!force && typing()) { S.dirty = true; return; }
     if (force && typing() && !S.forceTyping) { S.dirty = true; return; }
     var h = mainHtml();
