@@ -15,7 +15,11 @@ templateEngineOverride: false
   function pid(name) { return 'p-' + String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 36); }
   function me() { return M.userName(); }
   function personal() { var m = M.SH.S.me; return !!(m && m.user); }
-  function profile() { return M.find('profile', pid(me())) || {}; }
+  // Profil und Trainerdatensatz sind dieselben Angaben: der Trainerdatensatz (Mitglieder/Trainer) gilt, wenn er einen Wert hat
+  var SYNC = { lizArt: 'lizArt', lizNr: 'lizNr', lizBis: 'lizBis', ehBis: 'ersteHilfeBis', rettungBis: 'rettungBis', fz: 'fuehrungszeugnis' };
+  function masterTr() { var n = String(me() || '').toLowerCase().trim(); var r = null; try { M.items('trainer').forEach(function (t) { if (String(t.name || '').toLowerCase().trim() === n) r = t; }); } catch (e) { r = null; } return r; }
+  function profile() { var p = Object.assign({}, M.find('profile', pid(me())) || {}); var t = masterTr(); if (t) Object.keys(SYNC).forEach(function (k) { if (t[k]) p[SYNC[k]] = t[k]; }); return p; }
+  function syncToTrainer(vv) { var t = masterTr(); if (!t) return; var f = {}; Object.keys(SYNC).forEach(function (k) { if (vv[SYNC[k]] !== undefined && vv[SYNC[k]] !== (t[k] || '')) f[k] = vv[SYNC[k]]; }); if (Object.keys(f).length) M.op({ op: 'patch', coll: 'trainer', id: t.id, fields: f }); }
   function rates() { var s = M.find('saetze', 'main') || {}; var d = function (v, x) { return v === undefined || v === '' ? x : num(v); }; return { std: d(s.std, 5), km: d(s.km, 0.2), fahrt: d(s.fahrt, 5), liz: Array.isArray(s.liz) ? s.liz : [], fahrer: Array.isArray(s.fahrer) ? s.fahrer : [] }; }
   function satzFor(lizArt) {
     var r = rates(); var l = lower(lizArt);
@@ -517,7 +521,7 @@ templateEngineOverride: false
   }
   function prow(label, val) { return '<div class="m-chk"><span style="flex:1">' + label + '</span><b style="text-align:right;overflow-wrap:anywhere">' + (val === '' || val === undefined ? '<span class="wm-sub">–</span>' : val) + '</b></div>'; }
   M.register('profil', {
-    title: 'Mein Profil', icon: '👤', colls: ['profile'], custom: true,
+    title: 'Mein Profil', icon: '👤', colls: ['profile', 'trainer'], custom: true,
     render: function () {
       var m = M.SH.S.me;
       if (!m) return '<section class="wm-card"><p class="wm-note">Bitte melde dich an.</p><button type="button" class="wm-amber" data-sh="login">Anmelden</button></section>';
@@ -582,7 +586,7 @@ templateEngineOverride: false
       pfedit: function () {
         var p = profile(); var item = {}; PF.forEach(function (f) { item[f[0]] = p[f[0]] || ''; });
         var fields = PF.map(function (f) { return { k: f[0], t: f[2] === 'date' ? 'date' : 'text', label: f[1] }; });
-        M.openForm({ title: 'Profil bearbeiten', fields: fields, item: item, onSave: function (vv) { M.op({ op: 'set', coll: 'profile', item: Object.assign({}, p, { id: pid(me()) }, vv) }); M.toast('Profil gespeichert.'); } });
+        M.openForm({ title: 'Profil bearbeiten', fields: fields, item: item, onSave: function (vv) { M.op({ op: 'set', coll: 'profile', item: Object.assign({}, M.find('profile', pid(me())) || {}, { id: pid(me()) }, vv) }); syncToTrainer(vv); M.toast('Profil gespeichert.'); } });
       },
       pfimport: function () {
         M.openDlg('<div class="hub-dhead"><h3>Aus WebClub-Datei</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div><p class="wm-note">In WebClub deine Stammdaten als CSV exportieren („stammdaten.csv“) und hier auswählen. Es wird nur deine eigene Zeile gelesen. Übernommen werden Telefon, E-Mail, Lizenzen, Nachweise und Bankverbindung. Die Datei selbst wird nicht gespeichert.</p><div class="m-fgrid"><label class="m-f wide"><span>CSV-Datei</span><input type="file" id="pffile" accept=".csv,text/csv,text/plain"></label></div><p id="pfmsg" class="wm-note"></p><div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="pfread">Einlesen</button></div>');

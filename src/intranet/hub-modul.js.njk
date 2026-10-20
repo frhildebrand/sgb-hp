@@ -203,6 +203,7 @@ templateEngineOverride: false
   function fieldHtml(f, v) {
     var id = 'mf_' + f.k; var val = v === undefined || v === null ? '' : v; var lab = '<span>' + esc(f.label) + (f.req ? ' *' : '') + '</span>';
     var attr = ' name="' + esc(f.k) + '" id="' + id + '"' + (f.req ? ' required' : '') + (f.ph ? ' placeholder="' + esc(f.ph) + '"' : '');
+    if (f.t === 'sec') return '<div class="m-f wide m-fsec">' + esc(f.label) + '</div>';
     if (f.t === 'chk') return '<label class="m-f m-fchk"><input type="checkbox"' + attr + (val ? ' checked' : '') + '>' + lab + '</label>';
     if (f.t === 'area') return '<label class="m-f' + (f.wide === false ? '' : ' wide') + '">' + lab + '<textarea' + attr + ' rows="' + (f.rows || 4) + '">' + esc(val) + '</textarea>' + (f.hint ? '<small>' + f.hint + '</small>' : '') + '</label>';
     if (f.t === 'lines') return '<label class="m-f wide">' + lab + '<textarea' + attr + ' rows="' + (f.rows || 5) + '">' + esc((Array.isArray(val) ? val : []).join('\n')) + '</textarea>' + (f.hint ? '<small>' + f.hint + '</small>' : '') + '</label>';

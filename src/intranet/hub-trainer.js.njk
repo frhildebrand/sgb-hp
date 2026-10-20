@@ -18,12 +18,16 @@ templateEngineOverride: false
     { k: 'name', t: 'text', label: 'Name', req: true },
     { k: 'gruppen', t: 'pick', label: 'Gruppen', opts: GR },
     { k: 'lizArt', t: 'text', label: 'Lizenz (Art)', ph: 'z. B. Trainer C Breitensport' },
-    { k: 'lizNr', t: 'text', label: 'Lizenz-Nr.' },
+    { k: 'lizNr', t: 'text', label: 'Lizenznummer' },
+    { k: 'lizDosb', t: 'text', label: 'Lizenznummer DOSB' },
+    { k: 'aktiv', t: 'sel', label: 'Aktiver Trainer', opts: [['', 'Ja'], ['nein', 'Nein']] },
+    { k: 'seit', t: 'date', label: 'Trainer seit' },
     { k: 'lizBis', t: 'date', label: 'Lizenz gültig bis' },
     { k: 'ehBis', t: 'date', label: 'Erste Hilfe gültig bis' },
     { k: 'rettungBis', t: 'date', label: 'Rettungsnachweis gültig bis' },
     { k: 'kariBis', t: 'date', label: 'Kampfrichter gültig bis' },
     { k: 'fz', t: 'date', label: 'Führungszeugnis vom' },
+    { k: 'ehrenkodex', t: 'date', label: 'Ehrenkodex vom' },
     { k: 'notiz', t: 'area', label: 'Notiz', rows: 3 }
   ];
   function flt() { return M.S.filter || (M.S.filter = {}); }
@@ -40,7 +44,7 @@ templateEngineOverride: false
     card: function (t) {
       var row = function (lab, iso, extra) { var a = amp(iso); return '<div class="m-chk"><span style="flex:1">' + lab + (extra ? ' <span class="wm-sub">' + esc(extra) + '</span>' : '') + '</span>' + M.badge(a[1], a[0]) + '</div>'; };
       return { title: t.name, badges: M.badge({ green: 'ok', amber: 'bald ablaufend', red: 'abgelaufen', gray: '' }[worst(t)] || '', worst(t) === 'gray' ? 'gray' : worst(t)),
-        sub: (t.gruppen || []).join(', ') || 'keine Gruppe', body: row('Trainerlizenz', t.lizBis, t.lizArt) + row('Erste Hilfe', t.ehBis) + row('Rettungsnachweis', t.rettungBis) + (t.kariBis ? row('Kampfrichter', t.kariBis) : '') + (t.fz ? '<div class="m-chk"><span style="flex:1">Führungszeugnis</span><b>' + fd(t.fz) + '</b></div>' : '') + (t.notiz ? '<pre>' + esc(t.notiz) + '</pre>' : '') };
+        sub: (t.gruppen || []).join(', ') || 'keine Gruppe', body: row('Trainerlizenz', t.lizBis, [t.lizArt, t.lizNr, t.lizDosb ? 'DOSB ' + t.lizDosb : ''].filter(Boolean).join(' · ')) + row('Erste Hilfe', t.ehBis) + row('Rettungsnachweis', t.rettungBis) + (t.kariBis ? row('Kampfrichter', t.kariBis) : '') + [['fz', 'Führungszeugnis'], ['ehrenkodex', 'Ehrenkodex'], ['seit', 'Trainer seit']].map(function (r) { return t[r[0]] ? '<div class="m-chk"><span style="flex:1">' + r[1] + '</span><b>' + fd(t[r[0]]) + '</b></div>' : ''; }).join('') + (t.notiz ? '<pre>' + esc(t.notiz) + '</pre>' : '') };
     }
   };
   M.register('trainer', { title: 'Trainer', icon: '🎓', colls: ['trainer'], tabs: [tab], actions: { tgf: function (it, el) { var f = flt(); var v = el.getAttribute('data-v'); if (v) f.g = v; else delete f.g; M.render(true); } } });

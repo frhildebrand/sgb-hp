@@ -10,7 +10,7 @@ templateEngineOverride: false
   var M = window.HubMod; if (!M) return;
   var esc = M.esc;
   var GR = ['Wettkampfgruppe', 'Gruppe 1', 'Gruppe 2', 'Gruppe 3', 'Gruppe 4', 'Masters'];
-  var ROLLEN = ['Schwimmer', 'Kampfrichter', 'Funktionär', 'Sonstige'];
+  var ROLLEN = ['Schwimmer', 'Trainer', 'Kampfrichter', 'Funktionär'];
   function lower(s) { return String(s || '').toLowerCase().trim(); }
   function members() { return M.items('wgMitglieder').sort(function (a, b) { return String(a.name || '').localeCompare(String(b.name || ''), 'de'); }); }
   // Ältere Einträge ohne Gruppenfeld gehören zur Wettkampfgruppe
@@ -28,49 +28,159 @@ templateEngineOverride: false
     return ms.filter(function (m) { var mn = lower(m.name); return mn === n || mn === rev; })[0] || null;
   }
 
-  /* ---------- Liste ---------- */
-  var FIELDS = [
-    { k: 'name', t: 'text', label: 'Name', req: true, ph: 'Vorname Nachname' },
-    { k: 'jg', t: 'num', label: 'Jahrgang' },
-    { k: 'sex', t: 'sel', label: 'Geschlecht', opts: [['', '–'], ['w', 'weiblich'], ['m', 'männlich'], ['d', 'divers']] },
-    { k: 'gruppen', t: 'pick', label: 'Gruppen', opts: GR, hint: 'Mehrere sind möglich.' },
-    { k: 'rollen', t: 'pick', label: 'Rollen', opts: ROLLEN, hint: 'Mehrere sind möglich, z. B. Schwimmer und Kampfrichter.' },
-    { k: 'trainerIn', t: 'pick', label: 'Trainer in Gruppen', opts: GR, hint: 'Wo diese Person Trainer ist. Sie erscheint dann auch im Bereich Trainer.' },
-    { k: 'status', t: 'sel', label: 'Status', opts: [['', 'aktiv'], ['pausiert', 'pausiert'], ['ausgetreten', 'ausgetreten']] },
-    { k: 'eintritt', t: 'text', label: 'Eintritt (Jahr oder Datum)' },
-    { k: 'austritt', t: 'text', label: 'Austritt (Jahr oder Datum)', hint: 'Nur für die Jahresauswertung (Austritte).' },
-    { k: 'dsv', t: 'text', label: 'DSV-ID' },
-    { k: 'notiz', t: 'area', label: 'Notiz', rows: 3 }
-  ];
-  function chipRow(label, key, opts, cur) {
-    return '<div class="m-chips" style="margin:2px 0 6px"><span class="wm-sub" style="align-self:center">' + label + '</span>' + [['', 'Alle']].concat(opts.map(function (o) { return [o, o]; })).map(function (o) { return '<button type="button" class="m-chip' + (cur === o[0] ? ' on' : '') + '" data-ma="mgf" data-k="' + key + '" data-v="' + esc(o[0]) + '">' + esc(o[1]) + '</button>'; }).join('') + '</div>';
+  /* ---------- Personenliste (eine Liste für alle Rollen) ---------- */
+  var LIZ = ['Helfer', 'Breitensport', 'Trainer C', 'Trainer C – Breitensport'];
+  var AMT = ['Organisatorischer Leiter', 'Geschäftsführung', 'Vorstand', 'Kassenwart', 'Jugendvertretung', 'Schriftführung', 'Trainer', 'Helfer'];
+  var SHORT = { 'Wettkampfgruppe': 'WK', 'Gruppe 1': 'Gr. 1', 'Gruppe 2': 'Gr. 2', 'Gruppe 3': 'Gr. 3', 'Gruppe 4': 'Gr. 4', 'Masters': 'Masters' };
+  var PERSON_KEYS = ['name', 'jg', 'sex', 'mnr', 'dsv', 'status', 'eintritt', 'austritt', 'rollen', 'gruppen', 'attest', 'kariNr', 'kariBis', 'kariAusw', 'kariSchied', 'amt', 'amtVon', 'amtBis', 'notiz'];
+  var TRAINER_KEYS = ['lizArt', 'lizNr', 'lizDosb', 'lizBis', 'aktiv', 'seit', 'ehBis', 'rettungBis', 'fz', 'ehrenkodex'];
+  // Profil (Abrechnung) und Trainerdatensatz teilen diese Angaben
+  var PROFILE_MAP = { lizArt: 'lizArt', lizNr: 'lizNr', lizBis: 'lizBis', ehBis: 'ersteHilfeBis', rettungBis: 'rettungBis', fz: 'fuehrungszeugnis', kariNr: 'kariNr', kariBis: 'kariBis' };
+  var PL = { q: '', nr: '', r: '', g: '', st: 'aktiv', sort: 'name', dir: 1, page: 0, open: {}, per: 25 };
+  var SORTS = [['name', 'Name A–Z'], ['nr', 'Mitgliedsnummer'], ['schwimmer', 'Schwimmer zuerst'], ['trainer', 'Trainer zuerst'], ['kari', 'Kampfrichter zuerst'], ['funk', 'Funktionäre zuerst']];
+  function pidOf(n) { return 'p-' + lower(n).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 36); }
+  function trMap() { var o = {}; trainers().forEach(function (t) { o[lower(t.name)] = t; o[lower(swapName(t.name))] = t; if (t.mnr) o['#' + t.mnr] = t; }); return o; }
+  // Verbindung Person ↔ Trainerdatensatz: zuerst über die Mitgliedsnummer, sonst über den Namen
+  function trOf(m, tm) { return (m.mnr && tm['#' + m.mnr]) || tm[lower(m.name)] || tm[lower(swapName(m.name))] || null; }
+  // Personen = Mitgliederliste + Trainer, die noch keinen Mitgliedseintrag haben
+  function people() {
+    var ms = members(); var tm = trMap(); var have = {}; ms.forEach(function (m) { have[lower(m.name)] = 1; if (m.mnr) have['#' + m.mnr] = 1; });
+    trainers().forEach(function (t) { if (!(t.mnr && have['#' + t.mnr]) && !have[lower(t.name)] && !have[lower(swapName(t.name))]) { have[lower(t.name)] = 1; ms.push({ id: 'v-' + t.id, virtual: 1, tid: t.id, name: t.name, rollen: ['Trainer'], gruppen: [] }); } });
+    return ms.map(function (m) { var tr = trOf(m, tm); return { m: m, tr: tr }; });
   }
-  var listTab = {
-    id: 'alle', label: 'Alle Mitglieder', coll: 'wgMitglieder', view: ['mitglieder.view'], edit: ['mitglieder.edit'], add: ['mitglieder.edit', 'mitglieder.anlegen'], del: ['mitglieder.edit', 'mitglieder.loeschen'], addLabel: 'Neues Mitglied', search: ['name', 'dsv'], get fields() { return M.anyCan(['mitglieder.trainer']) ? FIELDS : FIELDS.filter(function (f) { return f.k !== 'trainerIn'; }); },
-    newItem: function () { var f = flt(); return { gruppen: f.g ? [f.g] : [], rollen: ['Schwimmer'] }; },
-    prep: function (m) { var t = match(m.name, trainers().map(function (x) { return { name: x.name, g: x.gruppen }; })); if (!Array.isArray(m.trainerIn)) { var tr = trainers().filter(function (x) { return lower(x.name) === lower(m.name) || lower(x.name) === lower(swapName(m.name)); })[0]; m.trainerIn = tr ? (tr.gruppen || []).slice() : []; } return m; },
-    beforeSave: function (it) {
-      it.title = it.name; if (!M.anyCan(['mitglieder.trainer'])) { delete it.trainerIn; return; } var tin = Array.isArray(it.trainerIn) ? it.trainerIn : [];
-      var tr = trainers().filter(function (x) { return lower(x.name) === lower(it.name) || lower(x.name) === lower(swapName(it.name)); })[0];
-      if (tr) { if (JSON.stringify(tr.gruppen || []) !== JSON.stringify(tin)) M.op({ op: 'patch', coll: 'trainer', id: tr.id, fields: { gruppen: tin } }); }
-      else if (tin.length) M.op({ op: 'set', coll: 'trainer', item: { id: 't-' + slug(it.name), name: it.name, title: it.name, owner: it.name, gruppen: tin } });
-    },
-    filter: function (m, f) { f = f || {}; if (f.g && gOf(m).indexOf(f.g) < 0) return false; if (f.r && !hasR(m, f.r)) return false; if (!f.alle && !isActive(m)) return false; return true; },
-    summary: function (all) {
-      var f = flt(); var act = all.filter(isActive);
-      return '<div class="m-stats">' + M.stat(act.length, 'Aktive Mitglieder', '') + M.stat(all.length - act.length, 'Pausiert / ausgetreten', '') + M.stat(act.filter(function (m) { return hasR(m, 'Kampfrichter'); }).length, 'Kampfrichter', '') + M.stat(act.filter(function (m) { return !gOf(m).length; }).length, 'Ohne Gruppe', act.filter(function (m) { return !gOf(m).length; }).length ? 'warn' : '') + '</div>' +
-        chipRow('Gruppe', 'g', GR, f.g || '') + chipRow('Rolle', 'r', ROLLEN, f.r || '') + '<div class="m-chips" style="margin:2px 0 8px"><button type="button" class="m-chip' + (f.alle ? ' on' : '') + '" data-ma="mgall">Auch pausierte und ausgetretene zeigen</button></div>';
-    },
-    card: function (m) {
-      return { title: m.name, badges: (m.status ? M.badge(m.status, 'amber') : '') + rOf(m).filter(function (r) { return r !== 'Schwimmer'; }).map(function (r) { return ' ' + M.badge(r, 'blue'); }).join(''),
-        sub: [m.jg ? 'Jg. ' + m.jg + ' (' + age(m) + ')' : '', gOf(m).join(', ') || 'keine Gruppe', (function () { var tr = trainers().filter(function (x) { return lower(x.name) === lower(m.name); })[0]; return tr && (tr.gruppen || []).length ? 'Trainer: ' + tr.gruppen.join(', ') : ''; })()].filter(Boolean).join(' · '),
-        body: [m.dsv && m.dsv !== '0' ? '<div><b>DSV-ID:</b> ' + esc(m.dsv) + '</div>' : '', m.notiz ? '<div><pre>' + esc(m.notiz) + '</pre></div>' : ''].join('') };
-    },
-    printAll: function (all) {
-      var f = flt(); var l = all.filter(function (m) { return listTab.filter(m, f); });
-      return { title: 'Mitglieder' + (f.g ? ' ' + f.g : ''), body: '<h1>Mitglieder' + (f.g ? ': ' + esc(f.g) : '') + '</h1><div class="sub">Stand ' + M.fmtDate(M.today()) + ' · ' + l.length + ' Personen</div><table><tr><th>Name</th><th>Jg.</th><th>Gruppen</th><th>Rolle</th></tr>' + l.map(function (m) { return '<tr><td>' + esc(m.name) + '</td><td>' + esc(m.jg || '') + '</td><td>' + esc(gOf(m).join(', ')) + '</td><td>' + esc(rOf(m).join(', ')) + '</td></tr>'; }).join('') + '</table>' };
+  function isSw(p) { return hasR(p.m, 'Schwimmer') && !p.m.virtual; }
+  function isTr(p) { return p.m.pl ? hasR(p.m, 'Trainer') : (hasR(p.m, 'Trainer') || !!p.tr); }
+  function isKari(p) { return hasR(p.m, 'Kampfrichter') || !!(p.m.kariNr || p.m.kariBis); }
+  function isFunk(p) { return hasR(p.m, 'Funktionär') || !!p.m.amt; }
+  function tGroups(p) { return (p.tr && p.tr.gruppen) || p.m.trainerIn || []; }
+  function dleft(iso) { if (!iso) return null; var d = M.daysTo(iso); return d === null || d === undefined ? null : d; }
+  function ampel(iso) { var d = dleft(iso); return d === null ? 'gray' : d < 0 ? 'red' : d <= 90 ? 'amber' : 'green'; }
+  function worstTr(tr) { if (!tr) return 'gray'; var rk = { gray: 0, green: 1, amber: 2, red: 3 }, w = 'green', any = false; ['lizBis', 'ehBis', 'rettungBis'].forEach(function (k) { var c = ampel(tr[k]); if (c !== 'gray') { any = true; if (rk[c] > rk[w]) w = c; } }); return any ? w : 'gray'; }
+  function chip(txt, cls) { txt = String(txt); return '<span class="pl-c pl-' + cls + '"' + (txt.length > 26 ? ' title="' + esc(txt) + '"' : '') + '>' + esc(txt.length > 26 ? txt.slice(0, 25) + '…' : txt) + '</span>'; }
+  function chips(arr, cls) { arr = arr || []; var out = arr.slice(0, 3).map(function (g) { return chip(SHORT[g] || g, cls); }).join(''); if (arr.length > 3) out += chip('+' + (arr.length - 3), 'g'); return out; }
+  function warn(iso, label) { var a = ampel(iso); return a === 'red' ? chip(label + ' abgelaufen', 'w') : a === 'amber' ? chip(label + ' bis ' + M.fmtDate(iso), 'a') : ''; }
+  function fd(i) { return i ? M.fmtDate(i) : '–'; }
+  function lastName(n) { var t = String(n || '').trim().split(/\s+/); return t.length > 1 ? t[t.length - 1] + ' ' + t.slice(0, -1).join(' ') : t[0] || ''; }
+  function sortKey(p, k) {
+    if (k === 'nr') return Number(p.m.mnr) || 1e9;
+    var has = { schwimmer: isSw(p), trainer: isTr(p), kari: isKari(p), funk: isFunk(p) }[k];
+    return has === undefined ? lower(lastName(p.m.name)) : (has ? 0 : 1);
+  }
+  function listed() {
+    var ps = people(); var q = lower(PL.q), nr = lower(PL.nr);
+    ps = ps.filter(function (p) {
+      var m = p.m; var act = isActive(m);
+      if (PL.st === 'aktiv' && !act) return false; if (PL.st === 'pausiert' && m.status !== 'pausiert') return false; if (PL.st === 'ausgetreten' && act) return false;
+      if (q && lower(m.name).indexOf(q) < 0) return false; if (nr && String(m.mnr || '').indexOf(nr) < 0) return false;
+      if (PL.r) { var has = { Schwimmer: isSw(p), Trainer: isTr(p), Kampfrichter: isKari(p), 'Funktionär': isFunk(p) }[PL.r]; if (!has) return false; }
+      if (PL.g && gOf(m).indexOf(PL.g) < 0 && tGroups(p).indexOf(PL.g) < 0) return false;
+      return true;
+    });
+    ps.forEach(function (p) { p.k = sortKey(p, PL.sort); p.n = lower(lastName(p.m.name)); });
+    ps.sort(function (a, b) { var c = a.k < b.k ? -1 : a.k > b.k ? 1 : 0; if (c === 0) c = a.n < b.n ? -1 : a.n > b.n ? 1 : 0; return c * PL.dir; });
+    return ps;
+  }
+  function nameCell(p) { var m = p.m; return '<b>' + esc(m.name) + '</b>' + (m.jg ? '<div class="wm-sub">Jg. ' + esc(m.jg) + '</div>' : ''); }
+  function rowHtml(p) {
+    var m = p.m; var open = !!PL.open[m.id]; var can = M.anyCan(['mitglieder.edit']);
+    var dot = !isActive(m) ? (m.status === 'pausiert' ? 'amber' : 'gray') : '';
+    var sw = isSw(p) ? (gOf(m).length ? chips(gOf(m), 's') : chip('keine Gruppe', 'g')) + warn(m.attest, 'Attest') : '<span class="pl-none">–</span>';
+    var wt = worstTr(p.tr); var trc = isTr(p) ? (tGroups(p).length ? chips(tGroups(p), 'tr') : chip('Trainer', 'tr')) + (wt === 'red' ? chip('Nachweis abgelaufen', 'w') : wt === 'amber' ? chip('Nachweis läuft ab', 'a') : '') : '<span class="pl-none">–</span>';
+    var kc = isKari(p) ? chip(m.kariNr ? 'Nr. ' + m.kariNr : 'Kampfrichter', 'k') + warn(m.kariBis, 'Lizenz') : '<span class="pl-none">–</span>';
+    var fc = isFunk(p) ? (m.amt ? chip(m.amt, 'v') : chip('Funktionär', 'v')) + warn(m.amtBis, 'Amt') : '<span class="pl-none">–</span>';
+    var out = '<tr class="pl-r" data-id="' + esc(m.id) + '" data-ma="plopen"><td><span class="pl-dot ' + dot + '"></span></td><td>' + nameCell(p) + '</td><td>' + esc(m.mnr || '') + '</td><td>' + sw + '</td><td>' + trc + '</td><td>' + kc + '</td><td>' + fc + '</td><td style="white-space:nowrap">' +
+      '<button type="button" class="pl-ic" data-ma="plopen" aria-label="Details">' + (open ? '⌃' : '⌄') + '</button>' + (can ? '<button type="button" class="pl-ic" data-ma="pledit" aria-label="Bearbeiten">✎</button><button type="button" class="pl-ic" data-ma="pldel" aria-label="Löschen">🗑</button>' : '') + '</td></tr>';
+    if (open) out += '<tr class="pl-d"><td></td><td colspan="7">' + detailHtml(p) + '</td></tr>';
+    return out;
+  }
+  function okLine(lab, iso) { var a = ampel(iso); return '<span class="pl-c pl-' + ({ green: 'k', amber: 'a', red: 'w', gray: 'g' }[a]) + '">' + (a === 'green' ? '✓ ' : a === 'gray' ? '– ' : '⚠ ') + esc(lab) + '</span>'; }
+  function detailHtml(p) {
+    var m = p.m, tr = p.tr || {}; var b = [];
+    if (isSw(p)) b.push('<div class="pl-bl"><h4>🏊 Schwimmer</h4><p>Gruppen: ' + (gOf(m).map(esc).join(', ') || '–') + '</p><p>Attest gültig bis: <b>' + fd(m.attest) + '</b> ' + warn(m.attest, 'Attest') + '</p><p>Alter: ' + (m.jg ? age(m) + ' (Jg. ' + esc(m.jg) + ')' : '–') + '</p>' + (m.dsv && m.dsv !== '0' ? '<p>DSV-ID: ' + esc(m.dsv) + '</p>' : '') + '</div>');
+    if (isTr(p)) b.push('<div class="pl-bl"><h4>🎓 Trainer' + (tr.aktiv === 'nein' ? ' (nicht aktiv)' : '') + '</h4><p>Gruppen: ' + (tGroups(p).map(esc).join(', ') || '–') + '</p><div class="pl-line">' + okLine('Lizenz', tr.lizBis) + okLine('Erste Hilfe', tr.ehBis) + okLine('Rettung', tr.rettungBis) + okLine('Führungszeugnis', tr.fz ? '2999-12-31' : '') + '</div>' +
+      '<details><summary>Lizenz</summary><p>Art: ' + esc(tr.lizArt || '–') + '</p><p>Nr.: ' + esc(tr.lizNr || '–') + '</p><p>DOSB-Nr.: ' + esc(tr.lizDosb || '–') + '</p><p>Gültig bis: ' + fd(tr.lizBis) + '</p><p>Trainer seit: ' + fd(tr.seit) + '</p></details>' +
+      '<details><summary>Nachweise</summary><p>Erste Hilfe bis: ' + fd(tr.ehBis) + '</p><p>Rettungsnachweis bis: ' + fd(tr.rettungBis) + '</p><p>Führungszeugnis vom: ' + fd(tr.fz) + '</p><p>Ehrenkodex vom: ' + fd(tr.ehrenkodex) + '</p></details></div>');
+    if (isKari(p)) b.push('<div class="pl-bl"><h4>⚖️ Kampfrichter</h4><p>Lizenznummer: <b>' + esc(m.kariNr || '–') + '</b></p><p>Wettkampfrichter bis: ' + fd(m.kariBis) + ' ' + warn(m.kariBis, 'Lizenz') + '</p><p>Auswertung bis: ' + fd(m.kariAusw) + '</p><p>Schiedsrichter bis: ' + fd(m.kariSchied) + '</p></div>');
+    if (isFunk(p)) b.push('<div class="pl-bl"><h4>🏛 Funktionär</h4><p>Amt: <b>' + esc(m.amt || '–') + '</b></p><p>Amtszeit: ' + (m.amtVon || m.amtBis ? fd(m.amtVon) + ' – ' + fd(m.amtBis) : '–') + ' ' + warn(m.amtBis, 'Amt') + '</p></div>');
+    var meta = [m.mnr ? 'Mitgliedsnr. ' + esc(m.mnr) : '', m.eintritt ? 'Eintritt ' + esc(/^\d{4}-\d{2}-\d{2}$/.test(m.eintritt) ? M.fmtDate(m.eintritt) : m.eintritt) : '', m.austritt ? 'Austritt ' + esc(/^\d{4}-\d{2}-\d{2}$/.test(m.austritt) ? M.fmtDate(m.austritt) : m.austritt) : '', m.status ? esc(m.status) : ''].filter(Boolean).join(' · ');
+    return (b.length ? '<div class="pl-grid">' + b.join('') + '</div>' : '<p class="wm-note">Noch keine Rolle eingetragen.</p>') + (meta ? '<p class="wm-sub" style="margin:8px 0 0">' + meta + '</p>' : '') + ((m.notiz || tr.notiz) ? '<div class="pl-note">📝 ' + esc([m.notiz, tr.notiz].filter(Boolean).join('\n')) + '</div>' : '');
+  }
+  function bodyHtml() {
+    var ps = listed(); var pages = Math.max(1, Math.ceil(ps.length / PL.per)); if (PL.page >= pages) PL.page = pages - 1; var cur = ps.slice(PL.page * PL.per, PL.page * PL.per + PL.per);
+    var th = function (k, lab) { return '<th class="' + (PL.sort === k ? 'on' : '') + '" data-ma="plsort" data-v="' + k + '">' + lab + (PL.sort === k ? (PL.dir > 0 ? ' ▲' : ' ▼') : ' ⇅') + '</th>'; };
+    return '<div class="pl-wrap"><table class="pl-t"><tr><th style="width:20px;cursor:default"></th>' + th('name', 'Name') + th('nr', 'Nr.') + th('schwimmer', '🏊 Schwimmer') + th('trainer', '🎓 Trainer') + th('kari', '⚖️ Kampfrichter') + th('funk', '🏛 Funktionär') + '<th style="cursor:default"></th></tr>' +
+      (cur.length ? cur.map(rowHtml).join('') : '<tr><td colspan="8" class="wm-note" style="padding:16px">Keine Personen gefunden.</td></tr>') + '</table></div>' +
+      (pages > 1 ? '<div class="pl-pg"><button type="button" class="m-chip" data-ma="plpage" data-v="-1">‹</button><span class="wm-sub">Seite ' + (PL.page + 1) + ' von ' + pages + ' · ' + ps.length + ' Personen</span><button type="button" class="m-chip" data-ma="plpage" data-v="1">›</button></div>' : '<p class="wm-sub" style="text-align:center">' + ps.length + ' Personen</p>');
+  }
+  function listRender() {
+    var can = M.anyCan(['mitglieder.edit', 'mitglieder.anlegen']);
+    var sel = function (id, cur, opts) { return '<select data-pl="' + id + '">' + opts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(cur) === String(o[0]) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>'; };
+    return '<section class="wm-card"><div class="wm-bar"><h3>Personen</h3>' + (can ? '<button type="button" class="wm-amber" data-ma="plnew">+ Person</button>' : '') + '<button type="button" class="hub-btn hub-ghost" data-ma="plprint">🖨️</button></div>' +
+      '<div class="pl-bar"><input class="pl-q" type="search" data-pl="q" placeholder="🔍 Name suchen …" value="' + esc(PL.q) + '" autocomplete="off"><input class="pl-n" type="search" data-pl="nr" placeholder="Mitgl.-Nr." value="' + esc(PL.nr) + '" inputmode="numeric" autocomplete="off">' +
+      sel('r', PL.r, [['', 'Alle Rollen']].concat(ROLLEN.map(function (r) { return [r, r]; }))) + sel('g', PL.g, [['', 'Alle Gruppen']].concat(GR.map(function (g) { return [g, g]; }))) +
+      sel('st', PL.st, [['aktiv', 'Aktive'], ['pausiert', 'Pausierte'], ['ausgetreten', 'Ausgetretene'], ['alle', 'Alle']]) + sel('sort', PL.sort, SORTS.map(function (s) { return ['' + s[0], 'Sortieren: ' + s[1]]; })) + '</div>' +
+      '<div id="plBody">' + bodyHtml() + '</div></section>';
+  }
+  function plInput(ev) {
+    var t = ev.target; var k = t && t.getAttribute && t.getAttribute('data-pl'); if (!k) return false;
+    if (PL[k] === t.value) return true; PL[k] = t.value; PL.page = 0; if (k === 'sort') PL.dir = 1;
+    var b = document.getElementById('plBody'); if (b) b.innerHTML = bodyHtml(); return true;
+  }
+  function formFields(p) {
+    var canTr = M.anyCan(['trainer.edit', 'mitglieder.trainer']);
+    var f = [
+      { k: '_s1', t: 'sec', label: 'Stammdaten' },
+      { k: 'name', t: 'text', label: 'Name', req: true, ph: 'Vorname Nachname' }, { k: 'mnr', t: 'text', label: 'Mitgliedsnummer' }, { k: 'jg', t: 'num', label: 'Jahrgang' },
+      { k: 'sex', t: 'sel', label: 'Geschlecht', opts: [['', '–'], ['w', 'weiblich'], ['m', 'männlich'], ['d', 'divers']] }, { k: 'status', t: 'sel', label: 'Status', opts: [['', 'aktiv'], ['pausiert', 'pausiert'], ['ausgetreten', 'ausgetreten']] },
+      { k: 'eintritt', t: 'text', label: 'Eintritt (Jahr oder Datum)' }, { k: 'austritt', t: 'text', label: 'Austritt (Jahr oder Datum)' }, { k: 'dsv', t: 'text', label: 'DSV-ID' },
+      { k: 'rollen', t: 'pick', label: 'Rollen', opts: ROLLEN, hint: 'Mehrere sind möglich.' },
+      { k: '_s2', t: 'sec', label: 'Schwimmer' }, { k: 'gruppen', t: 'pick', label: 'Gruppen als Schwimmer', opts: GR }, { k: 'attest', t: 'date', label: 'Attest gültig bis' }];
+    if (canTr) f = f.concat([{ k: '_s3', t: 'sec', label: 'Trainer' }, { k: 'trainerIn', t: 'pick', label: 'Gruppen als Trainer', opts: GR },
+      { k: 'aktiv', t: 'sel', label: 'Aktiver Trainer', opts: [['', 'Ja'], ['nein', 'Nein']] }, { k: 'lizArt', t: 'text', label: 'Lizenzart', list: 'plLiz' }, { k: 'lizNr', t: 'text', label: 'Lizenznummer' }, { k: 'lizDosb', t: 'text', label: 'Lizenznummer DOSB' }, { k: 'lizBis', t: 'date', label: 'Lizenz gültig bis' }, { k: 'seit', t: 'date', label: 'Trainer seit' },
+      { k: 'ehBis', t: 'date', label: 'Erste Hilfe bis' }, { k: 'rettungBis', t: 'date', label: 'Rettungsnachweis bis' }, { k: 'fz', t: 'date', label: 'Führungszeugnis vom' }, { k: 'ehrenkodex', t: 'date', label: 'Ehrenkodex vom' }]);
+    return f.concat([{ k: '_s4', t: 'sec', label: 'Kampfrichter' }, { k: 'kariNr', t: 'text', label: 'Lizenznummer' }, { k: 'kariBis', t: 'date', label: 'Wettkampfrichter bis' }, { k: 'kariAusw', t: 'date', label: 'Auswertung bis' }, { k: 'kariSchied', t: 'date', label: 'Schiedsrichter bis' },
+      { k: '_s5', t: 'sec', label: 'Funktionär' }, { k: 'amt', t: 'text', label: 'Amt / Funktion', list: 'plAmt' }, { k: 'amtVon', t: 'date', label: 'Amtszeit von' }, { k: 'amtBis', t: 'date', label: 'Amtszeit bis' },
+      { k: '_s6', t: 'sec', label: 'Notizen' }, { k: 'notiz', t: 'area', label: 'Notiz', rows: 3 }]);
+  }
+  function lists() {
+    if (document.getElementById('plLiz')) return; var d = document.createElement('div');
+    d.innerHTML = '<datalist id="plLiz">' + LIZ.map(function (x) { return '<option value="' + esc(x) + '">'; }).join('') + '</datalist><datalist id="plAmt">' + AMT.map(function (x) { return '<option value="' + esc(x) + '">'; }).join('') + '</datalist>'; document.body.appendChild(d);
+  }
+  function editPerson(p) {
+    lists(); var base = {}; var tr = p ? p.tr : null;
+    if (p) { base = Object.assign({}, p.m, { id: p.m.virtual ? undefined : p.m.id, name: p.m.name }); TRAINER_KEYS.forEach(function (k) { if (tr && tr[k] !== undefined) base[k] = tr[k]; }); base.rollen = rOf(p.m).slice(); if (!p.m.pl && tr && base.rollen.indexOf('Trainer') < 0) base.rollen.push('Trainer'); base.trainerIn = tGroups(p).slice(); base.aktiv = tr ? tr.aktiv || '' : ''; }
+    else { base = { gruppen: PL.g ? [PL.g] : [], rollen: ['Schwimmer'] }; }
+    M.openForm({ title: p ? 'Bearbeiten · ' + p.m.name : 'Neue Person', fields: formFields(p), item: base, saveLabel: 'Speichern', onSave: function (v) { return savePerson(p, base, v); } });
+  }
+  function savePerson(p, base, v) {
+    var ops = []; var it = p && !p.m.virtual ? Object.assign({}, p.m) : { id: M.uid() }; var name = v.name;
+    if (v.mnr) { var dup = null; people().forEach(function (q) { if (!q.m.virtual && q.m.id !== it.id && String(q.m.mnr || '') === String(v.mnr)) dup = q; }); if (dup) { M.toast('Die Mitgliedsnummer ' + v.mnr + ' hat schon ' + dup.m.name + '.'); return false; } }
+    PERSON_KEYS.forEach(function (k) { if (v[k] !== undefined) it[k] = v[k]; }); it.title = name; it.pl = 1;
+    if (v.rollen && v.rollen.indexOf('Schwimmer') < 0) it.gruppen = it.gruppen || [];
+    ops.push({ op: 'set', coll: 'wgMitglieder', item: it });
+    var canTr = M.anyCan(['trainer.edit', 'mitglieder.trainer']);
+    var isT = (v.rollen || []).indexOf('Trainer') >= 0; var tr = p ? p.tr : null; var pf = {};
+    if (canTr && (isT || tr)) {
+      var t = tr ? Object.assign({}, tr) : { id: 't-' + slug(name), owner: name };
+      TRAINER_KEYS.forEach(function (k) { if (v[k] !== undefined) t[k] = v[k]; }); t.gruppen = isT ? (v.trainerIn || []) : (t.gruppen || []); t.name = name; t.title = name; if (it.mnr) t.mnr = it.mnr;
+      ops.push({ op: 'set', coll: 'trainer', item: t });
+      Object.keys(PROFILE_MAP).forEach(function (k) { if (t[k] !== undefined) pf[PROFILE_MAP[k]] = t[k]; });
     }
-  };
+    ['kariNr', 'kariBis'].forEach(function (k) { if (it[k] !== undefined) pf[PROFILE_MAP[k]] = it[k]; });
+    if (lower(name) === lower(M.userName() || '') && M.find('profile', pidOf(name))) ops.push({ op: 'patch', coll: 'profile', id: pidOf(name), fields: pf });
+    M.ops(ops); M.toast('Gespeichert.');
+  }
+  function delPerson(p) {
+    M.confirm('„' + p.m.name + '“ wirklich löschen?', 'Löschen', function () {
+      var ops = []; if (!p.m.virtual) ops.push({ op: 'del', coll: 'wgMitglieder', id: p.m.id }); if (p.tr && M.anyCan(['trainer.edit', 'mitglieder.trainer'])) ops.push({ op: 'del', coll: 'trainer', id: p.tr.id }); if (ops.length) M.ops(ops);
+    });
+  }
+  function personById(id) { var r = null; people().forEach(function (p) { if (p.m.id === id) r = p; }); return r; }
+  function printList() {
+    var ps = listed(); var rows = ps.map(function (p) { var m = p.m; return '<tr><td>' + esc(m.name) + '</td><td>' + esc(m.mnr || '') + '</td><td>' + esc(gOf(m).join(', ')) + '</td><td>' + esc(isTr(p) ? tGroups(p).join(', ') || 'Trainer' : '') + '</td><td>' + esc(isKari(p) ? (m.kariNr || 'Kampfrichter') : '') + '</td><td>' + esc(isFunk(p) ? (m.amt || 'Funktionär') : '') + '</td></tr>'; }).join('');
+    M.print('Personen', '<h1>Personen</h1><div class="sub">Stand ' + M.fmtDate(M.today()) + ' · ' + ps.length + ' Personen</div><table><tr><th>Name</th><th>Nr.</th><th>Schwimmer</th><th>Trainer</th><th>Kampfrichter</th><th>Funktionär</th></tr>' + rows + '</table>', { landscape: true });
+  }
+  var listTab = { id: 'alle', label: 'Personen', view: ['mitglieder.view'], render: function () { return listRender(); } };
 
   /* ---------- Gruppenübersicht ---------- */
   function gruppenTab() {
@@ -106,7 +216,8 @@ templateEngineOverride: false
     var can = M.anyCan(['mitglieder.import']);
     if (!can) return '<section class="wm-card"><p class="wm-note">Für den Import fehlt dir die Berechtigung.</p></section>';
     return '<section class="wm-card"><div class="wm-bar"><h3>WebClub-Import</h3></div><p class="wm-note">Wähle die Gruppe und die „Gruppenliste“ (PDF) aus WebClub. Du kannst die Schwimmer- und die Trainerliste zusammen auswählen. Du siehst zuerst eine Vorschau (neu, geändert, nicht mehr in der Liste). Es wird nie automatisch gelöscht.</p>' +
-      '<div class="m-fgrid"><label class="m-f"><span>Gruppe</span><select id="mi_g">' + GR.map(function (g) { return '<option>' + esc(g) + '</option>'; }).join('') + '</select></label><label class="m-f wide"><span>PDF-Datei(en)</span><input type="file" id="mi_f" accept="application/pdf,.pdf" multiple></label></div><div class="m-btns"><button type="button" class="wm-amber" data-ma="mimpread">Vorschau erstellen</button></div><div id="mi_msg" class="wm-sub" style="margin-top:8px"></div></section>';
+      '<div class="m-fgrid"><label class="m-f"><span>Gruppe</span><select id="mi_g">' + GR.map(function (g) { return '<option>' + esc(g) + '</option>'; }).join('') + '</select></label><label class="m-f wide"><span>PDF-Datei(en)</span><input type="file" id="mi_f" accept="application/pdf,.pdf" multiple></label></div><div class="m-btns"><button type="button" class="wm-amber" data-ma="mimpread">Vorschau erstellen</button></div><div id="mi_msg" class="wm-sub" style="margin-top:8px"></div></section>' +
+      '<section class="wm-card"><div class="wm-bar"><h3>Personendaten (CSV / ZIP)</h3></div><p class="wm-note">Wähle die Datenauskunft aus WebClub (ZIP oder die Datei „stammdaten.csv“, gern mit „gruppenzuordnung.csv"). Übernommen werden Mitgliedsnummer, Rollen, Attest, Trainer-, Kampfrichter- und Funktionärsdaten. Bank- und Adressdaten werden nicht gelesen. Du siehst zuerst eine Vorschau.</p><div class="m-fgrid"><label class="m-f wide"><span>Datei(en)</span><input type="file" id="mc_f" accept=".zip,.csv,text/csv,application/zip" multiple></label></div><div class="m-btns"><button type="button" class="wm-amber" data-ma="mcsvread">Vorschau erstellen</button></div><div id="mc_msg" class="wm-sub" style="margin-top:8px"></div></section>';
   }
   function impRead() {
     var fl = document.getElementById('mi_f').files; var msg = document.getElementById('mi_msg'); var g = document.getElementById('mi_g').value;
@@ -161,22 +272,108 @@ templateEngineOverride: false
     M.closeDlg(); if (ops.length) M.ops(ops); M.toast(ops.length ? 'Import übernommen (' + ops.length + ' Änderungen).' : 'Nichts zu ändern.'); IMP = null;
   }
 
+  /* ---------- Personendaten aus WebClub (stammdaten.csv, auch als ZIP) ---------- */
+  var CSVI = null;
+  function isoDe(s) { var m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(String(s || '').trim()); return m ? m[3] + '-' + m[2] + '-' + m[1] : ''; }
+  function csvRows(txt) {
+    var rows = [], row = [], cur = '', q = false;
+    for (var i = 0; i < txt.length; i++) {
+      var ch = txt.charAt(i);
+      if (q) { if (ch === '"') { if (txt.charAt(i + 1) === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+      else if (ch === '"') q = true; else if (ch === ';') { row.push(cur); cur = ''; } else if (ch === '\n') { row.push(cur.replace(/\r$/, '')); rows.push(row); row = []; cur = ''; } else cur += ch;
+    }
+    if (cur || row.length) { row.push(cur.replace(/\r$/, '')); rows.push(row); }
+    return rows.filter(function (r) { return r.some(function (x) { return String(x).trim(); }); });
+  }
+  function csvObjs(txt) {
+    var rows = csvRows(txt); if (!rows.length) return [];
+    var head = rows[0].map(function (h) { return lower(h).replace(/[^a-z0-9]/g, ''); });
+    return rows.slice(1).map(function (r) { var o = {}; head.forEach(function (h, i) { if (h) o[h] = String(r[i] === undefined ? '' : r[i]).trim(); }); return o; });
+  }
+  function dec(buf) { try { return new TextDecoder('windows-1252').decode(buf); } catch (e) { return new TextDecoder().decode(buf); } }
+  function readZip(buf) {
+    var dv = new DataView(buf), n = dv.byteLength, e = -1;
+    for (var i = n - 22; i >= Math.max(0, n - 70000); i--) if (dv.getUint32(i, true) === 0x06054b50) { e = i; break; }
+    if (e < 0) return Promise.reject(new Error('Keine gültige ZIP-Datei.'));
+    var cnt = dv.getUint16(e + 10, true), off = dv.getUint32(e + 16, true), jobs = [];
+    for (var k = 0; k < cnt; k++) {
+      var meth = dv.getUint16(off + 10, true), cs = dv.getUint32(off + 20, true), nl = dv.getUint16(off + 28, true), xl = dv.getUint16(off + 30, true), cl = dv.getUint16(off + 32, true), lo = dv.getUint32(off + 42, true);
+      var name = dec(buf.slice(off + 46, off + 46 + nl)); off += 46 + nl + xl + cl;
+      (function (name, meth, cs, lo) {
+        var ln = dv.getUint16(lo + 26, true), lx = dv.getUint16(lo + 28, true), data = buf.slice(lo + 30 + ln + lx, lo + 30 + ln + lx + cs);
+        if (!/\.csv$/i.test(name)) return;
+        if (meth === 0) jobs.push(Promise.resolve([name, dec(data)]));
+        else if (meth === 8 && window.DecompressionStream) jobs.push(new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer().then(function (b) { return [name, dec(b)]; }));
+        else jobs.push(Promise.reject(new Error('Dieser Browser kann die ZIP-Datei nicht entpacken. Bitte die CSV-Dateien einzeln auswählen.')));
+      })(name, meth, cs, lo);
+    }
+    return Promise.all(jobs);
+  }
+  function csvFiles(files) {
+    return Promise.all(Array.prototype.map.call(files, function (f) { return f.arrayBuffer().then(function (b) { return /\.zip$/i.test(f.name) ? readZip(b) : [[f.name, dec(b)]]; }); })).then(function (parts) { var o = {}; parts.forEach(function (p) { p.forEach(function (x) { o[x[0].split('/').pop().toLowerCase()] = x[1]; }); }); return o; });
+  }
+  function importFromCsv(o) {
+    var st = o['stammdaten.csv']; if (!st) throw new Error('Keine „stammdaten.csv“ gefunden.');
+    var rows = csvObjs(st), gz = o['gruppenzuordnung.csv'] ? csvObjs(o['gruppenzuordnung.csv']) : [];
+    var grp = function (n) { n = String(n || '').replace(/\s+/g, ' ').trim(); return /^wettkampf/i.test(n) ? 'Wettkampfgruppe' : n; };
+    var yes = function (v) { return /^ja$/i.test(v || ''); };
+    var all = people();
+    return rows.map(function (r) {
+      var name = ((r.vorname || '') + ' ' + (r.name || '')).trim(); if (!name) return null;
+      var v = { name: name }, rl = [];
+      var set = function (k, x) { if (x) v[k] = x; };
+      set('mnr', r.mitgliedsnummer); set('dsv', r.dsvid); var gb = isoDe(r.geburtstag); if (gb) v.jg = Number(gb.slice(0, 4));
+      set('sex', { m: 'm', w: 'w', d: 'd' }[lower(r.geschlecht)]); set('eintritt', isoDe(r.eintritt)); var au = isoDe(r.austritt); if (au && au < '2090') v.austritt = au;
+      set('attest', isoDe(r.attest)); set('kariNr', r.karilizenznr); set('kariBis', isoDe(r.wettkampfrichterbis)); set('kariAusw', isoDe(r.auswertungbis)); set('kariSchied', isoDe(r.schiedsrichterbis));
+      if (yes(r.aktiverfunktionr) || r.funktion) set('amt', r.funktion); set('notiz', r.bemerkung);
+      set('lizNr', r.trainerlizenznr); set('lizBis', isoDe(r.trainerlizenzgueltig)); set('rettungBis', isoDe(r.rettungsnachweisbis)); set('ehBis', isoDe(r.erstehilfebis)); set('fz', isoDe(r.fhrungszeugnisvom));
+      if (yes(r.aktiverschwimmer)) rl.push('Schwimmer'); if (yes(r.aktivertrainer)) rl.push('Trainer'); if (yes(r.aktiverkampfrichter)) rl.push('Kampfrichter'); if (yes(r.aktiverfunktionr)) rl.push('Funktionär');
+      if (rows.length === 1 && gz.length) { var sg = [], tg = []; gz.forEach(function (g) { var n = grp(g.gruppenname); if (GR.indexOf(n) < 0) return; if (g.schwimmer) sg.push(n); if (g.trainer) tg.push(n); }); if (sg.length) v.gruppen = sg; if (tg.length) v.trainerIn = tg; }
+      var ex = null; all.forEach(function (p) { if (r.mitgliedsnummer && String(p.m.mnr || '') === String(r.mitgliedsnummer)) ex = p; }); if (!ex) all.forEach(function (p) { if (!ex && !(p.m.mnr && r.mitgliedsnummer) && (lower(p.m.name) === lower(name) || lower(swapName(p.m.name)) === lower(name))) ex = p; });
+      if (ex) { var cr = rOf(ex.m).slice(); if (!ex.m.pl && ex.tr && cr.indexOf('Trainer') < 0) cr.push('Trainer'); rl.forEach(function (x) { if (cr.indexOf(x) < 0) cr.push(x); }); v.rollen = cr; } else v.rollen = rl;
+      if (v.gruppen === undefined && !ex) v.gruppen = [];
+      var diff = []; Object.keys(v).forEach(function (k) { if (k === 'name' || k === 'rollen') return; var old = ex ? (TRAINER_KEYS.indexOf(k) >= 0 ? (ex.tr || {})[k] : k === 'trainerIn' ? tGroups(ex) : ex.m[k]) : undefined; if (JSON.stringify(old === undefined ? '' : old) !== JSON.stringify(v[k])) diff.push(k); });
+      return { v: v, ex: ex, diff: diff };
+    }).filter(Boolean);
+  }
+  var KEYLAB = { mnr: 'Mitgliedsnr.', dsv: 'DSV-ID', jg: 'Jahrgang', sex: 'Geschlecht', eintritt: 'Eintritt', austritt: 'Austritt', attest: 'Attest', kariNr: 'Kari-Nr.', kariBis: 'Kari bis', kariAusw: 'Auswertung bis', kariSchied: 'Schiedsr. bis', amt: 'Funktion', notiz: 'Bemerkung', lizNr: 'Lizenz-Nr.', lizBis: 'Lizenz bis', rettungBis: 'Rettung bis', ehBis: 'Erste Hilfe bis', fz: 'Führungszeugnis', gruppen: 'Gruppen', trainerIn: 'Trainer-Gruppen' };
+  function csvRead() {
+    var el = document.getElementById('mc_f'), msg = document.getElementById('mc_msg'); if (!el || !el.files.length) { if (msg) msg.textContent = 'Bitte zuerst eine Datei auswählen.'; return; }
+    msg.textContent = 'Wird gelesen …';
+    csvFiles(el.files).then(function (o) {
+      var res = importFromCsv(o); if (!res.length) { msg.innerHTML = '<span class="m-over">Keine Personen in der Datei gefunden.</span>'; return; }
+      CSVI = res; var chg = res.filter(function (r) { return r.diff.length || !r.ex; });
+      M.openDlg('<div class="hub-dhead"><h3>Vorschau: Personendaten</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div><p class="wm-note"><b>' + res.filter(function (r) { return !r.ex; }).length + '</b> neu · <b>' + res.filter(function (r) { return r.ex && r.diff.length; }).length + '</b> geändert · <b>' + res.filter(function (r) { return r.ex && !r.diff.length; }).length + '</b> unverändert. Bank- und Adressdaten werden nicht übernommen.</p><div style="max-height:45vh;overflow:auto">' +
+        res.map(function (r) { return '<div class="m-chk"><span style="flex:1"><b>' + esc(r.v.name) + '</b> <span class="wm-sub">' + (r.ex ? 'vorhanden' : 'neu') + '</span><br><span class="wm-sub">' + esc(r.diff.map(function (k) { return KEYLAB[k] || k; }).join(', ') || 'keine Änderung') + '</span></span></div>'; }).join('') + '</div>' +
+        '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="mcsvsave">Übernehmen</button></div>');
+    }).catch(function (e) { msg.innerHTML = '<span class="m-over">' + esc(e.message || String(e)) + '</span>'; });
+  }
+  function csvSave() {
+    if (!CSVI) return; var n = 0; CSVI.forEach(function (r) { if (r.ex || r.diff.length) { var v = Object.assign({}, r.v); if (r.ex && v.gruppen === undefined) v.gruppen = r.ex.m.gruppen || []; if (!v.trainerIn && r.ex) v.trainerIn = tGroups(r.ex); savePerson(r.ex, r.ex ? r.ex.m : {}, v); n++; } });
+    M.closeDlg(); CSVI = null; M.toast(n + ' Personen übernommen.');
+  }
+
   function applyHash() {
     var h = decodeURIComponent(String(location.hash || '').replace(/^#/, '')); if (!h) return;
-    if (h === 'gruppen') { M.S.tab = 'gruppen'; } else if (h === 'import') { M.S.tab = 'import'; } else if (h === 'alle') { M.S.tab = 'alle'; M.S.filter = {}; } else if (/^g=/.test(h)) { M.S.tab = 'alle'; M.S.filter = { g: h.slice(2) }; } else return;
+    if (h === 'gruppen') { M.S.tab = 'gruppen'; } else if (h === 'import') { M.S.tab = 'import'; } else if (h === 'alle') { M.S.tab = 'alle'; PL.g = ''; } else if (/^g=/.test(h)) { M.S.tab = 'alle'; PL.g = h.slice(2); PL.page = 0; } else return;
     if (M.render) M.render(true);
   }
   window.addEventListener('hashchange', applyHash);
   setTimeout(applyHash, 900); setTimeout(applyHash, 2500);
 
   M.register('mitglieder', {
-    title: 'Mitglieder', icon: '👥', colls: ['wgMitglieder', 'trainer'],
+    title: 'Mitglieder', icon: '👥', colls: ['wgMitglieder', 'trainer', 'profile'],
+    onInput: function (ev) { plInput(ev); }, onChange: function (ev) { plInput(ev); },
     tabs: [listTab, { id: 'gruppen', label: 'Gruppen', view: ['mitglieder.view'], render: function () { return gruppenTab(); } }, { id: 'import', label: 'WebClub-Import', view: ['mitglieder.import'], render: function () { return importTab(); } }],
     actions: {
+      plopen: function (it, el, ev, c) { if (ev && ev.target.closest && ev.target.closest('.pl-d')) return; var id = c.id; PL.open[id] = !PL.open[id]; var b = document.getElementById('plBody'); if (b) b.innerHTML = bodyHtml(); },
+      plsort: function (it, el) { var k = el.getAttribute('data-v'); if (PL.sort === k) PL.dir = -PL.dir; else { PL.sort = k; PL.dir = 1; } PL.page = 0; M.render(true); },
+      plpage: function (it, el) { PL.page = Math.max(0, PL.page + Number(el.getAttribute('data-v'))); var b = document.getElementById('plBody'); if (b) b.innerHTML = bodyHtml(); },
+      plnew: function () { editPerson(null); }, pledit: function (it, el, ev, c) { var p = personById(c.id); if (p) editPerson(p); }, pldel: function (it, el, ev, c) { var p = personById(c.id); if (p) delPerson(p); }, plprint: function () { printList(); },
       mgf: function (it, el) { var f = flt(); var k = el.getAttribute('data-k'), v = el.getAttribute('data-v'); if (v) f[k] = v; else delete f[k]; M.render(true); },
       mgall: function () { var f = flt(); f.alle = !f.alle; M.render(true); },
-      mggo: function (it, el) { M.S.tab = 'alle'; M.S.filter = { g: el.getAttribute('data-v') }; M.render(true); },
-      mimpread: function () { impRead(); },
+      mggo: function (it, el) { M.S.tab = 'alle'; PL.g = el.getAttribute('data-v'); PL.page = 0; M.render(true); },
+      mimpread: function () { impRead(); }, mcsvread: function () { csvRead(); }, mcsvsave: function () { csvSave(); },
       mimpsave: function () { impSave(); }
     }
   });

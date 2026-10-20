@@ -17,7 +17,7 @@ templateEngineOverride: false
   function sub() { var s = M.S.sub; if (!s.ag) s.ag = GR[0]; if (!s.am) s.am = ym(M.today()); return s; }
   function shift(m, n) { var p = m.split('-'); var d = new Date(+p[0], +p[1] - 1 + n, 1); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); }
   function lists(g) { return M.items('anwesenheit').filter(function (x) { return x.gruppe === g; }); }
-  var CODE = { a: ['a', '✓'], e: ['e', 'e'], f: ['o', '–'], k: ['k', 'k'] };
+  var CODE = { a: ['a', '✓'], e: ['e', 'e'], f: ['o', 'x'], k: ['k', 'k'] };
   function cell(c) { if (!c || c === '.') return '<span class="st n" style="display:inline-block;width:22px;text-align:center;color:#94a3b8">·</span>'; var x = CODE[c] || ['n', c]; var col = { a: '#d1fae5;color:#047857', e: '#fef3c7;color:#92400e', o: '#fee2e2;color:#b91c1c', k: '#dbeafe;color:#1d4ed8', n: '#eef1f6;color:#94a3b8' }[x[0]]; return '<span style="display:inline-block;width:22px;border-radius:7px;text-align:center;font-weight:800;font-size:12px;background:' + col + '">' + x[1] + '</span>'; }
   // Alle Termine und Personen einer Gruppe aus allen hochgeladenen Listen zusammenführen
   function merged(g) {
@@ -38,10 +38,10 @@ templateEngineOverride: false
     else {
       out += '<div class="m-twrap"><table><tr><th>Name</th>' + keys.map(function (k) { return '<th class="nowrap">' + esc(M.fmtDate(mg.sess[k].date, true)) + '<br>' + esc(mg.sess[k].time) + '</th>'; }).join('') + '<th>Quote</th></tr>';
       mg.ppl.forEach(function (p) {
-        var a = 0, t = 0; keys.forEach(function (k) { var c = p.st[k]; if (c) { t++; if (c === 'a') a++; } });
+        var a = 0, t = 0; keys.forEach(function (k) { var c = p.st[k]; if (c && c !== '.') { t++; if (c === 'a') a++; } });
         out += '<tr><td class="nowrap"><b>' + esc(p.name) + '</b>' + (p.trainer ? ' <span class="wm-sub">Trainer</span>' : '') + '</td>' + keys.map(function (k) { return '<td style="text-align:center">' + cell(p.st[k]) + '</td>'; }).join('') + '<td>' + (t ? Math.round(a * 100 / t) + ' %' : '–') + '</td></tr>';
       });
-      out += '</table></div><p class="wm-sub" style="margin-top:8px">' + cell('a') + ' anwesend &nbsp; ' + cell('e') + ' entschuldigt &nbsp; ' + cell('f') + ' fehlt</p>';
+      out += '</table></div><p class="wm-sub" style="margin-top:8px">' + cell('a') + ' anwesend &nbsp; ' + cell('e') + ' entschuldigt &nbsp; ' + cell('f') + ' fehlt (zählt in die Quote)</p>';
     }
     out += '</section>';
     // Status: welche Gruppe hat in welchem Monat eine Liste

@@ -50,7 +50,7 @@ templateEngineOverride: false
   function inGroup(m, date) { if (m.status === 'ausgetreten' && !m.austritt) return false; var e = m.eintritt || firstSeen()[m.id]; if (e && date < e) return false; if (m.austritt && date > m.austritt) return false; return true; }
   function isActive(m) { return m.status !== 'ausgetreten' && m.status !== 'pausiert' && (!m.austritt || m.austritt >= M.today()); }
   function age(m) { return m.jg ? new Date().getFullYear() - Number(m.jg) : ''; }
-  function sessions() { return M.items('trainingTage').sort(function (a, b) { return (a.date + (a.time || '')) < (b.date + (b.time || '')) ? 1 : -1; }); }
+  function sessions() { return M.items('trainingTage').slice().sort(function (a, b) { return (a.date + (a.time || '')) < (b.date + (b.time || '')) ? 1 : -1; }); }
   function rosterFor(t) {
     var ms = members(gsOf(t)); var seen = {};
     var r = ms.filter(function (m) { return inGroup(m, t.date) || (t.anw && t.anw[m.id]); });
@@ -430,8 +430,6 @@ templateEngineOverride: false
     ],
     onChange: function (ev) { var tg = ev.target; if (tg && tg.getAttribute && tg.getAttribute('data-wgn')) { var n = Math.max(1, Math.min(20, Math.round(Number(tg.value) || 3))); M.op({ op: 'set', coll: 'trainingCfg', item: { id: 'main', warnN: n } }); return; } if (ev.target && ev.target.getAttribute && ev.target.getAttribute('data-wgg') && imp) { var l = [].slice.call(document.querySelectorAll('input[data-wgg]:checked')).map(function (x) { return x.getAttribute('data-wgg'); }); imp.gruppen = l.length ? l : ['Wettkampfgruppe']; preview(); } },
     actions: {
-      wgmit: function () { location.href = '/intranet/mitglieder/#g=Wettkampfgruppe'; },
-      wgtab: function (it, el) { M.S.tab = el.getAttribute('data-v'); M.lsSet('modtab_training', M.S.tab); M.render(true); },
       wgwh: function () { M.S.sub.wh = !M.S.sub.wh; M.render(true); },
       wgev: function (it, el, ev, c) {
         var x = M.find('trainingTage', c.id); if (!x) return; var l = hidList(), k = hidKeys(x), off = isHid(x, l), dn = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'][new Date(x.date + 'T12:00:00').getDay()], du = Number(x.dauer) || defaultDauer(), st = tmin(x.time), tr = x.trainer || [];

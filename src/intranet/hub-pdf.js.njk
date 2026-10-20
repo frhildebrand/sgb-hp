@@ -645,7 +645,7 @@ var WKParse = (function () {
         r.its.forEach(function (it) {
           if (it.x + (it.w || 0) < minCx - 20) return;
           var c = it.x + (it.w || 0) / 2; var bi = 0, bd = 1e9; cols.forEach(function (cc, i) { var dd = Math.abs(cc.cx - c); if (dd < bd) { bd = dd; bi = i; } });
-          var s = it.str.trim().toLowerCase(); var code = /^unentschuldigt|^fehlt/.test(s) ? 'f' : /^entschuldigt/.test(s) ? 'e' : /^anwesend/.test(s) ? 'a' : '';
+          var s = it.str.trim().toLowerCase(); var code = /^unentschuldigt|^fehlt|^abwesend|^nicht anwesend|^x$/.test(s) ? 'f' : /^entschuldigt/.test(s) ? 'e' : /^anwesend/.test(s) ? 'a' : '';
           if (code) p.st[sessIdx[bi]] = code;
         });
       });
