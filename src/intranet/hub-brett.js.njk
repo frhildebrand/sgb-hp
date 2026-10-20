@@ -17,14 +17,15 @@ templateEngineOverride: false
   function live() { return sortAll(M.items('brett').filter(function (b) { return !HB.expired(b); })); }
   function archive() { return sortAll(M.items('brett').filter(function (b) { return HB.expired(b); })); }
   function groups() { var s = {}; M.items('wgMitglieder').forEach(function (m) { (m.gruppen || []).forEach(function (g) { s[g] = 1; }); }); return Object.keys(s).sort(function (a, b) { return a.localeCompare(b, 'de'); }); }
-  function acts(b, up, dn) {
-    return '<td class="a"><div>' + (up !== null ? '<button type="button" class="hub-bx" data-ma="bbup" data-id="' + esc(b.id) + '" aria-label="Nach oben"' + (up ? '' : ' disabled') + '>▲</button><button type="button" class="hub-bx" data-ma="bbdn" data-id="' + esc(b.id) + '" aria-label="Nach unten"' + (dn ? '' : ' disabled') + '>▼</button>' : '') +
+  function bgs(b) { var c = HR.okBg(b && b.bg); return c ? ' style="background:' + c + '"' : ''; }
+  function acts(b, up, dn, st) {
+    return '<td class="a"' + (st || '') + '><div>' + (up !== null ? '<button type="button" class="hub-bx" data-ma="bbup" data-id="' + esc(b.id) + '" aria-label="Nach oben"' + (up ? '' : ' disabled') + '>▲</button><button type="button" class="hub-bx" data-ma="bbdn" data-id="' + esc(b.id) + '" aria-label="Nach unten"' + (dn ? '' : ' disabled') + '>▼</button>' : '') +
       '<button type="button" class="hub-bx" data-ma="bbedit" data-id="' + esc(b.id) + '" aria-label="Bearbeiten">✏️</button>' + (canDel() ? '<button type="button" class="hub-bx" data-ma="bbdel" data-id="' + esc(b.id) + '" aria-label="Löschen">🗑️</button>' : '') + '</div></td>';
   }
   function row(b, up, dn) {
     if (EDIT && EDIT.id === b.id) return HB.editRow(b, { attr: 'data-ma', save: 'bbsave', cancel: 'bbcancel', groups: groups(), me: M.userName() });
     var at = HB.audText(b);
-    return '<tr' + (b.wichtig ? ' class="imp"' : '') + '><td>' + esc(b.by || '') + '</td><td>' + esc(fd(b.date)) + '</td><td class="m"' + (HR.okBg(b.bg) ? ' style="background:' + HR.okBg(b.bg) + '"' : '') + '><b>' + (b.wichtig ? '📣 ' : '') + HR.showTitle(b) + '</b>' + (HB.isNew(b) ? '<span class="hub-new">NEU</span>' : '') + (at ? '<span class="hub-lock">🔒 ' + esc(at) + '</span>' : '') + HR.show(b) + (b.until ? '<span class="hub-lock">sichtbar bis ' + esc(fd(b.until)) + '</span>' : '') + '</td>' + (can() ? acts(b, up, dn) : '') + '</tr>';
+    return '<tr' + (b.wichtig ? ' class="imp"' : '') + '><td' + bgs(b) + '>' + esc(b.by || '') + '</td><td' + bgs(b) + '>' + esc(fd(b.date)) + '</td><td class="m"' + bgs(b) + '><b>' + (b.wichtig ? '📣 ' : '') + HR.showTitle(b) + '</b>' + (HB.isNew(b) ? '<span class="hub-new">NEU</span>' : '') + (at ? '<span class="hub-lock">🔒 ' + esc(at) + '</span>' : '') + HR.show(b) + (b.until ? '<span class="hub-lock">sichtbar bis ' + esc(fd(b.until)) + '</span>' : '') + '</td>' + (can() ? acts(b, up, dn, bgs(b)) : '') + '</tr>';
   }
   function render() {
     var l = live(), ar = can() ? archive() : [];
