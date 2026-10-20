@@ -29,9 +29,10 @@ templateEngineOverride: false
   }
 
   /* ---------- Personenliste (eine Liste für alle Rollen) ---------- */
-  var LIZ = ['Helfer', 'Breitensport', 'Trainer C', 'Trainer C – Breitensport'];
-  var AMT = ['Organisatorischer Leiter', 'Geschäftsführung', 'Vorstand', 'Kassenwart', 'Jugendvertretung', 'Schriftführung', 'Trainer', 'Helfer'];
-  var BRETTER = ['Rotes Brett', 'Grün-Schwarzes Brett', 'Blaues Brett', 'Schwarzes Brett', 'Grünes Brett', 'Anderes Modell'];
+  // Auswahllisten (Lizenzarten, Ämter, Bretter): Standardwerte, im Reiter „Listen“ änderbar
+  var DEF = { liz: ['Helfer', 'Breitensport', 'Trainer C', 'Trainer C – Breitensport'], amt: ['Organisatorischer Leiter', 'Geschäftsführung', 'Vorstand', 'Kassenwart', 'Jugendvertretung', 'Schriftführung', 'Trainer', 'Helfer'], brett: ['Rotes Brett', 'Grün-Schwarzes Brett', 'Blaues Brett', 'Schwarzes Brett', 'Grünes Brett', 'Anderes Modell'] };
+  function cfgList(k) { var c = M.find('trainingCfg', 'lists') || {}; return Array.isArray(c[k]) && c[k].length ? c[k] : DEF[k]; }
+  function LIZ() { return cfgList('liz'); } function AMT() { return cfgList('amt'); } function BRETTER() { return cfgList('brett'); }
   var SHORT = { 'Wettkampfgruppe': 'WK', 'Gruppe 1': 'Gr. 1', 'Gruppe 2': 'Gr. 2', 'Gruppe 3': 'Gr. 3', 'Gruppe 4': 'Gr. 4', 'Masters': 'Masters' };
   var PERSON_KEYS = ['name', 'jg', 'sex', 'mnr', 'dsv', 'status', 'eintritt', 'austritt', 'rollen', 'gruppen', 'attest', 'kariNr', 'kariBis', 'kariAusw', 'kariSchied', 'amt', 'amtVon', 'amtBis', 'notiz', 'kappe', 'kappeDatum', 'brettArt', 'brettAus', 'brettRueck'];
   var TRAINER_KEYS = ['lizArt', 'lizNr', 'lizDosb', 'lizBis', 'aktiv', 'seit', 'ehBis', 'rettungBis', 'fz', 'ehrenkodex'];
@@ -95,39 +96,41 @@ templateEngineOverride: false
     return out;
   }
   function okLine(lab, iso) { var a = ampel(iso); return '<span class="pl-c pl-' + ({ green: 'k', amber: 'a', red: 'w', gray: 'g' }[a]) + '">' + (a === 'green' ? '✓ ' : a === 'gray' ? '– ' : '⚠ ') + esc(lab) + '</span>'; }
+  function kv(label, val) { return '<p><b>' + label + ':</b> ' + val + '</p>'; }
   function detailHtml(p) {
     var m = p.m, tr = p.tr || {}; var b = [];
-    if (isSw(p)) b.push('<div class="pl-bl"><h4>🏊 Schwimmer</h4><p>Gruppen: ' + (gOf(m).map(esc).join(', ') || '–') + '</p><p>Attest gültig bis: <b>' + fd(m.attest) + '</b> ' + warn(m.attest, 'Attest') + '</p><p>Alter: ' + (m.jg ? age(m) + ' (Jg. ' + esc(m.jg) + ')' : '–') + '</p>' + (m.dsv && m.dsv !== '0' ? '<p>DSV-ID: ' + esc(m.dsv) + '</p>' : '') + '</div>');
-    if (isTr(p)) b.push('<div class="pl-bl"><h4>🎓 Trainer' + (tr.aktiv === 'nein' ? ' (nicht aktiv)' : '') + '</h4><p>Gruppen: ' + (tGroups(p).map(esc).join(', ') || '–') + '</p><div class="pl-line">' + okLine('Lizenz', tr.lizBis) + okLine('Erste Hilfe', tr.ehBis) + okLine('Rettung', tr.rettungBis) + okLine('Führungszeugnis', tr.fz ? '2999-12-31' : '') + '</div>' +
-      '<details><summary>Lizenz</summary><p>Art: ' + esc(tr.lizArt || '–') + '</p><p>Nr.: ' + esc(tr.lizNr || '–') + '</p><p>DOSB-Nr.: ' + esc(tr.lizDosb || '–') + '</p><p>Gültig bis: ' + fd(tr.lizBis) + '</p><p>Trainer seit: ' + fd(tr.seit) + '</p></details>' +
-      '<details><summary>Nachweise</summary><p>Erste Hilfe bis: ' + fd(tr.ehBis) + '</p><p>Rettungsnachweis bis: ' + fd(tr.rettungBis) + '</p><p>Führungszeugnis vom: ' + fd(tr.fz) + '</p><p>Ehrenkodex vom: ' + fd(tr.ehrenkodex) + '</p></details></div>');
-    if (isKari(p)) b.push('<div class="pl-bl"><h4>⚖️ Kampfrichter</h4><p>Lizenznummer: <b>' + esc(m.kariNr || '–') + '</b></p><p>Wettkampfrichter bis: ' + fd(m.kariBis) + ' ' + warn(m.kariBis, 'Lizenz') + '</p><p>Auswertung bis: ' + fd(m.kariAusw) + '</p><p>Schiedsrichter bis: ' + fd(m.kariSchied) + '</p></div>');
-    if (isFunk(p)) b.push('<div class="pl-bl"><h4>🏛 Funktionär</h4><p>Amt: <b>' + esc(m.amt || '–') + '</b></p><p>Amtszeit: ' + (m.amtVon || m.amtBis ? fd(m.amtVon) + ' – ' + fd(m.amtBis) : '–') + ' ' + warn(m.amtBis, 'Amt') + '</p></div>');
+    if (isSw(p)) b.push('<div class="pl-bl"><h4>🏊 Schwimmer</h4>' + kv('Gruppen', gOf(m).map(esc).join(', ') || '–') + kv('Attest gültig bis', fd(m.attest) + ' ' + warn(m.attest, 'Attest')) + kv('Alter', m.jg ? age(m) + ' (Jg. ' + esc(m.jg) + ')' : '–') + (m.dsv && m.dsv !== '0' ? kv('DSV-ID', esc(m.dsv)) : '') + '</div>');
+    if (isTr(p)) b.push('<div class="pl-bl"><h4>🎓 Trainer' + (tr.aktiv === 'nein' ? ' (nicht aktiv)' : '') + '</h4>' + kv('Gruppen', tGroups(p).map(esc).join(', ') || '–') + '<div class="pl-line">' + okLine('Lizenz', tr.lizBis) + okLine('Erste Hilfe', tr.ehBis) + okLine('Rettung', tr.rettungBis) + okLine('Führungszeugnis', tr.fz ? '2999-12-31' : '') + '</div>' +
+      '<details><summary>Lizenz</summary>' + kv('Art', esc(tr.lizArt || '–')) + kv('Nr.', esc(tr.lizNr || '–')) + kv('DOSB-Nr.', esc(tr.lizDosb || '–')) + kv('Gültig bis', fd(tr.lizBis)) + kv('Trainer seit', fd(tr.seit)) + '</details>' +
+      '<details><summary>Nachweise</summary>' + kv('Erste Hilfe bis', fd(tr.ehBis)) + kv('Rettungsnachweis bis', fd(tr.rettungBis)) + kv('Führungszeugnis vom', fd(tr.fz)) + kv('Ehrenkodex vom', fd(tr.ehrenkodex)) + '</details></div>');
+    if (isKari(p)) b.push('<div class="pl-bl"><h4>⚖️ Kampfrichter</h4>' + kv('Lizenznummer', esc(m.kariNr || '–')) + kv('Wettkampfrichter bis', fd(m.kariBis) + ' ' + warn(m.kariBis, 'Lizenz')) + kv('Auswertung bis', fd(m.kariAusw)) + kv('Schiedsrichter bis', fd(m.kariSchied)) + '</div>');
+    if (isFunk(p)) b.push('<div class="pl-bl"><h4>🏛 Funktionär</h4>' + kv('Amt', esc(m.amt || '–')) + kv('Amtszeit', (m.amtVon || m.amtBis ? fd(m.amtVon) + ' – ' + fd(m.amtBis) : '–') + ' ' + warn(m.amtBis, 'Amt')) + '</div>');
     var kap = !!(m.kappe || m.kappeDatum), br = !!(m.brettArt || m.brettAus), anb = gOf(m).some(function (g) { return g === 'Wettkampfgruppe' || g === 'Gruppe 1' || g === 'Gruppe 2'; }), kapAnb = gOf(m).some(function (g) { return g === 'Wettkampfgruppe' || g === 'Gruppe 1'; });
-    if (kap || br || anb) b.push('<div class="pl-bl"><h4>🎒 Ausrüstung</h4><p>Vereinsbadekappe: ' + (kap ? '<b>ausgegeben' + (m.kappeDatum ? ' am ' + fd(m.kappeDatum) : '') + '</b>' : kapAnb ? '<span class="wm-sub">keine ausgegeben</span>' : '–') + '</p><p>Schwimmbrett: ' + (br ? '<b>' + esc(m.brettArt || 'Brett') + '</b>' + (m.brettAus && !m.brettRueck ? ' ' + chip('ausgegeben', 'a') : '') : '–') + '</p>' + (br ? '<p>Ausgegeben am: ' + fd(m.brettAus) + '</p><p>Zurück am: ' + fd(m.brettRueck) + '</p>' : '') + '</div>');
+    if (kap || br || anb) b.push('<div class="pl-bl"><h4>🎒 Ausrüstung</h4>' + kv('Vereinsbadekappe', kap ? 'ausgegeben' + (m.kappeDatum ? ' am ' + fd(m.kappeDatum) : '') : kapAnb ? '<span class="wm-sub">keine ausgegeben</span>' : '–') + kv('Schwimmbrett', br ? esc(m.brettArt || 'Brett') + (m.brettAus && !m.brettRueck ? ' ' + chip('ausgegeben', 'a') : '') : '–') + (br ? kv('Brett ausgegeben am', fd(m.brettAus)) + kv('Brett zurück am', fd(m.brettRueck)) : '') + '</div>');
     var meta = [m.mnr ? 'Mitgliedsnr. ' + esc(m.mnr) : '', m.eintritt ? 'Eintritt ' + esc(/^\d{4}-\d{2}-\d{2}$/.test(m.eintritt) ? M.fmtDate(m.eintritt) : m.eintritt) : '', m.austritt ? 'Austritt ' + esc(/^\d{4}-\d{2}-\d{2}$/.test(m.austritt) ? M.fmtDate(m.austritt) : m.austritt) : '', m.status ? esc(m.status) : ''].filter(Boolean).join(' · ');
     return (b.length ? '<div class="pl-grid">' + b.join('') + '</div>' : '<p class="wm-note">Noch keine Rolle eingetragen.</p>') + (meta ? '<p class="wm-sub" style="margin:8px 0 0">' + meta + '</p>' : '') + ((m.notiz || tr.notiz) ? '<div class="pl-note">📝 ' + esc([m.notiz, tr.notiz].filter(Boolean).join('\n')) + '</div>' : '');
   }
   function bodyHtml() {
-    var ps = listed(); var pages = Math.max(1, Math.ceil(ps.length / PL.per)); if (PL.page >= pages) PL.page = pages - 1; var cur = ps.slice(PL.page * PL.per, PL.page * PL.per + PL.per);
+    var ps = listed(); PL.cnt = ps.length; var pages = Math.max(1, Math.ceil(ps.length / PL.per)); if (PL.page >= pages) PL.page = pages - 1; var cur = ps.slice(PL.page * PL.per, PL.page * PL.per + PL.per);
     var th = function (k, lab) { return '<th class="' + (PL.sort === k ? 'on' : '') + '" data-ma="plsort" data-v="' + k + '">' + lab + (PL.sort === k ? (PL.dir > 0 ? ' ▲' : ' ▼') : ' ⇅') + '</th>'; };
     return '<div class="pl-wrap"><table class="pl-t"><tr><th style="width:20px;cursor:default"></th>' + th('name', 'Name') + th('nr', 'Nr.') + th('schwimmer', '🏊 Schwimmer') + th('trainer', '🎓 Trainer') + th('kari', '⚖️ Kampfrichter') + th('funk', '🏛 Funktionär') + '<th style="cursor:default"></th></tr>' +
       (cur.length ? cur.map(rowHtml).join('') : '<tr><td colspan="8" class="wm-note" style="padding:16px">Keine Personen gefunden.</td></tr>') + '</table></div>' +
-      '<p class="wm-sub" style="text-align:center;margin:8px 0 0">Badekappen ausgegeben: ' + ps.filter(function (p) { return p.m.kappe || p.m.kappeDatum; }).length + ' · Bretter ausgegeben: ' + ps.filter(function (p) { return p.m.brettAus && !p.m.brettRueck; }).length + '</p>' + (pages > 1 ? '<div class="pl-pg"><button type="button" class="m-chip" data-ma="plpage" data-v="-1">‹</button><span class="wm-sub">Seite ' + (PL.page + 1) + ' von ' + pages + ' · ' + ps.length + ' Personen</span><button type="button" class="m-chip" data-ma="plpage" data-v="1">›</button></div>' : '<p class="wm-sub" style="text-align:center">' + ps.length + ' Personen</p>');
+      (pages > 1 ? '<div class="pl-pg"><button type="button" class="m-chip" data-ma="plpage" data-v="-1">‹</button><span class="wm-sub">Seite ' + (PL.page + 1) + ' von ' + pages + ' · ' + ps.length + ' Personen</span><button type="button" class="m-chip" data-ma="plpage" data-v="1">›</button></div>' : '');
   }
   function listRender() {
     var can = M.anyCan(['mitglieder.edit', 'mitglieder.anlegen']);
     var sel = function (id, cur, opts) { return '<select data-pl="' + id + '">' + opts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(cur) === String(o[0]) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>'; };
-    return '<section class="wm-card"><div class="wm-bar"><h3>Personen</h3>' + (can ? '<button type="button" class="wm-amber" data-ma="plnew">+ Person</button>' : '') + '<button type="button" class="hub-btn hub-ghost" data-ma="plprint">🖨️</button></div>' +
+    return '<section class="wm-card"><div class="wm-bar"><h3>Personen <span class="wm-sub" id="plCnt"></span></h3><span class="m-actions"><button type="button" class="wm-btn" data-ma="plxlsx">📊 Excel</button>' + (can ? '<button type="button" class="wm-btn" data-ma="plnew">+ Person</button>' : '') + '</span></div>' +
       '<div class="pl-bar"><input class="pl-q" type="search" data-pl="q" placeholder="🔍 Name suchen …" value="' + esc(PL.q) + '" autocomplete="off"><input class="pl-n" type="search" data-pl="nr" placeholder="Mitgl.-Nr." value="' + esc(PL.nr) + '" inputmode="numeric" autocomplete="off">' +
       sel('r', PL.r, [['', 'Alle Rollen']].concat(ROLLEN.map(function (r) { return [r, r]; }))) + sel('g', PL.g, [['', 'Alle Gruppen']].concat(GR.map(function (g) { return [g, g]; }))) +
       sel('st', PL.st, [['aktiv', 'Aktive'], ['pausiert', 'Pausierte'], ['ausgetreten', 'Ausgetretene'], ['alle', 'Alle']]) + sel('sort', PL.sort, SORTS.map(function (s) { return ['' + s[0], 'Sortieren: ' + s[1]]; })) + '</div>' +
       '<div id="plBody">' + bodyHtml() + '</div></section>';
   }
+  function plRefresh() { var b = document.getElementById('plBody'); if (b) b.innerHTML = bodyHtml(); var c = document.getElementById('plCnt'); if (c) c.textContent = '(' + PL.cnt + ')'; }
   function plInput(ev) {
     var t = ev.target; var k = t && t.getAttribute && t.getAttribute('data-pl'); if (!k) return false;
     if (PL[k] === t.value) return true; PL[k] = t.value; PL.page = 0; if (k === 'sort') PL.dir = 1;
-    var b = document.getElementById('plBody'); if (b) b.innerHTML = bodyHtml(); return true;
+    plRefresh(); return true;
   }
   function formFields(p) {
     var canTr = M.anyCan(['trainer.edit', 'mitglieder.trainer']);
@@ -143,12 +146,12 @@ templateEngineOverride: false
       { k: 'ehBis', t: 'date', label: 'Erste Hilfe bis' }, { k: 'rettungBis', t: 'date', label: 'Rettungsnachweis bis' }, { k: 'fz', t: 'date', label: 'Führungszeugnis vom' }, { k: 'ehrenkodex', t: 'date', label: 'Ehrenkodex vom' }]);
     return f.concat([{ k: '_s4', t: 'sec', label: 'Kampfrichter' }, { k: 'kariNr', t: 'text', label: 'Lizenznummer' }, { k: 'kariBis', t: 'date', label: 'Wettkampfrichter bis' }, { k: 'kariAusw', t: 'date', label: 'Auswertung bis' }, { k: 'kariSchied', t: 'date', label: 'Schiedsrichter bis' },
       { k: '_s5', t: 'sec', label: 'Funktionär' }, { k: 'amt', t: 'text', label: 'Amt / Funktion', list: 'plAmt' }, { k: 'amtVon', t: 'date', label: 'Amtszeit von' }, { k: 'amtBis', t: 'date', label: 'Amtszeit bis' },
-      { k: '_s5b', t: 'sec', label: 'Ausrüstung (Badekappe: Wettkampfgruppe und Gruppe 1, Bretter: auch Gruppe 2)' }, { k: 'kappe', t: 'chk', label: 'Gesponserte Vereinsbadekappe erhalten' }, { k: 'kappeDatum', t: 'date', label: 'Badekappe ausgegeben am' }, { k: 'brettArt', t: 'sel', label: 'Schwimmbrett', opts: [['', 'keins']].concat(BRETTER.map(function (b) { return [b, b]; })) }, { k: 'brettAus', t: 'date', label: 'Brett ausgegeben am' }, { k: 'brettRueck', t: 'date', label: 'Brett zurückgegeben am' },
+      { k: '_s5b', t: 'sec', label: 'Ausrüstung (Badekappe: Wettkampfgruppe und Gruppe 1, Bretter: auch Gruppe 2)' }, { k: 'kappe', t: 'chk', label: 'Gesponserte Vereinsbadekappe erhalten' }, { k: 'kappeDatum', t: 'date', label: 'Badekappe ausgegeben am' }, { k: 'brettArt', t: 'sel', label: 'Schwimmbrett', opts: [['', 'keins']].concat(BRETTER().map(function (b) { return [b, b]; })) }, { k: 'brettAus', t: 'date', label: 'Brett ausgegeben am' }, { k: 'brettRueck', t: 'date', label: 'Brett zurückgegeben am' },
       { k: '_s6', t: 'sec', label: 'Notizen' }, { k: 'notiz', t: 'area', label: 'Notiz', rows: 3 }]);
   }
   function lists() {
-    if (document.getElementById('plLiz')) return; var d = document.createElement('div');
-    d.innerHTML = '<datalist id="plLiz">' + LIZ.map(function (x) { return '<option value="' + esc(x) + '">'; }).join('') + '</datalist><datalist id="plAmt">' + AMT.map(function (x) { return '<option value="' + esc(x) + '">'; }).join('') + '</datalist>'; document.body.appendChild(d);
+    var old = document.getElementById('plLists'); if (old) old.remove(); var d = document.createElement('div'); d.id = 'plLists';
+    d.innerHTML = '<datalist id="plLiz">' + LIZ().map(function (x) { return '<option value="' + esc(x) + '">'; }).join('') + '</datalist><datalist id="plAmt">' + AMT().map(function (x) { return '<option value="' + esc(x) + '">'; }).join('') + '</datalist>'; document.body.appendChild(d);
   }
   function editPerson(p) {
     lists(); var base = {}; var tr = p ? p.tr : null;
@@ -181,25 +184,27 @@ templateEngineOverride: false
     });
   }
   function personById(id) { var r = null; people().forEach(function (p) { if (p.m.id === id) r = p; }); return r; }
-  function printList() {
-    var ps = listed(); var rows = ps.map(function (p) { var m = p.m; return '<tr><td>' + esc(m.name) + '</td><td>' + esc(m.mnr || '') + '</td><td>' + esc(gOf(m).join(', ')) + '</td><td>' + esc(isTr(p) ? tGroups(p).join(', ') || 'Trainer' : '') + '</td><td>' + esc(isKari(p) ? (m.kariNr || 'Kampfrichter') : '') + '</td><td>' + esc(isFunk(p) ? (m.amt || 'Funktionär') : '') + '</td></tr>'; }).join('');
-    M.print('Personen', '<h1>Personen</h1><div class="sub">Stand ' + M.fmtDate(M.today()) + ' · ' + ps.length + ' Personen</div><table><tr><th>Name</th><th>Nr.</th><th>Schwimmer</th><th>Trainer</th><th>Kampfrichter</th><th>Funktionär</th></tr>' + rows + '</table>', { landscape: true });
+  function exportXlsx() {
+    var ps = listed(); var j = function (a) { return (a || []).join(', '); };
+    var head = ['Name', 'Mitgliedsnr.', 'Jahrgang', 'Status', 'Eintritt', 'Austritt', 'Schwimmer-Gruppen', 'Attest bis', 'Trainer-Gruppen', 'Lizenzart', 'Lizenznr.', 'Lizenznr. DOSB', 'Lizenz bis', 'Trainer seit', 'Erste Hilfe bis', 'Rettung bis', 'Führungszeugnis vom', 'Ehrenkodex vom', 'Kampfrichter-Nr.', 'Wettkampfrichter bis', 'Auswertung bis', 'Schiedsrichter bis', 'Amt', 'Amt von', 'Amt bis', 'Badekappe', 'Kappe ausgegeben', 'Brett', 'Brett ausgegeben', 'Brett zurück', 'Notiz'];
+    var rows = ps.map(function (p) { var m = p.m, t = p.tr || {}; var tr = isTr(p); return [m.name, m.mnr || '', m.jg || '', m.status || 'aktiv', m.eintritt || '', m.austritt || '', isSw(p) ? j(gOf(m)) : '', m.attest || '', tr ? j(tGroups(p)) : '', tr ? t.lizArt || '' : '', tr ? t.lizNr || '' : '', tr ? t.lizDosb || '' : '', tr ? t.lizBis || '' : '', tr ? t.seit || '' : '', tr ? t.ehBis || '' : '', tr ? t.rettungBis || '' : '', tr ? t.fz || '' : '', tr ? t.ehrenkodex || '' : '', isKari(p) ? m.kariNr || '' : '', isKari(p) ? m.kariBis || '' : '', isKari(p) ? m.kariAusw || '' : '', isKari(p) ? m.kariSchied || '' : '', isFunk(p) ? m.amt || '' : '', isFunk(p) ? m.amtVon || '' : '', isFunk(p) ? m.amtBis || '' : '', m.kappe || m.kappeDatum ? 'ja' : '', m.kappeDatum || '', m.brettArt || '', m.brettAus || '', m.brettRueck || '', m.notiz || '']; });
+    var go = function () { var ws = XLSX.utils.aoa_to_sheet([head].concat(rows)); ws['!cols'] = head.map(function (h, i) { return { wch: i === 0 ? 26 : Math.max(12, h.length + 2) }; }); var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Personen'); XLSX.writeFile(wb, 'Personen ' + M.today() + '.xlsx'); M.toast('Excel-Liste erstellt (' + rows.length + ' Personen).'); };
+    if (window.XLSX) return go(); M.toast('Excel-Liste wird erstellt …');
+    M.loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js').then(go, function () { M.toast('Der Excel-Baustein konnte nicht geladen werden. Bitte Verbindung prüfen.'); });
   }
-  var listTab = { id: 'alle', label: 'Personen', view: ['mitglieder.view'], render: function () { return listRender(); } };
-
-  /* ---------- Gruppenübersicht ---------- */
-  function gruppenTab() {
-    var ms = members().filter(isActive); var tr = trainers();
-    var out = '<section class="wm-card"><div class="wm-bar"><h3>Gruppen</h3></div><p class="wm-note">Tippe auf eine Gruppe, um ihre Mitglieder zu sehen. Gruppen kommen aus dem WebClub-Import (Gruppenliste).</p></section><div class="m-stats" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">';
-    GR.forEach(function (g) {
-      var inG = ms.filter(function (m) { return gOf(m).indexOf(g) >= 0; });
-      var sw = inG.filter(function (m) { return hasR(m, 'Schwimmer'); }).length; var kr = inG.filter(function (m) { return hasR(m, 'Kampfrichter'); }).length; var fu = inG.filter(function (m) { return hasR(m, 'Funktionär'); }).length;
-      var tn = tr.filter(function (t) { return (t.gruppen || []).indexOf(g) >= 0; }).length;
-      out += '<button type="button" class="m-stat" data-ma="mggo" data-v="' + esc(g) + '"><b>' + sw + '</b><span>' + esc(g) + '</span><small class="wm-sub">Schwimmer · ' + tn + ' Trainer · ' + kr + ' Kampfrichter · ' + fu + ' Funktionäre</small></button>';
-    });
-    var none = ms.filter(function (m) { return !gOf(m).length; }).length;
-    return out + '</div>' + (none ? '<p class="wm-note">' + none + ' aktive Mitglieder haben noch keine Gruppe.</p>' : '');
+  // Listen: Lizenzarten, Ämter, Schwimmbretter
+  function listenRender() {
+    var l = function (t, k, hint) { return '<div class="pl-bl" style="margin-bottom:10px"><h4>' + t + '</h4><p class="wm-sub">' + hint + '</p><p>' + cfgList(k).map(function (x) { return chip(x, 'g'); }).join('') + '</p></div>'; };
+    return '<section class="wm-card"><div class="wm-bar"><h3>Auswahllisten</h3>' + (M.anyCan(['mitglieder.edit']) ? '<span class="m-actions"><button type="button" class="wm-btn" data-ma="plcfg">✏️ Bearbeiten</button></span>' : '') + '</div><p class="wm-note">Diese Listen erscheinen als Vorschläge beim Bearbeiten einer Person.</p>' +
+      l('Lizenzarten (Trainer)', 'liz', 'z. B. Helfer, Breitensport, Trainer C') + l('Ämter (Funktionäre)', 'amt', 'z. B. Kassenwart, Vorstand') + l('Schwimmbretter', 'brett', 'Arten und Farben der Bretter') + '</section>';
   }
+  function editCfg() {
+    var lines = function (k) { return cfgList(k).slice(); };
+    M.openForm({ title: 'Auswahllisten', item: { liz: lines('liz'), amt: lines('amt'), brett: lines('brett') }, fields: [
+      { k: 'liz', t: 'lines', label: 'Lizenzarten (eine pro Zeile)', rows: 5 }, { k: 'amt', t: 'lines', label: 'Ämter (eine pro Zeile)', rows: 6 }, { k: 'brett', t: 'lines', label: 'Schwimmbretter (eine pro Zeile)', rows: 6 }],
+      onSave: function (v) { M.op({ op: 'set', coll: 'trainingCfg', item: { id: 'lists', title: 'Listen', liz: v.liz, amt: v.amt, brett: v.brett } }); M.toast('Gespeichert.'); } });
+  }
+  var listTab = { id: 'alle', label: 'Personen', view: ['mitglieder.view'], render: function () { setTimeout(plRefresh, 0); return listRender(); } };
 
   /* ---------- WebClub-Import ---------- */
   function parseGruppenliste(lines) {
@@ -332,7 +337,7 @@ templateEngineOverride: false
       set('attest', isoDe(r.attest)); set('kariNr', r.karilizenznr); set('kariBis', isoDe(r.wettkampfrichterbis)); set('kariAusw', isoDe(r.auswertungbis)); set('kariSchied', isoDe(r.schiedsrichterbis));
       if (yes(r.aktiverfunktionr) || r.funktion) set('amt', r.funktion); set('notiz', r.bemerkung);
       if (/^(ja|x|1)$/i.test(r.gesponserteverinsbadekappe || r.gesponservereinsbadekappe || r.gesponserteverinsbadekappe || '')) v.kappe = true; var all0 = Object.keys(r).filter(function (k) { return /gesponsert.*badekappe/.test(k); })[0]; if (all0 && /^(ja|x|1)$/i.test(r[all0])) v.kappe = true; set('kappeDatum', isoDe(r.badekappeausgegebenam)); if (v.kappeDatum) v.kappe = true;
-      set('brettAus', isoDe(r.brettausgegebenam)); set('brettRueck', isoDe(r.brettzurckgegebenam)); BRETTER.forEach(function (bn) { if (lower(bn) === lower(r.schwimmbrettausgegeben || '')) v.brettArt = bn; });
+      set('brettAus', isoDe(r.brettausgegebenam)); set('brettRueck', isoDe(r.brettzurckgegebenam)); BRETTER().forEach(function (bn) { if (lower(bn) === lower(r.schwimmbrettausgegeben || '')) v.brettArt = bn; });
       set('lizNr', r.trainerlizenznr); set('lizBis', isoDe(r.trainerlizenzgueltig)); set('rettungBis', isoDe(r.rettungsnachweisbis)); set('ehBis', isoDe(r.erstehilfebis)); set('fz', isoDe(r.fhrungszeugnisvom));
       if (yes(r.aktiverschwimmer)) rl.push('Schwimmer'); if (yes(r.aktivertrainer)) rl.push('Trainer'); if (yes(r.aktiverkampfrichter)) rl.push('Kampfrichter'); if (yes(r.aktiverfunktionr)) rl.push('Funktionär');
       if (rows.length === 1 && gz.length) { var sg = [], tg = []; gz.forEach(function (g) { var n = grp(g.gruppenname); if (GR.indexOf(n) < 0) return; if (g.schwimmer) sg.push(n); if (g.trainer) tg.push(n); }); if (sg.length) v.gruppen = sg; if (tg.length) v.trainerIn = tg; }
@@ -362,24 +367,23 @@ templateEngineOverride: false
 
   function applyHash() {
     var h = decodeURIComponent(String(location.hash || '').replace(/^#/, '')); if (!h) return;
-    if (h === 'gruppen') { M.S.tab = 'gruppen'; } else if (h === 'import') { M.S.tab = 'import'; } else if (h === 'alle') { M.S.tab = 'alle'; PL.g = ''; } else if (/^r=/.test(h)) { M.S.tab = 'alle'; PL.r = h.slice(2); PL.g = ''; PL.page = 0; } else if (/^g=/.test(h)) { M.S.tab = 'alle'; PL.g = h.slice(2); PL.page = 0; } else return;
+    if (h === 'import') { M.S.tab = 'import'; } else if (h === 'alle') { M.S.tab = 'alle'; PL.g = ''; } else if (/^r=/.test(h)) { M.S.tab = 'alle'; PL.r = h.slice(2); PL.g = ''; PL.page = 0; } else if (/^g=/.test(h)) { M.S.tab = 'alle'; PL.g = h.slice(2); PL.page = 0; } else return;
     if (M.render) M.render(true);
   }
   window.addEventListener('hashchange', applyHash);
   setTimeout(applyHash, 900); setTimeout(applyHash, 2500);
 
   M.register('mitglieder', {
-    title: 'Mitglieder', icon: '👥', colls: ['wgMitglieder', 'trainer', 'profile'],
+    title: 'Mitglieder', icon: '👥', colls: ['wgMitglieder', 'trainer', 'profile', 'trainingCfg'],
     onInput: function (ev) { plInput(ev); }, onChange: function (ev) { plInput(ev); },
-    tabs: [listTab, { id: 'gruppen', label: 'Gruppen', view: ['mitglieder.view'], render: function () { return gruppenTab(); } }, { id: 'import', label: 'WebClub-Import', view: ['mitglieder.import'], render: function () { return importTab(); } }],
+    tabs: [listTab, { id: 'listen', label: 'Listen', view: ['mitglieder.view'], render: function () { return listenRender(); } }, { id: 'import', label: 'WebClub-Import', view: ['mitglieder.import'], render: function () { return importTab(); } }],
     actions: {
-      plopen: function (it, el, ev, c) { if (ev && ev.target.closest && ev.target.closest('.pl-d')) return; var id = c.id; PL.open[id] = !PL.open[id]; var b = document.getElementById('plBody'); if (b) b.innerHTML = bodyHtml(); },
+      plopen: function (it, el, ev, c) { if (ev && ev.target.closest && ev.target.closest('.pl-d')) return; var id = c.id; PL.open[id] = !PL.open[id]; plRefresh(); },
       plsort: function (it, el) { var k = el.getAttribute('data-v'); if (PL.sort === k) PL.dir = -PL.dir; else { PL.sort = k; PL.dir = 1; } PL.page = 0; M.render(true); },
-      plpage: function (it, el) { PL.page = Math.max(0, PL.page + Number(el.getAttribute('data-v'))); var b = document.getElementById('plBody'); if (b) b.innerHTML = bodyHtml(); },
-      plnew: function () { editPerson(null); }, pledit: function (it, el, ev, c) { var p = personById(c.id); if (p) editPerson(p); }, pldel: function (it, el, ev, c) { var p = personById(c.id); if (p) delPerson(p); }, plprint: function () { printList(); },
+      plpage: function (it, el) { PL.page = Math.max(0, PL.page + Number(el.getAttribute('data-v'))); plRefresh(); },
+      plnew: function () { editPerson(null); }, plxlsx: function () { exportXlsx(); }, plcfg: function () { editCfg(); }, pledit: function (it, el, ev, c) { var p = personById(c.id); if (p) editPerson(p); }, pldel: function (it, el, ev, c) { var p = personById(c.id); if (p) delPerson(p); },
       mgf: function (it, el) { var f = flt(); var k = el.getAttribute('data-k'), v = el.getAttribute('data-v'); if (v) f[k] = v; else delete f[k]; M.render(true); },
       mgall: function () { var f = flt(); f.alle = !f.alle; M.render(true); },
-      mggo: function (it, el) { M.S.tab = 'alle'; PL.g = el.getAttribute('data-v'); PL.page = 0; M.render(true); },
       mimpread: function () { impRead(); }, mcsvread: function () { csvRead(); }, mcsvsave: function () { csvSave(); },
       mimpsave: function () { impSave(); }
     }

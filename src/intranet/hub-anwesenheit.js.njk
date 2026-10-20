@@ -20,12 +20,26 @@ templateEngineOverride: false
   var CODE = { a: ['a', '✓'], e: ['e', 'e'], f: ['o', 'x'], k: ['k', 'k'] };
   function cell(c) { if (!c || c === '.') return '<span class="st n" style="display:inline-block;width:22px;text-align:center;color:#94a3b8">·</span>'; var x = CODE[c] || ['n', c]; var col = { a: '#d1fae5;color:#047857', e: '#fef3c7;color:#92400e', o: '#fee2e2;color:#b91c1c', k: '#dbeafe;color:#1d4ed8', n: '#eef1f6;color:#94a3b8' }[x[0]]; return '<span style="display:inline-block;width:22px;border-radius:7px;text-align:center;font-weight:800;font-size:12px;background:' + col + '">' + x[1] + '</span>'; }
   // Alle Termine und Personen einer Gruppe aus allen hochgeladenen Listen zusammenführen
-  function merged(g) {
+  function merged(g, onlyLists) {
     var sess = {}, ppl = {};
     lists(g).forEach(function (l) {
       (l.sessions || []).forEach(function (s, i) {
         var k = s.date + '|' + (s.time || ''); sess[k] = { date: s.date, time: s.time || '' };
-        (l.people || []).forEach(function (p) { var pk = (p.trainer ? 't:' : 's:') + String(p.name).toLowerCase(); var o = ppl[pk] || (ppl[pk] = { name: p.name, trainer: !!p.trainer, st: {} }); var c = (p.st || '').charAt(i); if (c && c !== '.') o.st[k] = c; });
+        (l.people || []).forEach(function (p) { var pk = (p.trainer ? 't:' : 's:') + lowr(swapN(p.name)); var o = ppl[pk] || (ppl[pk] = { name: p.name, trainer: !!p.trainer, st: {} }); var c = (p.st || '').charAt(i); if (c && c !== '.') o.st[k] = c; });
+      });
+    });
+    // Trainingstage aus der Gruppenseite: dort eingetragene Anwesenheit (✓, e, ✗) erscheint hier ebenfalls; ohne Eintrag gilt an einem vergangenen Termin mit Eintragungen als „fehlt“
+    if (!onlyLists) M.items('trainingTage').forEach(function (t) {
+      var gs = Array.isArray(t.gruppen) && t.gruppen.length ? t.gruppen : [t.gruppe || 'Wettkampfgruppe']; if (gs.indexOf(g) < 0) return;
+      var k = t.date + '|' + (t.time || ''); var an = t.anw || {}; var taken = Object.keys(an).length > 0; if (!taken && !sess[k]) return;
+      var trn = (t.trainer || []).map(lowr); sess[k] = sess[k] || { date: t.date, time: t.time || '' };
+      M.items('wgMitglieder').forEach(function (m) {
+        var mg = Array.isArray(m.gruppen) ? m.gruppen : ['Wettkampfgruppe']; if (mg.indexOf(g) < 0 && !an[m.id]) return;
+        if (m.status === 'ausgetreten' && !an[m.id]) return;
+        var sw = (t.schw || []).indexOf(m.id) >= 0; if (!sw && ((m.trainerIn || []).indexOf(g) >= 0 || trn.indexOf(lowr(m.name)) >= 0)) return;
+        var pk = 's:' + lowr(m.name); var o = ppl[pk] || (ppl[pk] = { name: m.name, trainer: false, st: {} });
+        if (o.st[k]) return;
+        var c = an[m.id]; if (!c && taken && t.date <= M.today()) c = 'f'; if (c) o.st[k] = c;
       });
     });
     var keys = Object.keys(sess).sort(); return { keys: keys, sess: sess, ppl: Object.keys(ppl).map(function (k) { return ppl[k]; }).sort(function (a, b) { return (a.trainer === b.trainer ? 0 : a.trainer ? -1 : 1) || a.name.localeCompare(b.name, 'de'); }) };
@@ -47,7 +61,7 @@ templateEngineOverride: false
     // Status: welche Gruppe hat in welchem Monat eine Liste
     var y = s.am.slice(0, 4);
     out += '<section class="wm-card"><div class="wm-bar"><h3>Listen-Status ' + esc(y) + '</h3></div><div class="m-twrap"><table><tr><th>Gruppe</th>' + MON.map(function (m) { return '<th>' + m + '</th>'; }).join('') + '</tr>' + GR.map(function (x) {
-      var mm = merged(x); var have = {}; mm.keys.forEach(function (k) { have[ym(k)] = 1; });
+      var mm = merged(x, true); var have = {}; mm.keys.forEach(function (k) { have[ym(k)] = 1; });
       return '<tr><td><b>' + esc(x) + '</b></td>' + MON.map(function (m, i) { var key = y + '-' + ('0' + (i + 1)).slice(-2); var future = key > ym(M.today()); return '<td style="text-align:center">' + (have[key] ? cell('a') : future ? '<span class="wm-sub">·</span>' : cell('f')) + '</td>'; }).join('') + '</tr>';
     }).join('') + '</table></div><p class="wm-sub" style="margin-top:8px">✓ Liste vorhanden · – fehlt</p></section>';
     return out;
