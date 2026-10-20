@@ -22,6 +22,67 @@ window.HubTheme = (function () {
   return { mode: mode, cycle: cycle, label: label, apply: apply };
 })();
 
+/* Formatierbare Texte (Schwarzes Brett): kleine Werkzeugleiste, Bereinigung des HTML und Anzeige. */
+window.HubRich = (function () {
+  var TAGS = { B: 1, STRONG: 1, I: 1, EM: 1, U: 1, SPAN: 1, DIV: 1, P: 1, BR: 1 }, DROP = { SCRIPT: 1, STYLE: 1, IFRAME: 1, OBJECT: 1, EMBED: 1, TEMPLATE: 1, LINK: 1, META: 1 };
+  var COL = /^(#[0-9a-f]{3,8}|rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(,\s*[\d.]+\s*)?\)|[a-z]{3,20})$/i;
+  var PROP = { 'color': COL, 'background-color': COL, 'font-size': /^(x-small|small|medium|large|x-large|xx-large)$/i, 'text-align': /^(left|center|right|justify)$/i, 'font-weight': /^(bold|normal|[1-9]00)$/i, 'font-style': /^(italic|normal)$/i, 'text-decoration': /^(underline|none|line-through)( solid)?$/i, 'text-decoration-line': /^(underline|none|line-through)$/i };
+  var TXT = ['#111827', '#dc2626', '#ea580c', '#16a34a', '#2563eb', '#7c3aed', '#db2777', '#6b7280'], MARK = ['#fef08a', '#bbf7d0', '#bfdbfe', '#fbcfe8', '#fed7aa', '#e9d5ff'], BG = ['#fff7d6', '#dcfce7', '#dbeafe', '#fce7f3', '#ffedd5', '#f3e8ff', '#e5e7eb'];
+  function esc(s) { return String(s === undefined || s === null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function cleanStyle(st) { var out = []; String(st || '').split(';').forEach(function (p) { var i = p.indexOf(':'); if (i < 0) return; var k = p.slice(0, i).trim().toLowerCase(), v = p.slice(i + 1).trim(); if (PROP[k] && PROP[k].test(v)) out.push(k + ':' + v); }); return out.join(';'); }
+  function walk(n) {
+    Array.prototype.slice.call(n.childNodes).forEach(function (c) {
+      if (c.nodeType === 3) return; if (c.nodeType !== 1) { n.removeChild(c); return; }
+      var t = c.tagName; if (DROP[t]) { n.removeChild(c); return; }
+      if (!TAGS[t]) { walk(c); while (c.firstChild) n.insertBefore(c.firstChild, c); n.removeChild(c); return; }
+      Array.prototype.slice.call(c.attributes).forEach(function (a) { if (a.name === 'style') { var s = cleanStyle(a.value); if (s) c.setAttribute('style', s); else c.removeAttribute('style'); } else c.removeAttribute(a.name); });
+      walk(c);
+    });
+  }
+  function clean(html) { var doc = new DOMParser().parseFromString('<body>' + String(html || '') + '</body>', 'text/html'); walk(doc.body); return doc.body.innerHTML; }
+  function okBg(c) { return /^#[0-9a-f]{3,8}$/i.test(String(c || '')) ? c : ''; }
+  function ico(kind) { var y = { l: [3, 3, 17, 3, 3, 7, 14, 7, 3, 11, 17, 11], c: [3, 3, 17, 3, 6, 7, 14, 7, 3, 11, 17, 11], r: [3, 3, 17, 3, 8, 7, 17, 7, 3, 11, 17, 11] }[kind]; var l = ''; for (var i = 0; i < 12; i += 4) l += '<line x1="' + y[i] + '" y1="' + (3 + i * 1.5) + '" x2="' + y[i + 2] + '" y2="' + (3 + i * 1.5) + '" />'; return '<svg width="16" height="16" viewBox="0 0 20 18" stroke="currentColor" stroke-width="2" stroke-linecap="round">' + l + '</svg>'; }
+  function sw(cmd, cols, none) { return cols.map(function (c) { return '<button type="button" class="hub-rsw" data-rt="' + cmd + '" data-v="' + c + '" style="background:' + c + '" aria-label="' + c + '"></button>'; }).join('') + (none ? '<button type="button" class="hub-rsw hub-rno" data-rt="' + cmd + '" data-v="' + none + '" aria-label="keine" title="keine">✕</button>' : ''); }
+  function bar() {
+    return '<div class="hub-rtb">' +
+      '<button type="button" data-rt="justifyLeft" title="Linksbündig">' + ico('l') + '</button><button type="button" data-rt="justifyCenter" title="Zentriert">' + ico('c') + '</button><button type="button" data-rt="justifyRight" title="Rechtsbündig">' + ico('r') + '</button><span class="hub-rsp"></span>' +
+      '<button type="button" data-rt="size" data-v="2" title="Klein" style="font-size:11px">A</button><button type="button" data-rt="size" data-v="3" title="Normal" style="font-size:14px">A</button><button type="button" data-rt="size" data-v="4" title="Groß" style="font-size:17px">A</button><button type="button" data-rt="size" data-v="6" title="Sehr groß" style="font-size:21px">A</button><span class="hub-rsp"></span>' +
+      '<button type="button" data-rt="bold" title="Fett"><b>B</b></button><button type="button" data-rt="italic" title="Kursiv"><i>K</i></button><button type="button" data-rt="underline" title="Unterstrichen"><u>U</u></button><span class="hub-rsp"></span>' +
+      '<span class="hub-rpw"><button type="button" data-rtp="1" title="Textfarbe"><b style="border-bottom:3px solid #dc2626;line-height:1">A</b></button><span class="hub-rpp">' + sw('foreColor', TXT) + '</span></span>' +
+      '<span class="hub-rpw"><button type="button" data-rtp="1" title="Textmarker">🖍️</button><span class="hub-rpp">' + sw('hiliteColor', MARK, 'transparent') + '</span></span>' +
+      '<span class="hub-rpw"><button type="button" data-rtp="1" title="Hintergrundfarbe des Eintrags">🎨</button><span class="hub-rpp">' + sw('bg', BG, 'none') + '</span></span>' +
+      '<button type="button" data-rt="removeFormat" title="Formatierung entfernen">⌧</button></div>';
+  }
+  function editor(html, bg) { bg = okBg(bg); return '<div class="hub-rtw">' + bar() + '<div class="hub-rte" contenteditable="true" data-ph="Mitteilung …" data-bg="' + esc(bg) + '"' + (bg ? ' style="background:' + bg + '"' : '') + '>' + clean(html) + '</div></div>'; }
+  function val(root) { var ed = (root || document).querySelector('.hub-rte'); if (!ed) return { html: '', text: '', bg: '' }; var h = clean(ed.innerHTML), text = (ed.innerText || '').replace(/ /g, ' ').trim(); return { html: text ? h : '', text: text, bg: okBg(ed.getAttribute('data-bg')) }; }
+  function plainToHtml(t) { return esc(t).replace(/\n/g, '<br>'); }
+  function show(b) { return b.html ? '<div class="hub-rtc">' + clean(b.html) + '</div>' : (b.text ? '<div class="hub-rtc hub-pl">' + esc(b.text) + '</div>' : ''); }
+  var SEL = null;
+  document.addEventListener('selectionchange', function () { var s = window.getSelection && window.getSelection(); if (!s || !s.rangeCount) return; var r = s.getRangeAt(0), n = r.commonAncestorContainer, el = n.nodeType === 1 ? n : n.parentNode; if (el && el.closest && el.closest('.hub-rte')) SEL = r.cloneRange(); });
+  document.addEventListener('mousedown', function (e) { if (e.target.closest && e.target.closest('.hub-rtb')) e.preventDefault(); }, true);
+  document.addEventListener('paste', function (e) { var t = e.target; if (t && t.closest && t.closest('.hub-rte')) { e.preventDefault(); var tx = (e.clipboardData || window.clipboardData).getData('text/plain'); document.execCommand('insertText', false, tx); } });
+  function closePop() { Array.prototype.forEach.call(document.querySelectorAll('.hub-rpw.open'), function (x) { x.classList.remove('open'); }); }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-rt],[data-rtp]');
+    if (!b) { if (!(e.target.closest && e.target.closest('.hub-rpw'))) closePop(); return; }
+    var w = b.closest('.hub-rtw'), ed = w && w.querySelector('.hub-rte'); if (!ed) return;
+    if (b.hasAttribute('data-rtp')) { var p = b.parentNode, was = p.classList.contains('open'); closePop(); if (!was) p.classList.add('open'); return; }
+    var cmd = b.getAttribute('data-rt'), v = b.getAttribute('data-v');
+    if (cmd === 'bg') { var c = v === 'none' ? '' : v; ed.setAttribute('data-bg', c); ed.style.background = c; closePop(); return; }
+    ed.focus(); if (SEL) { var s = window.getSelection(); s.removeAllRanges(); s.addRange(SEL); }
+    try { document.execCommand('styleWithCSS', false, true); } catch (x) { }
+    if (cmd === 'size') document.execCommand('fontSize', false, v);
+    else if (cmd === 'hiliteColor') { if (!document.execCommand('hiliteColor', false, v)) document.execCommand('backColor', false, v); }
+    else if (cmd === 'foreColor') document.execCommand('foreColor', false, v);
+    else document.execCommand(cmd, false, null);
+    closePop();
+  });
+  var st = document.createElement('style');
+  st.textContent = '.hub-rtb{display:flex;flex-wrap:wrap;gap:3px;align-items:center;padding:5px;border:1px solid var(--line,#cbd5e1);border-radius:10px 10px 0 0;background:color-mix(in srgb,#94a3b8 10%,var(--card,#fff))}.hub-rtb>button,.hub-rpw>button{min-width:32px;height:30px;padding:0 6px;border:1px solid transparent;border-radius:7px;background:transparent;color:inherit;font:inherit;font-size:14px;cursor:pointer}.hub-rtb>button:hover,.hub-rpw>button:hover{background:color-mix(in srgb,#94a3b8 22%,transparent)}.hub-rsp{width:1px;height:20px;background:var(--line,#cbd5e1);margin:0 3px}.hub-rpw{position:relative}.hub-rpp{display:none;position:absolute;top:34px;left:0;z-index:30;gap:5px;flex-wrap:wrap;width:170px;padding:8px;border-radius:10px;background:var(--card,#fff);border:1px solid var(--line,#cbd5e1);box-shadow:0 6px 18px rgba(0,0,0,.18)}.hub-rpw.open .hub-rpp{display:flex}.hub-rsw{width:26px;height:26px;border-radius:50%;border:1px solid rgba(0,0,0,.25);cursor:pointer;padding:0;font-size:12px;color:#555}.hub-rno{background:#fff!important}.hub-rte{min-height:90px;padding:8px 10px;border:1px solid var(--line,#cbd5e1);border-top:0;border-radius:0 0 10px 10px;background:var(--card,#fff);outline:none;text-align:left;font-size:15px;line-height:1.4;overflow-wrap:anywhere}.hub-rte:empty:before{content:attr(data-ph);opacity:.5}.hub-rtc{overflow-wrap:anywhere}.hub-rtc.hub-pl{white-space:pre-line}.hub-rtc div,.hub-rtc p{margin:0}';
+  document.head.appendChild(st);
+  return { clean: clean, bar: bar, editor: editor, val: val, show: show, plain: plainToHtml, okBg: okBg };
+})();
+
 window.HubShell = (function () {
   var API = window.HUB_API || 'https://script.google.com/macros/s/AKfycby7gQCbTizF8qBnrfLgtEMMsdUu0ZG00AaQ8mrLn5wThBf_G8GiqBUS5knb4QElBVVh/exec';
   var TIMEOUT = window.HUB_TIMEOUT_MS || 15000;

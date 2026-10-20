@@ -202,7 +202,8 @@ templateEngineOverride: false
   function ausrKey(x) { return (x.d || '') + '|' + String(x.t || '').toLowerCase().replace(/\s+/g, ' ').slice(0, 40); }
   // Meldegeld: standardmäßig aus WebClub (sonst aus der Ausschreibung); manuell geänderte Beträge stehen in saison/mg
   function mgSet(k, v) { var vals = Object.assign({}, mgOv()); if (v === '' || v === null || isNaN(+v)) delete vals[k]; else vals[k] = Math.round(+v * 100) / 100; M.op({ op: 'set', coll: 'saison', item: { id: 'meldegeld', title: 'Meldegeld manuell geändert', vals: vals } }); }
-  document.addEventListener('change', function (e) { var t = e.target; if (t && t.classList && t.classList.contains('mgin')) mgSet(t.getAttribute('data-k'), t.value); });
+  var MGE = '';
+  document.addEventListener('keydown', function (e) { var t = e.target; if (e.key === 'Enter' && t && t.classList && t.classList.contains('mgin')) { e.preventDefault(); MGE = ''; mgSet(t.getAttribute('data-k'), t.value); } });
   function mgOv() { var x = M.find('saison', 'meldegeld'); return (x && x.vals) || {}; }
   function krEx() { var x = M.find('saison', 'krx'); return (x && x.names) || []; }
   function stat(j) {
@@ -235,7 +236,7 @@ templateEngineOverride: false
     var ab = wc.abs || {}; var pe = [ab.e1 || 0, ab.e2 || 0, ab.e3 || 0], ps = [ab.s1 || 0, ab.s2 || 0, ab.s3 || 0];
     var ex = krEx();
     var kr = (wc.kr || []).map(function (x) { return { n: x.n, v: x.v, w: x.w, a: x.a, ex: ex.indexOf(x.n) >= 0 }; });
-    if (allOwn && own.n) return own;
+    if (allOwn && own.n) return Object.assign({}, own, { vr: vr, tot: tot, n: vr.length });
     return { vr: vr, tot: tot, kr: kr, n: vr.length, pl: { e: pe.concat([Math.max(0, tot.e - pe[0] - pe[1] - pe[2])]), s: ps.concat([Math.max(0, tot.s - ps[0] - ps[1] - ps[2])]) }, wc: true };
   }
   // Einsätze eines Kampfrichters: Datum, Wettkampf, Abschnitte (aus den Kampfgerichten der Wettkämpfe)
@@ -253,7 +254,7 @@ templateEngineOverride: false
     var ov = mgOv(); s.vr.forEach(function (x) { var o = ov[ausrKey(x)]; x.mo = o !== undefined && o !== null; if (x.mo) x.g = +o; });
     var tg = s.vr.reduce(function (a, x) { return x.g === null || x.g === undefined ? a : a + x.g; }, 0), anyG = s.vr.some(function (x) { return x.g !== null && x.g !== undefined; });
     var v = '<h2 class="aus-h">Veranstaltungen, Saison ' + esc(j) + '</h2><table class="aus-t aus-v"><tr><th>Datum</th><th>Veranstaltung</th><th>Ort</th><th>Bahn</th><th>Schwimmer</th><th>Einzel</th><th>Staffel</th><th>Meldegeld</th><th class="no-print">Ändern</th></tr>' +
-      s.vr.map(function (x) { return '<tr><td class="r">' + esc(dd(x.d)) + '</td><td class="l">' + esc(x.t) + '</td><td class="l">' + esc(x.o) + '</td><td class="l">' + (x.bw === 25 ? 'Kurz' : x.bw === 50 ? 'Lang' : '–') + '</td><td class="r">' + x.sw + '</td><td class="r">' + x.e + '</td><td class="r">' + x.s + '</td><td class="r">' + eur(x.g) + '</td><td class="no-print"><input type="number" class="mgin" step="0.01" min="0" data-k="' + esc(ausrKey(x)) + '" value="' + (x.g === null || x.g === undefined ? '' : x.g) + '" placeholder="€" style="width:84px">' + (x.mo ? ' <button type="button" class="wm-btn" data-ma="ausmgreset" data-k="' + esc(ausrKey(x)) + '" title="Zurück auf den Wert aus WebClub">↺</button>' : '') + '</td></tr>'; }).join('') +
+      s.vr.map(function (x) { return '<tr><td class="r">' + esc(dd(x.d)) + '</td><td class="l">' + esc(x.t) + '</td><td class="l">' + esc(x.o) + '</td><td class="l">' + (x.bw === 25 ? 'Kurz' : x.bw === 50 ? 'Lang' : '–') + '</td><td class="r">' + x.sw + '</td><td class="r">' + x.e + '</td><td class="r">' + x.s + '</td><td class="r">' + eur(x.g) + '</td><td class="no-print">' + (MGE === ausrKey(x) ? '<input type="number" class="mgin" step="0.01" min="0" data-k="' + esc(ausrKey(x)) + '" value="' + (x.g === null || x.g === undefined ? '' : x.g) + '" placeholder="€" style="width:84px"> <button type="button" class="wm-btn" data-ma="ausmgsave" data-k="' + esc(ausrKey(x)) + '" title="Speichern">💾</button> <button type="button" class="wm-btn" data-ma="ausmgcancel" title="Abbrechen">✕</button>' : '<button type="button" class="wm-btn" data-ma="ausmgedit" data-k="' + esc(ausrKey(x)) + '" title="Meldegeld ändern">✏️</button>' + (x.mo ? ' <button type="button" class="wm-btn" data-ma="ausmgreset" data-k="' + esc(ausrKey(x)) + '" title="Zurück auf den Wert aus WebClub">↺</button>' : '')) + '</td></tr>'; }).join('') +
       '<tr class="tot"><td colspan="4" class="l"><b>Gesamt für ' + s.n + ' Veranstaltungen mit Ergebnissen</b></td><td class="r"><b>' + s.tot.sw + '</b></td><td class="r"><b>' + s.tot.e + '</b></td><td class="r"><b>' + s.tot.s + '</b></td><td class="r"><b>' + (anyG ? eur(tg) : '–') + '</b></td><td class="no-print"></td></tr></table>';
     var kin = s.kr.filter(function (x) { return !x.ex; });
     var k = '<h2 class="aus-h">Kampfrichterstatistik, Saison ' + esc(j) + '</h2>' + (s.kr.length ? '<table class="aus-t aus-k"><tr><th>Kampfrichter</th><th>Stammverein</th><th>Veranstaltungen</th><th>Abschnitte</th><th class="no-print">Wettkämpfe</th><th class="no-print">Zählt</th></tr>' + s.kr.map(function (x) { return '<tr class="' + (x.ex ? 'ex no-print' : '') + '"' + (x.ex ? ' style="opacity:.45"' : '') + '><td class="l">' + esc(x.n) + '</td><td class="l">' + esc(x.v) + '</td><td class="r">' + x.w + '</td><td class="r">' + x.a + '</td><td class="l no-print">' + krEvText(x, j) + '</td><td class="no-print"><button type="button" class="wm-btn" data-ma="auskr" data-n="' + esc(x.n) + '">' + (x.ex ? '✗ nein' : '✓ ja') + '</button></td></tr>'; }).join('') + '<tr class="tot"><td colspan="2" class="l"><b>Gesamt für ' + kin.length + ' Kampfrichter</b></td><td class="r"><b>' + kin.reduce(function (a, x) { return a + x.w; }, 0) + '</b></td><td class="r"><b>' + kin.reduce(function (a, x) { return a + x.a; }, 0) + '</b></td><td class="no-print"></td><td class="no-print"></td></tr></table><p class="wm-note no-print">Mit „Zählt“ legst du fest, wer als offizieller Kampfrichter in die Statistik kommt (z. B. nicht bei vereinsinternen Wettkämpfen).</p>' : '<p class="wm-note">Bei den Veranstaltungen ist kein Kampfgericht eingetragen.</p>');
@@ -768,7 +769,10 @@ templateEngineOverride: false
     actions: {
       ausj: function (it, el) { sub().sj = el.getAttribute('data-v'); M.render(true); },
       ausb: function (it, el) { sub().sb = el.getAttribute('data-v'); M.render(true); },
-      ausmgreset: function (it, el) { mgSet(el.getAttribute('data-k'), ''); },
+      ausmgreset: function (it, el) { MGE = ''; mgSet(el.getAttribute('data-k'), ''); },
+      ausmgedit: function (it, el) { MGE = el.getAttribute('data-k'); M.render(true); var i = document.querySelector('.mgin'); if (i) { i.focus(); i.select(); } },
+      ausmgsave: function (it, el) { var i = el.parentNode.querySelector('.mgin'); MGE = ''; mgSet(el.getAttribute('data-k'), i ? i.value : ''); },
+      ausmgcancel: function () { MGE = ''; M.render(true); },
       auskr: function (it, el) { var n = el.getAttribute('data-n'), l = krEx().slice(), i = l.indexOf(n); if (i >= 0) l.splice(i, 1); else l.push(n); M.op({ op: 'set', coll: 'saison', item: { id: 'krx', names: l, title: 'Kampfrichter ausgeschlossen' } }); },
       ausxlsx: function () { exportXlsx(); },
       wcread: function () { wcRead(); },
