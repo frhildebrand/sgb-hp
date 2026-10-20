@@ -386,8 +386,13 @@ templateEngineOverride: false
 
   /* ---------- Modul ---------- */
   function mk(id, label, view, render, extra) { return Object.assign({ id: id, label: label, view: view, render: render }, extra || {}); }
+  function applyHash() {
+    var h = decodeURIComponent(String(location.hash || '').replace(/^#/, '')); if (!/^g=/.test(h)) return;
+    M.S.sub.gg = h.slice(2) || 'mine'; M.S.tab = 'uebersicht'; if (M.render) M.render(true);
+  }
+  window.addEventListener('hashchange', applyHash); setTimeout(applyHash, 900); setTimeout(applyHash, 2500);
   M.register('training', {
-    title: 'Wettkampfgruppe', icon: '🦈', colls: ['wgMitglieder', 'trainingTage', 'trainingCfg', 'profile', 'saetze', 'wettkaempfe', 'abzeichen', 'fahrten'],
+    title: 'Gruppen', icon: '🦈', colls: ['wgMitglieder', 'trainingTage', 'trainingCfg', 'profile', 'saetze', 'wettkaempfe', 'abzeichen', 'fahrten'],
     tabs: [
       mk('uebersicht', 'Übersicht', ['training.view', 'training.tage.view', 'training.mitglieder.view'], function () { return uebersicht(); }),
       mk('tage', 'Training', ['training.tage.view'], function () { return tageTab(); }, { coll: 'trainingTage' })

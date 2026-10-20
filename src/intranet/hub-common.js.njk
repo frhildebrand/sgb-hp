@@ -381,10 +381,10 @@ window.HubShell = (function () {
   function itemHtml(s, color, here) {
     var u = hereOf(s.url); var out = link(esc(s.url), esc(s.icon || '•'), /\/training\/$/.test(u) ? 'Gruppen' : s.name, here === u && !/\/training\/$/.test(u), color);
     if (/\/training\/$/.test(u)) {
-      var ov = menuOv(); var oo = ov['Gruppen'] !== undefined ? !!ov['Gruppen'] : (here === u || (/\/mitglieder\/$/.test(here) && /^#g=/.test(location.hash)));
-      var allUrl = has('mitglieder.view') ? HUB_URL + 'mitglieder/#gruppen' : s.url;
+      var ov = menuOv(); var oo = ov['Gruppen'] !== undefined ? !!ov['Gruppen'] : here === u;
+      var allUrl = s.url;
       out = '<div class="hub-mrow"><a class="hub-mi hub-mgo" href="' + esc(allUrl) + '" style="--mc:' + esc(color) + '"><span class="hub-mic">' + esc(s.icon || '•') + '</span><span class="hub-mlb">Gruppen</span></a><button type="button" class="hub-mcar" data-sh="cat" data-v="Gruppen" aria-expanded="' + (oo ? 'true' : 'false') + '" aria-label="Gruppen auf- oder zuklappen">' + (oo ? '▴' : '▾') + '</button></div>' + (oo ? '<div class="hub-msub">' + GRUPPEN.map(function (g, i) {
-        var href = i === 0 ? s.url : HUB_URL + 'mitglieder/#g=' + encodeURIComponent(g); if (i && !has('mitglieder.view')) return '';
+        var href = i === 0 ? s.url : s.url + '#g=' + encodeURIComponent(g);
         return '<a class="hub-mi hub-mi2' + (i === 0 && here === u ? ' hub-on' : '') + '" href="' + esc(href) + '" style="--mc:' + esc(color) + '"><span class="hub-mlb">' + esc(g) + '</span></a>'; }).join('') + '</div>' : '');
     }
     return out;
