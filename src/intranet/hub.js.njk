@@ -59,12 +59,29 @@ templateEngineOverride: false
   }
   // ---------- Startseite: zwei Spalten ----------
   function dayBox(iso) { var d = new Date(iso + 'T12:00:00'); return '<span class="hub-dbx"><b>' + ('0' + d.getDate()).slice(-2) + '</b><i>' + ['JAN', 'FEB', 'MÄR', 'APR', 'MAI', 'JUN', 'JUL', 'AUG', 'SEP', 'OKT', 'NOV', 'DEZ'][d.getMonth()] + '</i></span>'; }
+  function brettSort(l) {
+    return (l || []).slice().sort(function (a, b) {
+      var w = (b.wichtig ? 1 : 0) - (a.wichtig ? 1 : 0); if (w) return w;
+      var oa = typeof a.ord === 'number' ? a.ord : -1, ob = typeof b.ord === 'number' ? b.ord : -1; if (oa !== ob) return oa - ob;
+      return String(b.date || '') < String(a.date || '') ? -1 : String(b.date || '') > String(a.date || '') ? 1 : 0;
+    });
+  }
+  function brettForm() {
+    var ex = state.bedit ? (state.brett || []).filter(function (b) { return b.id === state.bedit; })[0] : null; ex = ex || {};
+    return '<form class="hub-bf hub-comp" data-bf="1" data-id="' + esc(ex.id || '') + '"><div class="hub-comph"><b>' + (ex.id ? 'Mitteilung bearbeiten' : 'Neue Mitteilung') + '</b><span>von ' + esc(ex.by || (SH.S.me && SH.S.me.user) || '') + '</span></div>' +
+      '<label class="hub-fl"><span>Überschrift</span><input type="text" name="title" placeholder="Worum geht es?" maxlength="120" required value="' + esc(ex.title || '') + '"></label>' +
+      '<label class="hub-fl"><span>Mitteilung</span><textarea name="text" rows="5" placeholder="Was sollen alle wissen? (Zeilenumbrüche bleiben erhalten)">' + esc(ex.text || '') + '</textarea></label>' +
+      '<label class="hub-sw"><input type="checkbox" name="wichtig"' + (ex.wichtig ? ' checked' : '') + '><span class="hub-swt"></span><span>📣 Wichtig <i>(steht automatisch ganz oben)</i></span></label>' +
+      '<div class="hub-bfb"><button type="button" class="hub-btn hub-ghost" data-act="bcancel">Abbrechen</button><button type="submit" class="hub-btn hub-gold">' + (ex.id ? 'Speichern' : 'Veröffentlichen') + '</button></div></form>';
+  }
   function brettHtml() {
-    var can = SH.has('startseite.brett'), del = SH.has('brett.loeschen'); if (!SH.has('brett.view') && !can) return '';
-    var l = (state.brett || []).slice().sort(function (a, b) { return (b.wichtig ? 1 : 0) - (a.wichtig ? 1 : 0) || (String(b.date || '') < String(a.date || '') ? -1 : String(b.date || '') > String(a.date || '') ? 1 : 0); });
-    var form = state.bform ? '<form class="hub-bf" data-bf="1"><input type="text" name="title" placeholder="Überschrift" maxlength="120" required><textarea name="text" rows="4" placeholder="Mitteilung (Zeilenumbrüche bleiben erhalten)"></textarea><label class="hub-bfc"><input type="checkbox" name="wichtig"> Als „Wichtig“ markieren (erscheint oben als Hinweisband)</label><div class="hub-bfb"><button type="button" class="hub-btn hub-ghost" data-act="bcancel">Abbrechen</button><button type="submit" class="hub-btn hub-gold">Eintragen</button></div></form>' : '';
-    return '<section class="hub-card2" id="brett"><div class="hub-c2h"><h3>📌 Schwarzes Brett</h3><span style="display:flex;gap:8px">' + (can && !state.bform ? '<button type="button" class="hub-btn hub-gold" data-act="bnew" style="padding:4px 12px;font-size:13px">+ Eintragen</button>' : '') + '<a class="hub-btn hub-ghost" href="/intranet/brett/" style="padding:4px 10px;font-size:12px">' + (can ? 'Verwalten →' : 'Alle ansehen →') + '</a></span></div>' + form +
-      (l.length ? '<div class="hub-bwrap"><table class="hub-bt"><tr><th>Von</th><th>Datum</th><th>Mitteilung</th>' + (del ? '<th></th>' : '') + '</tr>' + l.slice(0, 5).map(function (b) { return '<tr' + (b.wichtig ? ' class="imp"' : '') + '><td>' + esc(b.by || '') + '</td><td>' + esc(fmtDMY(b.date)) + '</td><td class="m"><b>' + (b.wichtig ? '📣 ' : '') + esc(b.title) + '</b>' + (b.text ? '<p>' + esc(b.text) + '</p>' : '') + '</td>' + (del ? '<td><button type="button" class="hub-bx" data-act="bdel" data-id="' + esc(b.id) + '" aria-label="Löschen">🗑️</button></td>' : '') + '</tr>'; }).join('') + '</table></div>' + (l.length > 5 ? '<p class="hub-sub" style="margin:8px 0 0">Weitere ' + (l.length - 5) + ' Mitteilungen unter „' + (can ? 'Verwalten' : 'Alle ansehen') + '“.</p>' : '') : '<p class="hub-sub" style="margin:6px 0 0">Zurzeit gibt es keine Mitteilungen.</p>') + '</section>';
+    var can = SH.has('startseite.brett'), del = SH.has('brett.loeschen') || can; if (!SH.has('brett.view') && !can) return '';
+    var l = brettSort(state.brett), form = state.bform ? brettForm() : '', shown = l.slice(0, 6);
+    return '<section class="hub-card2" id="brett"><div class="hub-c2h"><h3>📌 Schwarzes Brett</h3><span style="display:flex;gap:8px">' + (can && !state.bform ? '<button type="button" class="hub-btn hub-gold" data-act="bnew" style="padding:4px 12px;font-size:13px">+ Neue Mitteilung</button>' : '') + '<a class="hub-btn hub-ghost" href="/intranet/brett/" style="padding:4px 10px;font-size:12px">' + (can ? 'Verwalten →' : 'Alle ansehen →') + '</a></span></div>' + form +
+      (l.length ? '<div class="hub-bwrap"><table class="hub-bt"><tr><th>Von</th><th>Datum</th><th>Mitteilung</th>' + (can ? '<th></th>' : '') + '</tr>' + shown.map(function (b, i) {
+        var up = i > 0 && !!shown[i - 1].wichtig === !!b.wichtig, dn = i < shown.length - 1 && !!shown[i + 1].wichtig === !!b.wichtig;
+        return '<tr' + (b.wichtig ? ' class="imp"' : '') + '><td>' + esc(b.by || '') + '</td><td>' + esc(fmtDMY(b.date)) + '</td><td class="m"><b>' + (b.wichtig ? '📣 ' : '') + esc(b.title) + '</b>' + (b.text ? '<p>' + esc(b.text) + '</p>' : '') + '</td>' +
+          (can ? '<td class="a"><button type="button" class="hub-bx" data-act="bmove" data-dir="-1" data-id="' + esc(b.id) + '" aria-label="Nach oben"' + (up ? '' : ' disabled') + '>▲</button><button type="button" class="hub-bx" data-act="bmove" data-dir="1" data-id="' + esc(b.id) + '" aria-label="Nach unten"' + (dn ? '' : ' disabled') + '>▼</button><button type="button" class="hub-bx" data-act="bedit" data-id="' + esc(b.id) + '" aria-label="Bearbeiten">✏️</button>' + (del ? '<button type="button" class="hub-bx" data-act="bdel" data-id="' + esc(b.id) + '" aria-label="Löschen">🗑️</button>' : '') + '</td>' : '') + '</tr>'; }).join('') + '</table></div>' + (l.length > shown.length ? '<p class="hub-sub" style="margin:8px 0 0">Weitere ' + (l.length - shown.length) + ' Mitteilungen unter „' + (can ? 'Verwalten' : 'Alle ansehen') + '“.</p>' : '') : (state.bform ? '' : '<p class="hub-sub" style="margin:6px 0 0">Zurzeit gibt es keine Mitteilungen.</p>')) + '</section>';
   }
   function termineHtml() {
     var n = state.next && state.next.token === SH.token() ? state.next : null; var items = [];
@@ -83,7 +100,11 @@ templateEngineOverride: false
   }
   function blickHtml() {
     var n = state.next && state.next.token === SH.token() ? state.next : null; if (!n || !n.cnt) return '';
-    return '<section class="hub-stats"><div class="hub-stt"><i>👥 Mitglieder</i><b>' + n.cnt.mem + '</b></div>' + (n.cnt.gr ? '<div class="hub-stt"><i>🦈 Gruppen</i><b>' + n.cnt.gr + '</b></div>' : '') + (n.cnt.tr ? '<div class="hub-stt"><i>🎓 Trainer:innen</i><b>' + n.cnt.tr + '</b></div>' : '') + '<div class="hub-stt"><i>🏊 Wettkampfgruppe</i><b>' + n.cnt.wg + '</b></div>' + (n.nstarts ? '<div class="hub-stt"><i>🏁 Nächste Starts</i><b>' + n.nstarts + '</b></div>' : '') + '</section>';
+    return '<section class="hub-stats"><div class="hub-stt"><i>👥 Mitglieder</i><b>' + n.cnt.mem + '</b></div>' + (n.cnt.gr ? '<div class="hub-stt"><i>🦈 Gruppen</i><b>' + n.cnt.gr + '</b></div>' : '') + (n.cnt.tr ? '<div class="hub-stt"><i>🎓 Trainer:innen</i><b>' + n.cnt.tr + '</b></div>' : '') + '</section>';
+  }
+  function wgCard() {
+    var n = state.next && state.next.token === SH.token() ? state.next : null; if (!n || !n.cnt) return '';
+    return '<section class="hub-card2"><div class="hub-c2h"><h3>🏊 Wettkampfgruppe</h3><a href="/intranet/wettkaempfe/" class="hub-sub">Wettkämpfe →</a></div><div class="hub-bl"><div><i>Schwimmer:innen</i><b>' + n.cnt.wg + '</b></div>' + (n.nstarts ? '<div><i>Starts beim nächsten Wettkampf</i><b>' + n.nstarts + '</b></div>' : '') + '</div></section>';
   }
   function greetRow() { var nm = SH.S.me ? String(SH.S.me.user || '').split(/\s+/)[0] : ''; return '<div class="hub-greet"><h2>' + (nm ? 'Hallo ' + esc(nm) + ' 👋' : 'Willkommen') + '</h2><span>' + esc(longDate()) + '</span></div>'; }
   function body() {
@@ -91,7 +112,7 @@ templateEngineOverride: false
     if (!state.loaded) return '<section class="hub-tiles"><div class="hub-skel"></div><div class="hub-skel"></div><div class="hub-skel"></div></section>';
     if (S.offline) return '<section class="hub-card hub-offline"><h2>Keine Verbindung</h2><p class="hub-sub">Das Konto-System ist gerade nicht erreichbar. Bitte prüfe das Internet und versuche es nochmal.</p><button type="button" class="hub-btn hub-gold" data-act="retry">Nochmal versuchen</button><details class="hub-diag"><summary>Technische Details</summary><pre>' + esc(SH.DIAG.length ? SH.DIAG.join('\n') : 'Keine Angaben.') + '</pre></details></section>';
     var out = greetRow();
-    if (S.me) out += blickHtml() + '<div class="hub-home2"><div class="hub-stack">' + brettHtml() + termineHtml() + fristHtml() + '</div><div class="hub-stack">' + aufgabenCard() + '</div></div>';
+    if (S.me) out += '<div class="hub-stack">' + brettHtml() + blickHtml() + '<div class="hub-home2"><div class="hub-stack">' + termineHtml() + fristHtml() + '</div><div class="hub-stack">' + aufgabenCard() + wgCard() + '</div></div></div>';
     else out += hero();
     out += S.systems.length ? '<div class="hub-narrow">' + groupsHtml(S.systems) + '</div>' : '<section class="hub-card"><p class="hub-sub">Für dein Konto sind noch keine Systeme freigeschaltet.</p></section>';
     return out;
@@ -172,16 +193,26 @@ templateEngineOverride: false
     var t = ev.target.closest ? ev.target.closest('[data-act]') : null;
     if (!t) return; var a = t.getAttribute('data-act');
     if (a === 'retry') load();
-    else if (a === 'bnew') { state.bform = true; render(); }
-    else if (a === 'bcancel') { state.bform = false; render(); }
+    else if (a === 'bnew') { state.bform = true; state.bedit = null; render(); }
+    else if (a === 'bedit') { state.bform = true; state.bedit = t.getAttribute('data-id'); render(); var bf = root.querySelector('.hub-comp'); if (bf && bf.scrollIntoView) bf.scrollIntoView({ block: 'center' }); }
+    else if (a === 'bcancel') { state.bform = false; state.bedit = null; render(); }
+    else if (a === 'bmove') {
+      var mid = t.getAttribute('data-id'), dir = +t.getAttribute('data-dir'), cur = brettSort(state.brett), ix = cur.map(function (b) { return b.id; }).indexOf(mid), jx = ix + dir;
+      if (ix >= 0 && jx >= 0 && jx < cur.length && !!cur[jx].wichtig === !!cur[ix].wichtig) {
+        var tmp = cur[ix]; cur[ix] = cur[jx]; cur[jx] = tmp; var ids = cur.map(function (b) { return b.id; });
+        state.brett = cur.map(function (b, k) { return Object.assign({}, b, { ord: k }); }); SH.lsSet('hubbrett', state.brett); render();
+        SH.post({ action: 'dataOps', token: SH.token(), ops: [{ op: 'order', coll: 'brett', ids: ids }] });
+      }
+    }
     else if (a === 'bdel') { var bid = t.getAttribute('data-id'); state.brett = (state.brett || []).filter(function (b) { return b.id !== bid; }); SH.lsSet('hubbrett', state.brett); SH.post({ action: 'dataOps', token: SH.token(), ops: [{ op: 'del', coll: 'brett', id: bid }] }); render(); }
   });
   root.addEventListener('submit', function (ev) {
     var f = ev.target; if (f && f.getAttribute && f.getAttribute('data-bf')) {
       ev.preventDefault(); var fd = new FormData(f); var title = String(fd.get('title') || '').trim(); if (!title) return;
-      var it = { id: 'b-' + Date.now().toString(36), title: title, text: String(fd.get('text') || '').trim(), wichtig: !!fd.get('wichtig'), by: SH.S.me && SH.S.me.user || '', date: todayIso() };
-      state.brett = [it].concat(state.brett || []); SH.lsSet('hubbrett', state.brett); state.bform = false;
-      SH.post({ action: 'dataOps', token: SH.token(), ops: [{ op: 'set', coll: 'brett', item: it }] }).then(function (r) { if (!r || r.status !== 'success') { state.brett = state.brett.filter(function (b) { return b.id !== it.id; }); render(); } });
+      var eid = f.getAttribute('data-id'), old = eid ? (state.brett || []).filter(function (b) { return b.id === eid; })[0] : null;
+      var it = old ? Object.assign({}, old, { title: title, text: String(fd.get('text') || '').trim(), wichtig: !!fd.get('wichtig') }) : { id: 'b-' + Date.now().toString(36), title: title, text: String(fd.get('text') || '').trim(), wichtig: !!fd.get('wichtig'), by: SH.S.me && SH.S.me.user || '', date: todayIso() };
+      var before = state.brett || []; state.brett = old ? before.map(function (b) { return b.id === eid ? it : b; }) : [it].concat(before); SH.lsSet('hubbrett', state.brett); state.bform = false; state.bedit = null;
+      SH.post({ action: 'dataOps', token: SH.token(), ops: [{ op: 'set', coll: 'brett', item: it }] }).then(function (r) { if (!r || r.status !== 'success') { state.brett = before; SH.lsSet('hubbrett', before); render(); } });
       render(); return;
     }
     SH.submit(ev, render, load);

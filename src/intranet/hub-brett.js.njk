@@ -16,7 +16,7 @@ templateEngineOverride: false
     { k: 'text', t: 'area', label: 'Text', rows: 6, hint: 'Nur Text. Zeilenumbrüche bleiben erhalten.' },
     { k: 'wichtig', t: 'chk', label: 'Als „Wichtig“ markieren (erscheint auf der Startseite als Hinweis)' }
   ];
-  function list() { return M.items('brett').slice().sort(function (a, b) { return (b.wichtig ? 1 : 0) - (a.wichtig ? 1 : 0) || String(b.date || '').localeCompare(String(a.date || '')); }); }
+  function list() { return M.items('brett').slice().sort(function (a, b) { var oa = typeof a.ord === 'number' ? a.ord : -1, ob = typeof b.ord === 'number' ? b.ord : -1; return (b.wichtig ? 1 : 0) - (a.wichtig ? 1 : 0) || oa - ob || String(b.date || '').localeCompare(String(a.date || '')); }); }
   function render() {
     var l = list();
     var out = '<section class="wm-card"><div class="wm-bar"><h3>📌 Schwarzes Brett</h3>' + (can() ? '<button type="button" class="wm-amber" data-ma="bbnew">+ Neue Mitteilung</button>' : '') + '</div>' +
