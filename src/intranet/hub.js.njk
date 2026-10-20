@@ -59,26 +59,15 @@ templateEngineOverride: false
   }
   // ---------- Startseite: zwei Spalten ----------
   function dayBox(iso) { var d = new Date(iso + 'T12:00:00'); return '<span class="hub-dbx"><b>' + ('0' + d.getDate()).slice(-2) + '</b><i>' + ['JAN', 'FEB', 'MÄR', 'APR', 'MAI', 'JUN', 'JUL', 'AUG', 'SEP', 'OKT', 'NOV', 'DEZ'][d.getMonth()] + '</i></span>'; }
-  function brettSort(l) {
-    return (l || []).slice().sort(function (a, b) {
-      var w = (b.wichtig ? 1 : 0) - (a.wichtig ? 1 : 0); if (w) return w;
-      var oa = typeof a.ord === 'number' ? a.ord : -1, ob = typeof b.ord === 'number' ? b.ord : -1; if (oa !== ob) return oa - ob;
-      return String(b.date || '') < String(a.date || '') ? -1 : String(b.date || '') > String(a.date || '') ? 1 : 0;
-    });
-  }
-  function bgs(b) { var c = window.HubRich.okBg(b && b.bg); return c ? ' style="background:' + c + '"' : ''; }
-  function brettLive() { return brettSort((state.brett || []).filter(function (b) { return !window.HubBrett.expired(b); })); }
   function grpNames() { return state.next && state.next.grp ? state.next.grp.all.map(function (g) { return g.name; }) : null; }
-  function brettEditRow(ex) { return window.HubBrett.editRow(ex, { attr: 'data-act', save: 'bsave', cancel: 'bcancel', me: SH.S.me && SH.S.me.user, groups: state.next && state.next.grp ? state.next.grp.all.map(function (g) { return g.name; }) : null }); }
+  function brettLive() { return window.HubBrett.live(state.brett); }
   function brettHtml() {
-    var can = SH.has('startseite.brett'), del = SH.has('brett.loeschen') || can; if (!SH.has('brett.view') && !can) return '';
-    var l = brettLive(), shown = l.slice(0, 6);
-    var head = '<tr><th>Von</th><th>Datum</th><th>Mitteilung</th>' + (can ? '<th></th>' : '') + '</tr>' + (state.bform ? window.HubRich.barRow(can ? 4 : 3) : '');
-    var rows = (state.bform && !state.bedit ? brettEditRow(null) : '') + shown.map(function (b, i) {
-      if (state.bform && state.bedit === b.id) return brettEditRow(b);
-      var up = i > 0 && !!shown[i - 1].wichtig === !!b.wichtig, dn = i < shown.length - 1 && !!shown[i + 1].wichtig === !!b.wichtig;
-      return '<tr' + (b.wichtig ? ' class="imp"' : '') + '><td' + bgs(b) + '>' + esc(b.by || '') + '</td><td' + bgs(b) + '>' + esc(fmtDMY(b.date)) + '</td><td class="m"' + bgs(b) + '><b>' + (b.wichtig ? '📣 ' : '') + window.HubRich.showTitle(b) + '</b>' + (window.HubBrett.isNew(b) ? '<span class="hub-new">NEU</span>' : '') + (window.HubBrett.audText(b) ? '<span class="hub-lock">🔒 ' + esc(window.HubBrett.audText(b)) + '</span>' : '') + window.HubRich.show(b) + (b.until ? '<span class="hub-lock">sichtbar bis ' + esc(fmtDMY(b.until)) + '</span>' : '') + '</td>' +
-        (can ? '<td class="a"' + bgs(b) + '><div><button type="button" class="hub-bx" data-act="bmove" data-dir="-1" data-id="' + esc(b.id) + '" aria-label="Nach oben"' + (up ? '' : ' disabled') + '>▲</button><button type="button" class="hub-bx" data-act="bmove" data-dir="1" data-id="' + esc(b.id) + '" aria-label="Nach unten"' + (dn ? '' : ' disabled') + '>▼</button><button type="button" class="hub-bx" data-act="bedit" data-id="' + esc(b.id) + '" aria-label="Bearbeiten">✏️</button>' + (del ? '<button type="button" class="hub-bx" data-act="bdel" data-id="' + esc(b.id) + '" aria-label="Löschen">🗑️</button>' : '') + '</div></td>' : '') + '</tr>'; }).join('');
+    var HB = window.HubBrett, can = SH.has('startseite.brett'), del = SH.has('brett.loeschen') || can; if (!SH.has('brett.view') && !can) return '';
+    var l = brettLive(), shown = l.slice(0, 6), eo = { attr: 'data-act', save: 'bsave', cancel: 'bcancel', me: SH.S.me && SH.S.me.user, groups: grpNames() };
+    var head = HB.head(can, state.bform);
+    var rows = (state.bform && !state.bedit ? HB.editRow(null, eo) : '') + shown.map(function (b, i) {
+      return HB.row(b, { A: 'data-act', pre: 'b', can: can, del: del, fmt: fmtDMY, edit: eo, editing: state.bform && state.bedit === b.id, up: i > 0 && !!shown[i - 1].wichtig === !!b.wichtig, dn: i < shown.length - 1 && !!shown[i + 1].wichtig === !!b.wichtig });
+    }).join('');
     return '<section class="hub-card2" id="brett"><div class="hub-c2h"><h3>📌 Schwarzes Brett</h3><span class="hub-c2b">' + (can && !state.bform ? '<button type="button" class="hub-btn hub-gold" data-act="bnew">+ Neue Mitteilung</button>' : '') + '<a class="hub-btn hub-ghost" href="/intranet/brett/">' + (can ? 'Verwalten →' : 'Alle ansehen →') + '</a></span></div>' +
             (rows ? '<div class="hub-bwrap' + (state.bform ? ' pin' : '') + '"><table class="hub-bt' + (state.bform ? ' pin' : '') + '">' + head + rows + '</table></div>' + (l.length > shown.length ? '<p class="hub-sub" style="margin:8px 0 0">Weitere ' + (l.length - shown.length) + ' Mitteilungen unter „' + (can ? 'Verwalten' : 'Alle ansehen') + '“.</p>' : '') : '<p class="hub-sub" style="margin:6px 0 0">Zurzeit gibt es keine Mitteilungen.</p>') + '</section>';
   }
@@ -176,7 +165,7 @@ templateEngineOverride: false
       if (d.vorstandAntraege) { var oa = d.vorstandAntraege.filter(function (x) { return x.status === 'Eingereicht'; }).length; hints.vorstand = oa ? { t: oa + (oa > 1 ? ' Anträge' : ' Antrag') + ' offen', c: 'warn' } : { t: 'Keine offenen Anträge', c: 'none' }; }
       if (d.abrechnungen || d.fahrten) { var ent = (d.abrechnungen || []).filter(function (x) { return x.status === 'entwurf' || x.status === 'eingereicht'; }).length; var fo = (d.fahrten || []).filter(function (x) { return x.status !== 'abgerechnet'; }).length; var parts = []; if (ent) parts.push(ent + ' in Arbeit'); if (fo) parts.push(fo + (fo === 1 ? ' Fahrt' : ' Fahrten') + ' offen'); hints.abrechnung = parts.length ? { t: parts.join(', '), c: 'warn' } : { t: 'Alles abgerechnet', c: 'none' }; }
       if (d.trainingTage) { var last = d.trainingTage.slice().sort(function (a, b) { return String(b.date) < String(a.date) ? -1 : 1; }).filter(function (x) { return (x.date || '') <= t; })[0]; if (last) { var an = Object.keys(last.anw || {}).filter(function (k) { return last.anw[k] === 'a'; }).length; hints.training = { t: 'Zuletzt ' + fmtD(last.date) + ', ' + an + ' da', c: 'none' }; } }
-      var warn = []; var pf = (d.profile || [])[0]; state.hasProfile = !!pf; state.pgrp = pf && Array.isArray(pf.grp) ? pf.grp : null; 
+      var warn = []; var pf = (d.profile || [])[0]; state.hasProfile = !!pf; if (pf && pf.brettSeen) window.HubBrett.adoptSeen(pf.brettSeen); state.pgrp = pf && Array.isArray(pf.grp) ? pf.grp : null; 
       if (pf) [['lizBis', 'Trainerlizenz'], ['ersteHilfeBis', 'Erste Hilfe'], ['rettungBis', 'Rettungsnachweis'], ['kariBis', 'Kampfrichter-Lizenz']].forEach(function (x) { var iso = pf[x[0]]; if (/^\d{4}-\d{2}-\d{2}$/.test(iso || '')) { var dd = daysTo(iso); if (dd !== null && dd <= 60) warn.push({ label: x[1], iso: iso, days: dd }); } });
       warn.sort(function (a, b) { return a.days - b.days; });
       var fr = [];
@@ -221,20 +210,15 @@ templateEngineOverride: false
     else if (a === 'bsave') {
       var tr = root.querySelector('tr.ed'), v = tr ? window.HubBrett.collect(tr) : null; if (!v) { tip('Bitte eine Überschrift eingeben.', true); return; }
       var eid = state.bedit, old = eid ? (state.brett || []).filter(function (b) { return b.id === eid; })[0] : null;
-      var it = old ? Object.assign({}, old, v) : Object.assign({ id: 'b-' + Date.now().toString(36), by: SH.S.me && SH.S.me.user || '', ts: Date.now() }, v);
-      if (!v.titleHtml) delete it.titleHtml;
+      var it = window.HubBrett.merge(old, v, SH.S.me && SH.S.me.user);
       var before = state.brett || []; state.brett = old ? before.map(function (b) { return b.id === eid ? it : b; }) : [it].concat(before); SH.lsSet('hubbrett', state.brett); state.bform = false; state.bedit = null;
       SH.post({ action: 'dataOps', token: SH.token(), ops: [{ op: 'set', coll: 'brett', item: it }] }).then(function (r) { if (!r || r.status !== 'success') { state.brett = before; SH.lsSet('hubbrett', before); render(); tip('Speichern hat nicht geklappt.', true); } });
       render();
     }
     else if (a === 'bcancel') { state.bform = false; state.bedit = null; render(); }
-    else if (a === 'bmove') {
-      var mid = t.getAttribute('data-id'), dir = +t.getAttribute('data-dir'), cur = brettLive(), ix = cur.map(function (b) { return b.id; }).indexOf(mid), jx = ix + dir;
-      if (ix >= 0 && jx >= 0 && jx < cur.length && !!cur[jx].wichtig === !!cur[ix].wichtig) {
-        var tmp = cur[ix]; cur[ix] = cur[jx]; cur[jx] = tmp; var ids = cur.map(function (b) { return b.id; });
-        state.brett = cur.map(function (b, k) { return Object.assign({}, b, { ord: k }); }); SH.lsSet('hubbrett', state.brett); render();
-        SH.post({ action: 'dataOps', token: SH.token(), ops: [{ op: 'order', coll: 'brett', ids: ids }] });
-      }
+    else if (a === 'bup' || a === 'bdn') {
+      var ids = window.HubBrett.moved(brettLive(), t.getAttribute('data-id'), a === 'bup' ? -1 : 1);
+      if (ids) { var pos = {}; ids.forEach(function (x, k) { pos[x] = k; }); state.brett = (state.brett || []).map(function (b) { return pos[b.id] !== undefined ? Object.assign({}, b, { ord: pos[b.id] }) : b; }); SH.lsSet('hubbrett', state.brett); render(); SH.post({ action: 'dataOps', token: SH.token(), ops: [{ op: 'order', coll: 'brett', ids: ids }] }); }
     }
     else if (a === 'bdel') { var bid = t.getAttribute('data-id'); state.brett = (state.brett || []).filter(function (b) { return b.id !== bid; }); SH.lsSet('hubbrett', state.brett); SH.post({ action: 'dataOps', token: SH.token(), ops: [{ op: 'del', coll: 'brett', id: bid }] }); render(); }
   });

@@ -13,26 +13,17 @@ templateEngineOverride: false
   function fd(d) { return d ? M.fmtDate(d) : ''; }
   var EDIT = null, PASS = false;                                   // EDIT: { id } beim Bearbeiten (id leer = neu)
   function rerender() { PASS = true; try { M.render(true); } finally { PASS = false; } if (EDIT) HB.pin(); }
-  function sortAll(l) { return l.slice().sort(function (a, b) { var oa = typeof a.ord === 'number' ? a.ord : -1, ob = typeof b.ord === 'number' ? b.ord : -1; return (b.wichtig ? 1 : 0) - (a.wichtig ? 1 : 0) || oa - ob || String(b.date || '').localeCompare(String(a.date || '')); }); }
-  function live() { return sortAll(M.items('brett').filter(function (b) { return !HB.expired(b); })); }
-  function archive() { return sortAll(M.items('brett').filter(function (b) { return HB.expired(b); })); }
+  function live() { return HB.live(M.items('brett')); }
+  function archive() { return HB.archive(M.items('brett')); }
   function groups() { var s = {}; M.items('wgMitglieder').forEach(function (m) { (m.gruppen || []).forEach(function (g) { s[g] = 1; }); }); return Object.keys(s).sort(function (a, b) { return a.localeCompare(b, 'de'); }); }
-  function bgs(b) { var c = HR.okBg(b && b.bg); return c ? ' style="background:' + c + '"' : ''; }
-  function acts(b, up, dn, st) {
-    return '<td class="a"' + (st || '') + '><div>' + (up !== null ? '<button type="button" class="hub-bx" data-ma="bbup" data-id="' + esc(b.id) + '" aria-label="Nach oben"' + (up ? '' : ' disabled') + '>▲</button><button type="button" class="hub-bx" data-ma="bbdn" data-id="' + esc(b.id) + '" aria-label="Nach unten"' + (dn ? '' : ' disabled') + '>▼</button>' : '') +
-      '<button type="button" class="hub-bx" data-ma="bbedit" data-id="' + esc(b.id) + '" aria-label="Bearbeiten">✏️</button>' + (canDel() ? '<button type="button" class="hub-bx" data-ma="bbdel" data-id="' + esc(b.id) + '" aria-label="Löschen">🗑️</button>' : '') + '</div></td>';
-  }
-  function row(b, up, dn) {
-    if (EDIT && EDIT.id === b.id) return HB.editRow(b, { attr: 'data-ma', save: 'bbsave', cancel: 'bbcancel', groups: groups(), me: M.userName() });
-    var at = HB.audText(b);
-    return '<tr' + (b.wichtig ? ' class="imp"' : '') + '><td' + bgs(b) + '>' + esc(b.by || '') + '</td><td' + bgs(b) + '>' + esc(fd(b.date)) + '</td><td class="m"' + bgs(b) + '><b>' + (b.wichtig ? '📣 ' : '') + HR.showTitle(b) + '</b>' + (HB.isNew(b) ? '<span class="hub-new">NEU</span>' : '') + (at ? '<span class="hub-lock">🔒 ' + esc(at) + '</span>' : '') + HR.show(b) + (b.until ? '<span class="hub-lock">sichtbar bis ' + esc(fd(b.until)) + '</span>' : '') + '</td>' + (can() ? acts(b, up, dn, bgs(b)) : '') + '</tr>';
-  }
+  function eo() { return { attr: 'data-ma', save: 'bbsave', cancel: 'bbcancel', groups: groups(), me: M.userName() }; }
+  function row(b, up, dn) { return HB.row(b, { A: 'data-ma', pre: 'bb', can: can(), del: canDel(), fmt: fd, edit: eo(), editing: !!EDIT && EDIT.id === b.id, up: up, dn: dn }); }
   function render() {
     var l = live(), ar = can() ? archive() : [];
     var out = '<section class="wm-card"><div class="wm-bar"><h3>📌 Schwarzes Brett</h3>' + (can() ? '<button type="button" class="wm-amber" data-ma="bbnew">+ Neue Mitteilung</button>' : '') + '</div>' +
       '<p class="wm-note">Mitteilungen für den ganzen Verein. ' + (can() ? 'Du darfst Einträge verfassen und ändern' + (canDel() ? ' und löschen.' : '.') : 'Verfasst werden sie vom Vorstand und der Orga.') + '</p></section>';
-    var ed = !!EDIT, cols = can() ? 4 : 3, hd = '<tr><th>Von</th><th>Datum</th><th>Mitteilung</th>' + (can() ? '<th></th>' : '') + '</tr>' + (ed ? HR.barRow(cols) : '');
-    var newRow = ed && !EDIT.id ? HB.editRow(null, { attr: 'data-ma', save: 'bbsave', cancel: 'bbcancel', groups: groups(), me: M.userName() }) : '';
+    var ed = !!EDIT, hd = HB.head(can(), ed);
+    var newRow = ed && !EDIT.id ? HB.editRow(null, eo()) : '';
     if (!l.length && !newRow) out += '<section class="wm-card"><p class="wm-note">Zurzeit gibt es keine Mitteilungen.</p></section>';
     else out += '<section class="wm-card"><div class="hub-bwrap' + (ed ? ' pin' : '') + '"><table class="hub-bt' + (ed ? ' pin' : '') + '">' + hd + newRow + l.map(function (b, i) {
       return row(b, i > 0 && !!l[i - 1].wichtig === !!b.wichtig, i < l.length - 1 && !!l[i + 1].wichtig === !!b.wichtig);
@@ -40,22 +31,16 @@ templateEngineOverride: false
     if (ar.length) out += '<section class="wm-card"><details><summary style="cursor:pointer;font-weight:800">🗄️ Archiv · abgelaufen (' + ar.length + ')</summary><p class="wm-note">Nur für Verfasser:innen sichtbar. Mit ✏️ und neuem „Sichtbar bis“-Datum wieder hervorholen.</p><div class="hub-bwrap"><table class="hub-bt"><tr><th>Von</th><th>Datum</th><th>Mitteilung</th><th></th></tr>' + ar.map(function (b) { return row(b, null, null); }).join('') + '</table></div></details></section>';
     return out;
   }
-  function move(id, dir) {
-    var l = live(), ix = l.map(function (b) { return b.id; }).indexOf(id), jx = ix + dir;
-    if (ix < 0 || jx < 0 || jx >= l.length || !!l[jx].wichtig !== !!l[ix].wichtig) return;
-    var t = l[ix]; l[ix] = l[jx]; l[jx] = t; M.op({ op: 'order', coll: 'brett', ids: l.map(function (b) { return b.id; }) });
-  }
+  function move(id, dir) { var ids = HB.moved(live(), id, dir); if (ids) M.op({ op: 'order', coll: 'brett', ids: ids }); }
   M.register('brett', {
-    title: 'Schwarzes Brett', icon: '📌', colls: ['brett', 'wgMitglieder'], hold: function () { return !!EDIT && !PASS; },
+    title: 'Schwarzes Brett', icon: '📌', colls: ['brett', 'wgMitglieder', 'profile'], hold: function () { return !!EDIT && !PASS; },
     tabs: [{ id: 'brett', label: 'Mitteilungen', view: ['brett.view', 'startseite.brett'], render: render }],
     actions: {
       bbnew: function () { EDIT = { id: '' }; rerender(); HB.refreshPicker(document.querySelector('tr.ed'), null, groups()); var te = document.querySelector('.hub-rtt'); if (te) te.focus(); },
       bbcancel: function () { EDIT = null; rerender(); },
       bbsave: function () {
         var tr = document.querySelector('tr.ed'), v = tr ? HB.collect(tr) : null; if (!v) { M.toast('Bitte eine Überschrift eingeben.'); return; }
-        var old = EDIT && EDIT.id ? M.find('brett', EDIT.id) : null, n = Object.assign({}, old || {}, v);
-        if (!v.titleHtml) delete n.titleHtml;
-        if (!n.id) { n.id = M.uid(); n.ts = Date.now(); } if (!n.by) n.by = M.userName();
+        var old = EDIT && EDIT.id ? M.find('brett', EDIT.id) : null, n = HB.merge(old, v, M.userName(), M.uid());
         EDIT = null; M.op({ op: 'set', coll: 'brett', item: n }); rerender();
       },
       bbedit: function (it, el, ev, c) { var b = M.find('brett', c.id); if (!b) return; EDIT = { id: b.id }; rerender(); HB.refreshPicker(document.querySelector('tr.ed'), b, groups()); var e = document.querySelector('tr.ed'); if (e && e.scrollIntoView) e.scrollIntoView({ block: 'center' }); },
@@ -64,5 +49,8 @@ templateEngineOverride: false
       bbdel: function (it, el, ev, c) { var b = M.find('brett', c.id); if (b) M.confirm('„' + b.title + '“ löschen?', 'Löschen', function () { M.op({ op: 'del', coll: 'brett', id: b.id }); }); }
     }
   });
-  setTimeout(HB.markSeen, 4000);            // „Neu“-Markierung bleibt für diesen Besuch sichtbar
+  // „Neu“ gilt als gesehen, wenn die Seite 15 Sekunden offen war oder verlassen wird; je Person im Profil gemerkt
+  var seenDone = false;
+  function seenNow() { if (seenDone) return; seenDone = true; HB.markSeen(M.items('profile').length > 0); }
+  setTimeout(seenNow, 15000); window.addEventListener('pagehide', seenNow);
 })();
