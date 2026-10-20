@@ -97,8 +97,8 @@ templateEngineOverride: false
     var o = state.hasProfile ? { op: 'patch', coll: 'profile', id: id, fields: f } : { op: 'set', coll: 'profile', item: Object.assign({ id: id, owner: u }, f) };
     SH.post({ action: 'dataOps', token: SH.token(), ops: [o] }).then(function (r) { if (r && r.status === 'success') { state.hasProfile = true; tip('✓ Gruppenauswahl gespeichert'); } else tip('Speichern hat nicht geklappt. Bitte nochmal versuchen.', true); });
   }
-  // Welche Gruppen auf der Startseite stehen: eigene Auswahl, sonst die Gruppen, in denen man Trainer ist, sonst die Wettkampfgruppe
-  function groupSel(n) { return Array.isArray(state.pgrp) ? state.pgrp : (n.grp && n.grp.mine && n.grp.mine.length ? n.grp.mine : ['Wettkampfgruppe']); }
+  // Welche Gruppen auf der Startseite stehen: eigene Auswahl, sonst die Gruppen, in denen man Trainer ist, sonst keine
+  function groupSel(n) { return Array.isArray(state.pgrp) ? state.pgrp : (n.grp && n.grp.mine && n.grp.mine.length ? n.grp.mine : []); }
   function wgCard() {
     var n = state.next && state.next.token === SH.token() ? state.next : null; if (!n || !n.grp || !(n.grp.all || []).length) return '';
     var sel = groupSel(n), cnt = {}; n.grp.all.forEach(function (g) { cnt[g.name] = g.n; });

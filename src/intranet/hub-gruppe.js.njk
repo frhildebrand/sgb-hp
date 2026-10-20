@@ -25,18 +25,20 @@ templateEngineOverride: false
   function members(g) { if (g === null) return M.items('wgMitglieder').slice().sort(function (a, b) { return String(a.name || '').localeCompare(String(b.name || ''), 'de'); }); var gl = !g ? ['Wettkampfgruppe'] : Array.isArray(g) ? g : [g]; return M.items('wgMitglieder').filter(function (m) { return Array.isArray(m.gruppen) ? m.gruppen.some(function (x) { return gl.indexOf(x) >= 0; }) : gl.indexOf('Wettkampfgruppe') >= 0; }).sort(function (a, b) { return String(a.name || '').localeCompare(String(b.name || ''), 'de'); }); }
   // ----- Gruppenfilter: standardmäßig „Meine Gruppen“ (Auswahl von der Startseite, sonst die Gruppen, in denen ich Trainer bin, sonst Wettkampfgruppe) -----
   function nk(x) { return String(x || '').toLowerCase().replace(/,/g, ' ').split(/\s+/).filter(Boolean).sort().join(' '); }
+  function pidOf(n) { return 'p-' + String(n || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 36); }
+  function myProf() { return M.find('profile', pidOf(M.userName())); }
   function myGroups() {
-    var pf = M.items('profile')[0]; if (pf && Array.isArray(pf.grp) && pf.grp.length) return pf.grp;
+    var pf = myProf(); if (pf && Array.isArray(pf.grp)) return pf.grp;
     var me = nk(M.userName()), tr = []; M.items('wgMitglieder').forEach(function (m) { if (me && nk(m.name) === me && (m.trainerIn || []).length) tr = m.trainerIn.slice(); });
-    return tr.length ? tr : ['Wettkampfgruppe'];
+    return tr;      // wer keine Gruppe hat, sieht auch keine
   }
-  function gSet() { var g = M.S.sub.gg; if (g === '*') return null; if (g) return [g]; return myGroups(); }       // null = alle Gruppen
+  function gSet() { var g = M.S.sub.gg; if (g === '*') return null; if (g && g !== 'mine') return [g]; var m = myGroups(); return m.length ? [m[0]] : []; }       // null = alle Gruppen; [] = keine Gruppe
   function inSet(t, set) { return !set || gsOf(t).some(function (x) { return set.indexOf(x) >= 0; }); }
   function allGroups() { var o = GRS.slice(); M.items('wgMitglieder').forEach(function (m) { (m.gruppen || []).forEach(function (g) { if (o.indexOf(g) < 0) o.push(g); }); }); M.items('trainingTage').forEach(function (t) { gsOf(t).forEach(function (g) { if (o.indexOf(g) < 0) o.push(g); }); }); return o; }
   function defGroup() { var g = M.S.sub.gg; return g && g !== '*' ? g : myGroups()[0] || 'Wettkampfgruppe'; }
   function gChipsBar() {
-    var gf = M.S.sub.gg || 'mine';
-    return '<div class="m-chips" style="margin:4px 0 8px">' + [['mine', 'Meine Gruppen'], ['*', 'Alle Gruppen']].concat(allGroups().map(function (g) { return [g, g]; })).map(function (p) { return '<button type="button" class="m-chip' + (gf === p[0] ? ' on' : '') + '" data-ma="wggf" data-v="' + esc(p[0]) + '">' + esc(p[1]) + '</button>'; }).join('') + '</div>';
+    var set = gSet(), my = myGroups(), all = allGroups(), order = my.filter(function (g) { return all.indexOf(g) >= 0; }).concat(all.filter(function (g) { return my.indexOf(g) < 0; }));
+    return '<div class="m-chips" style="margin:4px 0 8px">' + order.map(function (g) { return [g, g]; }).concat([['*', 'Alle Gruppen']]).map(function (p) { var on = set ? set[0] === p[0] : p[0] === '*'; return '<button type="button" class="m-chip' + (on ? ' on' : '') + '" data-ma="wggf" data-v="' + esc(p[0]) + '">' + esc(p[1]) + '</button>'; }).join('') + '</div>';
   }
   var firstSeenCache = { n: -1, map: {} };
   // Ohne Eintrittsdatum gilt: dabei ab dem ersten Termin, an dem jemand eine Anwesenheit für die Person eingetragen hat (neue Mitglieder zählen also nicht rückwirkend)
@@ -85,49 +87,77 @@ templateEngineOverride: false
       '<p class="wm-note">Mindestens ' + N + ' Termine in Folge weder anwesend noch entschuldigt. Bitte in WebClub aus der Gruppe nehmen und hier mit „Erledigt“ ausblenden.</p>' +
       w.map(function (x) { return '<div class="m-chk" data-id="' + esc(x.m.id) + '" style="align-items:flex-start;gap:10px"><div style="flex:1"><b>' + esc(x.m.name) + '</b> <span class="wm-sub">' + x.groups.map(gTag).join(' ') + '</span><div class="wm-sub" style="color:#dc2626;font-weight:700">' + x.n + '× in Folge: ' + x.dates.map(function (d) { return esc(M.fmtDate(d, true)); }).join(', ') + '</div></div>' + (ed ? '<button type="button" class="wm-btn" data-ma="wgack" data-id="' + esc(x.m.id) + '" data-d="' + esc(x.dates[x.dates.length - 1]) + '">Erledigt</button>' : '') + '</div>'; }).join('') + '</section>';
   }
-  function weekCard(set) {
-    var t = M.today(), end = M.addDays(t, 7);
-    var l = sessions().filter(function (x) { return x.date >= t && x.date <= end && inSet(x, set); }).sort(function (a, b) { return (a.date + (a.time || '')) < (b.date + (b.time || '')) ? -1 : 1; });
-    var DAYS = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+  function tmin(tm) { var m = /^(\d{1,2}):(\d{2})/.exec(tm || ''); return m ? Number(m[1]) * 60 + Number(m[2]) : null; }
+  function hhmm(n) { n = Math.round(n); return ('0' + Math.floor(n / 60) % 24).slice(-2) + ':' + ('0' + n % 60).slice(-2); }
+  // Ausgeblendete Termine (nur für mich, im Profil): einzelner Termin ('i:ID') oder wöchentlich ('w:Gruppen|Wochentag|Uhrzeit')
+  function hidList() { var p = myProf(); return p && Array.isArray(p.wkHide) ? p.wkHide : []; }
+  function hidKeys(x) { var dw = new Date(x.date + 'T12:00:00').getDay(); return { one: 'i:' + x.id, wk: 'w:' + gsOf(x).join('+') + '|' + dw + '|' + (x.time || '') }; }
+  function isHid(x, l) { var k = hidKeys(x); return l.indexOf(k.one) >= 0 || l.indexOf(k.wk) >= 0; }
+  function saveHid(l) {
+    var p = myProf(); if (p) M.op({ op: 'patch', coll: 'profile', id: p.id, fields: { wkHide: l } });
+    else if (M.userName()) M.op({ op: 'set', coll: 'profile', item: { id: pidOf(M.userName()), owner: M.userName(), wkHide: l } });
+  }
+  function hidLine(n, on) { return n ? '<p class="wm-sub" style="margin:8px 0 0">' + n + (n === 1 ? ' Termin' : ' Termine') + ' ausgeblendet · <button type="button" class="wg-lnk" data-ma="wgwh">' + (on ? 'wieder verbergen' : 'anzeigen') + '</button></p>' : ''; }
+  function weekCard() {
+    var t = M.today(), days = []; for (var i = 0; i < 7; i++) days.push(M.addDays(t, i));
+    var hid = hidList(), showH = !!M.S.sub.wh, all7 = sessions().filter(function (x) { return x.date >= t && x.date <= days[6]; }), nHid = all7.filter(function (x) { return isHid(x, hid); }).length;
+    var l = all7.filter(function (x) { return showH || !isHid(x, hid); });
+    var DAYS = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'], PPM = 1.1;
     var out = '<section class="wm-card"><div class="wm-bar"><h3>📅 Nächste 7 Tage</h3></div>';
-    if (!l.length) { var nx = sessions().filter(function (x) { return x.date > end && inSet(x, set); }).sort(function (a, b) { return a.date < b.date ? -1 : 1; })[0]; return out + '<p class="wm-note" style="margin:0">Kein Training in den nächsten 7 Tagen.' + (nx ? ' Als Nächstes: ' + esc(fd(nx.date)) + (nx.time ? ' · ' + esc(nx.time) + ' Uhr' : '') + '.' : '') + '</p></section>'; }
-    return out + l.map(function (x) { var d = new Date(x.date + 'T12:00:00'), tr = x.trainer || []; return '<div class="m-chk" style="gap:10px;align-items:center"><b style="min-width:92px">' + DAYS[d.getDay()] + ', ' + esc(fd(x.date).replace(/^\S+,?\s*/, '').slice(0, 6)) + (x.time ? ' · ' + esc(x.time) : '') + '</b><span style="flex:1">' + gsOf(x).map(gTag).join(' ') + (x.ort ? ' <span class="wm-sub">' + esc(x.ort) + '</span>' : '') + '</span><span class="wm-sub">' + (tr.length ? esc(tr.join(', ')) : 'kein Trainer eingetragen') + '</span></div>'; }).join('') + '</section>';
+    if (!l.length) { var nx = sessions().filter(function (x) { return x.date > days[6] && !isHid(x, hid); }).sort(function (a, b) { return a.date < b.date ? -1 : 1; })[0]; return out + '<p class="wm-note" style="margin:0">Kein Training in den nächsten 7 Tagen.' + (nx ? ' Als Nächstes: ' + esc(fd(nx.date)) + (nx.time ? ' · ' + esc(nx.time) + ' Uhr' : '') + '.' : '') + '</p>' + hidLine(nHid, showH) + '</section>'; }
+    var dd = defaultDauer(), ev = l.filter(function (x) { return tmin(x.time) !== null; }).map(function (x) { var st = tmin(x.time), du = Number(x.dauer) || dd; return { x: x, s: st, e: st + du }; });
+    var allday = l.filter(function (x) { return tmin(x.time) === null; });
+    var minH = 17, maxH = 20; if (ev.length) { minH = Math.floor(Math.min.apply(null, ev.map(function (v) { return v.s; })) / 60); maxH = Math.ceil(Math.max.apply(null, ev.map(function (v) { return v.e; })) / 60); if (maxH - minH < 4) maxH = minH + 4; }
+    PPM = Math.max(0.62, Math.min(PPM, 400 / ((maxH - minH) * 60)));
+    var H = Math.round((maxH - minH) * 60 * PPM);
+    var head = '<div class="wg-cal-g"></div>' + days.map(function (d) { var dt = new Date(d + 'T12:00:00'); return '<div class="wg-cal-dh' + (d === t ? ' today' : '') + '"><span>' + DAYS[dt.getDay()] + '</span><b>' + Number(d.slice(8)) + '.' + Number(d.slice(5, 7)) + '.</b></div>'; }).join('');
+    var ad = allday.length ? '<div class="wg-cal-g wg-cal-ad">ohne Zeit</div>' + days.map(function (d) { return '<div class="wg-cal-ad">' + allday.filter(function (x) { return x.date === d; }).map(function (x) { return '<span class="wg-ev1 wg-e' + (Math.max(0, GRS.indexOf(gsOf(x)[0])) % 5) + (isHid(x, hid) ? ' off' : '') + '" data-id="' + esc(x.id) + '" data-ma="wgev" role="button">' + esc(gsOf(x).join(' + ')) + '</span>'; }).join('') + '</div>'; }).join('') : '';
+    var gut = '<div class="wg-cal-g" style="height:' + H + 'px">';
+    for (var h = minH; h <= maxH; h++) gut += '<span style="top:' + Math.round((h - minH) * 60 * PPM) + 'px">' + ('0' + h).slice(-2) + ':00</span>';
+    gut += '</div>';
+    var cols = days.map(function (d) {
+      var es = ev.filter(function (v) { return v.x.date === d; }).sort(function (a, b) { return a.s - b.s || a.e - b.e; });
+      var cl = [], cur = null; es.forEach(function (v) { if (!cur || v.s >= cur.end) { cur = { end: v.e, lanes: [], items: [] }; cl.push(cur); } var ln = 0; while (cur.lanes[ln] !== undefined && cur.lanes[ln] > v.s) ln++; cur.lanes[ln] = v.e; v.lane = ln; cur.end = Math.max(cur.end, v.e); cur.items.push(v); });
+      var blocks = cl.map(function (c) { var n = c.lanes.length; return c.items.map(function (v) {
+        var x = v.x, tr = x.trainer || [], top = Math.round((v.s - minH * 60) * PPM), ht = Math.max(24, Math.round((v.e - v.s) * PPM) - 2), gi = Math.max(0, GRS.indexOf(gsOf(x)[0])) % 5;
+        return '<div class="wg-ev wg-e' + gi + (ht < 46 ? ' sm' : '') + (isHid(x, hid) ? ' off' : '') + '" data-id="' + esc(x.id) + '" data-ma="wgev" role="button" style="top:' + top + 'px;height:' + ht + 'px;left:calc(' + (v.lane * 100 / n) + '% + 2px);width:calc(' + (100 / n) + '% - 4px)" title="' + esc(gsOf(x).join(' + ') + ' · ' + hhmm(v.s) + '–' + hhmm(v.e) + (x.ort ? ' · ' + x.ort : '') + (tr.length ? ' · ' + tr.join(', ') : '')) + '"><b>' + hhmm(v.s) + '–' + hhmm(v.e) + '</b><span>' + esc(gsOf(x).join(' + ')) + '</span>' + (tr.length ? '<i>' + esc(tr.map(function (n) { return String(n).split(' ')[0]; }).join(', ')) + '</i>' : '') + (x.ort ? '<i>' + esc(x.ort) + '</i>' : '') + '</div>'; }).join(''); }).join('');
+      return '<div class="wg-cal-c' + (d === t ? ' today' : '') + '" style="height:' + H + 'px;background-size:100% ' + Math.round(60 * PPM) + 'px">' + blocks + '</div>';
+    }).join('');
+    return out + '<div class="wg-cal-w"><div class="wg-cal"><div class="wg-cal-r">' + head + '</div>' + (ad ? '<div class="wg-cal-r">' + ad + '</div>' : '') + '<div class="wg-cal-r">' + gut + cols + '</div></div></div>' + hidLine(nHid, showH) + '</section>';
   }
   function memberCard(g) {
-    var ms = members([g]), ed = M.can('training.mitglieder.edit');
-    return '<section class="wm-card"><div class="wm-bar"><h3>👥 Mitglieder · ' + esc(g) + '</h3>' + (ed ? '<button type="button" class="wm-btn" data-ma="wgmadd" data-g="' + esc(g) + '">+ Mitglied hinzufügen</button>' : '') + '</div>' +
-      (ms.length ? '<table class="m-table"><tr><th>Name</th><th>Jg.</th><th>Gruppen</th>' + (ed ? '<th></th>' : '') + '</tr>' + ms.map(function (m) { return '<tr' + (isActive(m) ? '' : ' style="opacity:.55"') + '><td>' + esc(m.name) + (isActive(m) ? '' : ' <span class="wm-sub">(' + esc(m.status || 'inaktiv') + ')</span>') + '</td><td>' + esc(m.jg || '') + '</td><td>' + (m.gruppen && m.gruppen.length ? m.gruppen : ['Wettkampfgruppe']).map(gTag).join(' ') + '</td>' + (ed ? '<td style="text-align:right"><button type="button" class="wm-btn" data-ma="wgmgrp" data-id="' + esc(m.id) + '">Gruppen ändern</button></td>' : '') + '</tr>'; }).join('') + '</table>' : '<p class="wm-note" style="margin:0">In dieser Gruppe sind noch keine Mitglieder eingetragen.</p>') + '</section>';
+    var ms = members([g]), ed = M.can('training.mitglieder.edit'), open = !!M.S.sub.mo, n = ms.filter(isActive).length;
+    return '<section class="wm-card"><div class="wm-bar"><h3>👥 Mitglieder · ' + esc(g) + ' <span class="wm-sub">(' + n + ')</span></h3><span class="m-actions">' + (ed ? '<button type="button" class="wm-btn" data-ma="wgmadd" data-g="' + esc(g) + '">+ Hinzufügen</button>' : '') + '<button type="button" class="wm-btn" data-ma="wgmo">' + (open ? 'Ausblenden' : 'Anzeigen') + '</button></span></div>' +
+      (open ? (ms.length ? '<div class="wg-mch-w">' + ms.map(function (m) { return '<span class="wg-mch"' + (isActive(m) ? '' : ' style="opacity:.5"') + '>' + esc(m.name) + (m.jg ? ' <small>' + esc(String(m.jg).slice(-2)) + '</small>' : '') + (ed ? ' <button type="button" data-ma="wgmgrp" data-id="' + esc(m.id) + '" title="Gruppen ändern" aria-label="Gruppen ändern">✎</button>' : '') + '</span>'; }).join('') + '</div>' : '<p class="wm-note" style="margin:0">In dieser Gruppe sind noch keine Mitglieder eingetragen.</p>') : '') + '</section>';
   }
   // Fahrten der Wettkampfgruppe je Monat (aus den Trainingstagen)
   function fahrtenCard() {
-    var y = M.S.sub.fy || String(new Date().getFullYear()), per = {}, any = false;
-    sessions().filter(function (d) { return isWK(d) && String(d.date).slice(0, 4) === y && (d.fahrer || []).length; }).forEach(function (d) { var mo = Number(d.date.slice(5, 7)) - 1; (d.fahrer || []).forEach(function (n) { (per[n] = per[n] || new Array(12).fill(0))[mo]++; any = true; }); });
+    var y = M.S.sub.fy || String(new Date().getFullYear()), per = {}, any = false, tot = 0, mt = new Array(12).fill(0);
+    sessions().filter(function (d) { return isWK(d) && String(d.date).slice(0, 4) === y && (d.fahrer || []).length; }).forEach(function (d) { var mo = Number(d.date.slice(5, 7)) - 1; (d.fahrer || []).forEach(function (n) { (per[n] = per[n] || new Array(12).fill(0))[mo]++; any = true; tot++; mt[mo]++; }); });
     var years = []; for (var i = 0; i < 4; i++) years.push([String(new Date().getFullYear() - i), String(new Date().getFullYear() - i)]);
-    var MO = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
-    var out = '<section class="wm-card"><div class="wm-bar"><h3>🚗 Fahrten Wettkampfgruppe ' + esc(y) + '</h3>' + M.seg(years, y, 'wgfyear') + '</div>';
+    var MO = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'], MON = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+    var out = '<section class="wm-card"><div class="wm-bar"><h3>🚗 Fahrten · Wettkampfgruppe ' + esc(y) + '</h3>' + M.seg(years, y, 'wgfyear') + '</div>';
     if (!any) return out + '<p class="wm-note" style="margin:0">Noch keine Fahrten eingetragen. Fahrer werden beim Trainingstag angegeben.</p></section>';
     var names = Object.keys(per).sort(function (a, b) { return a.localeCompare(b, 'de'); });
-    return out + '<div style="overflow-x:auto"><table class="m-table"><tr><th>Fahrer</th>' + MO.map(function (m) { return '<th>' + m + '</th>'; }).join('') + '<th>Σ</th></tr>' + names.map(function (n) { var r = per[n], sum = r.reduce(function (a, b) { return a + b; }, 0); return '<tr><td>' + esc(n) + '</td>' + r.map(function (v) { return '<td style="text-align:center">' + (v || '') + '</td>'; }).join('') + '<td style="text-align:center"><b>' + sum + '</b></td></tr>'; }).join('') + '</table></div></section>';
+    var mx = Math.max.apply(null, names.map(function (n) { return Math.max.apply(null, per[n]); }));
+    out += '<p class="wm-sub" style="margin:0 0 8px"><b>' + tot + '</b> Fahrten · <b>' + names.length + '</b> Fahrer</p><div class="wg-fh"><span></span><div class="wg-fm">' + MO.map(function (m) { return '<i>' + m + '</i>'; }).join('') + '</div><span></span></div>';
+    return out + names.map(function (n) { var r = per[n], sum = r.reduce(function (a, b) { return a + b; }, 0); return '<div class="wg-fr"><span class="wg-fn">' + esc(n) + '</span><div class="wg-fm">' + r.map(function (v, k) { return '<i class="' + (v ? 'on' : '') + '" style="' + (v ? 'opacity:' + (0.45 + 0.55 * v / mx).toFixed(2) : '') + '" title="' + MON[k] + ': ' + v + '">' + (v || '') + '</i>'; }).join('') + '</div><b class="wg-fs">' + sum + '</b></div>'; }).join('') + '</section>';
   }
   function uebersicht() {
-    var set = gSet(); var ms = members(set); var act = ms.filter(isActive);
-    var tage = sessions().filter(function (x) { return inSet(x, set); }); var t = M.today();
-    var last8 = tage.filter(function (x) { return x.date <= t; }).slice(0, 8);
-    var a = 0, tot = 0; last8.forEach(function (x) { var c = counts(x); a += c.a; tot += c.a + c.e + c.f; });
-    var pct = tot ? Math.round(a * 100 / tot) + ' %' : '–';
-    var wks = M.items('wettkaempfe').filter(function (w) { return (w.date || '') >= t; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    var set = gSet(), t = M.today(), one = set && set.length === 1, none = set && !set.length, wkIn = !set || set.indexOf('Wettkampfgruppe') >= 0;
+    var tage = sessions().filter(function (x) { return inSet(x, set); });
     var out = gChipsBar();
-    if (M.anyCan(['training.tage.view'])) out += warnCard(set);
-    out += weekCard(set);
-    out += '<div class="m-stats">' + M.stat(act.length, 'Mitglieder', '', 'data-ma="wgmit"') + M.stat(pct, 'Anwesenheit (letzte 8)', pct === '–' ? '' : 'ok') + M.stat(wks.length ? M.daysTo(wks[0].date) : '–', wks.length ? 'Tage bis ' + wks[0].title.slice(0, 22) : 'Kein Wettkampf geplant', wks.length && M.daysTo(wks[0].date) <= 7 ? 'warn' : 'info', 'data-ma="wgtab" data-v="wk"') + '</div>';
-    out += '<section class="wm-card"><div class="m-sec" style="margin-top:0">Zuletzt</div>';
-    if (!tage.length) out += '<p class="wm-note">Noch keine Trainingstage. Lege einen an oder importiere die Anwesenheitsliste aus WebClub.</p>';
-    tage.filter(function (x) { return x.date <= t; }).slice(0, 4).forEach(function (x) { var c = counts(x); out += '<div class="m-chk"><b>' + fd(x.date) + '</b><span class="wm-sub" style="flex:1"> ' + esc(x.time || '') + (x.fokus ? ' · ' + esc(x.fokus) : '') + '</span><span class="wm-sub">✓ ' + c.a + ' · E ' + c.e + ' · ✗ ' + c.f + '</span></div>'; });
-    out += '</section>';
-    if (M.anyCan(['training.mitglieder.view']) && set) set.slice(0, 4).forEach(function (g) { out += memberCard(g); });
+    if (none) out += '<p class="wm-note">Du bist keiner Gruppe zugeordnet. Wähle oben eine Gruppe oder „Alle Gruppen“. Deine Gruppen kannst du auf der Startseite einstellen.</p>';
+    if (!none && M.anyCan(['training.tage.view'])) out += warnCard(set);
+    out += weekCard();
+    var past = tage.filter(function (x) { return x.date <= t; }).slice(0, 4);
+    if (none) return out;
+    if (!tage.length) out += '<section class="wm-card"><p class="wm-note" style="margin:0">Noch keine Trainingstage. Lege einen an oder importiere die Anwesenheitsliste aus WebClub.</p></section>';
+    else if (past.length) out += '<section class="wm-card wg-last"><span class="wg-lt">Zuletzt</span>' + past.map(function (x) { var c = counts(x); return '<span class="wg-lc"><b>' + esc(fd(x.date)) + '</b>' + (x.time ? ' ' + esc(x.time) : '') + (one ? '' : ' ' + gsOf(x).map(gTag).join('')) + ' <em>✓' + c.a + ' E' + c.e + ' ✗' + c.f + '</em></span>'; }).join('') + '</section>';
+    if (one && M.anyCan(['training.mitglieder.view'])) out += memberCard(set[0]);
     if (M.anyCan(['training.tage.view'])) out += statistikTab();
-    if (M.anyCan(['training.tage.view'])) out += fahrtenCard();
-    if (M.can('training.rueckblick')) out += rueckblickCard();
+    if (wkIn && M.anyCan(['training.tage.view'])) out += fahrtenCard();
+    if (M.can('training.rueckblick')) out += rueckblickCard(set ? set[0] : null);
     return out;
   }
 
@@ -233,11 +263,11 @@ templateEngineOverride: false
   function statistikTab() {
     var per = M.S.sub.sp || 'y'; var t = M.today();
     var from = per === '3m' ? M.addDays(t, -92) : per === 'y' ? t.slice(0, 4) + '-01-01' : '0000-00-00';
-    var set = gSet(); var days = sessions().filter(function (d) { return inSet(d, set) && d.date >= from && d.date <= t; });
-    var out = '<section class="wm-card"><div class="wm-bar"><h3>Anwesenheit</h3>' + M.seg([['3m', '3 Monate'], ['y', 'Dieses Jahr'], ['all', 'Alles']], per, 'wgper') + '</div><p class="wm-note">' + days.length + ' Trainingstage im Zeitraum. Prozent = anwesend im Verhältnis zu allen Terminen seit Eintritt.</p>';
+    var set = gSet(); if (set && !set.length) return ''; var days = sessions().filter(function (d) { return inSet(d, set) && d.date >= from && d.date <= t; });
+    var out = '<section class="wm-card"><div class="wm-bar"><h3>Anwesenheit' + (set && set.length === 1 ? ' · ' + esc(set[0]) : '') + '</h3>' + M.seg([['3m', '3 Monate'], ['y', 'Dieses Jahr'], ['all', 'Alles']], per, 'wgper') + '</div><p class="wm-note">' + days.length + ' Trainingstage im Zeitraum. Prozent = anwesend im Verhältnis zu allen Terminen seit Eintritt.</p>';
     var rows = members(set).map(function (m) {
       var a = 0, e = 0, f = 0, n = 0;
-      days.forEach(function (d) { if (!inGroup(m, d.date)) return; n++; var c = (d.anw || {})[m.id]; if (c === 'a') a++; else if (c === 'e') e++; else if (c === 'f') f++; });
+      days.forEach(function (d) { if (!inGroup(m, d.date)) return; var mgs = Array.isArray(m.gruppen) && m.gruppen.length ? m.gruppen : ['Wettkampfgruppe']; if (!gsOf(d).some(function (g) { return mgs.indexOf(g) >= 0; })) return; n++; var c = (d.anw || {})[m.id]; if (c === 'a') a++; else if (c === 'e') e++; else if (c === 'f') f++; });
       return { m: m, a: a, e: e, f: f, n: n, p: n ? Math.round(a * 100 / n) : null };
     }).filter(function (r) { return r.n > 0; }).sort(function (x, y) { return (y.p || 0) - (x.p || 0); });
     if (!rows.length) return out + '<p class="wm-note">Noch keine Daten.</p></section>';
@@ -250,29 +280,30 @@ templateEngineOverride: false
     var n = 0; (w.starts || []).forEach(function (s) { var r = (w.res || {})[s.e + '-' + s.l + '-' + s.b]; if (!r || !r.t || !s.m || !P) return; var a = P.timeMs(r.t), m = P.timeMs(s.m); if (a !== null && m !== null && a < m) n++; });
     return n;
   }
-  function rueckblickData(year) {
+  function rueckblickData(year, g) {
     var y = String(year); var d = {};
-    var days = M.items('trainingTage').filter(function (x) { return isWK(x) && String(x.date).slice(0, 4) === y; });
+    var days = M.items('trainingTage').filter(function (x) { return (!g || gsOf(x).indexOf(g) >= 0) && String(x.date).slice(0, 4) === y; });
+    d.wk = !g || g === 'Wettkampfgruppe';
     var a = 0, tot = 0; days.forEach(function (x) { var c = counts(x); a += c.a; tot += c.a + c.e + c.f; });
     d.tage = days.length; d.pct = tot ? Math.round(a * 100 / tot) : null;
-    var ms = members(); d.zug = ms.filter(function (m) { return String(m.eintritt || '').slice(0, 4) === y; }); d.abg = ms.filter(function (m) { return String(m.austritt || '').slice(0, 4) === y; }); d.aktiv = ms.filter(isActive).length;
-    d.wks = M.items('wettkaempfe').filter(function (w) { return String(w.date || '').slice(0, 4) === y; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    var ms = members(g || null); d.zug = ms.filter(function (m) { return String(m.eintritt || '').slice(0, 4) === y; }); d.abg = ms.filter(function (m) { return String(m.austritt || '').slice(0, 4) === y; }); d.aktiv = ms.filter(isActive).length;
+    d.wks = !d.wk ? [] : M.items('wettkaempfe').filter(function (w) { return String(w.date || '').slice(0, 4) === y; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
     d.starts = 0; d.best = 0; d.sw = {}; d.wks.forEach(function (w) { d.starts += (w.starts || []).length; d.best += bestzeiten(w); (w.starts || []).forEach(function (s) { d.sw[s.n] = 1; }); });
-    d.abz = M.items('abzeichen').filter(function (x) { return String(x.date || '').slice(0, 4) === y; });
+    d.abz = !d.wk ? [] : M.items('abzeichen').filter(function (x) { return String(x.date || '').slice(0, 4) === y; });
     var top = ms.map(function (m) { var n = 0, p = 0; days.forEach(function (x) { if (!inGroup(m, x.date)) return; n++; if ((x.anw || {})[m.id] === 'a') p++; }); return { n: m.name, p: p, t: n }; }).filter(function (r) { return r.t >= 5; }).sort(function (x, y2) { return y2.p / y2.t - x.p / x.t; }).slice(0, 5);
     d.top = top;
     return d;
   }
-  function rueckblickCard() {
-    var y = M.S.sub.ry || String(new Date().getFullYear()); var d = rueckblickData(y);
+  function rueckblickCard(g) {
+    var y = M.S.sub.ry || String(new Date().getFullYear()); var d = rueckblickData(y, g);
     var years = []; for (var i = 0; i < 4; i++) years.push([String(new Date().getFullYear() - i), String(new Date().getFullYear() - i)]);
-    return '<section class="wm-card"><div class="wm-bar"><h3>Jahresrückblick ' + esc(y) + '</h3><span class="m-actions">' + M.seg(years, y, 'wgyear') + '<button type="button" class="wm-btn" data-ma="wgprintr">🖨️ Drucken</button></span></div>' +
-      '<div class="m-stats">' + M.stat(d.pct === null ? '–' : d.pct + ' %', 'Ø Anwesenheit', 'ok') + M.stat(d.wks.length, 'Wettkämpfe') + M.stat(d.best, 'Bestzeiten', 'info') + '</div>' +
-      '<p class="wm-sub">' + Object.keys(d.sw).length + ' Schwimmer waren bei Wettkämpfen am Start (' + d.starts + ' Starts)' + (d.abz.length ? ' · ' + d.abz.length + ' Abzeichen' : '') + '.</p></section>';
+    return '<section class="wm-card"><div class="wm-bar"><h3>Jahresrückblick ' + esc(y) + ' · ' + esc(g || 'Gesamt') + '</h3><span class="m-actions">' + M.seg(years, y, 'wgyear') + '<button type="button" class="wm-btn" data-ma="wgprintr" data-g="' + esc(g || '') + '">🖨️ Drucken</button></span></div>' +
+      '<div class="m-stats">' + M.stat(d.pct === null ? '–' : d.pct + ' %', 'Ø Anwesenheit', 'ok') + M.stat(d.tage, 'Trainingstage') + M.stat(d.aktiv, 'Aktive Mitglieder') + (d.wk ? M.stat(d.wks.length, 'Wettkämpfe') + M.stat(d.best, 'Bestzeiten', 'info') : '') + '</div>' +
+      '<p class="wm-sub">' + (d.zug.length ? d.zug.length + ' neu dabei' : 'Keine Neuzugänge') + (d.abg.length ? ' · ' + d.abg.length + ' ausgetreten' : '') + (d.wk ? ' · ' + Object.keys(d.sw).length + ' Schwimmer waren bei Wettkämpfen am Start (' + d.starts + ' Starts)' + (d.abz.length ? ' · ' + d.abz.length + ' Abzeichen' : '') : '') + '.</p></section>';
   }
-  function printRueck() {
-    var y = M.S.sub.ry || String(new Date().getFullYear()); var d = rueckblickData(y);
-    M.print('Jahresrückblick ' + y, '<h1>Wettkampfgruppe: Jahresrückblick ' + esc(y) + '</h1><div class="sub">SG Barnstorf · Schwimmen</div><table><tr><th>Trainingstage</th><td>' + d.tage + '</td></tr><tr><th>Ø Anwesenheit</th><td>' + (d.pct === null ? '–' : d.pct + ' %') + '</td></tr><tr><th>Aktive Mitglieder</th><td>' + d.aktiv + '</td></tr><tr><th>Wettkämpfe</th><td>' + d.wks.length + '</td></tr><tr><th>Starts / Schwimmer</th><td>' + d.starts + ' / ' + Object.keys(d.sw).length + '</td></tr><tr><th>Bestzeiten</th><td>' + d.best + '</td></tr><tr><th>Abzeichen</th><td>' + d.abz.length + '</td></tr></table>' +
+  function printRueck(g) {
+    var y = M.S.sub.ry || String(new Date().getFullYear()); var d = rueckblickData(y, g || null);
+    M.print('Jahresrückblick ' + y, '<h1>' + esc(g || 'Gesamt') + ': Jahresrückblick ' + esc(y) + '</h1><div class="sub">SG Barnstorf · Schwimmen</div><table><tr><th>Trainingstage</th><td>' + d.tage + '</td></tr><tr><th>Ø Anwesenheit</th><td>' + (d.pct === null ? '–' : d.pct + ' %') + '</td></tr><tr><th>Aktive Mitglieder</th><td>' + d.aktiv + '</td></tr>' + (d.wk ? '<tr><th>Wettkämpfe</th><td>' + d.wks.length + '</td></tr><tr><th>Starts / Schwimmer</th><td>' + d.starts + ' / ' + Object.keys(d.sw).length + '</td></tr><tr><th>Bestzeiten</th><td>' + d.best + '</td></tr><tr><th>Abzeichen</th><td>' + d.abz.length + '</td></tr>' : '') + '</table>' +
       (d.wks.length ? '<h2>Wettkämpfe</h2><table><tr><th>Datum</th><th>Wettkampf</th><th>Ort</th><th>Starts</th></tr>' + d.wks.map(function (w) { return '<tr><td>' + fs(w.date) + '</td><td>' + esc(w.title) + '</td><td>' + esc(w.ort || '') + '</td><td>' + (w.starts || []).length + '</td></tr>'; }).join('') + '</table>' : ''));
   }
 
@@ -401,7 +432,17 @@ templateEngineOverride: false
     actions: {
       wgmit: function () { location.href = '/intranet/mitglieder/#g=Wettkampfgruppe'; },
       wgtab: function (it, el) { M.S.tab = el.getAttribute('data-v'); M.lsSet('modtab_training', M.S.tab); M.render(true); },
-      wggf: function (it, el) { var v = el.getAttribute('data-v'); if (v && v !== 'mine') M.S.sub.gg = v; else delete M.S.sub.gg; M.render(true); },
+      wgwh: function () { M.S.sub.wh = !M.S.sub.wh; M.render(true); },
+      wgev: function (it, el, ev, c) {
+        var x = M.find('trainingTage', c.id); if (!x) return; var l = hidList(), k = hidKeys(x), off = isHid(x, l), dn = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'][new Date(x.date + 'T12:00:00').getDay()], du = Number(x.dauer) || defaultDauer(), st = tmin(x.time), tr = x.trainer || [];
+        var b = off ? '<button type="button" class="hub-btn hub-gold" data-ma="wgshow" data-a="' + esc(k.one) + '" data-b="' + esc(k.wk) + '">Wieder einblenden</button>'
+          : '<button type="button" class="hub-btn hub-ghost" data-ma="wghide" data-a="' + esc(k.one) + '">Nur diesen Termin ausblenden</button><button type="button" class="hub-btn hub-ghost" data-ma="wghide" data-a="' + esc(k.wk) + '">Jeden ' + dn + (x.time ? ' ' + esc(x.time) : '') + ' ' + esc(gsOf(x).join(' + ')) + ' ausblenden</button>';
+        M.openDlg('<div class="hub-dhead"><h3>' + esc(gsOf(x).join(' + ')) + '</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose" aria-label="Schließen">✕</button></div><p class="wm-note">' + esc(dn + ', ' + fd(x.date)) + (st !== null ? ' · ' + hhmm(st) + '–' + hhmm(st + du) + ' Uhr' : '') + (x.ort ? ' · ' + esc(x.ort) : '') + '<br>' + (tr.length ? 'Trainer: ' + esc(tr.join(', ')) : 'Kein Trainer eingetragen') + '</p><p class="wm-sub">Ausblenden gilt nur für dich und nur in dieser Wochenansicht.</p><div class="ha-actions" style="flex-wrap:wrap;gap:8px">' + b + '</div>');
+      },
+      wghide: function (it, el) { var l = hidList().slice(), k = el.getAttribute('data-a'); if (l.indexOf(k) < 0) l.push(k); saveHid(l); M.closeDlg(); },
+      wgshow: function (it, el) { var a = el.getAttribute('data-a'), b = el.getAttribute('data-b'); saveHid(hidList().filter(function (k) { return k !== a && k !== b; })); M.closeDlg(); },
+      wgmo: function () { M.S.sub.mo = !M.S.sub.mo; M.render(true); },
+      wggf: function (it, el) { var v = el.getAttribute('data-v'); if (v) M.S.sub.gg = v; else delete M.S.sub.gg; M.render(true); },
       wgfyear: function (it, el) { M.S.sub.fy = el.getAttribute('data-v'); M.render(true); },
       wgack: function (it, el) { M.op({ op: 'patch', coll: 'wgMitglieder', id: el.getAttribute('data-id'), fields: { warnAck: el.getAttribute('data-d') > M.today() ? M.today() : el.getAttribute('data-d') } }); M.toast('Hinweis ausgeblendet. Er kommt wieder, wenn die Person erneut fehlt.'); },
       wgmadd: function (it, el) {
@@ -432,7 +473,7 @@ templateEngineOverride: false
       wgglsave: function () { glistSave(); },
       wgper: function (it, el) { M.S.sub.sp = el.getAttribute('data-v'); M.render(true); },
       wgyear: function (it, el) { M.S.sub.ry = el.getAttribute('data-v'); M.render(true); },
-      wgprintr: function () { printRueck(); }
+      wgprintr: function (it, el) { printRueck(el.getAttribute('data-g')); }
     }
   });
   var st = document.createElement('style'); st.textContent = '#hubRoot .wg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:8px 0}#hubRoot .wg-p{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;border:1px solid var(--line);background:#fff;color:inherit;font:700 14px -apple-system,system-ui,sans-serif;text-align:left;cursor:pointer;min-height:44px}#hubRoot .wg-p i{flex:0 0 auto;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:900;background:rgba(148,163,184,.25);color:var(--soft)}#hubRoot .wg-p span{overflow-wrap:anywhere;line-height:1.15}#hubRoot .wg-p.c-a i{background:var(--ok);color:#fff}#hubRoot .wg-p.c-e i{background:var(--warn);color:#fff}#hubRoot .wg-p.c-f i{background:var(--bad);color:#fff}#hubRoot .wg-p[disabled]{cursor:default}.dark #hubRoot .wg-p{background:#131d30;border-color:#1f2a3d}';

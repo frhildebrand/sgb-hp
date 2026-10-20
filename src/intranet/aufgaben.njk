@@ -715,6 +715,39 @@ permalink: /intranet/aufgaben/
   #hubRoot .tt-wk td { background: rgba(230,176,67,.18); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; padding: 5px 10px; }
   #hubRoot .tt-row { cursor: pointer; } #hubRoot .tt-row:hover td { background: rgba(100,160,255,.08); } #hubRoot .tt-open td { background: rgba(100,160,255,.10); }
   #hubRoot .tt-d { font-weight: 800; white-space: nowrap; } #hubRoot .tt-d small { display: block; font-weight: 600; color: #64748b; font-size: 11.5px; }
+  /* Gruppen: Wochenkalender, Zuletzt, Mitglieder, Fahrten */
+  #hubRoot .wg-cal-w { overflow-x: auto; }
+  #hubRoot .wg-cal { min-width: 600px; }
+  #hubRoot .wg-cal-r { display: grid; grid-template-columns: 46px repeat(7, minmax(0, 1fr)); }
+  #hubRoot .wg-cal-dh { text-align: center; padding: 4px 0 6px; border-bottom: 1px solid var(--line); line-height: 1.15; }
+  #hubRoot .wg-cal-dh span { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; opacity: .65; letter-spacing: .04em; }
+  #hubRoot .wg-cal-dh b { font-size: 15px; }
+  #hubRoot .wg-cal-dh.today b { display: inline-block; background: #dc2626; color: #fff; border-radius: 999px; padding: 1px 8px; }
+  #hubRoot .wg-cal-g { position: relative; font-size: 10.5px; opacity: .7; }
+  #hubRoot .wg-cal-g span { position: absolute; right: 6px; transform: translateY(-50%); }
+  #hubRoot .wg-cal-ad { padding: 3px 2px; font-size: 10.5px; white-space: nowrap; border-bottom: 1px solid var(--line); }
+  #hubRoot .wg-ev1 { display: block; border-radius: 6px; padding: 2px 5px; margin-bottom: 2px; font-size: 11px; font-weight: 700; }
+  #hubRoot .wg-cal-c { position: relative; border-left: 1px solid var(--line); background-image: linear-gradient(to bottom, var(--line) 1px, transparent 1px); background-repeat: repeat-y; }
+  #hubRoot .wg-cal-c.today { background-color: color-mix(in srgb, #dc2626 5%, transparent); }
+  #hubRoot .wg-ev { position: absolute; box-sizing: border-box; border-radius: 7px; padding: 3px 5px; overflow: hidden; font-size: 11px; line-height: 1.25; border-left: 3px solid currentColor; }
+  #hubRoot .wg-ev b { display: block; font-size: 11px; } #hubRoot .wg-ev span { display: block; font-weight: 800; } #hubRoot .wg-ev i { display: block; font-style: normal; opacity: .8; font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #hubRoot .wg-ev.sm { padding: 1px 5px; } #hubRoot .wg-ev.sm i { display: none; } #hubRoot .wg-ev b, #hubRoot .wg-ev span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #hubRoot .wg-ev { cursor: pointer; } #hubRoot .wg-ev.off, #hubRoot .wg-ev1.off { opacity: .4; background-image: repeating-linear-gradient(135deg, transparent 0 5px, rgba(0,0,0,.06) 5px 10px); }
+  #hubRoot .wg-ev1 { cursor: pointer; } #hubRoot .wg-lnk { border: 0; background: none; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
+  #hubRoot .wg-e0 { background: #dbeafe; color: #1e4f9b; } #hubRoot .wg-e1 { background: #fef3c7; color: #92400e; } #hubRoot .wg-e2 { background: #dcfce7; color: #166534; } #hubRoot .wg-e3 { background: #f3e8ff; color: #6b21a8; } #hubRoot .wg-e4 { background: #ffe4e6; color: #9f1239; }
+  .dark #hubRoot .wg-e0 { background: #1e3a5f; color: #bfdbfe; } .dark #hubRoot .wg-e1 { background: #4a3410; color: #fde68a; } .dark #hubRoot .wg-e2 { background: #14391f; color: #bbf7d0; } .dark #hubRoot .wg-e3 { background: #3b1d5c; color: #e9d5ff; } .dark #hubRoot .wg-e4 { background: #4c1522; color: #fecdd3; }
+  #hubRoot .wg-last { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 10px 14px; }
+  #hubRoot .wg-lt { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; opacity: .6; }
+  #hubRoot .wg-lc { font-size: 13px; white-space: nowrap; } #hubRoot .wg-lc em { font-style: normal; opacity: .7; font-size: 12px; }
+  #hubRoot .wg-mch-w { display: flex; flex-wrap: wrap; gap: 6px; }
+  #hubRoot .wg-mch { background: color-mix(in srgb, var(--navy, #1e3a5f) 8%, transparent); border-radius: 999px; padding: 3px 10px; font-size: 13px; } #hubRoot .wg-mch small { opacity: .55; }
+  #hubRoot .wg-mch button { border: 0; background: none; cursor: pointer; font-size: 13px; padding: 0 0 0 4px; opacity: .7; color: inherit; }
+  #hubRoot .wg-fr, #hubRoot .wg-fh { display: grid; grid-template-columns: minmax(90px, 160px) 1fr 34px; gap: 8px; align-items: center; margin-bottom: 4px; }
+  #hubRoot .wg-fm { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; }
+  #hubRoot .wg-fm i { font-style: normal; text-align: center; border-radius: 6px; min-height: 24px; line-height: 24px; font-size: 12px; font-weight: 800; background: color-mix(in srgb, currentColor 7%, transparent); }
+  #hubRoot .wg-fh .wg-fm i { background: none; min-height: 0; line-height: 1; font-size: 10.5px; opacity: .6; font-weight: 700; }
+  #hubRoot .wg-fm i.on { background: #2563eb; color: #fff; }
+  #hubRoot .wg-fn { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } #hubRoot .wg-fs { text-align: right; font-size: 15px; }
   #hubRoot .tt-g { display: inline-block; border-radius: 6px; padding: 2px 8px; margin: 1px 4px 1px 0; font-size: 11.5px; font-weight: 800; }
   #hubRoot .tt-g0 { background: #dbeafe; color: #1e4f9b; } #hubRoot .tt-g1 { background: #fef3c7; color: #92400e; } #hubRoot .tt-g2 { background: #dcfce7; color: #166534; } #hubRoot .tt-g3 { background: #f3e8ff; color: #6b21a8; } #hubRoot .tt-g4 { background: #ffe4e6; color: #9f1239; }
   #hubRoot .tt-bar { display: inline-block; width: 64px; height: 7px; border-radius: 9px; background: rgba(148,163,184,.35); vertical-align: middle; margin-right: 7px; overflow: hidden; } #hubRoot .tt-bar i { display: block; height: 100%; background: #22a06b; } #hubRoot .tt-warn i { background: #e0a020; }
@@ -785,7 +818,7 @@ permalink: /intranet/aufgaben/
     html #hubRoot .aus-chip.on { background: #1e4a78; border-color: #1e4a78; color: #fff; }
 </style>
 <div id="hubRoot" data-modul="aufgaben"><noscript><p style="padding:24px">Dafür wird JavaScript gebraucht.</p></noscript></div>
-<script src="/intranet/js/hub-config.js?v=10201615" defer></script>
-<script src="/intranet/js/hub-common.js?v=10201615" defer></script>
-<script src="/intranet/js/hub-modul.js?v=10201615" defer></script>
-<script src="/intranet/js/hub-systeme.js?v=10201615" defer></script>
+<script src="/intranet/js/hub-config.js?v=10201632" defer></script>
+<script src="/intranet/js/hub-common.js?v=10201632" defer></script>
+<script src="/intranet/js/hub-modul.js?v=10201632" defer></script>
+<script src="/intranet/js/hub-systeme.js?v=10201632" defer></script>
