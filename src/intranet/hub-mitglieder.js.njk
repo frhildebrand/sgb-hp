@@ -140,14 +140,14 @@ templateEngineOverride: false
       { k: 'sex', t: 'sel', label: 'Geschlecht', opts: [['', '–'], ['w', 'weiblich'], ['m', 'männlich'], ['d', 'divers']] }, { k: 'status', t: 'sel', label: 'Status', opts: [['', 'aktiv'], ['pausiert', 'pausiert'], ['ausgetreten', 'ausgetreten']] },
       { k: 'eintritt', t: 'text', label: 'Eintritt (Jahr oder Datum)' }, { k: 'austritt', t: 'text', label: 'Austritt (Jahr oder Datum)' }, { k: 'dsv', t: 'text', label: 'DSV-ID' },
       { k: 'rollen', t: 'pick', label: 'Rollen', opts: ROLLEN, hint: 'Mehrere sind möglich.' },
-      { k: '_s2', t: 'sec', label: 'Schwimmer' }, { k: 'gruppen', t: 'pick', label: 'Gruppen als Schwimmer', opts: GR }, { k: 'attest', t: 'date', label: 'Attest gültig bis' }];
-    if (canTr) f = f.concat([{ k: '_s3', t: 'sec', label: 'Trainer' }, { k: 'trainerIn', t: 'pick', label: 'Gruppen als Trainer', opts: GR },
+      { k: '_s2', t: 'sec', label: 'Schwimmer', role: 'Schwimmer' }, { k: 'gruppen', t: 'pick', label: 'Gruppen als Schwimmer', opts: GR }, { k: 'attest', t: 'date', label: 'Attest gültig bis' }];
+    if (canTr) f = f.concat([{ k: '_s3', t: 'sec', label: 'Trainer', role: 'Trainer' }, { k: 'trainerIn', t: 'pick', label: 'Gruppen als Trainer', opts: GR },
       { k: 'aktiv', t: 'sel', label: 'Aktiver Trainer', opts: [['', 'Ja'], ['nein', 'Nein']] }, { k: 'lizArt', t: 'text', label: 'Lizenzart', list: 'plLiz' }, { k: 'lizNr', t: 'text', label: 'Lizenznummer' }, { k: 'lizDosb', t: 'text', label: 'Lizenznummer DOSB' }, { k: 'lizBis', t: 'date', label: 'Lizenz gültig bis' }, { k: 'seit', t: 'date', label: 'Trainer seit' },
       { k: 'ehBis', t: 'date', label: 'Erste Hilfe bis' }, { k: 'rettungBis', t: 'date', label: 'Rettungsnachweis bis' }, { k: 'fz', t: 'date', label: 'Führungszeugnis vom' }, { k: 'ehrenkodex', t: 'date', label: 'Ehrenkodex vom' }]);
-    return f.concat([{ k: '_s4', t: 'sec', label: 'Kampfrichter' }, { k: 'kariNr', t: 'text', label: 'Lizenznummer' }, { k: 'kariBis', t: 'date', label: 'Wettkampfrichter bis' }, { k: 'kariAusw', t: 'date', label: 'Auswertung bis' }, { k: 'kariSchied', t: 'date', label: 'Schiedsrichter bis' },
-      { k: '_s5', t: 'sec', label: 'Funktionär' }, { k: 'amt', t: 'text', label: 'Amt / Funktion', list: 'plAmt' }, { k: 'amtVon', t: 'date', label: 'Amtszeit von' }, { k: 'amtBis', t: 'date', label: 'Amtszeit bis' },
-      { k: '_s5b', t: 'sec', label: 'Ausrüstung (Badekappe: Wettkampfgruppe und Gruppe 1, Bretter: auch Gruppe 2)' }, { k: 'kappe', t: 'chk', label: 'Gesponserte Vereinsbadekappe erhalten' }, { k: 'kappeDatum', t: 'date', label: 'Badekappe ausgegeben am' }, { k: 'brettArt', t: 'sel', label: 'Schwimmbrett', opts: [['', 'keins']].concat(BRETTER().map(function (b) { return [b, b]; })) }, { k: 'brettAus', t: 'date', label: 'Brett ausgegeben am' }, { k: 'brettRueck', t: 'date', label: 'Brett zurückgegeben am' },
-      { k: '_s6', t: 'sec', label: 'Notizen' }, { k: 'notiz', t: 'area', label: 'Notiz', rows: 3 }]);
+    return f.concat([{ k: '_s4', t: 'sec', label: 'Kampfrichter', role: 'Kampfrichter' }, { k: 'kariNr', t: 'text', label: 'Lizenznummer' }, { k: 'kariBis', t: 'date', label: 'Wettkampfrichter bis' }, { k: 'kariAusw', t: 'date', label: 'Auswertung bis' }, { k: 'kariSchied', t: 'date', label: 'Schiedsrichter bis' },
+      { k: '_s5', t: 'sec', label: 'Funktionär', role: 'Funktionär' }, { k: 'amt', t: 'text', label: 'Amt / Funktion', list: 'plAmt' }, { k: 'amtVon', t: 'date', label: 'Amtszeit von' }, { k: 'amtBis', t: 'date', label: 'Amtszeit bis' },
+      { k: '_s5b', t: 'sec', label: 'Ausrüstung' }, { k: 'kappe', t: 'chk', label: 'Gesponserte Vereinsbadekappe erhalten' }, { k: 'kappeDatum', t: 'date', label: 'Badekappe ausgegeben am' }, { k: 'brettArt', t: 'sel', label: 'Schwimmbrett', opts: [['', 'keins']].concat(BRETTER().map(function (b) { return [b, b]; })) }, { k: 'brettAus', t: 'date', label: 'Brett ausgegeben am' }, { k: 'brettRueck', t: 'date', label: 'Brett zurückgegeben am' },
+      { k: '_s6', t: 'sec', label: 'Notiz' }, { k: 'notiz', t: 'area', label: 'Notiz', rows: 3 }]);
   }
   function lists() {
     var old = document.getElementById('plLists'); if (old) old.remove(); var d = document.createElement('div'); d.id = 'plLists';
@@ -157,7 +157,7 @@ templateEngineOverride: false
     lists(); var base = {}; var tr = p ? p.tr : null;
     if (p) { base = Object.assign({}, p.m, { id: p.m.virtual ? undefined : p.m.id, name: p.m.name }); TRAINER_KEYS.forEach(function (k) { if (tr && tr[k] !== undefined) base[k] = tr[k]; }); base.rollen = rOf(p.m).slice(); if (!p.m.pl && tr && base.rollen.indexOf('Trainer') < 0) base.rollen.push('Trainer'); base.trainerIn = tGroups(p).slice(); base.aktiv = tr ? tr.aktiv || '' : ''; }
     else { base = { gruppen: PL.g ? [PL.g] : [], rollen: ['Schwimmer'] }; }
-    M.openForm({ title: p ? 'Bearbeiten · ' + p.m.name : 'Neue Person', fields: formFields(p), item: base, saveLabel: 'Speichern', onSave: function (v) { return savePerson(p, base, v); } });
+    M.openForm({ title: p ? p.m.name : 'Neue Person', tabs: true, fields: formFields(p), item: base, saveLabel: 'Speichern', onSave: function (v) { return savePerson(p, base, v); } });
   }
   function savePerson(p, base, v) {
     var ops = []; var it = p && !p.m.virtual ? Object.assign({}, p.m) : { id: M.uid() }; var name = v.name;
@@ -186,10 +186,30 @@ templateEngineOverride: false
   function personById(id) { var r = null; people().forEach(function (p) { if (p.m.id === id) r = p; }); return r; }
   function exportXlsx() {
     var ps = listed(); var j = function (a) { return (a || []).join(', '); };
-    var head = ['Name', 'Mitgliedsnr.', 'Jahrgang', 'Status', 'Eintritt', 'Austritt', 'Schwimmer-Gruppen', 'Attest bis', 'Trainer-Gruppen', 'Lizenzart', 'Lizenznr.', 'Lizenznr. DOSB', 'Lizenz bis', 'Trainer seit', 'Erste Hilfe bis', 'Rettung bis', 'Führungszeugnis vom', 'Ehrenkodex vom', 'Kampfrichter-Nr.', 'Wettkampfrichter bis', 'Auswertung bis', 'Schiedsrichter bis', 'Amt', 'Amt von', 'Amt bis', 'Badekappe', 'Kappe ausgegeben', 'Brett', 'Brett ausgegeben', 'Brett zurück', 'Notiz'];
-    var rows = ps.map(function (p) { var m = p.m, t = p.tr || {}; var tr = isTr(p); return [m.name, m.mnr || '', m.jg || '', m.status || 'aktiv', m.eintritt || '', m.austritt || '', isSw(p) ? j(gOf(m)) : '', m.attest || '', tr ? j(tGroups(p)) : '', tr ? t.lizArt || '' : '', tr ? t.lizNr || '' : '', tr ? t.lizDosb || '' : '', tr ? t.lizBis || '' : '', tr ? t.seit || '' : '', tr ? t.ehBis || '' : '', tr ? t.rettungBis || '' : '', tr ? t.fz || '' : '', tr ? t.ehrenkodex || '' : '', isKari(p) ? m.kariNr || '' : '', isKari(p) ? m.kariBis || '' : '', isKari(p) ? m.kariAusw || '' : '', isKari(p) ? m.kariSchied || '' : '', isFunk(p) ? m.amt || '' : '', isFunk(p) ? m.amtVon || '' : '', isFunk(p) ? m.amtBis || '' : '', m.kappe || m.kappeDatum ? 'ja' : '', m.kappeDatum || '', m.brettArt || '', m.brettAus || '', m.brettRueck || '', m.notiz || '']; });
-    var go = function () { var ws = XLSX.utils.aoa_to_sheet([head].concat(rows)); ws['!cols'] = head.map(function (h, i) { return { wch: i === 0 ? 26 : Math.max(12, h.length + 2) }; }); var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Personen'); XLSX.writeFile(wb, 'Personen ' + M.today() + '.xlsx'); M.toast('Excel-Liste erstellt (' + rows.length + ' Personen).'); };
-    if (window.XLSX) return go(); M.toast('Excel-Liste wird erstellt …');
+    var d = function (x) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(x || '')); return m ? m[3] + '.' + m[2] + '.' + m[1] : (x || ''); };
+    var S = [
+      { n: 'Übersicht', h: ['Name', 'Mitgliedsnr.', 'Jahrgang', 'Status', 'Rollen', 'Gruppen (Schwimmer)', 'Gruppen (Trainer)'], f: function (p) { var m = p.m; return [m.name, m.mnr || '', m.jg || '', m.status || 'aktiv', j(rOf(m)), isSw(p) ? j(gOf(m)) : '', isTr(p) ? j(tGroups(p)) : '']; }, w: function () { return true; } },
+      { n: 'Schwimmer', h: ['Name', 'Mitgliedsnr.', 'Jahrgang', 'DSV-ID', 'Gruppen', 'Attest bis', 'Eintritt', 'Austritt'], f: function (p) { var m = p.m; return [m.name, m.mnr || '', m.jg || '', m.dsv || '', j(gOf(m)), d(m.attest), m.eintritt || '', m.austritt || '']; }, w: isSw },
+      { n: 'Trainer', h: ['Name', 'Mitgliedsnr.', 'Gruppen', 'Lizenzart', 'Lizenznr.', 'Lizenznr. DOSB', 'Lizenz bis', 'Trainer seit', 'Erste Hilfe bis', 'Rettung bis', 'Führungszeugnis', 'Ehrenkodex'], f: function (p) { var t = p.tr || {}; return [p.m.name, p.m.mnr || '', j(tGroups(p)), t.lizArt || '', t.lizNr || '', t.lizDosb || '', d(t.lizBis), d(t.seit), d(t.ehBis), d(t.rettungBis), d(t.fz), d(t.ehrenkodex)]; }, w: isTr },
+      { n: 'Kampfrichter', h: ['Name', 'Mitgliedsnr.', 'Lizenznr.', 'Wettkampfrichter bis', 'Auswertung bis', 'Schiedsrichter bis'], f: function (p) { var m = p.m; return [m.name, m.mnr || '', m.kariNr || '', d(m.kariBis), d(m.kariAusw), d(m.kariSchied)]; }, w: isKari },
+      { n: 'Funktionäre', h: ['Name', 'Mitgliedsnr.', 'Amt', 'Von', 'Bis'], f: function (p) { var m = p.m; return [m.name, m.mnr || '', m.amt || '', d(m.amtVon), d(m.amtBis)]; }, w: isFunk },
+      { n: 'Ausrüstung', h: ['Name', 'Mitgliedsnr.', 'Gruppen', 'Badekappe ausgegeben', 'Brett', 'Brett ausgegeben', 'Brett zurück'], f: function (p) { var m = p.m; return [m.name, m.mnr || '', j(gOf(m)), m.kappe || m.kappeDatum ? (d(m.kappeDatum) || 'ja') : '', m.brettArt || '', d(m.brettAus), d(m.brettRueck)]; }, w: function (p) { var m = p.m; return !!(m.kappe || m.kappeDatum || m.brettArt); } },
+      { n: 'Notizen', h: ['Name', 'Mitgliedsnr.', 'Notiz'], f: function (p) { return [p.m.name, p.m.mnr || '', p.m.notiz || '']; }, w: function (p) { return !!p.m.notiz; } }
+    ];
+    var go = function () {
+      var wb = XLSX.utils.book_new(); var stand = d(M.today()); var total = 0;
+      S.forEach(function (sh) {
+        var rows = ps.filter(sh.w).map(sh.f); if (!rows.length && sh.n !== 'Übersicht') return;
+        var aoa = [['SG Barnstorf Sharks – ' + sh.n + ' (Stand ' + stand + ')'], [''], sh.h].concat(rows);
+        var ws = XLSX.utils.aoa_to_sheet(aoa);
+        ws['!cols'] = sh.h.map(function (h, i) { var mx = h.length; rows.forEach(function (r) { mx = Math.max(mx, String(r[i] === undefined ? '' : r[i]).length); }); return { wch: Math.min(40, Math.max(12, mx + 2)) }; });
+        ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 2, c: 0 }, e: { r: 2 + rows.length, c: sh.h.length - 1 } }) };
+        ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: Math.max(0, sh.h.length - 1) } }];
+        XLSX.utils.book_append_sheet(wb, ws, sh.n); if (sh.n === 'Übersicht') total = rows.length;
+      });
+      XLSX.writeFile(wb, 'Personen ' + M.today() + '.xlsx'); M.toast('Excel-Datei erstellt (' + total + ' Personen, ' + wb.SheetNames.length + ' Blätter).');
+    };
+    if (window.XLSX) return go(); M.toast('Excel-Datei wird erstellt …');
     M.loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js').then(go, function () { M.toast('Der Excel-Baustein konnte nicht geladen werden. Bitte Verbindung prüfen.'); });
   }
   // Listen: Lizenzarten, Ämter, Schwimmbretter
