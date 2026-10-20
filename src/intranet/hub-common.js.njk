@@ -426,6 +426,8 @@ window.HubShell = (function () {
         if (res.status !== 'success') { S.error = res.message || 'Falsche Anmeldedaten.'; rerender(); return; }
         S.session = { token: res.token, user: res.user || '', roles: res.roles || [], perms: res.user ? res.perms : [] }; lsSet('session4', S.session);
         try { localStorage.setItem('userRole', res.role.id); } catch (e) { /* egal */ }
+        S.me = { status: 'success', user: res.user || '', role: res.role, roles: res.roles || [], extras: [], perms: res.perms || [], mustChange: !!res.mustChange };
+        if (res.systems) { S.systems = res.systems; S.offline = false; saveCache(); }
         S.dialog = null; reload();
       });
       return true;

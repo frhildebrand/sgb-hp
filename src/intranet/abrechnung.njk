@@ -511,6 +511,57 @@ permalink: /intranet/abrechnung/
   #hubRoot .hub-greet span { color: var(--soft); font-weight: 600; }
   #hubRoot .hub-wichtig { margin: 0 0 14px; padding: 12px 16px; border-radius: 14px; border: 1px solid #e8c36a; background: #fdf3d8; color: #5b3d00; font-weight: 600; }
   .dark #hubRoot .hub-wichtig { background: #3a2c0b; border-color: #7a5d17; color: #f6dc9b; }
+  /* Startseite neu: Statistik oben, Brett als Tabelle, große Aufgaben, Termine und Fristen gleich breit */
+  #hubRoot .hub-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  #hubRoot .hub-stt { padding: 12px 16px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); }
+  #hubRoot .hub-stt i { display: block; font-style: normal; color: var(--soft); font-size: 13px; }
+  #hubRoot .hub-stt b { font: 900 28px ui-rounded, system-ui, sans-serif; }
+  #hubRoot .hub-stack { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  #hubRoot .hub-two { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
+  @media (min-width: 900px) { #hubRoot .hub-two { grid-template-columns: 1fr 1fr; } }
+  #hubRoot .hub-bwrap { overflow-x: auto; }
+  #hubRoot .hub-bt { width: 100%; border-collapse: collapse; margin-top: 6px; }
+  #hubRoot .hub-bt th, #hubRoot .hub-bt td { border: 1px solid var(--line); padding: 9px 12px; text-align: center; vertical-align: middle; }
+  #hubRoot .hub-bt th { font-size: 13px; color: var(--soft); background: color-mix(in srgb, var(--soft) 8%, var(--card)); }
+  #hubRoot .hub-bt td:nth-child(1), #hubRoot .hub-bt td:nth-child(2) { white-space: nowrap; width: 1%; font-size: 14px; }
+  #hubRoot .hub-bt td.m { text-align: left; }
+  #hubRoot .hub-bt td.m .hub-rtc { margin: 4px 0 0; }
+  #hubRoot .hub-bt tr.ed .hub-rtw { margin-top: 6px; }
+  #hubRoot .hub-gl { display: flex; flex-direction: column; gap: 6px; }
+  #hubRoot .hub-gk { display: flex; align-items: center; gap: 8px; font-size: 15px; cursor: pointer; }
+  #hubRoot .hub-gk i { color: var(--soft); font-style: normal; font-size: 13px; }
+  #hubRoot .hub-bt tr.imp td { background: color-mix(in srgb, #dc2626 8%, var(--card)); }
+  #hubRoot .hub-big .hub-ai { padding: 14px 0; font-size: 16px; }
+  #hubRoot .hub-fb { background: color-mix(in srgb, var(--info, #2563eb) 12%, var(--card)); }
+  #hubRoot .hub-fb.warn { background: color-mix(in srgb, #f59e0b 18%, var(--card)); }
+  #hubRoot .hub-fb.bad { background: color-mix(in srgb, #dc2626 14%, var(--card)); }
+  #hubRoot .hub-home2 { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
+  @media (min-width: 900px) { #hubRoot .hub-home2 { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); } }
+  #hubRoot .hub-bt td.a { white-space: nowrap; width: 1%; padding: 4px; }
+  #hubRoot .hub-bt td.a .hub-bx { padding: 6px 7px; font-size: 14px; }
+  #hubRoot .hub-bt td.a .hub-bx:disabled { opacity: .25; cursor: default; }
+  #hubRoot .hub-comp { padding: 14px 16px; margin: 6px 0 12px; border-radius: 16px; background: color-mix(in srgb, var(--gold, #d6a23a) 8%, var(--card)); border: 1px solid color-mix(in srgb, var(--gold, #d6a23a) 40%, var(--line)); }
+  #hubRoot .hub-comph { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  #hubRoot .hub-comph b { font-size: 16px; }
+  #hubRoot .hub-comph span { color: var(--soft); font-size: 13px; }
+  #hubRoot .hub-fl { display: flex; flex-direction: column; gap: 4px; }
+  #hubRoot .hub-fl > span { font-size: 12.5px; font-weight: 700; color: var(--soft); }
+  #hubRoot .hub-comp textarea { min-height: 110px; resize: vertical; font: inherit; }
+  #hubRoot .hub-sw { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 15px; font-weight: 700; }
+  #hubRoot .hub-sw i { font-weight: 400; font-style: normal; color: var(--soft); font-size: 13px; }
+  #hubRoot .hub-sw input { position: absolute; opacity: 0; width: 0; height: 0; }
+  #hubRoot .hub-swt { flex: 0 0 auto; width: 42px; height: 24px; border-radius: 999px; background: var(--line); position: relative; transition: background .15s; }
+  #hubRoot .hub-swt::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: left .15s; }
+  #hubRoot .hub-sw input:checked + .hub-swt { background: #dc2626; }
+  #hubRoot .hub-sw input:checked + .hub-swt::after { left: 21px; }
+  #hubRoot .hub-c2b { display: flex; gap: 8px; align-items: center; }
+  #hubRoot .hub-c2b .hub-btn { display: inline-flex; align-items: center; justify-content: center; height: 34px; padding: 0 14px; font-size: 13px; line-height: 1; box-sizing: border-box; }
+  #hubRoot .hub-bt tr.ed td { background: color-mix(in srgb, var(--gold, #d6a23a) 10%, var(--card)); }
+  #hubRoot .hub-bt tr.ed input[type=text], #hubRoot .hub-bt tr.ed textarea { width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: inherit; font: inherit; margin: 0; }
+  #hubRoot .hub-bt tr.ed textarea { margin-top: 6px; resize: vertical; min-height: 70px; }
+  #hubRoot .hub-bt tr.ed input[type=date] { padding: 6px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: inherit; font: inherit; font-size: 13px; width: 130px; }
+  #hubRoot .hub-bt td.a > div { display: flex; justify-content: center; }
+  #hubRoot .hub-wch { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 13px; font-weight: 700; margin-bottom: 4px; cursor: pointer; }
   #hubRoot .hub-home { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
   @media (min-width: 900px) { #hubRoot .hub-home { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); } }
   #hubRoot .hub-hcol { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
@@ -546,6 +597,13 @@ permalink: /intranet/abrechnung/
   #hubRoot .hub-ab { flex: 0 0 auto; padding: 3px 10px; border-radius: 999px; font: 800 13px -apple-system, system-ui, sans-serif; font-style: normal; background: #dbeafe; color: #1d4ed8; }
   #hubRoot .hub-ab.warn { background: #fef3c7; color: #92400e; }
   #hubRoot .hub-ab.bad { background: #fee2e2; color: #b91c1c; }
+  #hubRoot .hub-grl { display: grid; gap: 0; }
+  #hubRoot .hub-gr { display: flex; justify-content: space-between; align-items: baseline; padding: 9px 0; border-top: 1px solid var(--line, rgba(128,128,128,.25)); }
+  #hubRoot .hub-gr:first-child { border-top: 0; }
+  #hubRoot .hub-gr b { font-weight: 800; }
+  #hubRoot .hub-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  #hubRoot .hub-chip { color: var(--ink, #0f172a); background: rgba(128,128,128,.14); border-radius: 999px; padding: 4px 11px; font-size: 14px; }
+  #hubRoot .hub-chip i { font-style: normal; font-size: 12px; opacity: .65; margin-left: 3px; }
   #hubRoot .hub-bl { display: flex; gap: 28px; flex-wrap: wrap; }
   #hubRoot .hub-bl i { display: block; font-style: normal; color: var(--soft); font-size: 14px; }
   #hubRoot .hub-bl b { font: 900 30px ui-rounded, system-ui, sans-serif; }
@@ -727,8 +785,8 @@ permalink: /intranet/abrechnung/
     html #hubRoot .aus-chip.on { background: #1e4a78; border-color: #1e4a78; color: #fff; }
 </style>
 <div id="hubRoot" data-modul="abrechnung"><noscript><p style="padding:24px">Dafür wird JavaScript gebraucht.</p></noscript></div>
-<script src="/intranet/js/hub-config.js?v=10192210" defer></script>
-<script src="/intranet/js/hub-common.js?v=10192210" defer></script>
-<script src="/intranet/js/hub-modul.js?v=10192210" defer></script>
-<script src="/intranet/js/hub-pdf.js?v=10192210" defer></script>
-<script src="/intranet/js/hub-abrechnung.js?v=10192210" defer></script>
+<script src="/intranet/js/hub-config.js?v=10201318" defer></script>
+<script src="/intranet/js/hub-common.js?v=10201318" defer></script>
+<script src="/intranet/js/hub-modul.js?v=10201318" defer></script>
+<script src="/intranet/js/hub-pdf.js?v=10201318" defer></script>
+<script src="/intranet/js/hub-abrechnung.js?v=10201318" defer></script>
