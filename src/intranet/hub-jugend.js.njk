@@ -61,7 +61,7 @@ templateEngineOverride: false
       if (!r) { r = { key: 'n:' + M.nameKey(x.name), name: x.name || '?', mnr: '', act: true, recs: [] }; rows.push(r); idx[M.nameKey(x.name)] = r; }
       r.recs.push(x);
     });
-    return rows.filter(function (r) { return r.act || r.recs.length; }).sort(function (a, b) { return String(a.name).localeCompare(String(b.name), 'de'); });
+    return rows.filter(function (r) { return r.recs.length; }).sort(function (a, b) { return String(a.name).localeCompare(String(b.name), 'de'); });
   }
   function abListed() {
     var q = M.lower(AB.q);
@@ -89,7 +89,7 @@ templateEngineOverride: false
     var cur = ps.slice(AB.page * AB.per, AB.page * AB.per + AB.per);
     var cnt = document.getElementById('abCnt'); if (cnt) cnt.textContent = '(' + ps.length + ')';
     return '<div class="pl-wrap"><table class="pl-t" style="min-width:560px"><tr><th style="cursor:default">Name</th><th style="cursor:default">Nr.</th><th style="cursor:default">Abzeichen</th><th style="cursor:default"></th></tr>' +
-      (cur.length ? cur.map(abRow).join('') : '<tr><td colspan="4" class="wm-note" style="padding:16px">Keine Personen gefunden.</td></tr>') + '</table></div>' +
+      (cur.length ? cur.map(abRow).join('') : '<tr><td colspan="4" class="wm-note" style="padding:16px">Noch keine Abzeichen eingetragen.</td></tr>') + '</table></div>' +
       (pages > 1 ? '<div class="pl-pg"><button type="button" class="m-chip" data-ma="abpage" data-v="-1">‹</button><span class="wm-sub">Seite ' + (AB.page + 1) + ' von ' + pages + '</span><button type="button" class="m-chip" data-ma="abpage" data-v="1">›</button></div>' : '');
   }
   function abRefresh() { var b = document.getElementById('abBody'); if (b) b.innerHTML = abBody(); }
@@ -98,7 +98,7 @@ templateEngineOverride: false
     var work = recs.filter(function (x) { return aStatus(x) === 'laufend'; }).length, due = recs.filter(function (x) { return aStatus(x) === 'bestanden'; }), sum = 0; due.forEach(function (x) { sum += aPreis(x); });
     var legacy = M.items('abzeichen').filter(function (x) { return !x.status; }).length;
     var sel = '<select data-ab="f"><option value=""' + (AB.f ? '' : ' selected') + '>Alle</option><option value="laufend"' + (AB.f === 'laufend' ? ' selected' : '') + '>In Arbeit</option><option value="zahl"' + (AB.f === 'zahl' ? ' selected' : '') + '>Zahlung offen</option></select>';
-    return '<section class="wm-card"><div class="wm-bar"><h3>Abnahme <span class="wm-sub" id="abCnt"></span></h3><span class="m-actions">' + (abzEdit() ? '<button type="button" class="wm-amber" data-ma="abznew">+ Abzeichen eintragen</button>' : '') + '</span></div>' +
+    return '<section class="wm-card"><div class="wm-bar"><h3>Abnahme <span class="wm-sub" id="abCnt"></span></h3><span class="m-actions">' + (abzEdit() ? '<button type="button" class="wm-amber" data-ma="abznew">+ Abzeichen eintragen</button>' : '') + '<button type="button" class="wm-btn" data-ma="abopenx">📊 Offene (Excel)</button></span></div>' +
       '<p class="wm-sub">' + work + ' in Arbeit · ' + due.length + ' mit offener Zahlung' + (due.length ? ' (' + M.euro(sum) + ')' : '') + '</p>' +
       '<div class="pl-bar"><input class="pl-q" type="search" data-ab="q" placeholder="🔍 Name oder Nr. suchen …" value="' + esc(AB.q) + '" autocomplete="off">' + sel + '</div>' +
       '<div id="abBody">' + abBody() + '</div>' + (legacy ? '<p class="wm-sub">' + legacy + ' ältere Einträge ohne Status stehen in der Übersicht.</p>' : '') + '</section>';
@@ -141,16 +141,17 @@ templateEngineOverride: false
     return true;
   }
   function abzForm(item, isNew) {
-    var old = document.getElementById('abPeople'); if (old) old.remove(); var dl = document.createElement('datalist'); dl.id = 'abPeople'; dl.innerHTML = abPeople().filter(function (r) { return r.act; }).map(function (r) { return '<option value="' + esc(r.name) + '">'; }).join(''); document.body.appendChild(dl);
+    var old = document.getElementById('abPeople'); if (old) old.remove(); var dl = document.createElement('datalist'); dl.id = 'abPeople'; dl.innerHTML = M.items('wgMitglieder').filter(function (m) { return M.isActive(m); }).map(function (m) { return '<option value="' + esc(m.name) + '" label="' + esc(m.mnr ? 'Nr. ' + m.mnr : '') + '">' + (m.mnr ? '<option value="' + esc(m.mnr) + '" label="' + esc(m.name) + '">' : ''); }).join(''); document.body.appendChild(dl);
     var opts = catalog().map(function (c) { return [c.n, c.n + ' – ' + M.euro(c.p)]; });
     if (item.abz && !opts.some(function (o) { return o[0] === item.abz; })) opts.push([item.abz, item.abz]);
     var base = Object.assign({ stand: 'laufend' }, item); if (isNew && (base.preis === undefined || base.preis === '')) base.preis = catOf(base.abz).p;
-    var f = [{ k: '_s1', t: 'sec', label: 'Wer' }, { k: 'name', t: 'text', label: 'Name', req: true, list: 'abPeople' },
+    var f = [{ k: '_s1', t: 'sec', label: 'Wer' }, { k: 'name', t: 'text', label: 'Person (Name oder Mitgliedsnummer)', req: true, list: 'abPeople' },
       { k: '_s2', t: 'sec', label: 'Abzeichen' }, { k: 'abz', t: 'sel', label: 'Abzeichen (mit Preis)', opts: opts }, { k: 'date', t: 'date', label: 'Datum' },
       { k: '_s3', t: 'sec', label: 'Preis und Zahlung' }, { k: 'preis', t: 'num', label: 'Preis (€)', hint: 'Kommt automatisch vom Abzeichen, kann hier geändert werden.' }];
     if (isNew) f.push({ k: 'stand', t: 'sel', label: 'Stand', opts: [['laufend', 'In Arbeit'], ['bestanden', 'Bestanden – Zahlung offen'], ['bezahlt', 'Bestanden und bezahlt (bar)']] });
     f.push({ k: 'notiz', t: 'area', label: 'Notiz (z. B. „Theorie fehlt“)', rows: 2 });
     M.openForm({ title: isNew ? 'Abzeichen eintragen' : 'Eintrag ändern', fields: f, item: base, onSave: function (v) {
+      var byNr = /^\d+$/.test(String(v.name || '').trim()) ? M.items('wgMitglieder').filter(function (m) { return String(m.mnr) === String(v.name).trim(); })[0] : null; if (byNr) v.name = byNr.name;
       v.title = v.name; if (v.preis === '' || v.preis === undefined || v.preis === null) v.preis = catOf(v.abz).p;
       var mm = M.items('wgMitglieder').filter(function (m) { return M.nameKey(m.name) === M.nameKey(v.name); })[0]; if (mm && mm.mnr) v.mnr = mm.mnr;
       var stand = v.stand; delete v.stand;
@@ -167,6 +168,16 @@ templateEngineOverride: false
     var y = aYear(); var rows = sumRows(y); var tot = 0; rows.forEach(function (r) { tot += r.sum; });
     var body = rows.map(function (r) { return [r.n, r.p, r.cnt || '', r.sum, r.names.join(', ')]; }); body.push(['Summe', '', '', tot, '']);
     M.xlsxList({ file: 'Abrechnung_Abzeichen_' + y + '.xlsx', title: 'Abrechnung Abzeichen ' + y, sub: 'Stand ' + M.today().split('-').reverse().join('.'), sheets: [{ name: 'Abzeichen', head: ['Abzeichen', 'Kosten', 'Anzahl', 'Gesamt', 'Namen'], rows: body, f: ['', 'eur', '', 'eur', ''], w: [22, 12, 9, 14, 70] }] });
+  }
+
+  function abOpenXlsx() {
+    var rows = []; M.items('abzeichen').filter(function (x) { return x.status && aStatus(x) !== 'bezahlt'; }).forEach(function (x) {
+      var m = M.items('wgMitglieder').filter(function (q) { return (x.mnr && String(q.mnr) === String(x.mnr)) || M.nameKey(q.name) === M.nameKey(x.name); })[0];
+      rows.push([x.name || '', (m && m.mnr) || x.mnr || '', x.abz || '', aStatus(x) === 'bestanden' ? 'Zahlung offen' : 'In Arbeit', aPreis(x), x.date ? String(x.date).split('-').reverse().join('.') : '', x.notiz || '']);
+    });
+    rows.sort(function (a, b) { return (a[3] < b[3] ? 1 : a[3] > b[3] ? -1 : 0) || String(a[0]).localeCompare(String(b[0]), 'de'); });
+    if (!rows.length) { M.toast('Keine offenen Abzeichen.'); return; }
+    M.xlsxList({ file: 'Offene_Abzeichen.xlsx', title: 'Offene Schwimmabzeichen', sub: 'Stand ' + M.today().split('-').reverse().join('.'), sheets: [{ name: 'Offen', head: ['Name', 'Mitgl.-Nr.', 'Abzeichen', 'Stand', 'Preis', 'Datum', 'Notiz'], rows: rows, f: ['', '', '', '', 'eur', '', ''], w: [26, 12, 20, 16, 10, 12, 36] }] });
   }
 
   /* ================= Jugendkasse ================= */
@@ -387,6 +398,7 @@ templateEngineOverride: false
         });
       },
       abzxlsx: function () { abzXlsx(); },
+      abopenx: function () { abOpenXlsx(); },
       abzplus: function () { M.openForm({ title: 'Abzeichen-Art hinzufügen', fields: [{ k: 'n', t: 'text', label: 'Name', req: true }, { k: 'p', t: 'num', label: 'Preis (€)' }, { k: 'req', t: 'lines', label: 'Anforderungen (eine pro Zeile)', rows: 6 }], item: { n: '', p: 0, req: [] }, onSave: function (v) { var d = abzDoc(); var ex = (Array.isArray(d.extra) ? d.extra : []).concat([{ n: v.n, p: M.num(v.p), req: v.req }]); M.op({ op: 'set', coll: 'abzListe', item: Object.assign({}, d, { id: 'main', extra: ex }) }); } }); },
       abzpreis: function (it, el) {
         var n = el.closest('[data-abz]').getAttribute('data-abz'); var c = catOf(n); var d = abzDoc();
