@@ -628,6 +628,18 @@ templateEngineOverride: false
       M.op({ op: 'patch', coll: 'material', id: it.id, fields: { loans: loans } });
     } });
   }
+  function editLoan(it, lid) {
+    var l = (it.loans || []).filter(function (x) { return x.id === lid; })[0]; if (!l) return; var units = it.units || [];
+    var free = units.filter(function (u) { return u === l.unit || !openLoans(it).some(function (o) { return o.unit === u; }); });
+    var fields = [{ k: 'who', t: 'text', label: 'Wer (Name oder Mitgliedsnummer)', req: true }].concat(units.length ? [{ k: 'unit', t: 'sel', label: 'Welches Stück', opts: free }] : [{ k: 'n', t: 'num', label: 'Anzahl', req: true }]).concat([{ k: 'at', t: 'date', label: 'Ausgabedatum' }, { k: 'bis', t: 'date', label: 'Rückgabedatum (optional)' }, { k: 'notiz', t: 'text', label: 'Notiz (optional)' }]);
+    setTimeout(function () { M.memberSuggest('mf_who'); }, 60);
+    M.openForm({ title: 'Ändern: ' + it.title, fields: fields, item: Object.assign({}, l), saveLabel: 'Speichern', onSave: function (v) {
+      var rn = M.memberResolve(v.who, l.who); if (!rn) { M.toast('„' + v.who + '“ steht nicht in der Mitgliederliste. Bitte Namen oder Mitgliedsnummer aus der Vorschlagsliste wählen.'); return false; } v.who = rn;
+      if (!units.length) { if (!(v.n > 0)) { M.toast('Anzahl prüfen.'); return false; } if (v.n > avail(it) + (Number(l.n) || 0)) { M.toast('So viele sind nicht verfügbar (' + (avail(it) + (Number(l.n) || 0)) + ').'); return false; } }
+      var loans = M.clone(it.loans || []).filter(function (x) { return !x.back; }).map(function (x) { return x.id === lid ? Object.assign(x, { who: v.who, n: units.length ? 1 : v.n, unit: units.length ? v.unit : '', at: v.at || x.at, bis: v.bis || '', notiz: v.notiz || '' }) : x; });
+      M.op({ op: 'patch', coll: 'material', id: it.id, fields: { loans: loans } });
+    } });
+  }
   function giveBack(it, lid) {
     var l = (it.loans || []).filter(function (x) { return x.id === lid; })[0]; if (!l) return;
     var loans = M.clone(it.loans || []).filter(function (x) { return x.id !== lid && !x.back; });
@@ -640,6 +652,7 @@ templateEngineOverride: false
     Object.keys(d.bestand || {}).forEach(function (k) { if (l.indexOf(k) < 0) l.push(k); }); return l;
   }
   // Schwimmbretter aus der Mitgliederliste: ausgegeben, noch nicht zurueck
+  var BRETT_DEF = ['Rotes Brett', 'Grün-Schwarzes Brett', 'Blaues Brett', 'Schwarzes Brett', 'Grünes Brett', 'Anderes Modell'];
   function brettOut() { return M.items('wgMitglieder').filter(function (m) { return m.brettArt && !m.brettRueck; }); }
   function brettOutOf(it) { var t = lower(it.title); return brettOut().filter(function (m) { return lower(m.brettArt) === t; }).length; }
   // Kompakter Block: Bretter und Kappen laut Mitgliederliste (Einzelliste klappbar)
@@ -658,7 +671,7 @@ templateEngineOverride: false
     tabs: [
       { id: 'geg', label: 'Gegenstände', coll: 'material', view: ['material.view'], edit: ['material.edit'], add: ['material.edit', 'material.anlegen'], del: ['material.edit', 'material.loeschen'], print: ['material.print'], addLabel: 'Neuer Gegenstand', search: ['title', 'kategorie', 'ort', 'notiz'],
         filter: function (it, f) { return (!f.low || low(it) || it.kaufen) && (!f.out || openLoans(it).length); },
-        summary: function (all) { var n = needList(all).length, out = all.filter(function (x) { return openLoans(x).length; }).length, ov = all.reduce(function (s, x) { return s + (x.loans || []).filter(overdueLoan).length; }, 0); return '<div class="m-chips"><button type="button" class="m-chip' + (M.S.filter.low ? ' on' : '') + '" data-ma="lowf">⚠️ Nachkaufen (' + n + ')</button><button type="button" class="m-chip' + (M.S.filter.out ? ' on' : '') + '" data-ma="outf">Verliehen (' + out + ')</button>' + (ov ? '<span class="m-over" style="align-self:center">⏰ ' + ov + ' überfällig</span>' : '') + '</div>'; },
+        summary: function (all) { var n = needList(all).length, out = all.filter(function (x) { return openLoans(x).length; }).length, ov = all.reduce(function (s, x) { return s + (x.loans || []).filter(overdueLoan).length; }, 0); return '<div class="m-chips"><button type="button" class="m-chip' + (M.S.filter.low ? ' on' : '') + '" data-ma="lowf">⚠️ Nachkaufen (' + n + ')</button><button type="button" class="m-chip' + (M.S.filter.out ? ' on' : '') + '" data-ma="outf">Verliehen (' + out + ')</button>' + (ov ? '<span class="m-over" style="align-self:center">⏰ ' + ov + ' überfällig</span>' : '') + (M.anyCan(['material.edit', 'material.anlegen']) && BRETT_DEF.some(function (n) { return !all.some(function (x) { return lower(x.title) === lower(n); }); }) ? '<button type="button" class="m-chip" data-ma="seedb">🏊 Brettarten anlegen</button>' : '') + '</div>'; },
         fields: [{ k: 'title', t: 'text', label: 'Name', req: true }, { k: 'kategorie', t: 'text', label: 'Kategorie', ph: 'z. B. Training, Wettkampf, Küche' }, { k: 'ort', t: 'text', label: 'Lagerort', ph: 'z. B. Halle, Schrank 2' }, { k: 'bestand', t: 'num', label: 'Bestand (gesamt)' }, { k: 'min', t: 'num', label: 'Mindestbestand' }, { k: 'einheit', t: 'text', label: 'Einheit', ph: 'Stück' },
           { k: 'zustand', t: 'sel', label: 'Zustand', opts: ['gut', 'gebraucht', 'defekt'] }, { k: 'kaufen', t: 'chk', label: 'Auf die Einkaufsliste setzen' }, { k: 'units', t: 'lines', label: 'Einzelstücke mit Nummer (optional)', rows: 4, hint: 'Pro Zeile ein Stück, z. B. „Nr. 1“, „Nr. 2“. Dann wird jedes Stück einzeln verliehen und der Bestand ergibt sich daraus.' }, { k: 'notiz', t: 'area', label: 'Notiz', rows: 2 }],
         newItem: function () { return { bestand: 1, einheit: 'Stück', zustand: 'gut' }; },
@@ -667,17 +680,23 @@ templateEngineOverride: false
           var av = avail(it); var open = openLoans(it); var canL = M.anyCan(['material.ausleihe', 'material.edit']);
           var body = (it.notiz ? '<div class="wm-sub">' + lines(it.notiz) + '</div>' : '') + '<div class="wm-sub">Bestand ' + esc(it.bestand || 0) + ' ' + esc(it.einheit || '') + ' · verfügbar ' + av + (it.min !== '' && it.min !== undefined && !(it.units || []).length ? ' · Minimum ' + esc(it.min) : '') + '</div>';
           if ((it.units || []).length) body += '<div class="wm-sub">Stücke: ' + it.units.map(function (u) { var l = open.filter(function (x) { return x.unit === u; })[0]; return l ? '<s>' + esc(u) + '</s>' : esc(u); }).join(', ') + '</div>';
-          if (open.length) body += '<h4 class="wm-sub" style="margin:10px 0 4px">Verliehen</h4>' + open.map(function (l) { return '<div class="m-chk"><span style="flex:1"><b>' + esc(l.who) + '</b> · ' + (l.unit ? esc(l.unit) : esc(l.n) + '×') + (l.at ? ' seit ' + fmtShort(l.at) : '') + (l.bis ? ' · <span class="' + (overdueLoan(l) ? 'm-over' : '') + '">' + (overdueLoan(l) ? '⏰ überfällig, ' : '') + 'zurück bis ' + fmtShort(l.bis) + '</span>' : '') + '</span>' + (canL ? '<button type="button" class="wm-btn" data-ma="back" data-lid="' + esc(l.id) + '">↩︎ zurück</button>' : '') + '</div>'; }).join('');
+          if (open.length) body += '<h4 class="wm-sub" style="margin:10px 0 4px">Verliehen</h4>' + open.map(function (l) { return '<div class="m-chk"><span style="flex:1"><b>' + esc(l.who) + '</b> · ' + (l.unit ? esc(l.unit) : esc(l.n) + '×') + (l.at ? ' seit ' + fmtShort(l.at) : '') + (l.bis ? ' · <span class="' + (overdueLoan(l) ? 'm-over' : '') + '">' + (overdueLoan(l) ? '⏰ überfällig, ' : '') + 'zurück bis ' + fmtShort(l.bis) + '</span>' : '') + '</span>' + (canL ? '<button type="button" class="wm-btn" data-ma="ledit" data-lid="' + esc(l.id) + '" aria-label="Ändern">✎</button><button type="button" class="wm-btn" data-ma="back" data-lid="' + esc(l.id) + '">↩︎ zurück</button>' : '') + '</div>'; }).join('');
           if ((it.hist || []).length) body += '<h4 class="wm-sub" style="margin:10px 0 4px">Zuletzt zurückgegeben</h4>' + it.hist.slice(0, 5).map(function (h) { return '<div class="wm-sub">' + esc(h.who) + (h.unit ? ' · ' + esc(h.unit) : '') + ' · ' + fmtShort(h.at) + ' bis ' + fmtShort(h.back) + '</div>'; }).join('');
           var anyOver = open.some(overdueLoan);
           return { title: it.title, badges: (low(it) ? M.badge('Mindestbestand', 'red') : '') + (it.kaufen ? M.badge('nachkaufen', 'amber') : '') + (it.zustand === 'defekt' ? M.badge('defekt', 'red') : '') + (open.length ? M.badge(open.length + ' verliehen', anyOver ? 'red' : 'blue') : ''), sub: [esc(it.kategorie || ''), esc(it.ort || ''), 'verfügbar ' + av + '/' + esc(it.bestand || 0)].filter(Boolean).join(' · '), body: body,
             row: canL ? '<button type="button" class="wm-btn" data-ma="lend"' + (av <= 0 ? ' disabled' : '') + '>🤝 Verleihen</button>' : '', buttons: canL && !(it.units || []).length ? '<button type="button" class="wm-btn" data-ma="stock">± Bestand</button>' : '' };
         },
         actions: {
+          seedb: function () {
+            var have = M.items('material').map(function (x) { return lower(x.title); }), ops = [];
+            BRETT_DEF.forEach(function (n) { if (have.indexOf(lower(n)) < 0) ops.push({ op: 'set', coll: 'material', item: { id: M.uid(), title: n, kategorie: 'Schwimmbretter', ort: '', bestand: 0, einheit: 'Stück', zustand: 'gut', loans: [] } }); });
+            if (!ops.length) { M.toast('Alle Brettarten sind schon da.'); return; } M.ops(ops); M.toast(ops.length + ' Brettarten angelegt. Bitte den Bestand eintragen.');
+          },
           lowf: function () { M.S.filter.low = !M.S.filter.low; M.render(true); },
           outf: function () { M.S.filter.out = !M.S.filter.out; M.render(true); },
           lend: function (it, el, ev) { ev.stopPropagation(); if (it) lendForm(it); },
           back: function (it, el) { if (it) giveBack(it, el.getAttribute('data-lid')); },
+          ledit: function (it, el) { if (it) editLoan(it, el.getAttribute('data-lid')); },
           stock: function (it) { if (!it) return; M.openForm({ title: 'Bestand: ' + it.title, fields: [{ k: 'bestand', t: 'num', label: 'Neuer Gesamtbestand', req: true }], item: { bestand: it.bestand }, onSave: function (v) { if (v.bestand === '' || v.bestand < 0) return false; M.op({ op: 'patch', coll: 'material', id: it.id, fields: { bestand: v.bestand } }); } }); }
         },
         xlsxAll: function (l) {
@@ -704,7 +723,7 @@ templateEngineOverride: false
             var bis = p.loans.map(function (x) { return x.l.bis; }).filter(Boolean).sort()[0];
             out += '<tr class="pl-r" data-k="' + esc(k) + '" data-ma="wopen"><td><span class="pl-dot ' + (over ? 'amber' : '') + '"></span></td><td><b>' + esc(p.name) + '</b></td><td>' + esc(p.nr) + '</td><td>' + chipsH + '</td><td>' + (bis ? '<span class="' + (over ? 'm-over' : '') + '">' + fmtShort(bis) + '</span>' : '<span class="pl-none">–</span>') + '</td><td style="white-space:nowrap"><button type="button" class="pl-ic" data-ma="wopen" aria-label="Details">' + (open ? '⌃' : '⌄') + '</button></td></tr>';
             if (open) out += '<tr class="pl-d"><td></td><td colspan="5"><div class="pl-grid">' +
-              (p.loans.length ? '<div class="pl-bl"><h4>📦 Material</h4>' + p.loans.map(function (x) { return '<div class="m-chk" data-id="' + esc(x.it.id) + '"><span style="flex:1"><b>' + loanText(x.it, x.l) + '</b><div class="wm-sub">Ausgabedatum ' + fmtShort(x.l.at) + (x.l.bis ? ' · <span class="' + (overdueLoan(x.l) ? 'm-over' : '') + '">' + (overdueLoan(x.l) ? '⏰ überfällig, ' : '') + 'Rückgabedatum ' + fmtShort(x.l.bis) + '</span>' : '') + '</div></span>' + (canL ? '<button type="button" class="wm-btn" data-ma="werback" data-lid="' + esc(x.l.id) + '">↩︎ zurück</button>' : '') + '</div>'; }).join('') + '</div>' : '') +
+              (p.loans.length ? '<div class="pl-bl"><h4>📦 Material</h4>' + p.loans.map(function (x) { return '<div class="m-chk" data-id="' + esc(x.it.id) + '"><span style="flex:1"><b>' + loanText(x.it, x.l) + '</b><div class="wm-sub">Ausgabedatum ' + fmtShort(x.l.at) + (x.l.bis ? ' · <span class="' + (overdueLoan(x.l) ? 'm-over' : '') + '">' + (overdueLoan(x.l) ? '⏰ überfällig, ' : '') + 'Rückgabedatum ' + fmtShort(x.l.bis) + '</span>' : '') + '</div></span>' + (canL ? '<button type="button" class="wm-btn" data-ma="ledit" data-lid="' + esc(x.l.id) + '" aria-label="Ändern">✎</button><button type="button" class="wm-btn" data-ma="werback" data-lid="' + esc(x.l.id) + '">↩︎ zurück</button>' : '') + '</div>'; }).join('') + '</div>' : '') +
               (p.brett ? '<div class="pl-bl"><h4>🏊 Schwimmbrett</h4><div class="wm-sub">' + esc(p.brett.brettArt) + (p.brett.brettAus ? ' · Ausgabedatum ' + fmtShort(p.brett.brettAus) : '') + '</div><div class="wm-sub">Rückgabe wird in der Mitgliederliste eingetragen.</div></div>' : '') + '</div></td></tr>';
           });
           return out + '</table></div></section>';
@@ -712,6 +731,7 @@ templateEngineOverride: false
         actions: {
           wopen: function (it, el) { var k = el.closest('tr').getAttribute('data-k'); WER.open[k] = !WER.open[k]; M.render(true); },
           werback: function (it, el) { if (it) giveBack(it, el.getAttribute('data-lid')); },
+          ledit: function (it, el) { if (it) editLoan(it, el.getAttribute('data-lid')); },
           printwer: function () {
             var d = function (v) { return v ? String(v).split('-').reverse().join('.') : ''; }, rows = []; M.items('material').forEach(function (it) { openLoans(it).forEach(function (l) { rows.push([l.who || '', it.title + (l.unit ? ' ' + l.unit : (it.units && it.units.length ? '' : ' (' + l.n + '×)')), d(l.at), d(l.bis)]); }); });
             var bs = brettOut().sort(function (x, y) { return String(x.name).localeCompare(String(y.name), 'de'); }).map(function (m) { return [m.name, m.brettArt, d(m.brettAus), d(m.brettRueck)]; });

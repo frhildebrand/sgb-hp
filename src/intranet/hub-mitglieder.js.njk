@@ -153,7 +153,7 @@ templateEngineOverride: false
     lists(); var base = {}; var tr = p ? p.tr : null;
     if (p) { base = Object.assign({}, p.m, { id: p.m.virtual ? undefined : p.m.id, name: p.m.name }); TRAINER_KEYS.forEach(function (k) { if (tr && tr[k] !== undefined) base[k] = tr[k]; }); base.rollen = rOf(p.m).slice(); if (!p.m.pl && tr && base.rollen.indexOf('Trainer') < 0) base.rollen.push('Trainer'); base.trainerIn = tGroups(p).slice(); base.aktiv = tr ? tr.aktiv || '' : ''; }
     else { base = { gruppen: PL.g ? [PL.g] : [], rollen: ['Schwimmer'] }; }
-    M.openForm({ title: p ? p.m.name : 'Neue Person', tabs: true, fields: formFields(p), item: base, saveLabel: 'Speichern', onSave: function (v) { return savePerson(p, base, v); } });
+    M.openForm({ title: p ? p.m.name : 'Neue Person', tabs: true, acc: true, fields: formFields(p), item: base, saveLabel: 'Speichern', onSave: function (v) { return savePerson(p, base, v); } });
   }
   function savePerson(p, base, v) {
     var ops = []; var it = p && !p.m.virtual ? Object.assign({}, p.m) : { id: M.uid() }; var name = v.name;
