@@ -11,6 +11,32 @@ templateEngineOverride: false
   var esc = M.esc;
   function lines(t) { return esc(t || '').replace(/\n/g, '<br>'); }
   function fmtShort(iso) { return iso ? M.fmtDate(iso, true) : ''; }
+  /* Protokoll-Gliederung: Zeile = Punkt (1.), „- “ = Unterpunkt (a.), „-- “ = (i.); Zeilen mit „|“ = Tabelle; [Name] wird markiert */
+  var TGC = ['#e4def5', '#e0f0e0', '#fde8d4', '#dbeafe', '#fce7f3', '#fef3c7'];
+  function tagged(x) { return esc(x).replace(/\[([^\]]+)\]/g, function (m, n) { var h = 0; for (var i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) % 997; return '[<span style="background:' + TGC[h % TGC.length] + ';padding:0 2px;border-radius:3px">' + n + '</span>]'; }); }
+  function outline(text) {
+    var out = '', lv = -1, n0 = 0, rows = [], TY = ['1', 'a', 'i', 'A'];
+    var closeAll = function () { while (lv >= 0) { out += '</li></ol>'; lv--; } };
+    var flushT = function () { if (!rows.length) return; closeAll(); out += '<table>' + rows.map(function (r, i) { return '<tr>' + r.map(function (c) { return '<' + (i ? 'td' : 'th') + '>' + tagged(c) + '</' + (i ? 'td' : 'th') + '>'; }).join('') + '</tr>'; }).join('') + '</table>'; rows = []; };
+    String(text || '').split('\n').forEach(function (raw) {
+      var ln = raw.replace(/\s+$/, ''); if (!ln.trim()) { flushT(); return; }
+      if (ln.indexOf('|') >= 0) { rows.push(ln.split('|').map(function (c) { return c.trim(); })); return; }
+      flushT();
+      var m = /^\s*(-*)\s*(.*)$/.exec(ln), L = Math.min(m[1].length, 3); if (L > lv + 1) L = lv + 1; if (L < 0) L = 0;
+      if (lv < 0) { out += '<ol type="1"' + (n0 ? ' start="' + (n0 + 1) + '"' : '') + ' style="margin:4px 0;padding-left:24px"><li>'; lv = 0; }
+      else if (L > lv) { out += '<ol type="' + TY[L] + '" style="margin:2px 0;padding-left:24px"><li>'; lv = L; }
+      else { while (lv > L) { out += '</li></ol>'; lv--; } out += '</li><li>'; }
+      if (L === 0) n0 = (n0 || 0) + 1;
+      out += tagged(m[2]);
+    });
+    flushT(); closeAll(); return out;
+  }
+  function dmy(iso) { return iso ? String(iso).split('-').reverse().join('.') : ''; }
+  function protoPrint(it, text, isSitzung) {
+    var tops = it.tops || [];
+    var body = '<h2>' + esc(it.title) + '</h2>' + (it.teilnehmer ? '<p><b>Anwesend:</b> ' + esc(it.teilnehmer) + '</p>' : '') + (text ? outline(text) : (isSitzung && tops.length ? '<h3>Tagesordnung</h3>' + outline(tops.join('\n')) : ''));
+    return { title: it.title, body: body, opts: { t2: (text ? 'Protokoll ' : '') + it.title + (it.date ? ' ' + dmy(it.date) : ''), t3: it.pf ? 'Protokollführung: ' + it.pf : (!text && it.ort ? it.ort : '') } };
+  }
   function pre(t) { return t ? '<pre>' + esc(t) + '</pre>' : ''; }
   function printHead(title, sub) { return '<h1>' + esc(title) + '</h1>' + (sub ? '<div class="sub">' + sub + '</div>' : ''); }
   var lower = M.lower;
@@ -281,7 +307,7 @@ templateEngineOverride: false
   }
   M.register('veranstaltungen', {
     title: 'Veranstaltungen', icon: '🎪', colls: ['veranstaltungen', 'aufgaben', 'vorlagen'],
-    tabs: [{ id: 'ev', label: 'Veranstaltungen', coll: 'veranstaltungen', view: ['veranstaltungen.view'], edit: ['veranstaltungen.edit'], add: ['veranstaltungen.edit', 'veranstaltungen.anlegen'], del: ['veranstaltungen.edit', 'veranstaltungen.loeschen'], print: ['veranstaltungen.print'], sortBy: { k: 'date', dir: 1 }, printItem: true, addLabel: 'Neue Veranstaltung', search: ['title', 'ort', 'beschreibung'],
+    tabs: [{ id: 'ev', label: 'Veranstaltungen', coll: 'veranstaltungen', view: ['veranstaltungen.view'], edit: ['veranstaltungen.edit'], add: ['veranstaltungen.edit', 'veranstaltungen.anlegen'], del: ['veranstaltungen.edit', 'veranstaltungen.loeschen'], print: ['veranstaltungen.print'], sortBy: { k: 'date', dir: 1 }, addLabel: 'Neue Veranstaltung', search: ['title', 'ort', 'beschreibung'],
       hint: 'Eigene Events mit Checkliste (Zuständig, Frist, Phase) und Helfern. Die Checkliste kann jeder mit Recht abhaken.',
       get fields() { return evFields(); },
       summary: function () { return M.anyCan(['veranstaltungen.edit', 'veranstaltungen.anlegen']) ? '<div class="m-chips"><button type="button" class="m-chip" data-ma="cpnew">📄 Neue Veranstaltung aus PDF</button></div>' : ''; },
@@ -491,14 +517,14 @@ templateEngineOverride: false
           toBeschl: function (it) { if (!it) return; var id = M.uid(); M.op({ op: 'set', coll: 'vorstandBeschluesse', item: { id: id, title: it.title, date: M.today(), text: it.beschluss || it.begruendung || '', who: [], due: '', status: 'offen', antrag: it.id } }); M.toast('Beschluss angelegt (Reiter „Beschlüsse“).'); }
         },
         noExport: true },
-      { id: 'sitzungen', label: 'Sitzungen', coll: 'vorstandSitzungen', view: ['vorstand.view', 'vorstand.sitzungen.view'], edit: ['vorstand.edit', 'vorstand.sitzungen.edit'], print: ['vorstand.print'], sortBy: { k: 'date', dir: -1 }, printItem: true, addLabel: 'Neue Sitzung', search: ['title', 'ort', 'tops', 'protokoll'],
+      { id: 'sitzungen', label: 'Sitzungen', coll: 'vorstandSitzungen', view: ['vorstand.view', 'vorstand.sitzungen.view'], edit: ['vorstand.edit', 'vorstand.sitzungen.edit'], print: ['vorstand.print'], sortBy: { k: 'date', dir: -1 }, addLabel: 'Neue Sitzung', search: ['title', 'ort', 'tops', 'protokoll'],
         hint: 'Erst die Tagesordnung, nach der Sitzung das Protokoll. Mit „Protokoll vorbereiten“ wird aus der Tagesordnung eine Gliederung.',
-        fields: [{ k: 'title', t: 'text', label: 'Titel', req: true, ph: 'z. B. Vorstandssitzung November' }, { k: 'date', t: 'date', label: 'Datum' }, { k: 'time', t: 'time', label: 'Uhrzeit' }, { k: 'ort', t: 'text', label: 'Ort' }, { k: 'status', t: 'sel', label: 'Stand', opts: ['Geplant', 'Durchgeführt'] }, { k: 'tops', t: 'lines', label: 'Tagesordnung', rows: 6, hint: 'Pro Zeile ein Punkt.' }, { k: 'teilnehmer', t: 'text', label: 'Teilnehmer' }, { k: 'protokoll', t: 'area', label: 'Protokoll', rows: 12 }],
+        fields: [{ k: 'title', t: 'text', label: 'Titel', req: true, ph: 'z. B. Vorstandssitzung November' }, { k: 'date', t: 'date', label: 'Datum' }, { k: 'time', t: 'time', label: 'Uhrzeit' }, { k: 'ort', t: 'text', label: 'Ort' }, { k: 'status', t: 'sel', label: 'Stand', opts: ['Geplant', 'Durchgeführt'] }, { k: 'tops', t: 'lines', label: 'Tagesordnung', rows: 6, hint: 'Pro Zeile ein Punkt.' }, { k: 'teilnehmer', t: 'text', label: 'Anwesend (Namen, Ämter)' }, { k: 'pf', t: 'text', label: 'Protokollführung', list: 'mPeople' }, { k: 'protokoll', t: 'area', label: 'Protokoll', rows: 12, hint: 'Eine Zeile = ein Punkt (wird automatisch 1., 2., …). Unterpunkte mit „- “ am Zeilenanfang (a., b.), darunter „-- “ (i., ii.). Namen in [eckigen Klammern] werden markiert. Tabelle: Zellen mit | trennen, Zeile 1 ist die Überschrift.' }],
         newItem: function () { return { date: M.today(), status: 'Geplant', tops: [] }; },
-        card: function (it) { var tops = it.tops || []; return { title: it.title, badges: M.badge(it.status || 'Geplant', it.status === 'Durchgeführt' ? 'green' : 'blue'), sub: [fmtShort(it.date) + (it.time ? ', ' + esc(it.time) + ' Uhr' : ''), esc(it.ort || '')].filter(Boolean).join(' · '), body: (tops.length ? '<h4 class="wm-sub">Tagesordnung</h4><ol style="margin:4px 0 8px 18px">' + tops.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol>' : '') + (it.teilnehmer ? '<div class="wm-sub">Teilnehmer: ' + esc(it.teilnehmer) + '</div>' : '') + (it.protokoll ? '<h4 class="wm-sub">Protokoll</h4>' + pre(it.protokoll) : ''), buttons: M.can('vorstand.edit') && tops.length && !it.protokoll ? '<button type="button" class="wm-btn" data-ma="protoVor">📝 Protokoll vorbereiten</button>' : '' }; },
-        actions: { protoVor: function (it) { if (!it) return; M.op({ op: 'patch', coll: 'vorstandSitzungen', id: it.id, fields: { protokoll: (it.tops || []).map(function (x, i) { return 'TOP ' + (i + 1) + ': ' + x + '\n\n'; }).join('') } }); } },
-        printItem: function (it) { var tops = it.tops || []; return { title: it.title, body: printHead(it.title, esc([fmtShort(it.date) + (it.time ? ', ' + it.time + ' Uhr' : ''), it.ort].filter(Boolean).join(' · '))) + (tops.length ? '<h2>Tagesordnung</h2><ol>' + tops.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol>' : '') + (it.teilnehmer ? '<p>Teilnehmer: ' + esc(it.teilnehmer) + '</p>' : '') + (it.protokoll ? '<h2>Protokoll</h2><pre>' + esc(it.protokoll) + '</pre>' : '') }; } },
-      { id: 'beschluesse', label: 'Beschlüsse', coll: 'vorstandBeschluesse', view: ['vorstand.view', 'vorstand.beschluesse.view'], edit: ['vorstand.edit', 'vorstand.beschluesse.edit'], print: ['vorstand.print'], sortBy: { k: 'date', dir: -1 }, printAll: true, addLabel: 'Neuer Beschluss', search: ['title', 'nr', 'text'],
+        card: function (it) { var tops = it.tops || []; return { title: it.title, badges: M.badge(it.status || 'Geplant', it.status === 'Durchgeführt' ? 'green' : 'blue'), sub: [fmtShort(it.date) + (it.time ? ', ' + esc(it.time) + ' Uhr' : ''), esc(it.ort || '')].filter(Boolean).join(' · '), body: (tops.length ? '<h4 class="wm-sub">Tagesordnung</h4><ol style="margin:4px 0 8px 18px">' + tops.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol>' : '') + (it.teilnehmer ? '<div class="wm-sub">Teilnehmer: ' + esc(it.teilnehmer) + '</div>' : '') + (it.protokoll ? '<h4 class="wm-sub">Protokoll</h4>' + outline(it.protokoll) : ''), buttons: M.can('vorstand.edit') && tops.length && !it.protokoll ? '<button type="button" class="wm-btn" data-ma="protoVor">📝 Protokoll vorbereiten</button>' : '' }; },
+        actions: { protoVor: function (it) { if (!it) return; M.op({ op: 'patch', coll: 'vorstandSitzungen', id: it.id, fields: { protokoll: (it.tops || []).map(function (x) { return x + '\n'; }).join('') } }); } },
+        printItem: function (it) { return protoPrint(it, it.protokoll, true); } },
+      { id: 'beschluesse', label: 'Beschlüsse', coll: 'vorstandBeschluesse', view: ['vorstand.view', 'vorstand.beschluesse.view'], edit: ['vorstand.edit', 'vorstand.beschluesse.edit'], print: ['vorstand.print'], sortBy: { k: 'date', dir: -1 }, addLabel: 'Neuer Beschluss', search: ['title', 'nr', 'text'],
         hint: 'Beschlüsse mit Zuständigem und Frist. Offene Beschlüsse tauchen im Reiter „Fristen“ auf.',
         filter: function (it, f) { return !f.open || (it.status || 'offen') !== 'erledigt'; },
         summary: function (all) { var o = all.filter(function (x) { return (x.status || 'offen') !== 'erledigt' && x.due; }); var ov = o.filter(function (x) { return x.due < M.today(); }).length; return '<div class="m-chips"><button type="button" class="m-chip' + (M.S.filter.open ? ' on' : '') + '" data-ma="openf">Nur offene (' + all.filter(function (x) { return (x.status || 'offen') !== 'erledigt'; }).length + ')</button>' + (ov ? '<span class="m-over" style="align-self:center">⚠️ ' + ov + ' überfällig</span>' : '') + '</div>'; },
@@ -509,8 +535,8 @@ templateEngineOverride: false
           openf: function () { M.S.filter.open = !M.S.filter.open; M.render(true); },
           bDone: function (it) { if (it) M.op({ op: 'patch', coll: 'vorstandBeschluesse', id: it.id, fields: { status: 'erledigt' } }); },
           bTask: function (it) { if (!it) return; var tid = M.uid(); M.ops([{ op: 'set', coll: 'aufgaben', item: { id: tid, title: 'Beschluss umsetzen: ' + it.title, text: it.text || '', who: it.who || [], due: it.due || '', status: 'offen', prio: 'normal', ref: 'bs:' + it.id, refLabel: 'Beschluss ' + (it.nr || ''), by: me() } }, { op: 'patch', coll: 'vorstandBeschluesse', id: it.id, fields: { taskId: tid } }]); M.toast('Aufgabe angelegt.'); }
-        },
-        printAll: function (l) { return { title: 'Beschlüsse', body: printHead('Beschlüsse') + '<table><tr><th>Nr.</th><th>Datum</th><th>Beschluss</th><th>Zuständig</th><th>Bis</th><th>Stand</th></tr>' + l.map(function (it) { return '<tr><td class="nowrap">' + esc(it.nr || '') + '</td><td class="nowrap">' + fmtShort(it.date) + '</td><td><b>' + esc(it.title) + '</b>' + (it.text ? '<br>' + lines(it.text) : '') + '</td><td>' + esc((it.who || []).join(', ')) + '</td><td class="nowrap">' + fmtShort(it.due) + '</td><td>' + (BSTAT[it.status || 'offen'][0]) + '</td></tr>'; }).join('') + '</table>' }; } },
+        }
+      },
       { id: 'fristen', label: 'Fristen', view: ['vorstand.view', 'vorstand.beschluesse.view'],
         render: function () {
           var ev = [];
@@ -521,11 +547,11 @@ templateEngineOverride: false
           if (!ev.length) return out + '<p class="wm-note">Keine offenen Fristen.</p></section>';
           return out + ev.map(function (x) { var dd = M.daysTo(x.d); return '<div class="m-chk"><span style="font-size:20px">' + x.k + '</span><div style="flex:1"><div>' + esc(x.t) + '</div><div class="wm-sub">' + esc(x.w) + '</div></div><b class="' + (dd < 0 ? 'm-over' : '') + '">' + fmtShort(x.d) + '<div class="wm-sub ' + (dd < 0 ? 'm-over' : '') + '">' + (dd < 0 ? (-dd) + ' Tg. überfällig' : dd === 0 ? 'heute' : 'in ' + dd + ' Tg.') + '</div></b></div>'; }).join('') + '</section>';
         } },
-      { id: 'protokolle', label: 'Protokolle', coll: 'vorstandProtokolle', view: ['vorstand.view', 'vorstand.protokolle.view'], edit: ['vorstand.edit', 'vorstand.protokolle.edit'], print: ['vorstand.print'], sortBy: { k: 'date', dir: -1 }, printItem: true, addLabel: 'Neues Protokoll', search: ['title', 'text', 'teilnehmer'],
-        fields: [{ k: 'title', t: 'text', label: 'Titel', req: true, ph: 'z. B. Vorstandssitzung Oktober' }, { k: 'date', t: 'date', label: 'Datum' }, { k: 'ort', t: 'text', label: 'Ort' }, { k: 'teilnehmer', t: 'text', label: 'Teilnehmer' }, { k: 'text', t: 'area', label: 'Protokoll', rows: 14 }],
+      { id: 'protokolle', label: 'Protokolle', coll: 'vorstandProtokolle', view: ['vorstand.view', 'vorstand.protokolle.view'], edit: ['vorstand.edit', 'vorstand.protokolle.edit'], print: ['vorstand.print'], sortBy: { k: 'date', dir: -1 }, addLabel: 'Neues Protokoll', search: ['title', 'text', 'teilnehmer'],
+        fields: [{ k: 'title', t: 'text', label: 'Titel', req: true, ph: 'z. B. Vorstandssitzung Oktober' }, { k: 'date', t: 'date', label: 'Datum' }, { k: 'ort', t: 'text', label: 'Ort' }, { k: 'teilnehmer', t: 'text', label: 'Anwesend (Namen, Ämter)' }, { k: 'pf', t: 'text', label: 'Protokollführung', list: 'mPeople' }, { k: 'text', t: 'area', label: 'Protokoll', rows: 14, hint: 'Eine Zeile = ein Punkt (wird automatisch 1., 2., …). Unterpunkte mit „- “ (a., b.), darunter „-- “ (i., ii.). Namen in [eckigen Klammern] werden markiert. Tabelle: Zellen mit | trennen, Zeile 1 ist die Überschrift.' }],
         newItem: function () { return { date: M.today() }; },
-        card: function (it) { return { title: it.title, sub: [fmtShort(it.date), esc(it.ort || '')].filter(Boolean).join(' · '), body: (it.teilnehmer ? '<div class="wm-sub">Teilnehmer: ' + esc(it.teilnehmer) + '</div>' : '') + pre(it.text) }; },
-        printItem: function (it) { return { title: it.title, body: printHead(it.title, esc([fmtShort(it.date), it.ort].filter(Boolean).join(' · '))) + (it.teilnehmer ? '<p>Teilnehmer: ' + esc(it.teilnehmer) + '</p>' : '') + '<pre>' + esc(it.text || '') + '</pre>' }; } }
+        card: function (it) { return { title: it.title, sub: [fmtShort(it.date), esc(it.ort || '')].filter(Boolean).join(' · '), body: (it.teilnehmer ? '<div class="wm-sub">Anwesend: ' + esc(it.teilnehmer) + '</div>' : '') + outline(it.text) }; },
+        printItem: function (it) { return protoPrint(it, it.text || ' ', false); } }
     ]
   });
 
@@ -567,7 +593,7 @@ templateEngineOverride: false
         return '<section class="wm-card"><div class="wm-bar"><h3>Abzeichen-Bestand</h3><a class="wm-btn" href="/intranet/jugend/">Bestand ändern in Jugend →</a></div>' +
           (low.length ? '<p class="wm-note"><b>Nachbestellen:</b> ' + low.map(function (k) { return M.esc(k) + ' (' + M.num(b[k]) + ')'; }).join(', ') + '</p>' : '') +
           (ks.length ? '<div class="m-twrap"><table><tr><th>Abzeichen</th><th>Bestand</th><th>Mindestbestand</th></tr>' + ks.map(function (k) { var l = low.indexOf(k) >= 0; return '<tr><td><b>' + M.esc(k) + '</b></td><td>' + (l ? '<span class="m-over">' + M.num(b[k]) + '</span>' : M.num(b[k])) + '</td><td>' + (mn[k] !== undefined && mn[k] !== '' ? M.num(mn[k]) : '–') + '</td></tr>'; }).join('') + '</table></div>' : '<p class="wm-note">Es ist noch kein Abzeichenbestand eingetragen. Er wird in der Jugend unter „Preise &amp; Bestand“ gepflegt und erscheint hier automatisch.</p>') + '</section>'; } },
-      { id: 'geg', label: 'Gegenstände', coll: 'material', view: ['material.view'], edit: ['material.edit'], add: ['material.edit', 'material.anlegen'], del: ['material.edit', 'material.loeschen'], print: ['material.print'], printAll: true, addLabel: 'Neuer Gegenstand', search: ['title', 'kategorie', 'ort', 'notiz'],
+      { id: 'geg', label: 'Gegenstände', coll: 'material', view: ['material.view'], edit: ['material.edit'], add: ['material.edit', 'material.anlegen'], del: ['material.edit', 'material.loeschen'], print: ['material.print'], addLabel: 'Neuer Gegenstand', search: ['title', 'kategorie', 'ort', 'notiz'],
         filter: function (it, f) { return (!f.low || low(it) || it.kaufen) && (!f.out || openLoans(it).length); },
         summary: function (all) { var n = needList(all).length, out = all.filter(function (x) { return openLoans(x).length; }).length, ov = all.reduce(function (s, x) { return s + (x.loans || []).filter(overdueLoan).length; }, 0); return '<div class="m-chips"><button type="button" class="m-chip' + (M.S.filter.low ? ' on' : '') + '" data-ma="lowf">⚠️ Nachkaufen (' + n + ')</button><button type="button" class="m-chip' + (M.S.filter.out ? ' on' : '') + '" data-ma="outf">Verliehen (' + out + ')</button>' + (ov ? '<span class="m-over" style="align-self:center">⏰ ' + ov + ' überfällig</span>' : '') + '</div>'; },
         fields: [{ k: 'title', t: 'text', label: 'Name', req: true }, { k: 'kategorie', t: 'text', label: 'Kategorie', ph: 'z. B. Training, Wettkampf, Küche' }, { k: 'ort', t: 'text', label: 'Lagerort', ph: 'z. B. Halle, Schrank 2' }, { k: 'bestand', t: 'num', label: 'Bestand (gesamt)' }, { k: 'min', t: 'num', label: 'Mindestbestand' }, { k: 'einheit', t: 'text', label: 'Einheit', ph: 'Stück' },

@@ -82,8 +82,11 @@ templateEngineOverride: false
   }
   function aufgabenCard() {
     var n = state.next && state.next.token === SH.token() ? state.next : null; if (!n) return '';
-    var l = (n.tasks || []).slice(0, 10); var tot = n.open !== undefined ? n.open : (n.tasks || []).length;
-    return '<section class="hub-card2 hub-big"><div class="hub-c2h"><h3>✅ ' + (n.mine ? 'Meine Aufgaben' : 'Offene Aufgaben') + '</h3><a href="/intranet/aufgaben/" class="hub-sub">' + tot + ' offen →</a></div>' + (l.length ? l.map(function (x) { var d = x.due ? daysTo(x.due) : null; var bc = d === null ? '' : d < 0 ? 'bad' : d === 0 ? 'bad' : d <= 7 ? 'warn' : 'info'; return '<a class="hub-ai" href="/intranet/aufgaben/"><span>' + (x.prio === 'hoch' ? '❗ ' : '') + esc(x.title || x.t || '') + '</span>' + (x.due ? '<em class="hub-ab ' + bc + '">' + (d === 0 ? 'heute' : d < 0 ? 'überfällig' : 'bis ' + esc(fmtDMY(x.due).slice(0, 6))) + '</em>' : '') + '</a>'; }).join('') + (tot > l.length ? '<p class="hub-sub" style="margin:8px 0 0">und ' + (tot - l.length) + ' weitere</p>' : '') : '<p class="hub-sub" style="margin:6px 0 0">Alles erledigt.</p>') + '</section>';
+    var tl = n.tl || { all: { l: n.tasks || [], n: n.open }, mine: { l: [], n: 0 } };
+    var mode = !n.canAll ? 'mine' : (state.tmode || SH.lsGet('hubtmode', '') || (tl.mine.n ? 'mine' : 'all')); if (mode !== 'mine' && mode !== 'all') mode = 'all';
+    var cur = tl[mode], l = cur.l || [], tot = cur.n;
+    var tog = n.canAll ? '<div class="hub-seg"><button type="button" data-act="tmode" data-m="mine" class="' + (mode === 'mine' ? 'on' : '') + '">Meine (' + tl.mine.n + ')</button><button type="button" data-act="tmode" data-m="all" class="' + (mode === 'all' ? 'on' : '') + '">Alle (' + tl.all.n + ')</button></div>' : '';
+    return '<section class="hub-card2 hub-big"><div class="hub-c2h"><h3>✅ ' + (mode === 'mine' ? 'Meine Aufgaben' : 'Offene Aufgaben') + '</h3><a href="/intranet/aufgaben/" class="hub-sub">' + tot + ' offen →</a></div>' + tog + (l.length ? l.map(function (x) { var d = x.due ? daysTo(x.due) : null; var bc = d === null ? '' : d < 0 ? 'bad' : d === 0 ? 'bad' : d <= 7 ? 'warn' : 'info'; return '<a class="hub-ai" href="/intranet/aufgaben/"><span>' + (x.prio === 'hoch' ? '❗ ' : '') + esc(x.title || x.t || '') + '</span>' + (x.due ? '<em class="hub-ab ' + bc + '">' + (d === 0 ? 'heute' : d < 0 ? 'überfällig' : 'bis ' + esc(fmtDMY(x.due).slice(0, 6))) + '</em>' : '') + '</a>'; }).join('') + (tot > l.length ? '<p class="hub-sub" style="margin:8px 0 0">und ' + (tot - l.length) + ' weitere</p>' : '') : '<p class="hub-sub" style="margin:6px 0 0">' + (mode === 'mine' ? 'Dir ist nichts zugewiesen.' : 'Alles erledigt.') + '</p>') + '</section>';
   }
   function blickHtml() {
     var n = state.next && state.next.token === SH.token() ? state.next : null; if (!n || !n.cnt) return '';
@@ -148,12 +151,16 @@ templateEngineOverride: false
       var pastIds = {}; comps.forEach(function (w) { if ((w.date || '9999') < t) pastIds[w.id] = 1; });
       var up = comps.filter(function (w) { return (w.date || '') >= t; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
       var wk = up.slice(0, 3).map(function (w) { return { date: w.date, title: w.title, ort: w.ort, prog: wkProgress(w), ims: (w.intMs && w.intMs >= t) ? w.intMs : '', ms: (w.meldeschluss && w.meldeschluss >= t) ? w.meldeschluss : '' }; });
-      var mine = !SH.has('aufgaben.view');
+      var canAll = SH.has('aufgaben.view');
       var tasks = (d.aufgaben || []).filter(function (x) { return x.status !== 'erledigt' && !(x.ref && x.ref.indexOf('wk:') === 0 && pastIds[x.ref.slice(3)]); });
-      if (!mine && me) { var m2 = tasks.filter(function (x) { return (x.who || []).some(function (w) { return String(w).toLowerCase() === me; }); }); if (m2.length) { tasks = m2; mine = true; } }
+      var tMine = me ? tasks.filter(function (x) { return (x.who || []).some(function (w) { return String(w).toLowerCase() === me; }); }) : [];
+      var tsort = function (l) { return l.slice().sort(function (a, b) { var pa = a.prio === 'hoch' ? 0 : 1, pb = b.prio === 'hoch' ? 0 : 1; if (pa !== pb) return pa - pb; return (a.due || '9999') < (b.due || '9999') ? -1 : 1; }).slice(0, 10).map(function (x) { return { title: x.title, due: x.due, prio: x.prio }; }); };
+      var mine = !canAll;
+      if (!canAll) tasks = tMine;
       var overdue = tasks.filter(function (x) { return x.due && x.due < t; }).length;
       var open = tasks.length;
-      tasks = tasks.sort(function (a, b) { var pa = a.prio === 'hoch' ? 0 : 1, pb = b.prio === 'hoch' ? 0 : 1; if (pa !== pb) return pa - pb; return (a.due || '9999') < (b.due || '9999') ? -1 : 1; }).slice(0, 10).map(function (x) { return { title: x.title, due: x.due, prio: x.prio }; });
+      var tl = { all: { l: tsort(tasks), n: tasks.length }, mine: { l: tsort(tMine), n: tMine.length } };
+      tasks = tl.all.l;
       var evs = (d.veranstaltungen || []).filter(function (e) { return (e.date || '') >= t && e.status !== 'Abgeschlossen'; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
       var ev = evs.slice(0, 3).map(function (e) { var c = e.check || []; var dn = c.filter(function (x) { return x.d; }).length; return { date: e.date, title: e.title, prog: c.length ? dn + '/' + c.length + ' erledigt' : '' }; });
       var hints = {};
@@ -182,7 +189,7 @@ templateEngineOverride: false
       fr.sort(function (a, b) { return a.k - b.k; });
       state.brett = d.brett || state.brett || []; var grp = r.counts ? { all: r.counts.all, mine: r.counts.mine } : null, cnt = r.counts ? r.counts.cnt : null; SH.lsSet('hubbrett', state.brett);
       var sw = null; if (up[0]) { var u0 = up[0], src = (u0.starts || []).length ? u0.starts : ((u0.meld && u0.meld.starts) || []), mp = {}; src.forEach(function (s0) { var k0 = s0.n || ''; if (k0) mp[k0] = (mp[k0] || 0) + 1; }); sw = { title: u0.title, date: u0.date, ort: u0.ort, m: src.length, names: Object.keys(mp).sort(function (a, b) { return a.localeCompare(b, 'de'); }).map(function (k0) { return { n: k0, c: mp[k0] }; }) }; }
-      state.next = { token: SH.token(), pgrp: state.pgrp, cnt: cnt, grp: grp, sw: sw, wk: wk, tasks: tasks, open: open, ev: ev, mine: mine, hints: hints, warn: warn, fr: fr.slice(0, 6) }; SH.lsSet('hubnext', state.next); softRender(); setTimeout(SH.prefetch, 800);
+      state.next = { token: SH.token(), pgrp: state.pgrp, cnt: cnt, grp: grp, sw: sw, wk: wk, tasks: tasks, open: open, tl: tl, canAll: canAll, ev: ev, mine: mine, hints: hints, warn: warn, fr: fr.slice(0, 6) }; SH.lsSet('hubnext', state.next); softRender(); setTimeout(SH.prefetch, 800);
     });
   }
   function loadWm() {
@@ -200,6 +207,7 @@ templateEngineOverride: false
     var t = ev.target.closest ? ev.target.closest('[data-act]') : null;
     if (!t) return; var a = t.getAttribute('data-act');
     if (a === 'retry') load();
+    else if (a === 'tmode') { state.tmode = t.getAttribute('data-m'); SH.lsSet('hubtmode', state.tmode); render(); }
     else if (a === 'gedit') { state.gedit = true; render(); }
     else if (a === 'gdone') { state.gedit = false; render(); }
     else if (a === 'greset') { state.pgrp = null; saveProf({ grp: null }); render(); }

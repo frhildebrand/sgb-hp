@@ -263,6 +263,12 @@ templateEngineOverride: false
       form.addEventListener('change', function (ev) { if (ev.target && ev.target.getAttribute && ev.target.getAttribute('data-pick') === 'rollen') sync(); });
       sync();
     }
+    [].forEach.call(form.querySelectorAll('input[list="mPeople"]'), function (inp) {
+      if (!(D.people || []).length || inp.id !== 'mf_who') return; var st = document.createElement('div'); st.className = 'm-pst'; st.style.cssText = 'font-size:13px;margin-top:4px;line-height:1.5;text-transform:none;letter-spacing:0;font-weight:600'; inp.parentNode.appendChild(st);
+      var known = {}; D.people.forEach(function (n) { known[lowerS(n)] = n; });
+      var chk = function () { var names = inp.value.split(',').map(function (x) { return x.trim(); }).filter(Boolean); st.innerHTML = names.map(function (n) { return known[lowerS(n)] ? '<span style="color:#15803d">✓ ' + esc(known[lowerS(n)]) + ' (Account erkannt)</span>' : '<span style="color:#b45309">⚠ ' + esc(n) + ' hat keinen Account – bekommt die Zuweisung nicht angezeigt</span>'; }).join('<br>'); };
+      inp.addEventListener('input', chk); chk();
+    });
     (o.fields || []).forEach(function (f) {
       if (f.fills) { var el = form.elements[f.k]; if (el) el.addEventListener('change', function () { var tgt = form.elements[f.fills.k]; var txt = f.fills.map[el.value]; if (tgt && txt !== undefined && (!tgt.value.trim() || confirm('Bisherigen Inhalt ersetzen?'))) tgt.value = txt; }); }
     });
