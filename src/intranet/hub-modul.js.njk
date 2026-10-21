@@ -418,7 +418,7 @@ templateEngineOverride: false
     var t = def.custom ? null : curTab(); var c = ctxOf(el);
     if (a === 'tab') { S.tab = el.getAttribute('data-tab'); S.q = ''; S.filter = {}; lsSet('modtab_' + def.id, S.tab); renderMain(true); return; }
     if (a === 'toggle') { if (ev.target.closest('a,button,input,select,textarea') && ev.target.closest('a,button,input,select,textarea') !== el) return; S.open[c.id] = !S.open[c.id]; renderMain(true); return; }
-    if (t && a === 'add') { editItem(t, null); return; }
+    if (t && a === 'add') { if (t.onAdd) t.onAdd(api); else editItem(t, null); return; }
     if (t && a === 'edit') { editItem(t, find(t.coll, c.id)); return; }
     if (t && a === 'del') { var it = find(t.coll, c.id); confirmBox('„' + ((it && (it.title || it.name)) || 'Eintrag') + '“ wirklich löschen?', 'Löschen', function () { op({ op: 'del', coll: t.coll, id: c.id }); }); return; }
     if (t && (a === 'up' || a === 'down')) { move(t, c.id, a === 'up' ? -1 : 1); return; }

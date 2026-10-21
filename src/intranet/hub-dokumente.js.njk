@@ -11,14 +11,18 @@ templateEngineOverride: false
   var KAT = ['Verein', 'Mitgliedschaft', 'Wettkampf', 'Training', 'Finanzen', 'Veranstaltungen', 'Sonstiges'];
   function flt() { return M.S.filter || (M.S.filter = {}); }
   var tab = {
-    id: 'dok', label: 'Dokumente', coll: 'dokumente', view: ['dokumente.view'], edit: ['dokumente.edit'], add: ['dokumente.edit'], del: ['dokumente.edit'], addLabel: 'Dokument eintragen', search: ['titel', 'notiz', 'kat'],
+    id: 'dok', label: 'Dokumente', coll: 'dokumente', view: ['dokumente.view'], edit: ['dokumente.edit'], add: ['dokumente.edit'], del: ['dokumente.edit'], addLabel: 'Dokument',
+    onAdd: function () {
+      var b = function (go, t) { return '<button type="button" class="wm-btn" style="display:block;width:100%;margin:8px 0;text-align:left;min-height:48px" data-ma="' + go + '">' + t + '</button>'; };
+      M.openDlg('<div class="hub-dhead"><h3>Dokument hinzufügen</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose" aria-label="Schließen">✕</button></div>' + b('dokup', '📤 Datei hochladen (wird im Drive abgelegt)') + b('doklink', '🔗 Link eintragen (Homepage, Drive …)'));
+    }, search: ['titel', 'notiz', 'kat'],
     fields: [{ k: 'titel', t: 'text', label: 'Titel', req: true }, { k: 'kat', t: 'sel', label: 'Bereich', opts: KAT }, { k: 'url', t: 'text', label: 'Link', ph: 'https://…', hint: 'Adresse der Datei, zum Beispiel von der Homepage oder aus dem Drive.' }, { k: 'notiz', t: 'area', label: 'Beschreibung', rows: 2 }],
     newItem: function () { return { kat: flt().k || 'Verein' }; },
     beforeSave: function (it) { it.title = it.titel; if (it.url && !/^https:\/\//i.test(it.url)) throw new Error('Der Link muss mit https:// beginnen.'); },
     filter: function (d, f) { f = f || {}; return !f.k || d.kat === f.k; },
     sortBy: function (a, b) { return String(a.kat || '').localeCompare(String(b.kat || ''), 'de') || String(a.titel || '').localeCompare(String(b.titel || ''), 'de'); },
     summary: function () {
-      var f = flt(); var up = M.anyCan(['dokumente.edit']) ? '<div class="m-btns" style="margin-bottom:8px"><button type="button" class="wm-amber" data-ma="dokup">📤 Datei hochladen</button><input type="file" id="dok_f" style="display:none"></div>' : '';
+      var f = flt(); var up = M.anyCan(['dokumente.edit']) ? '<input type="file" id="dok_f" style="display:none">' : '';
       return up + '<div class="m-chips">' + [''].concat(KAT).map(function (k) { return '<button type="button" class="m-chip' + ((f.k || '') === k ? ' on' : '') + '" data-ma="dokk" data-v="' + esc(k) + '">' + esc(k || 'Alle') + '</button>'; }).join('') + '</div>';
     },
     card: function (d) {
@@ -40,6 +44,6 @@ templateEngineOverride: false
   M.register('dokumente', {
     title: 'Dokumente', icon: '📁', colls: ['dokumente'], tabs: [tab],
     onChange: function (ev) { if (ev.target && ev.target.id === 'dok_f') { upload(ev.target.files[0]); ev.target.value = ''; } },
-    actions: { dokk: function (it, el) { var f = flt(), v = el.getAttribute('data-v'); if (v) f.k = v; else delete f.k; M.render(true); }, dokup: function () { var i = document.getElementById('dok_f'); if (i) i.click(); } }
+    actions: { dokk: function (it, el) { var f = flt(), v = el.getAttribute('data-v'); if (v) f.k = v; else delete f.k; M.render(true); }, dokup: function () { var i = document.getElementById('dok_f'); M.closeDlg(); if (i) i.click(); }, doklink: function () { M.closeDlg(); M.editItem(tab, null); } }
   });
 })();
