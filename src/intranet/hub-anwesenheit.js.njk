@@ -9,11 +9,9 @@ templateEngineOverride: false
   'use strict';
   var M = window.HubMod; if (!M) return;
   var P = window.WKParse; var esc = M.esc;
-  var GR = ['Wettkampfgruppe', 'Gruppe 1', 'Gruppe 2', 'Gruppe 3', 'Gruppe 4', 'Masters'];
+  var GR = M.GROUPS;
   var MON = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
-  function slug(n) { return String(n || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
-  function fd(i) { return i ? M.fmtDate(i) : ''; }
-  function ym(i) { return String(i || '').slice(0, 7); }
+  var slug = M.slug, fd = M.fd, ym = M.ym;
   function sub() { var s = M.S.sub; if (!s.ag) s.ag = GR[0]; if (!s.am) s.am = ym(M.today()); return s; }
   function shift(m, n) { var p = m.split('-'); var d = new Date(+p[0], +p[1] - 1 + n, 1); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); }
   function lists(g) { return M.items('anwesenheit').filter(function (x) { return x.gruppe === g; }); }
@@ -32,11 +30,11 @@ templateEngineOverride: false
     if (!onlyLists) M.items('trainingTage').forEach(function (t) {
       var gs = Array.isArray(t.gruppen) && t.gruppen.length ? t.gruppen : [t.gruppe || 'Wettkampfgruppe']; if (gs.indexOf(g) < 0) return;
       var k = t.date + '|' + (t.time || ''); var an = t.anw || {}; var taken = Object.keys(an).length > 0; if (!taken && !sess[k]) return;
-      var trn = (t.trainer || []).map(lowr); sess[k] = sess[k] || { date: t.date, time: t.time || '' };
+      sess[k] = sess[k] || { date: t.date, time: t.time || '' };
       M.items('wgMitglieder').forEach(function (m) {
         var mg = Array.isArray(m.gruppen) ? m.gruppen : ['Wettkampfgruppe']; if (mg.indexOf(g) < 0 && !an[m.id]) return;
         if (m.status === 'ausgetreten' && !an[m.id]) return;
-        var sw = (t.schw || []).indexOf(m.id) >= 0; if (!sw && ((m.trainerIn || []).indexOf(g) >= 0 || trn.indexOf(lowr(m.name)) >= 0)) return;
+        if (!M.asSw(m, t, gs)) return;
         var pk = 's:' + lowr(m.name); var o = ppl[pk] || (ppl[pk] = { name: m.name, trainer: false, st: {} });
         if (o.st[k]) return;
         var c = an[m.id]; if (!c && taken && t.date <= M.today()) c = 'f'; if (c) o.st[k] = c;

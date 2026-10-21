@@ -259,10 +259,6 @@ templateEngineOverride: false
   }
 
   // ---------- Anzeige ----------
-  function sysBadges(perms) {
-    var secs = S.catalog && S.catalog.sections ? S.catalog.sections : [{ id: 'weihnachtsmarkt', title: '🎄 Weihnachtsmarkt' }, { id: 'jugend', title: '🏊 Jugend' }];
-    return secs.filter(function (x) { return x.id !== 'hub' && (perms || []).indexOf('hub.' + x.id) >= 0; }).map(function (x) { return '<span class="ha-badge">' + esc(x.title) + '</span>'; }).join('');
-  }
   function when(t) { if (!t) return 'noch nie angemeldet'; var m = Math.round((Date.now() - Number(t)) / 60000); return m < 2 ? 'zuletzt angemeldet gerade eben' : m < 120 ? 'zuletzt angemeldet vor ' + m + ' Min.' : m < 2880 ? 'zuletzt angemeldet vor ' + Math.round(m / 60) + ' Std.' : 'zuletzt angemeldet vor ' + Math.round(m / 1440) + ' Tagen'; }
   function roleIcon(id) { return { admin: '👑', orga: '🧭', helfer: '🙋', gast: '👁️' }[id] || '🛡️'; }
   // Rang einer Rolle = Zahl ihrer Rechte (Administrator immer oben); ein Benutzer steht nach seiner höchsten Rolle

@@ -9,19 +9,16 @@ templateEngineOverride: false
   'use strict';
   var M = window.HubMod; if (!M) return;
   var esc = M.esc;
-  var GR = ['Wettkampfgruppe', 'Gruppe 1', 'Gruppe 2', 'Gruppe 3', 'Gruppe 4', 'Masters'];
+  var GR = M.GROUPS;
   var ROLLEN = ['Schwimmer', 'Trainer', 'Kampfrichter', 'Funktionär'];
-  function lower(s) { return String(s || '').toLowerCase().trim(); }
+  var lower = M.lower, pidOf = M.pidOf, isActive = M.isActive, age = M.age, slug = M.slug;
   function members() { return M.items('wgMitglieder').sort(function (a, b) { return String(a.name || '').localeCompare(String(b.name || ''), 'de'); }); }
   // Ältere Einträge ohne Gruppenfeld gehören zur Wettkampfgruppe
   function rOf(m) { return Array.isArray(m.rollen) && m.rollen.length ? m.rollen : [m.rolle || 'Schwimmer']; }
   function hasR(m, r) { return rOf(m).indexOf(r) >= 0; }
   function gOf(m) { return Array.isArray(m.gruppen) ? m.gruppen : ['Wettkampfgruppe']; }
-  function isActive(m) { return m.status !== 'ausgetreten' && m.status !== 'pausiert' && (!m.austritt || m.austritt >= M.today()); }
-  function age(m) { return m.jg ? new Date().getFullYear() - Number(m.jg) : ''; }
   function trainers() { try { return M.items('trainer'); } catch (e) { return []; } }
   function flt() { var f = M.S.filter || (M.S.filter = {}); return f; }
-  function slug(n) { return lower(n).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
   function swapName(n) { n = String(n || '').trim(); var i = n.indexOf(','); return i > 0 ? (n.slice(i + 1).trim() + ' ' + n.slice(0, i).trim()).trim() : n; }
   function match(name, ms) {
     var n = lower(name); var rev = lower(swapName(name));
@@ -37,10 +34,9 @@ templateEngineOverride: false
   var PERSON_KEYS = ['name', 'jg', 'sex', 'mnr', 'dsv', 'status', 'eintritt', 'austritt', 'rollen', 'gruppen', 'attest', 'kariNr', 'kariBis', 'kariAusw', 'kariSchied', 'amt', 'amtVon', 'amtBis', 'notiz', 'kappe', 'kappeDatum', 'brettArt', 'brettAus', 'brettRueck'];
   var TRAINER_KEYS = ['lizArt', 'lizNr', 'lizDosb', 'lizBis', 'aktiv', 'seit', 'ehBis', 'rettungBis', 'fz', 'ehrenkodex'];
   // Profil (Abrechnung) und Trainerdatensatz teilen diese Angaben
-  var PROFILE_MAP = { lizArt: 'lizArt', lizNr: 'lizNr', lizBis: 'lizBis', ehBis: 'ersteHilfeBis', rettungBis: 'rettungBis', fz: 'fuehrungszeugnis', kariNr: 'kariNr', kariBis: 'kariBis' };
+  var PROFILE_MAP = Object.assign({}, M.PROFILE_MAP, { kariNr: 'kariNr', kariBis: 'kariBis' });
   var PL = { q: '', nr: '', r: '', g: '', st: 'aktiv', sort: 'name', dir: 1, page: 0, open: {}, per: 25 };
   var SORTS = [['name', 'Name A–Z'], ['nr', 'Mitgliedsnummer'], ['schwimmer', 'Schwimmer zuerst'], ['trainer', 'Trainer zuerst'], ['kari', 'Kampfrichter zuerst'], ['funk', 'Funktionäre zuerst']];
-  function pidOf(n) { return 'p-' + lower(n).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 36); }
   function trMap() { var o = {}; trainers().forEach(function (t) { o[lower(t.name)] = t; o[lower(swapName(t.name))] = t; if (t.mnr) o['#' + t.mnr] = t; }); return o; }
   // Verbindung Person ↔ Trainerdatensatz: zuerst über die Mitgliedsnummer, sonst über den Namen
   function trOf(m, tm) { return (m.mnr && tm['#' + m.mnr]) || tm[lower(m.name)] || tm[lower(swapName(m.name))] || null; }
@@ -196,21 +192,10 @@ templateEngineOverride: false
       { n: 'Ausrüstung', h: ['Name', 'Mitgliedsnr.', 'Gruppen', 'Badekappe ausgegeben', 'Brett', 'Brett ausgegeben', 'Brett zurück'], f: function (p) { var m = p.m; return [m.name, m.mnr || '', j(gOf(m)), m.kappe || m.kappeDatum ? (d(m.kappeDatum) || 'ja') : '', m.brettArt || '', d(m.brettAus), d(m.brettRueck)]; }, w: function (p) { var m = p.m; return !!(m.kappe || m.kappeDatum || m.brettArt); } },
       { n: 'Notizen', h: ['Name', 'Mitgliedsnr.', 'Notiz'], f: function (p) { return [p.m.name, p.m.mnr || '', p.m.notiz || '']; }, w: function (p) { return !!p.m.notiz; } }
     ];
-    var go = function () {
-      var wb = XLSX.utils.book_new(); var stand = d(M.today()); var total = 0;
-      S.forEach(function (sh) {
-        var rows = ps.filter(sh.w).map(sh.f); if (!rows.length && sh.n !== 'Übersicht') return;
-        var aoa = [['SG Barnstorf Sharks – ' + sh.n + ' (Stand ' + stand + ')'], [''], sh.h].concat(rows);
-        var ws = XLSX.utils.aoa_to_sheet(aoa);
-        ws['!cols'] = sh.h.map(function (h, i) { var mx = h.length; rows.forEach(function (r) { mx = Math.max(mx, String(r[i] === undefined ? '' : r[i]).length); }); return { wch: Math.min(40, Math.max(12, mx + 2)) }; });
-        ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 2, c: 0 }, e: { r: 2 + rows.length, c: sh.h.length - 1 } }) };
-        ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: Math.max(0, sh.h.length - 1) } }];
-        XLSX.utils.book_append_sheet(wb, ws, sh.n); if (sh.n === 'Übersicht') total = rows.length;
-      });
-      XLSX.writeFile(wb, 'Personen ' + M.today() + '.xlsx'); M.toast('Excel-Datei erstellt (' + total + ' Personen, ' + wb.SheetNames.length + ' Blätter).');
-    };
-    if (window.XLSX) return go(); M.toast('Excel-Datei wird erstellt …');
-    M.loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js').then(go, function () { M.toast('Der Excel-Baustein konnte nicht geladen werden. Bitte Verbindung prüfen.'); });
+    var sheets = [];
+    S.forEach(function (sh) { var rows = ps.filter(sh.w).map(sh.f); if (!rows.length && sh.n !== 'Übersicht') return; sheets.push({ name: sh.n, head: sh.h, rows: rows, w: sh.h.map(function (h, i) { var mx = h.length; rows.forEach(function (r) { mx = Math.max(mx, String(r[i] === undefined ? '' : r[i]).length); }); return Math.min(40, Math.max(12, mx + 3)); }) }); });
+    var fl = []; if (PL.g) fl.push(PL.g); if (PL.r) fl.push(PL.r); if (PL.st && PL.st !== 'alle') fl.push(PL.st); if (PL.q) fl.push('Suche „' + PL.q + '“');
+    M.xlsxList({ file: 'Personenliste ' + M.today() + '.xlsx', title: 'Personenliste', sub: 'Stand ' + d(M.today()) + (fl.length ? ' · Filter: ' + fl.join(', ') : '') + ' · ' + ps.length + ' Personen', sheets: sheets });
   }
   // Listen: Lizenzarten, Ämter, Schwimmbretter
   function listenRender() {

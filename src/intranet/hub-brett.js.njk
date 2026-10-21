@@ -10,7 +10,7 @@ templateEngineOverride: false
   var M = window.HubMod; if (!M) return; var esc = M.esc, HB = window.HubBrett, HR = window.HubRich;
   function can() { return M.anyCan(['startseite.brett']); }
   function canDel() { return M.anyCan(['brett.loeschen']) || can(); }
-  function fd(d) { return d ? M.fmtDate(d) : ''; }
+  var fd = M.fd;
   var EDIT = null, PASS = false;                                   // EDIT: { id } beim Bearbeiten (id leer = neu)
   function rerender() { PASS = true; try { M.render(true); } finally { PASS = false; } if (EDIT) HB.pin(); }
   function live() { return HB.live(M.items('brett')); }

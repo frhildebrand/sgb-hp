@@ -13,14 +13,13 @@ templateEngineOverride: false
   function fmtShort(iso) { return iso ? M.fmtDate(iso, true) : ''; }
   function pre(t) { return t ? '<pre>' + esc(t) + '</pre>' : ''; }
   function printHead(title, sub) { return '<h1>' + esc(title) + '</h1>' + (sub ? '<div class="sub">' + sub + '</div>' : ''); }
-  function lower(s) { return String(s || '').toLowerCase(); }
+  var lower = M.lower;
   function me() { return M.userName(); }
   function isMe(n) { return !!me() && lower(n) === lower(me()); }
   function avatars(list) { return (list || []).slice(0, 3).map(function (n) { return M.avatar(n); }).join('') + ((list || []).length > 3 ? '<span class="wm-sub" style="margin-left:10px">+' + (list.length - 3) + '</span>' : ''); }
   function addMonths(iso, n) { var d = new Date(iso + 'T12:00:00'); d.setMonth(d.getMonth() + n); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function weekEnd() { var d = new Date(M.today() + 'T12:00:00'); var wd = (d.getDay() + 6) % 7; return M.addDays(M.today(), 6 - wd); }
   // Vorlagen: Zeilen "Text | Tage" (Aufgaben) bzw. "Text | Phase | Tage" (Veranstaltungen) <-> Liste
-  var PH = { v: 'vor', t: 'tag', n: 'danach' };
   var PHN = { vor: 'Vorher', tag: 'Am Tag', danach: 'Danach' };
   function parsePunkte(txt, withPhase) {
     return String(txt || '').split('\n').map(function (l) { return l.trim(); }).filter(Boolean).map(function (l) {
@@ -365,7 +364,6 @@ templateEngineOverride: false
 
   /* ================= VORSTAND ================= */
   /* ---------- Antrag: Druck im Briefkopf-Layout und PDF-Import ---------- */
-  function pidOf(name) { return 'p-' + String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 36); }
   // Tabellen im PDF erkennen (Spalten mit grossem Abstand) und als Markdown-Tabelle ausgeben
   function tableize(pages) {
     var blocks = [];
@@ -414,16 +412,6 @@ templateEngineOverride: false
       }
       return '<p>' + esc(b.trim()) + '</p>';
     }).join('');
-  }
-  function antragPrint(it) {
-    var txt = String(it.begruendung || '').trim();
-    if (!/^Sehr geehrte/i.test(txt)) txt = 'Sehr geehrter Vorstand,\n\n' + txt;
-    if (!/(Gruß|Grüße|Gruss)/i.test(txt.slice(-220))) txt += '\n\nMit sportlichem Gruß';
-    var paras = richText(txt);
-    var pr = lower(it.von) === lower(me()) ? M.find('profile', pidOf(me())) : null; var sig = pr && pr.sig;
-    var d = /^\d{4}-\d{2}-\d{2}$/.test(it.datum || '') ? it.datum.split('-').reverse().join('.') : (it.datum || '');
-    var body = '<div class="atitle">' + esc(it.ueberschrift || it.title || '').replace(/\n/g, '<br>') + '</div><div class="atext">' + paras + '</div><div class="asig">' + (sig ? '<img class="sig" src="' + esc(sig) + '" alt="">' : '<div style="height:44px"></div>') + '<div>' + esc(it.von || '') + '</div><div>Barnstorf' + (d ? ', ' + d : '') + '</div></div>';
-    return { title: it.title, body: body, opts: { t2: it.title || 'Antrag', t3: it.untertitel || '', css: '.atitle{font-size:18px;font-weight:700;text-align:center;margin:8px 0 18px;line-height:1.35}.atext p{margin:0 0 10px;white-space:pre-line;font-size:12.5px;line-height:1.55}.atab{width:auto;min-width:60%;margin:2px 0 12px 24px}.atab th,.atab td{font-size:12.5px;padding:4px 10px}.atab td:not(:first-child),.atab th:not(:first-child){text-align:right;white-space:nowrap}.asig{margin-top:6px;font-size:12.5px}.asig img.sig{height:52px}' } };
   }
   function parseAntragPdf(lines) {
     var L = lines.map(function (l) { return String(l).charAt(0) === '|' ? String(l) : String(l).replace(/\s{2,}/g, ' ').trim(); }).filter(Boolean);
@@ -537,9 +525,6 @@ templateEngineOverride: false
         printItem: function (it) { return { title: it.title, body: printHead(it.title, esc([fmtShort(it.date), it.ort].filter(Boolean).join(' · '))) + (it.teilnehmer ? '<p>Teilnehmer: ' + esc(it.teilnehmer) + '</p>' : '') + '<pre>' + esc(it.text || '') + '</pre>' }; } }
     ]
   });
-  function uform(it) {
-    M.openForm({ title: it ? 'Umlaufbeschluss bearbeiten' : 'Neuer Umlaufbeschluss', fields: [{ k: 'title', t: 'text', label: 'Worüber wird abgestimmt?', req: true }, { k: 'text', t: 'area', label: 'Text', rows: 6 }, { k: 'bis', t: 'date', label: 'Abstimmen bis' }], item: it || { bis: M.addDays(M.today(), 7) }, onSave: function (v) { var n = Object.assign({}, it || { id: M.uid(), stimmen: {} }, v); M.op({ op: 'set', coll: 'vorstandUmlauf', item: n }); } });
-  }
 
   M.mod('vorstand').actions = { apdf: function () { apOpen(); }, apread: function () { apRead(); }, apsave: function () { apSave(); } };
   /* ================= MATERIAL ================= */

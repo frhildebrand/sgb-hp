@@ -62,7 +62,6 @@ templateEngineOverride: false
   function tshow(t) { var m = /^(\d+):(\d{2}),(\d{2})$/.exec(t || ''); if (!m) return t || ''; return (+m[1] ? (+m[1]) + ':' : '') + (+m[1] ? m[2] : String(+m[2])) + ',' + m[3]; }
   function dshow(ms) { var a = Math.abs(ms), sec = Math.floor(a / 1000), h = Math.round((a % 1000) / 10); if (h === 100) { sec++; h = 0; } return (ms < 0 ? '-' : '+') + ('0' + Math.floor(sec / 60)).slice(-2) + ':' + ('0' + (sec % 60)).slice(-2) + ',' + ('0' + h).slice(-2); }
   function cancelled(wk) { return /abgesagt/i.test(wk.title || ''); }
-  var SC = null;
   function starts(j) {
     var by = {}; var ev = {};
     M.items('wettkaempfe').forEach(function (wk) {
@@ -154,7 +153,6 @@ templateEngineOverride: false
     return parts;
   }
   function report(j, l) { return reportParts(j, l).map(function (x) { return x.html; }).join(''); }
-  function bahnSel(s) { return '<div class="m-chips">' + [['best', 'Beste Wertung'], ['Lang', 'Langbahn'], ['Kurz', 'Kurzbahn']].map(function (x) { return '<button type="button" class="m-chip' + (s.sb === x[0] ? ' on' : '') + '" data-ma="ausb" data-v="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>'; }
   function yearSel(j) { var ys = years(); if (!ys.length) return ''; return '<div class="m-chips">' + ys.map(function (y) { return '<button type="button" class="m-chip' + (y === j ? ' on' : '') + '" data-ma="ausj" data-v="' + y + '">' + y + '</button>'; }).join('') + '</div>'; }
   function leer() { return '<section class="wm-card"><p class="wm-note">Es gibt noch keine Punkte. Im Reiter „Hochladen“ zuerst die World-Aquatics-Basiszeiten einlesen. Dann rechnet das Intranet die Punkte aus den eingelesenen Wettkampfergebnissen selbst aus. Alternativ kannst du die WebClub-Liste „Punktbeste Leistung nach World Aquatics“ hochladen.</p></section>'; }
   function waInfo() {
@@ -352,10 +350,6 @@ templateEngineOverride: false
   function sheetHtml(o, j) {
     return '<div class="xl-sheet">' + sheetTable(o, j) + '<div class="xs"><span>Summe der punktbesten Leistungen aller Strecken:</span><b>' + o.ges + '</b></div><div class="xs xs2"><span>Anzahl der gewerteten Strecken:</span><i>' + o.n + '</i></div><div class="xs"><span><b>Durchschnittlich erreichte Punktzahl pro Strecke:</b></span><b>' + o.avg + '</b></div></div>';
   }
-  function pickList(l, sel, q) {
-    var ql = String(q || '').toLowerCase();
-    return '<div class="aus-pick"><input type="search" class="aus-q" id="au_q" placeholder="🔎 Schwimmer suchen …" value="' + esc(q || '') + '" autocomplete="off"><div class="aus-chips">' + l.filter(function (x) { return !ql || x.name.toLowerCase().indexOf(ql) >= 0; }).map(function (x) { return '<button type="button" class="aus-chip' + (x.name === sel ? ' on' : '') + '" data-ma="ausp" data-n="' + esc(x.name) + '">' + esc(x.name) + '</button>'; }).join('') + '</div></div>';
-  }
   function namesHtml(al, sel, q) {
     var ql = String(q || '').toLowerCase();
     return al.filter(function (x) { return !ql || x.name.toLowerCase().indexOf(ql) >= 0; }).map(function (x) { return '<button type="button" class="aus-n' + (x.name === sel ? ' on' : '') + '" data-ma="ausp" data-n="' + esc(x.name) + '">' + esc(x.name) + '</button>'; }).join('');
@@ -453,7 +447,6 @@ templateEngineOverride: false
     var right = '<div><h2 class="aus-h">Jubiläum ' + esc(j) + '</h2>' + jt + '</div>';
     return '<div class="xl-row">' + left + mid + right + '</div>' + (src ? '' : '<p class="wm-note no-print">Diese Zahlen kommen aus dem Bereich Mitglieder. Genauer wird es mit den WebClub-Dateien unter „Hochladen“.</p>');
   }
-  function mitglieder() { var j = year(); return '<section class="wm-card">' + head('Mitglieder ' + esc(j), '') + yearSel(j) + '<div class="xl">' + mitHtml(j) + '</div></section>'; }
 
   // ---------- WebClub-Dateien einlesen (Auswertungen, Listen, Statistiken, Mitglieder) ----------
   function wcDec(f) {

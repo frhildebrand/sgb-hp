@@ -13,8 +13,7 @@ templateEngineOverride: false
   var imp = null;        // laufender Import { parsed, fileName, club }
   function club() { return M.lsGet(CLUB_KEY, 'SG Barnstorf') || 'SG Barnstorf'; }
   function sub() { var s = M.S.sub; if (!s.v) s.v = 'uebersicht'; return s; }
-  function fd(iso) { return iso ? M.fmtDate(iso) : ''; }
-  function fs(iso) { return iso ? M.fmtDate(iso, true) : ''; }
+  var fd = M.fd, fs = M.fs;
   function ev(wk, no) { var l = wk.events || []; for (var i = 0; i < l.length; i++) if (l[i].no === no) return l[i]; return { no: no, name: 'Wettkampf ' + no }; }
   function key(s) { return s.e + '-' + s.l + '-' + s.b; }
   function swimmerKey(s) { return s.n + '|' + s.j; }
@@ -613,7 +612,6 @@ templateEngineOverride: false
   }
 
   /* ---------- Drucken ---------- */
-  var PCSS = '';
   function printMenu(wk) {
     M.openDlg('<div class="hub-dhead"><h3>Drucken</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div><div class="m-btns" style="flex-direction:column;align-items:stretch">' +
       '<button type="button" class="wm-btn" data-ma="pr" data-w="slips">🧾 Laufzettel nach Wettkampffolge (quer)</button>' +
