@@ -192,7 +192,7 @@ templateEngineOverride: false
       out += '<article class="m-card' + (c.dim ? ' dim' : '') + '" data-id="' + esc(it.id) + '"><div class="m-head" data-ma="toggle"><div class="m-main"><div class="m-title">' + esc(c.title) + (c.badges || '') + '</div>' + (c.sub ? '<div class="wm-sub">' + c.sub + '</div>' : '') + '</div>' + (c.row ? '<span class="m-rowbtns">' + c.row + '</span>' : '') + '<span class="m-chev">' + (open ? '▾' : '▸') + '</span></div>' +
         (open ? '<div class="m-body">' + (c.body || '') + '<div class="m-btns">' +
           (t.manual && canEdit ? '<button type="button" class="wm-btn" data-ma="up"' + (i === 0 || S.q ? ' disabled' : '') + '>⬆️</button><button type="button" class="wm-btn" data-ma="down"' + (i === list.length - 1 || S.q ? ' disabled' : '') + '>⬇️</button>' : '') +
-          (canPrint && t.printItem ? '<button type="button" class="wm-btn" data-ma="print">🖨️ Drucken</button>' : '') +
+          (canPrint && (t.printItem || t.xlsxItem) ? '<button type="button" class="wm-btn" data-ma="' + (t.xlsxItem ? 'xlsxitem' : 'print') + '">' + (t.xlsxItem ? '📊 Excel' : '🖨️ Drucken') + '</button>' : '') +
           (c.buttons || '') +
           (canEdit ? '<button type="button" class="wm-btn" data-ma="edit">✏️ Bearbeiten</button>' : '') + (canDel ? '<button type="button" class="wm-btn m-danger" data-ma="del">🗑️ Löschen</button>' : '') + '</div></div>' : '') + '</article>';
     });
@@ -244,8 +244,15 @@ templateEngineOverride: false
     var body;
     if (tabbed) {
       var panes = [], cur = null;
-      fields.forEach(function (f) { if (f.t === 'sec') { cur = { f: f, h: '' }; panes.push(cur); } else { if (!cur) { cur = { f: { label: 'Allgemein' }, h: '' }; panes.push(cur); } cur.h += fieldHtml(f, item[f.k]); } });
-      if (o.acc) body = '<div class="m-fgrid">' + panes[0].h + '</div>' + panes.slice(1).map(function (pn, i) { return '<details class="m-acc"' + (pn.f.role ? ' data-role="' + esc(pn.f.role) + '"' : '') + '><summary>' + esc(pn.f.label) + '</summary><div class="m-fgrid">' + pn.h + '</div></details>'; }).join('');
+      var rolH = ''; fields.forEach(function (f) { if (f.t === 'sec') { cur = { f: f, h: '' }; panes.push(cur); } else if (o.acc && f.k === 'rollen') { rolH = fieldHtml(f, item[f.k]); } else { if (!cur) { cur = { f: { label: 'Allgemein' }, h: '' }; panes.push(cur); } cur.h += fieldHtml(f, item[f.k]); } });
+      if (o.acc) {
+        var IC = { 'Stammdaten': '🪪', 'Schwimmer': '🏊', 'Trainer': '🎓', 'Kampfrichter': '⚖️', 'Funktionär': '🏛', 'Ausrüstung': '🎒', 'Notiz': '📝' }, AC = { 'Schwimmer': 's', 'Trainer': 'tr', 'Kampfrichter': 'k', 'Funktionär': 'v' };
+        var nm = String(item.name || '').trim(), ini = nm ? nm.split(/\s+/).map(function (x) { return x.charAt(0); }).join('').slice(0, 2).toUpperCase() : '＋';
+        body = '<div class="m-phead"><span class="m-pav" id="m_pav">' + esc(ini) + '</span><div class="m-pnm"><b id="m_pname">' + esc(nm || 'Neue Person') + '</b><div class="m-prol" id="m_prol"></div></div></div>' +
+          '<section class="m-acard m-acard-main"><h4><span>' + IC.Stammdaten + '</span>Stammdaten</h4><div class="m-fgrid">' + panes[0].h + '</div></section>' +
+          '<details class="m-acc m-rolecard"><summary><span class="m-ai">🧩</span><span class="m-at">Rollen<small id="m_rsum"></small></span></summary><div class="m-rolebody">' + rolH + '</div></details>' +
+          panes.slice(1).map(function (pn) { return '<details class="m-acc m-ar-' + (AC[pn.f.label] || 'x') + '"' + (pn.f.role ? ' data-role="' + esc(pn.f.role) + '"' : '') + '><summary><span class="m-ai">' + (IC[pn.f.label] || '▫️') + '</span><span class="m-at">' + esc(pn.f.label) + '</span></summary><div class="m-fgrid">' + pn.h + '</div></details>'; }).join('');
+      }
       else body = '<div class="m-tabs" role="tablist">' + panes.map(function (pn, i) { return '<button type="button" class="m-tab' + (i === 0 ? ' on' : '') + '" data-tab="' + i + '"' + (pn.f.role ? ' data-role="' + esc(pn.f.role) + '"' : '') + '>' + esc(pn.f.label) + '</button>'; }).join('') + '</div>' +
         '<div class="m-panes">' + panes.map(function (pn, i) { return '<div class="m-pane' + (i === 0 ? ' on' : '') + '" data-pane="' + i + '"><div class="m-fgrid">' + pn.h + '</div></div>'; }).join('') + '</div>';
     } else body = '<div class="m-fgrid">' + fields.map(function (f) { return fieldHtml(f, item[f.k]); }).join('') + '</div>';
@@ -256,7 +263,18 @@ templateEngineOverride: false
     var form = document.querySelector('#mDlg form');
     form._o = o;
     if (tabbed) {
-      var dlg = document.querySelector('#mDlg .m-dlg'); if (dlg && !o.acc) dlg.className += ' m-dlgtab';
+      var dlg = document.querySelector('#mDlg .m-dlg'); if (dlg && !o.acc) dlg.className += ' m-dlgtab'; if (dlg && o.acc) dlg.className += ' m-dlgwide';
+      if (o.acc) {
+        var RC = { 'Schwimmer': 'pl-s', 'Trainer': 'pl-tr', 'Kampfrichter': 'pl-k', 'Funktionär': 'pl-v' };
+        var upd = function () {
+          var rs = [].slice.call(form.querySelectorAll('input[data-pick="rollen"]:checked')).map(function (x) { return x.value; });
+          var chips = rs.length ? rs.map(function (r) { return '<span class="pl-c ' + (RC[r] || 'pl-g') + '">' + esc(r) + '</span>'; }).join('') : '<span class="wm-sub">noch keine Rolle</span>';
+          var el1 = document.getElementById('m_prol'), el2 = document.getElementById('m_rsum'); if (el1) el1.innerHTML = chips; if (el2) el2.innerHTML = rs.length ? rs.join(' · ') : 'noch keine gewählt';
+          var n = form.querySelector('#mf_name'), v = n ? n.value.trim() : '', pn = document.getElementById('m_pname'), pv = document.getElementById('m_pav');
+          if (pn) pn.textContent = v || 'Neue Person'; if (pv) pv.textContent = v ? v.split(/\s+/).map(function (x) { return x.charAt(0); }).join('').slice(0, 2).toUpperCase() : '＋';
+        };
+        form.addEventListener('change', upd); form.addEventListener('input', function (e) { if (e.target && e.target.id === 'mf_name') upd(); }); upd();
+      }
       var roles = function () { return [].slice.call(form.querySelectorAll('input[data-pick="rollen"]:checked')).map(function (x) { return x.value; }); };
       var sync = function () { var rs = roles(); [].forEach.call(form.querySelectorAll('.m-acc[data-role]'), function (d) { d.style.display = rs.indexOf(d.getAttribute('data-role')) >= 0 ? '' : 'none'; }); [].forEach.call(form.querySelectorAll('.m-tab[data-role]'), function (b) { var on = rs.indexOf(b.getAttribute('data-role')) >= 0; b.style.display = on ? '' : 'none'; if (!on && b.classList.contains('on')) show(0); }); };
       var show = function (i) { [].forEach.call(form.querySelectorAll('.m-tab'), function (b) { b.classList.toggle('on', b.getAttribute('data-tab') === String(i)); }); [].forEach.call(form.querySelectorAll('.m-pane'), function (pn) { pn.classList.toggle('on', pn.getAttribute('data-pane') === String(i)); }); var pn = form.querySelector('.m-panes'); if (pn) pn.scrollTop = 0; };
@@ -440,6 +458,7 @@ templateEngineOverride: false
     if (t && a === 'edit') { editItem(t, find(t.coll, c.id)); return; }
     if (t && a === 'del') { var it = find(t.coll, c.id); confirmBox('„' + ((it && (it.title || it.name)) || 'Eintrag') + '“ wirklich löschen?', 'Löschen', function () { op({ op: 'del', coll: t.coll, id: c.id }); }); return; }
     if (t && (a === 'up' || a === 'down')) { move(t, c.id, a === 'up' ? -1 : 1); return; }
+    if (t && a === 'xlsxitem') { var xit = find(t.coll, c.id); if (xit && t.xlsxItem) t.xlsxItem(xit, api); return; }
     if (t && a === 'print') { var pit = find(t.coll, c.id); if (pit && t.printItem) { var pd = t.printItem(pit, api); printDoc(pd.title, pd.body, pd.opts); } return; }
     if (t && a === 'printall' && t.xlsxAll) { t.xlsxAll(items(t.coll), api); return; }
     if (t && a === 'printall') { var pa = t.printAll(items(t.coll), api); printDoc(pa.title, pa.body, pa.opts); return; }
@@ -501,6 +520,11 @@ templateEngineOverride: false
     '#hubRoot .m-chk{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(148,163,184,.18)}#hubRoot .m-chk:last-child{border-bottom:0}#hubRoot .m-box{flex:0 0 auto;width:26px;height:26px;border-radius:8px;border:2px solid #94a3b8;background:transparent;color:#fff;font-weight:900;font-size:16px;line-height:22px;padding:0;cursor:pointer}#hubRoot .m-box.on{background:#10b981;border-color:#10b981}' +
     '#hubRoot .m-acc{border:1px solid #cbd5e1;border-radius:12px;margin:12px 0 0;overflow:hidden}#hubRoot .m-acc>summary{cursor:pointer;list-style:none;padding:14px 16px;font-weight:800;font-size:15px;display:flex;justify-content:space-between;align-items:center;min-height:44px}#hubRoot .m-acc>summary::-webkit-details-marker{display:none}#hubRoot .m-acc>summary::after{content:\'⌄\';font-size:18px}#hubRoot .m-acc[open]>summary::after{content:\'⌃\'}#hubRoot .m-acc[open]>summary{border-bottom:1px solid #cbd5e1;background:rgba(100,116,139,.08)}#hubRoot .m-acc>.m-fgrid{padding:12px 14px}' +
     '#hubRoot .m-accform .ha-actions{position:sticky;bottom:0;background:#fff;padding:12px 0 4px;margin-top:12px;border-top:1px solid #e2e8f0}.dark #hubRoot .m-accform .ha-actions{background:#131d30;border-color:#1f2a3d}' +
+    '#hubRoot .m-dlg.m-dlgwide{max-width:68rem;width:calc(100vw - 24px)}#hubRoot .m-accform .m-fgrid{grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:14px 16px}#hubRoot .m-accform .m-f.wide{grid-column:1/-1}' +
+    '#hubRoot .m-phead{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:16px;background:linear-gradient(135deg,#0f2a4a,#1e4f82);color:#fff;margin:4px 0 14px}#hubRoot .m-pav{width:56px;height:56px;border-radius:50%;background:#f5b335;color:#10243f;font-weight:900;font-size:22px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}#hubRoot .m-pnm b{font-size:20px;display:block}#hubRoot .m-prol{margin-top:4px}#hubRoot .m-prol .pl-c{font-size:12.5px}' +
+    '#hubRoot .m-acard{border:1px solid #cbd5e1;border-radius:14px;padding:4px 16px 8px;margin:0 0 12px;background:rgba(100,116,139,.04)}#hubRoot .m-acard>h4{margin:12px 0 0;font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px}' +
+    '#hubRoot .m-accform .m-acc{border-radius:14px;margin:0 0 12px;border-left:5px solid #94a3b8}#hubRoot .m-accform .m-acc>summary{padding:16px 18px;font-size:16px;justify-content:flex-start;gap:12px}#hubRoot .m-accform .m-acc>summary::after{margin-left:auto}#hubRoot .m-ai{font-size:22px;line-height:1}#hubRoot .m-at{display:flex;flex-direction:column;font-weight:800}#hubRoot .m-at small{font-weight:600;opacity:.7;font-size:12.5px;margin-top:2px}' +
+    '#hubRoot .m-ar-s{border-left-color:#3b82f6!important}#hubRoot .m-ar-tr{border-left-color:#f59e0b!important}#hubRoot .m-ar-k{border-left-color:#10b981!important}#hubRoot .m-ar-v{border-left-color:#8b5cf6!important}#hubRoot .m-rolecard{border-left-color:#f5b335!important}#hubRoot .m-rolebody{padding:14px 16px}#hubRoot .m-rolebody .m-pk{padding:14px 20px;font-size:15px;border-radius:14px}#hubRoot .m-accform .m-acc>.m-fgrid{padding:14px 18px 18px}' +
     '#hubRoot .m-chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}#hubRoot .m-chip{padding:8px 14px;border-radius:999px;border:1px solid #cbd5e1;background:transparent;color:inherit;font:700 13px -apple-system,system-ui,sans-serif;cursor:pointer}#hubRoot .m-chip.on{background:#f59e0b;border-color:#f59e0b;color:#0f172a}' +
     '#hubRoot .m-over{color:#dc2626;font-weight:800}#hubRoot .m-ok{color:#059669;font-weight:800}#hubRoot .m-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}#hubRoot .m-table{width:100%;border-collapse:collapse;font-size:13px}#hubRoot .m-table th,#hubRoot .m-table td{padding:6px 8px;border-bottom:1px solid rgba(148,163,184,.25);text-align:left;vertical-align:middle}#hubRoot .m-table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#64748b}' +
     '#hubRoot .m-time{width:7.5em;font:700 16px ui-monospace,Menlo,monospace;padding:8px;border-radius:10px;border:1px solid rgba(148,163,184,.5);background:#fff;color:#0f172a;box-sizing:border-box}#hubRoot .m-time.bad{border-color:#ef4444}#hubRoot .m-split{width:100%;min-width:9em;font:600 14px ui-monospace,Menlo,monospace;padding:8px;border-radius:10px;border:1px solid rgba(148,163,184,.5);background:#fff;color:#0f172a;box-sizing:border-box}' +

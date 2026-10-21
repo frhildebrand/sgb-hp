@@ -318,6 +318,7 @@ templateEngineOverride: false
     if (BK.loading) return; BK.loading = true; BK.error = ''; render();
     get('backups').then(function (r) { BK.loading = false; if (!r) BK.error = 'Keine Verbindung.'; else if (r.code === 'perm') BK.error = 'Dafür fehlt dir die Berechtigung.'; else if (r.code === 'auth') BK.error = 'Bitte neu anmelden.'; else { BK.list = r.backups || []; BK.triggers = r.triggers || {}; BK.mail = r.mail || { to: '', aus: false }; } render(); });
   }
+  function bkAge(ts) { if (!ts) return '<p class="wm-note"><b style="color:#dc2626">⚠️ Es gibt noch keine Sicherung.</b></p>'; var h = Math.round((Date.now() - ts) / 3600000); var old = h > 36; return '<p class="wm-note">' + (old ? '<b style="color:#dc2626">⚠️ Letzte Sicherung vor ' + (h >= 48 ? Math.round(h / 24) + ' Tagen' : h + ' Stunden') + '. Läuft die tägliche Sicherung? Prüfe die Zeitpläne.</b>' : '✅ Letzte Sicherung vor ' + (h < 1 ? 'weniger als einer Stunde' : h + ' Stunden') + '.') + '</p>'; }
   function backupsHtml() {
     if (BK.error) return '<div class="wm-card"><p class="wm-note">' + esc(BK.error) + '</p></div>';
     if (!BK.list) return '<div class="wm-card"><p class="wm-note">Lade …</p></div>';
@@ -334,8 +335,9 @@ templateEngineOverride: false
     var d = ST.d; if (!d) return '<div class="wm-card"><p class="wm-note">' + (ST.loading ? 'Lade …' : 'Noch nicht geladen.') + '</p></div>';
     var last = d.backups && d.backups.last ? fmtDT(d.backups.last.ts) + ' (' + esc(d.backups.last.kind || '') + ')' : 'noch keine';
     var rows = [['Script-Version', d.version], ['Benutzer', d.users], ['Aktive Anmeldungen', d.sessions], ['Protokoll-Einträge', d.logRows], ['Sicherungen', (d.backups ? d.backups.count : 0) + ' · letzte: ' + last], ['Stand', fmtDT(d.now)]];
-    var parts = (d.parts || []).slice().sort(function (a, b) { return b.chars - a.chars; }).map(function (x) { return '<div class="vw-row"><span>' + esc(x.name) + '</span><b>' + Math.round(x.chars / 1000) + ' KB</b></div>'; }).join('');
-    return '<div class="wm-card"><div class="wm-bar"><h3>🩺 Systemstatus</h3><button type="button" class="wm-btn" data-act="stload">↻ Aktualisieren</button></div>' + rows.map(function (r) { return '<div class="vw-row"><span>' + esc(r[0]) + '</span><b>' + esc(String(r[1])) + '</b></div>'; }).join('') + bar('Google-Sheet-Zellen', d.cells, d.cellLimit, d.cells.toLocaleString('de-DE') + ' von ' + d.cellLimit.toLocaleString('de-DE')) + '</div>' + (parts ? '<div class="wm-card"><h3>Datenmenge je Bereich</h3>' + parts + '</div>' : '');
+    var mx = Math.max.apply(null, [1].concat((d.parts || []).map(function (x) { return x.chars; })));
+    var parts = (d.parts || []).slice().sort(function (a, b) { return b.chars - a.chars; }).map(function (x) { return '<div class="vw-row" style="display:block"><div style="display:flex;justify-content:space-between"><span>' + esc(x.name) + '</span><b>' + Math.round(x.chars / 1000) + ' KB</b></div><div style="height:6px;border-radius:4px;background:rgba(148,163,184,.25);margin-top:4px;overflow:hidden"><div style="height:100%;width:' + Math.max(2, Math.round(x.chars / mx * 100)) + '%;background:#3b82f6"></div></div></div>'; }).join('');
+    return '<div class="wm-card"><div class="wm-bar"><h3>🩺 Systemstatus</h3><button type="button" class="wm-btn" data-act="stload">↻ Aktualisieren</button></div>' + bkAge(d.backups && d.backups.last ? d.backups.last.ts : 0) + rows.map(function (r) { return '<div class="vw-row"><span>' + esc(r[0]) + '</span><b>' + esc(String(r[1])) + '</b></div>'; }).join('') + bar('Google-Sheet-Zellen', d.cells, d.cellLimit, d.cells.toLocaleString('de-DE') + ' von ' + d.cellLimit.toLocaleString('de-DE')) + '</div>' + (parts ? '<div class="wm-card"><h3>Datenmenge je Bereich</h3>' + parts + '</div>' : '');
   }
   function logHtml() {
     var sel = '<select data-lg="area"><option value="">Alle Bereiche</option>' + L.areas.map(function (a) { return '<option' + (a === L.area ? ' selected' : '') + ' value="' + esc(a) + '">' + esc(a) + '</option>'; }).join('') + '</select>';
@@ -439,7 +441,7 @@ templateEngineOverride: false
     ev.preventDefault();
     var d = S.dialog; if (!d || !d.submit) return;
     var v = readDialog(); var res = d.submit(v);
-    if (typeof res === 'string') { d.error = res; var keep = {}; d.fields.forEach(function (f) { if (v[f.key] !== undefined) f.value = v[f.key]; }); render(); return; }
+    if (typeof res === 'string') { d.error = res; d.fields.forEach(function (f) { if (v[f.key] !== undefined) f.value = v[f.key]; }); render(); return; }
     S.dialog = null; render();
   });
   load();

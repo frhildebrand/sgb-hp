@@ -37,7 +37,7 @@ templateEngineOverride: false
   function aPreis(x) { return x.preis !== undefined && x.preis !== '' ? M.num(x.preis) : catOf(x.abz).p; }
   function aYear() { var s = M.S.sub; if (!s.ay) s.ay = String(new Date().getFullYear()); return s.ay; }
   function aView() { var s = M.S.sub; if (!s.av) s.av = 'offen'; return s.av; }
-  var AVIEWS = [['offen', 'Abnahme'], ['uebersicht', 'Übersicht'], ['preise', 'Preise & Bestand']];
+  var AVIEWS = [['offen', 'Abnahme'], ['uebersicht', 'Übersicht'], ['preise', 'Preise & Anforderungen']];
   function abzEdit() { return M.anyCan(['jugend.abzeichen.edit']); }
   function abzCard(x) {
     var c = catOf(x.abz); var teil = x.teil || {}; var st = aStatus(x); var n = c.req.filter(function (r, i) { return teil[i]; }).length;
@@ -119,7 +119,7 @@ templateEngineOverride: false
   }
   function preiseView() {
     var d = abzDoc(); var b = d.bestand || {};
-    var out = '<section class="wm-card"><div class="wm-bar"><h3>Preise, Anforderungen & Bestand</h3><span class="m-actions">' + (abzEdit() ? '<button type="button" class="wm-btn" data-ma="abzplus">+ Abzeichen-Art</button>' : '') + '</span></div><p class="wm-note">Der Preis wird beim Start eines Abzeichens vorgeschlagen und bleibt pro Eintrag gespeichert. Der Bestand wird beim Bezahlen automatisch abgezogen. Bestand und Mindestmenge pflegst du unter Material → Abzeichen.</p><p><a class="wm-btn" href="/intranet/material/">Bestand verwalten (Material) →</a></p>';
+    var out = '<section class="wm-card"><div class="wm-bar"><h3>Preise &amp; Anforderungen</h3><span class="m-actions">' + (abzEdit() ? '<button type="button" class="wm-btn" data-ma="abzplus">+ Abzeichen-Art</button>' : '') + '</span></div><p class="wm-note">Der Preis wird beim Start eines Abzeichens vorgeschlagen und bleibt pro Eintrag gespeichert. Der Bestand wird beim Bezahlen automatisch abgezogen. Bestand und Mindestmenge pflegst du unter Material → Abzeichen.</p><p><a class="wm-btn" href="/intranet/material/">Bestand verwalten (Material) →</a></p>';
     out += catalog().map(function (c) { var bs = b[c.n]; var mn = (d.minPro && d.minPro[c.n] !== undefined && d.minPro[c.n] !== '') ? d.minPro[c.n] : d.minBestand; var low = bs !== undefined && bs !== '' && mn !== undefined && mn !== '' && M.num(bs) <= M.num(mn); return '<article class="m-card" data-abz="' + esc(c.n) + '"><div class="m-head"><div class="m-main"><div class="m-title">' + esc(c.n) + ' · ' + M.euro(c.p) + (low ? M.badge('bestellen', 'red') : '') + '</div><div class="wm-sub">Bestand: ' + (bs === undefined || bs === '' ? '–' : esc(bs)) + ' · ' + c.req.length + ' Anforderungen</div></div>' + (abzEdit() ? '<button type="button" class="wm-btn" data-ma="abzpreis">✏️</button>' : '') + '</div></article>'; }).join('');
     return out + '</section>';
   }

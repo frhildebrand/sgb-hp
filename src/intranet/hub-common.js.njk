@@ -419,12 +419,12 @@ window.HubShell = (function () {
   // ---------- Hilfe: zeigt nur Bereiche und Funktionen, die für das Konto freigegeben sind ----------
   // Je Bereich: Systemname (wie im Menü), Text und Hinweise. Ein Hinweis erscheint nur, wenn mindestens eines seiner Rechte da ist (null = immer).
   var HELP = [
-    { id: 'mitglieder', icon: '👥', title: 'Mitglieder', text: 'Alle Vereinsmitglieder mit ihren Gruppen. Unter „Gruppen“ siehst du, wer in welcher Gruppe ist.', steps: [
-      [['mitglieder.anlegen'], 'Mit „+“ legst du ein Mitglied an und wählst die Gruppen.'],
-      [['mitglieder.edit'], 'Mit dem Stift änderst du Angaben, Rolle und Gruppen eines Mitglieds.'],
-      [['mitglieder.import'], 'Im Reiter „WebClub-Import“ liest du die Gruppenliste (PDF) einer Gruppe ein. Du siehst vorher, wer neu ist, wer sich geändert hat und wer nicht mehr in der Liste steht.']] },
-    { id: 'trainer', icon: '🎓', title: 'Trainer', text: 'Lizenzen, Erste Hilfe, Rettungsnachweis und Kampfrichter der Trainer. Die Ampel zeigt, was bald abläuft.', steps: [
-      [['trainer.edit', 'trainer.eigene'], 'Mit dem Stift trägst du Gültigkeitsdaten ein.']] },
+    { id: 'mitglieder', icon: '👥', title: 'Mitglieder', text: 'Alle Personen des Vereins mit ihren Rollen (Schwimmer, Trainer, Kampfrichter, Funktionär). Die Liste ist wie eine Tabelle aufgebaut: Mit dem Pfeil klappst du die Details einer Person auf.', steps: [
+      [['mitglieder.anlegen'], 'Mit „+ Person“ legst du eine Person an. Oben stehen immer die Stammdaten mit den Rollen. Darunter klappst du die Abschnitte der gewählten Rollen auf (Schwimmer, Trainer, Kampfrichter, Funktionär), dazu Ausrüstung und Notiz.'],
+      [['mitglieder.edit'], 'Mit dem Stift änderst du die Angaben. Die Mitgliedsnummer verbindet die Person mit ihren Trainerdaten.'],
+      [['mitglieder.view'], 'Gesponserte Vereinsbadekappe (Ausgabedatum) und Schwimmbrett (Art, Ausgabe, Rückgabe) trägst du unter „Ausrüstung“ ein. Das Material zeigt daraus, wer ein Brett hat.'],
+      [['mitglieder.import'], 'Im Reiter „WebClub-Import“ liest du die Gruppenliste (PDF) oder die WebClub-Datei ein. Du siehst vorher, wer neu ist, wer sich geändert hat und wer nicht mehr in der Liste steht. Bankdaten und Adressen werden nicht übernommen.'],
+      [['mitglieder.view'], '„📊 Excel“ erzeugt die Liste in mehreren Blättern.']] },
     { id: 'anwesenheit', icon: '📋', title: 'Anwesenheit', text: 'Anwesenheitslisten aus WebClub je Gruppe. Die Übersicht zeigt pro Monat, wer da war, und welche Gruppe schon eine Liste hat.', steps: [
       [['anwesenheit.upload'], 'Im Reiter „Hochladen“ wählst du die Gruppe und die PDF-Datei. Die Liste wird gelesen, die PDF zusätzlich im Drive abgelegt.']] },
     { id: 'auswertung', icon: '📈', title: 'Jahresauswertung', text: 'Rangliste, Einzelblätter und Ehrungen aus der Punkteliste (World Aquatics). Gewertet wird je Strecke die punktbeste Leistung aus Lang- und Kurzbahn.', steps: [
@@ -432,9 +432,11 @@ window.HubShell = (function () {
       [['auswertung.print'], 'Mit „Drucken“ entsteht die Auswertung oder das Einzelblatt als PDF.']] },
     { id: 'dokumente', icon: '📁', title: 'Dokumente', text: 'Vereinsunterlagen an einem Ort, als Link oder als Datei im Drive.', steps: [
       [['dokumente.edit'], 'Mit „+“ trägst du einen Link ein, mit „Datei hochladen“ legst du eine Datei im Drive ab.']] },
-    { id: 'aufgaben', icon: '✅', title: 'Aufgaben', text: 'Wer macht was bis wann. Du siehst deine eigenen und die gemeinsamen Aufgaben mit Frist und Status.', steps: [
-      [['aufgaben.anlegen'], 'Mit „+“ legst du eine neue Aufgabe an: Titel, Frist, wer sie übernimmt.'],
-      [['aufgaben.edit', 'aufgaben.own'], 'Aufgaben hakst du ab, wenn sie erledigt sind. Mit dem Stift änderst du Text, Frist und Zuständige.'],
+    { id: 'aufgaben', icon: '✅', title: 'Aufgaben', text: 'Wer macht was bis wann. Auf der Startseite wechselst du zwischen „Meine“ und „Alle“ Aufgaben.', steps: [
+      [['aufgaben.anlegen'], 'Mit „+“ legst du eine neue Aufgabe an: Titel, Frist, Wichtigkeit und wer sie übernimmt. Unter dem Namensfeld siehst du, ob die Person ein Konto hat.'],
+      [['aufgaben.edit', 'aufgaben.own'], 'Aufgaben hakst du ab, wenn sie erledigt sind. Wiederkehrende Aufgaben legen die nächste selbst an. Mit dem Stift änderst du Text, Frist und Zuständige.'],
+      [['aufgaben.edit'], 'Im Reiter „Pakete“ legst du Aufgabenreihen an (z. B. Saisonstart) und wendest sie mit einem Stichtag an.'],
+      [null, '„📊 Excel“ erzeugt die Liste der offenen Aufgaben.'],
       [['aufgaben.loeschen'], 'Nicht mehr gebrauchte Aufgaben kannst du löschen.']] },
     { id: 'wettkaempfe', icon: '🏁', title: 'Wettkämpfe', text: 'Von der Planung bis zur Nachbereitung: Jeder Wettkampf hat eine Seite mit den Abschnitten Planung, Meldung, Nach Meldeergebnis, Wettkampf und Nachbereitung.', steps: [
       [['wettkaempfe.anlegen'], 'Mit „+“ legst du einen Wettkampf-Termin an.'],
@@ -446,13 +448,14 @@ window.HubShell = (function () {
       [['wettkaempfe.check'], 'Die Checkliste hakst du Schritt für Schritt ab.'],
       [['wettkaempfe.print'], 'Mit „Drucken“ bekommst du ein Blatt oder PDF.'],
       [['wettkaempfe.loeschen'], 'Wettkämpfe können gelöscht werden.']] },
-    { id: 'abrechnung', icon: '🧾', title: 'Abrechnung', text: 'Trainerstunden und Fahrten zum Wettkampftraining. Aus den Daten entstehen die Excel-Formulare, die du ausdruckst oder abgibst.', steps: [
-      [['abrechnung.eigene'], 'Reiter „Stunden“: Du liest die Anwesenheitsliste aus WebClub (PDF) ein. Die Termine werden nach Datum und Uhrzeit sortiert. Fehlt am Seitenrand etwas, warnt dich die App. Neue Zeilen kommen leer dazu.'],
+    { id: 'abrechnung', icon: '🧾', title: 'Abrechnung', text: 'Trainerstunden und Fahrten zum Wettkampftraining. Aus den Daten entsteht das Excel-Formular, das du abgibst.', steps: [
+      [['abrechnung.eigene'], 'Reiter „Stunden“: Du liest die Anwesenheitsliste aus WebClub (PDF) ein. Die Termine werden nach Datum und Uhrzeit sortiert. Neue Zeilen kommen leer dazu. Den Stundensatz bekommst du automatisch aus deiner Lizenz.'],
+      [['abrechnung.eigene'], 'Fahrten zum Wettkampftraining rechnest du über die Trainerabrechnung ab: Im Block „PKW und Sonstiges“ übernimmt „🚗 Offene Fahrten übernehmen“ deine offenen Fahrten mit Datum und Betrag.'],
       [['abrechnung.eigene'], '„📊 Excel“ erzeugt die Trainerabrechnung mit Name, Zeitraum, Stundensatz und IBAN aus deinem Profil.'],
-      [['fahrten.eigene'], 'Reiter „Fahrten“: Fahrten zum Wettkampftraining stammen aus den Trainingstagen. „📊 Excel“ erzeugt die Fahrtenabrechnung mit Satz, IBAN und BIC.'],
+      [['fahrten.eigene'], 'Reiter „Meine Fahrten“: Deine Fahrten nach Zeitraum (Jan – Mai, Mai – Sep, Sep – Dez) und Jahr. Ohne Trainerlizenz exportierst du sie als Excel.'],
       [['abrechnung.alle', 'abrechnung.ansehen', 'abrechnung.bezahlen'], 'Unter „Alle Stunden“ siehst du die Abrechnungen aller Trainer und markierst bezahlte.'],
-      [['fahrten.alle', 'fahrten.ansehen', 'fahrten.abrechnen'], 'Unter „Alle Fahrten“ siehst du die Fahrten aller Fahrer und kannst sie pro Person exportieren und abrechnen.'],
-      [['abrechnung.saetze'], 'Unter „Sätze“ stellst du Stundensätze (auch nach Lizenz), Kilometergeld, Fahrer-Pauschale und die Minuten pro Wettkampftraining ein.']] },
+      [['fahrten.alle', 'fahrten.ansehen', 'fahrten.abrechnen'], 'Unter „Alle Fahrten“ siehst du die Fahrten aller Fahrer und exportierst sie pro Person.'],
+      [['abrechnung.saetze'], 'Unter „Sätze“ stellst du den Standard-Stundensatz, Kilometergeld, Fahrer-Pauschale und die Sätze je Lizenz ein. Mehrere Lizenzen mit demselben Satz kommen in eine Zeile, durch Komma getrennt, z. B. „Helfer, DRSA | 5“.']] },
     { id: 'training', icon: '🦈', title: 'Wettkampfgruppe', text: 'Mitglieder, Trainingstage und Anwesenheit der Wettkampfgruppe.', steps: [
       [['training.view', 'training.tage.view', 'training.mitglieder.view'], 'Die Übersicht zeigt den Stand der Gruppe auf einen Blick.'],
       [['training.tage.view'], 'Unter „Training“ stehen die Trainingstage nach Monaten. Zu jedem Tag gibt es Trainer, Fahrer, Ort und Inhalt.'],
@@ -462,32 +465,35 @@ window.HubShell = (function () {
       [['training.beobachtung'], 'Beobachtungen zu einzelnen Schwimmern hältst du am Trainingstag fest.'],
       [['training.rueckblick'], 'Der Rückblick fasst das Jahr zusammen.']] },
     { id: 'jugend', icon: '🏊', title: 'Jugend', text: 'Schwimmabzeichen und die Jugendkasse.', steps: [
-      [['jugend.abzeichen.view'], 'Reiter „Abzeichen“: Die Liste der abgelegten Abzeichen. Mit dem Stift änderst du Einträge.'],
-      [['jugend.abzeichen.anlegen'], 'Neue Abzeichen trägst du mit Name, Abzeichen und Datum ein.'],
+      [['jugend.abzeichen.view'], 'Reiter „Abzeichen“ mit den Ansichten „Abnahme“ (Personen als Tabelle, Fortschritt je Anforderung), „Übersicht“ und „Preise & Anforderungen“. Mit dem Stift änderst du Einträge.'],
+      [['jugend.abzeichen.anlegen'], 'Neue Abzeichen trägst du mit Namen oder Mitgliedsnummer ein: Während du tippst, erscheinen unten passende Mitglieder, die du antippst. Es sind nur Personen aus der Mitgliederliste möglich.'],
+      [['jugend.abzeichen.view'], 'Ist ein Abzeichen bestanden, tippst du auf „Bezahlt“. Die Zahlung wird in die Jugendkasse gebucht und ein Stück vom Bestand abgezogen. Preise und Anforderungen pflegst du unter „Preise & Anforderungen“; den Bestand unter Material → Abzeichen.'],
+      [['jugend.abzeichen.view'], '„📊 Excel“ erzeugt die Liste der offenen Abzeichen.'],
       [['jugend.kasse.view'], 'Reiter „Jugendkasse“: Kassenbuch mit Einnahmen und Ausgaben. Einnahmen sind grün, Ausgaben rot hinterlegt.'],
       [['jugend.kasse.buchen'], 'Buchungen trägst du mit Datum, Betrag, Kategorie und Beleg ein. Wer eine Auslage hatte, kann sie beantragen.'],
       [['jugend.kasse.bestaetigen'], 'Beantragte Auslagen bestätigst oder lehnst du ab.'],
       [['jugend.kasse.verwalten'], 'Du richtest die Kasse ein, legst Kategorien fest und hältst fest, wer sie verwahrt oder wo sie ist.'],
       [['jugend.kasse.print'], '„📊 Kassenbuch (Excel)“ erzeugt das Kassenbuch. Bei mehr als 29 Buchungen wählst du die Seite.']] },
-    { id: 'vorstand', icon: '🏛️', title: 'Vorstand', text: 'Anträge, Sitzungen, Beschlüsse, Fristen und Protokolle des Vorstands.', steps: [
-      [['vorstand.view', 'vorstand.antrag', 'vorstand.antraege.view'], 'Reiter „Anträge“: Anträge stellen und verfolgen. Aus dem Antragstext entsteht ein Blatt mit Briefkopf.'],
+    { id: 'vorstand', icon: '🏛️', title: 'Vorstand', text: 'Anträge, Sitzungen, Beschlüsse und Fristen des Vorstands.', steps: [
+      [['vorstand.view', 'vorstand.antrag', 'vorstand.antraege.view'], 'Reiter „Anträge“: Anträge stellen und verfolgen. Mit „Antrag aus PDF“ liest du einen vorhandenen Antrag ein. Aus dem Antragstext entsteht ein Blatt mit Briefkopf.'],
       [['vorstand.abstimmen'], 'Bei Umlaufbeschlüssen kannst du abstimmen.'],
-      [['vorstand.view', 'vorstand.sitzungen.view'], 'Reiter „Sitzungen“: Termine mit Tagesordnung und Teilnehmern.'],
+      [['vorstand.view', 'vorstand.sitzungen.view'], 'Reiter „Sitzungen“: Termine mit Tagesordnung und Teilnehmern. Das Protokoll liest du bei der Sitzung aus einem PDF ein („Protokoll aus PDF“). Du prüfst es vor dem Speichern.'],
       [['vorstand.view', 'vorstand.beschluesse.view'], 'Reiter „Beschlüsse“ und „Fristen“: Was beschlossen wurde und bis wann etwas zu erledigen ist.'],
-      [['vorstand.view', 'vorstand.protokolle.view'], 'Reiter „Protokolle“: Protokolle der Sitzungen.'],
-      [['vorstand.print'], 'Mit „Drucken“ bekommst du ein Blatt oder PDF.']] },
-    { id: 'material', icon: '📦', title: 'Material', text: 'Gegenstände des Vereins mit Bestand, Mindestmenge und Ausleihe.', steps: [
-      [['material.view'], 'Reiter „Gegenstände“: Alles, was der Verein besitzt, mit Lagerort und Bestand.'],
-      [['material.ausleihe', 'material.view'], 'Reiter „Wer hat was“: Zeigt, was gerade verliehen ist, und an wen.'],
+      [['vorstand.print'], 'Das Protokoll und der Antrag lassen sich mit dem Briefkopf der SG als PDF ausgeben.']] },
+    { id: 'material', icon: '📦', title: 'Material', text: 'Gegenstände des Vereins mit Bestand, Mindestmenge, Ausgabe und Verleih sowie der Bestand der Abzeichen.', steps: [
+      [['material.view'], 'Reiter „Gegenstände“: Alles, was der Verein besitzt, mit Lagerort und Bestand. „📊 Excel“ erzeugt die Materialliste (Hochformat).'],
+      [['material.anlegen', 'material.edit'], 'Mit „+“ legst du Gegenstände an. „🏊 Brettarten anlegen“ erstellt auf einen Tipp alle Schwimmbrett-Arten; danach trägst du den Bestand ein.'],
+      [['material.ausleihe', 'material.edit'], 'Mit „🤝 Verleihen“ gibst du etwas aus: Person (Name oder Mitgliedsnummer aus der Vorschlagsliste), Anzahl, Ausgabedatum und Rückgabedatum. Mit ✎ änderst du einen Verleih, mit „↩︎ zurück“ buchst du ihn zurück.'],
+      [['material.view'], 'Reiter „Ausgabe & Verleih“: Personen als Tabelle mit dem, was sie haben. Auch die Schwimmbretter aus der Mitgliederliste stehen hier. „📊 Excel“ erzeugt die Liste „Wer hat was“.'],
       [['material.view'], 'Reiter „Einkaufsliste“: Was unter dem Mindestbestand liegt, wird hier gesammelt.'],
-      [['material.anlegen', 'material.edit'], 'Gegenstände legst du mit „+“ an und änderst sie mit dem Stift.'],
-      [['material.bestand'], 'Den Bestand stellst du direkt ein.'],
-      [['material.print'], 'Die Listen lassen sich drucken.']] },
+      [['material.view'], 'Reiter „Abzeichen“: Bestand je Abzeichen mit Balken. Der Strich im Balken ist der Mindestbestand; darunter wird es rot und das Abzeichen steht unter „Nachbestellen“.'],
+      [['material.bestand', 'material.edit'], 'Bestand und Mindestbestand der Abzeichen änderst du mit „ändern“ an der Kachel.']] },
     { id: 'veranstaltungen', icon: '🎪', title: 'Veranstaltungen', text: 'Eigene Events mit Checkliste, Helfern und Material.', steps: [
-      [['veranstaltungen.anlegen'], 'Mit „+“ legst du eine Veranstaltung an, auf Wunsch aus einer Vorlage.'],
-      [['veranstaltungen.check', 'veranstaltungen.edit'], 'Die Checkliste hakst du ab. Helfer und Material trägst du bei der Veranstaltung ein.'],
+      [['veranstaltungen.anlegen'], 'Mit „+“ legst du eine Veranstaltung an, auf Wunsch aus einer Vorlage. „📄 Neue Veranstaltung aus PDF“ macht aus einer vorhandenen Checkliste (PDF) eine Veranstaltung.'],
+      [['veranstaltungen.check', 'veranstaltungen.edit'], 'Die Checkliste hakst du ab. Helfer trägst du mit Namen oder Mitgliedsnummer ein.'],
+      [['veranstaltungen.edit'], 'Offene Punkte kannst du als Aufgaben anlegen. Weitere Punkte kommen mit „+ Punkt“ oder „Punkte aus PDF“ dazu.'],
       [['veranstaltungen.edit', 'veranstaltungen.vorlagen'], 'Reiter „Vorlagen“: Checklisten, die du für neue Veranstaltungen wiederverwendest.'],
-      [['veranstaltungen.print'], 'Veranstaltungen lassen sich drucken.']] },
+      [['veranstaltungen.print'], '„📊 Excel“ erzeugt Checkliste und Helferliste einer Veranstaltung.']] },
     { id: 'weihnachtsmarkt', icon: '🎄', title: 'Weihnachtsmarkt', text: 'Aushang, Kasse, Inventar, Aufbau und mehr. Der Weihnachtsmarkt hat eine eigene Hilfe, die im Menü des Marktes unter „Hilfe“ steht.', steps: [] }
   ];
   function anyOf(list) { return !list || !list.length || list.some(has); }
@@ -495,7 +501,7 @@ window.HubShell = (function () {
     var m = S.me; var ids = {}; S.systems.forEach(function (s) { ids[s.id] = s; });
     var who = m && m.user ? 'Du bist angemeldet als <b>' + esc(m.user) + '</b>.' : (m ? 'Du bist mit einer Rolle angemeldet.' : 'Du bist als Gast unterwegs.');
     var gen = '<section class="hub-help-card"><h4>👋 Allgemein</h4><p>' + who + ' Hier stehen nur die Bereiche und Funktionen, die für dein Konto freigegeben sind. Was du sehen und tun darfst, legt der Vorstand mit den Rechten fest.</p><ul>' +
-      '<li>Alle Bereiche findest du im Menü links. Auf dem Handy und kleinen Tablets öffnest du es mit ☰ oben rechts. Das Logo oben links bringt dich zurück zur Startseite. Mit dem Kreis oben wechselst du das Konto oder meldest dich ab.</li>' +
+      '<li>Wo ein Name einzutragen ist, tippst du Namen oder Mitgliedsnummer. Unten erscheinen passende Mitglieder zum Antippen; es zählt nur eine Auswahl aus der Mitgliederliste.</li><li>Alle Bereiche findest du im Menü links. Auf dem Handy und kleinen Tablets öffnest du es mit ☰ oben rechts. Das Logo oben links bringt dich zurück zur Startseite. Mit dem Kreis oben wechselst du das Konto oder meldest dich ab.</li>' +
       (m && m.user ? '<li>Dein Passwort änderst du im Menü unter deinem Namen. Vergessen? Dann setzt es ein Administrator zurück.</li><li>Unter „Mein Profil“ pflegst du Kontakt, Bankverbindung und Lizenzen. Sie landen automatisch in deinen Abrechnungen.</li>' : '') +
       '<li>Änderungen sind sofort auf allen Geräten da. Ohne Internet speichert das Gerät zuerst lokal und schickt später nach.</li>' +
       '<li>Mit „Auto, Hell, Dunkel“ oben stellst du das Design um.</li>' +

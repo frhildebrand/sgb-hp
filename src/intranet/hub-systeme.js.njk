@@ -38,7 +38,6 @@ templateEngineOverride: false
     return { title: it.title, body: body, opts: { t2: (text ? 'Protokoll ' : '') + it.title + (it.date ? ' ' + dmy(it.date) : ''), t3: it.pf ? 'Protokollführung: ' + it.pf : (!text && it.ort ? it.ort : '') } };
   }
   function pre(t) { return t ? '<pre>' + esc(t) + '</pre>' : ''; }
-  function printHead(title, sub) { return '<h1>' + esc(title) + '</h1>' + (sub ? '<div class="sub">' + sub + '</div>' : ''); }
   var lower = M.lower;
   function me() { return M.userName(); }
   function isMe(n) { return !!me() && lower(n) === lower(me()); }
@@ -306,7 +305,7 @@ templateEngineOverride: false
     return '<div class="m-chk" data-i="' + i + '"><button type="button" class="m-box' + (c.d ? ' on' : '') + '" data-ma="ckeck"' + (canTick ? '' : ' disabled') + '>' + (c.d ? '✓' : '') + '</button><div style="flex:1;min-width:0"><div' + (c.d ? ' style="text-decoration:line-through;opacity:.6"' : '') + '>' + esc(c.t) + '</div><div class="wm-sub">' + [c.due ? '<span class="' + (over ? 'm-over' : '') + '">' + (over ? '⚠️ ' : '') + 'bis ' + fmtShort(c.due) + '</span>' : '', (c.who || []).length ? '👤 ' + esc(c.who.join(', ')) : '', c.d && c.by ? '✓ ' + esc(c.by) : ''].filter(Boolean).join(' · ') + '</div></div>' + (canEdit ? '<button type="button" class="wm-btn" data-ma="cedit">✏️</button>' : '') + '</div>';
   }
   M.register('veranstaltungen', {
-    title: 'Veranstaltungen', icon: '🎪', colls: ['veranstaltungen', 'aufgaben', 'vorlagen'],
+    title: 'Veranstaltungen', icon: '🎪', colls: ['veranstaltungen', 'aufgaben', 'vorlagen', 'wgMitglieder'],
     tabs: [{ id: 'ev', label: 'Veranstaltungen', coll: 'veranstaltungen', view: ['veranstaltungen.view'], edit: ['veranstaltungen.edit'], add: ['veranstaltungen.edit', 'veranstaltungen.anlegen'], del: ['veranstaltungen.edit', 'veranstaltungen.loeschen'], print: ['veranstaltungen.print'], sortBy: { k: 'date', dir: 1 }, addLabel: 'Neue Veranstaltung', search: ['title', 'ort', 'beschreibung'],
       hint: 'Eigene Events mit Checkliste (Zuständig, Frist, Phase) und Helfern. Die Checkliste kann jeder mit Recht abhaken.',
       get fields() { return evFields(); },
@@ -344,12 +343,18 @@ templateEngineOverride: false
           if (!vs.length) { M.toast('Noch keine Vorlagen. Lege sie im Reiter „Vorlagen“ an.'); return; }
           M.openForm({ title: 'Vorlage anwenden', fields: [{ k: 'vid', t: 'sel', label: 'Vorlage', opts: vs.map(function (v) { return [v.id, v.title]; }) }], item: {}, saveLabel: 'Punkte ergänzen', onSave: function (v) { var t = M.find('vorlagen', v.vid); if (!t) return false; M.op({ op: 'patch', coll: 'veranstaltungen', id: it.id, fields: { check: (it.check || []).concat(applyVorlage(t, it.date)) } }); } });
         },
-        helfen: function (it) { if (!it) return; M.openForm({ title: 'Ich helfe: ' + it.title, fields: [{ k: 'n', t: 'text', label: 'Name', req: true }, { k: 't', t: 'text', label: 'Aufgabe (optional)', ph: 'z. B. Kuchenverkauf' }], item: { n: me() }, saveLabel: 'Eintragen', onSave: function (v) { var h = M.clone(it.helfer || []); h.push({ n: v.n, t: v.t }); M.op({ op: 'patch', coll: 'veranstaltungen', id: it.id, fields: { helfer: h } }); } }); },
+        helfen: function (it) { if (!it) return; setTimeout(function () { M.memberSuggest('mf_n'); }, 60); M.openForm({ title: 'Helfer eintragen: ' + it.title, fields: [{ k: 'n', t: 'text', label: 'Name oder Mitgliedsnummer', req: true }, { k: 't', t: 'text', label: 'Aufgabe (optional)', ph: 'z. B. Kuchenverkauf' }], item: { n: me() }, saveLabel: 'Eintragen', onSave: function (v) { var rn = M.memberResolve(v.n, me()); if (!rn) { M.toast('„' + v.n + '“ steht nicht in der Mitgliederliste. Bitte Namen oder Mitgliedsnummer aus der Vorschlagsliste wählen.'); return false; } var h = M.clone(it.helfer || []); h.push({ n: rn, t: v.t }); M.op({ op: 'patch', coll: 'veranstaltungen', id: it.id, fields: { helfer: h } }); } }); },
         hdel: function (it, el, ev) { ev.stopPropagation(); if (!it) return; var h = M.clone(it.helfer || []); h.splice(+el.getAttribute('data-i'), 1); M.op({ op: 'patch', coll: 'veranstaltungen', id: it.id, fields: { helfer: h } }); },
         toTasks: function (it) { if (!it) return; var open = (it.check || []).filter(function (c) { return !c.d; }); if (!open.length) { M.toast('Alle Punkte sind schon erledigt.'); return; }
           M.confirm(open.length + ' offene Punkte als Aufgaben anlegen?', 'Anlegen', function () { M.ops(open.map(function (c) { return { op: 'set', coll: 'aufgaben', item: { id: M.uid(), title: c.t, who: c.who || [], due: c.due || (it.date ? M.addDays(it.date, -1) : ''), status: 'offen', prio: 'normal', ref: 'ev:' + it.id, refLabel: it.title, by: me() } }; })); M.toast('Aufgaben angelegt.'); }); }
       },
-      printItem: function (it) { var chk = it.check || []; return { title: it.title, body: printHead(it.title, esc([fmtShort(it.date) + (it.time ? ', ' + it.time + ' Uhr' : ''), it.ort].filter(Boolean).join(' · '))) + (it.beschreibung ? '<pre>' + esc(it.beschreibung) + '</pre>' : '') + (chk.length ? '<h2>Checkliste</h2><table><tr><th></th><th>Punkt</th><th>Kategorie</th><th>Zuständig</th><th>Bis</th><th>Erledigt von</th></tr>' + chk.map(function (c) { return '<tr><td class="nowrap">' + (c.d ? '☑' : '☐') + '</td><td>' + esc(c.t) + '</td><td>' + esc(catOf(c)) + '</td><td>' + esc((c.who || []).join(', ')) + '</td><td class="nowrap">' + fmtShort(c.due) + '</td><td class="nowrap">' + esc(c.by || '') + '</td></tr>'; }).join('') + '</table>' : '') + ((it.helfer || []).length ? '<h2>Helfer</h2><table><tr><th>Name</th><th>Aufgabe</th></tr>' + it.helfer.map(function (x) { return '<tr><td>' + esc(x.n) + '</td><td>' + esc(x.t || '') + '</td></tr>'; }).join('') + '</table>' : '') + (it.material ? '<h2>Material</h2>' + esc(it.material) : '') }; } },
+      xlsxItem: function (it) {
+        var d = function (x) { return x ? String(x).split('-').reverse().join('.') : ''; }, chk = it.check || [], h = it.helfer || [];
+        var sheets = [{ name: 'Checkliste', head: ['Erledigt', 'Punkt', 'Kategorie', 'Zuständig', 'Frist', 'Erledigt von'], w: [10, 46, 18, 24, 12, 18], rows: chk.map(function (c) { return [c.d ? 'ja' : '', c.t || '', catOf(c), (c.who || []).join(', '), d(c.due), c.by || '']; }) }];
+        if (h.length) sheets.push({ name: 'Helfer', head: ['Name', 'Aufgabe'], w: [28, 36], rows: h.map(function (x) { return [x.n || '', x.t || '']; }) });
+        if (!chk.length && !h.length) { M.toast('Noch keine Checkliste oder Helfer.'); return; }
+        M.xlsxList({ file: String(it.title || 'Veranstaltung').replace(/[^\wäöüÄÖÜß-]+/g, '_') + '.xlsx', title: it.title || 'Veranstaltung', sub: [d(it.date) + (it.time ? ', ' + it.time + ' Uhr' : ''), it.ort].filter(Boolean).join(' · '), sheets: sheets });
+      } },
     { id: 'vorlagen', label: 'Vorlagen', coll: 'vorlagen', view: ['veranstaltungen.edit', 'veranstaltungen.vorlagen'],
       render: function () {
         var l = vorlagen('veranstaltung');
