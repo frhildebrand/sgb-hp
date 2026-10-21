@@ -119,8 +119,8 @@ templateEngineOverride: false
   }
   function preiseView() {
     var d = abzDoc(); var b = d.bestand || {};
-    var out = '<section class="wm-card"><div class="wm-bar"><h3>Preise, Anforderungen & Bestand</h3><span class="m-actions">' + (abzEdit() ? '<button type="button" class="wm-btn" data-ma="abzplus">+ Abzeichen-Art</button>' : '') + '</span></div><p class="wm-note">Der Preis wird beim Start eines Abzeichens vorgeschlagen und bleibt pro Eintrag gespeichert. Der Bestand wird beim Bezahlen automatisch abgezogen. Orders: „Bestellen“-Hinweis ab der Mindestmenge.</p>';
-    out += catalog().map(function (c) { var bs = b[c.n]; var low = bs !== undefined && bs !== '' && d.minBestand && M.num(bs) <= M.num(d.minBestand); return '<article class="m-card" data-abz="' + esc(c.n) + '"><div class="m-head"><div class="m-main"><div class="m-title">' + esc(c.n) + ' · ' + M.euro(c.p) + (low ? M.badge('bestellen', 'red') : '') + '</div><div class="wm-sub">Bestand: ' + (bs === undefined || bs === '' ? '–' : esc(bs)) + ' · ' + c.req.length + ' Anforderungen</div></div>' + (abzEdit() ? '<button type="button" class="wm-btn" data-ma="abzpreis">✏️</button>' : '') + '</div></article>'; }).join('');
+    var out = '<section class="wm-card"><div class="wm-bar"><h3>Preise, Anforderungen & Bestand</h3><span class="m-actions">' + (abzEdit() ? '<button type="button" class="wm-btn" data-ma="abzplus">+ Abzeichen-Art</button>' : '') + '</span></div><p class="wm-note">Der Preis wird beim Start eines Abzeichens vorgeschlagen und bleibt pro Eintrag gespeichert. Der Bestand wird beim Bezahlen automatisch abgezogen. Bestand und Mindestmenge pflegst du unter Material → Abzeichen.</p><p><a class="wm-btn" href="/intranet/material/">Bestand verwalten (Material) →</a></p>';
+    out += catalog().map(function (c) { var bs = b[c.n]; var mn = (d.minPro && d.minPro[c.n] !== undefined && d.minPro[c.n] !== '') ? d.minPro[c.n] : d.minBestand; var low = bs !== undefined && bs !== '' && mn !== undefined && mn !== '' && M.num(bs) <= M.num(mn); return '<article class="m-card" data-abz="' + esc(c.n) + '"><div class="m-head"><div class="m-main"><div class="m-title">' + esc(c.n) + ' · ' + M.euro(c.p) + (low ? M.badge('bestellen', 'red') : '') + '</div><div class="wm-sub">Bestand: ' + (bs === undefined || bs === '' ? '–' : esc(bs)) + ' · ' + c.req.length + ' Anforderungen</div></div>' + (abzEdit() ? '<button type="button" class="wm-btn" data-ma="abzpreis">✏️</button>' : '') + '</div></article>'; }).join('');
     return out + '</section>';
   }
   function abzRender() {
@@ -141,17 +141,6 @@ templateEngineOverride: false
     return true;
   }
   /* Vorschlagsliste unter dem Namensfeld: Name oder Mitgliedsnummer tippen, passende Mitglieder antippen */
-  function abSuggest() {
-    var inp = document.getElementById('mf_name'); if (!inp || inp.getAttribute('data-sg')) return; inp.setAttribute('data-sg', '1'); inp.setAttribute('autocomplete', 'off');
-    var box = document.createElement('div'); box.className = 'ab-sg'; inp.parentNode.insertBefore(box, inp.nextSibling);
-    var show = function () {
-      var q = M.lower(inp.value).trim(); box.innerHTML = ''; if (!q) return;
-      var hits = M.items('wgMitglieder').filter(function (m) { return M.isActive(m) && M.lower(m.name) !== q && (M.lower(m.name).indexOf(q) >= 0 || (m.mnr && String(m.mnr).indexOf(q) >= 0)); }).sort(function (a, b) { return String(a.name).localeCompare(String(b.name), 'de'); }).slice(0, 6);
-      hits.forEach(function (m) { var b = document.createElement('button'); b.type = 'button'; b.className = 'wm-btn'; b.style.cssText = 'display:block;width:100%;text-align:left;margin:4px 0;min-height:44px'; b.textContent = m.name + (m.mnr ? '  ·  Nr. ' + m.mnr : ''); b.addEventListener('click', function () { inp.value = m.name; box.innerHTML = ''; }); box.appendChild(b); });
-      if (!hits.length && !M.items('wgMitglieder').some(function (m) { return M.lower(m.name) === q || String(m.mnr) === q; })) box.innerHTML = '<p class="wm-sub" style="margin:6px 0">Kein passendes Mitglied gefunden.</p>';
-    };
-    inp.addEventListener('input', show);
-  }
   function abzForm(item, isNew) {
     var opts = catalog().map(function (c) { return [c.n, c.n + ' – ' + M.euro(c.p)]; });
     if (item.abz && !opts.some(function (o) { return o[0] === item.abz; })) opts.push([item.abz, item.abz]);
@@ -161,11 +150,10 @@ templateEngineOverride: false
       { k: '_s3', t: 'sec', label: 'Preis und Zahlung' }, { k: 'preis', t: 'num', label: 'Preis (€)', hint: 'Kommt automatisch vom Abzeichen, kann hier geändert werden.' }];
     if (isNew) f.push({ k: 'stand', t: 'sel', label: 'Stand', opts: [['laufend', 'In Arbeit'], ['bestanden', 'Bestanden – Zahlung offen'], ['bezahlt', 'Bestanden und bezahlt (bar)']] });
     f.push({ k: 'notiz', t: 'area', label: 'Notiz (z. B. „Theorie fehlt“)', rows: 2 });
-    setTimeout(abSuggest, 60);
+    setTimeout(function () { M.memberSuggest('mf_name'); }, 60);
     M.openForm({ title: isNew ? 'Abzeichen eintragen' : 'Eintrag ändern', fields: f, item: base, onSave: function (v) {
-      var byNr = /^\d+$/.test(String(v.name || '').trim()) ? M.items('wgMitglieder').filter(function (m) { return String(m.mnr) === String(v.name).trim(); })[0] : null; if (byNr) v.name = byNr.name;
-      var known = M.items('wgMitglieder').some(function (m) { return M.nameKey(m.name) === M.nameKey(v.name); });
-      if (!known && !(!isNew && M.nameKey(v.name) === M.nameKey(item.name))) { M.toast('„' + v.name + '“ steht nicht in der Mitgliederliste. Bitte Namen oder Mitgliedsnummer aus der Vorschlagsliste wählen.'); return false; }
+      var rn = M.memberResolve(v.name, isNew ? '' : item.name);
+      if (!rn) { M.toast('„' + v.name + '“ steht nicht in der Mitgliederliste. Bitte Namen oder Mitgliedsnummer aus der Vorschlagsliste wählen.'); return false; } v.name = rn;
       v.title = v.name; if (v.preis === '' || v.preis === undefined || v.preis === null) v.preis = catOf(v.abz).p;
       var mm = M.items('wgMitglieder').filter(function (m) { return M.nameKey(m.name) === M.nameKey(v.name); })[0]; if (mm && mm.mnr) v.mnr = mm.mnr;
       var stand = v.stand; delete v.stand;
@@ -421,9 +409,8 @@ templateEngineOverride: false
       abzplus: function () { M.openForm({ title: 'Abzeichen-Art hinzufügen', fields: [{ k: 'n', t: 'text', label: 'Name', req: true }, { k: 'p', t: 'num', label: 'Preis (€)' }, { k: 'req', t: 'lines', label: 'Anforderungen (eine pro Zeile)', rows: 6 }], item: { n: '', p: 0, req: [] }, onSave: function (v) { var d = abzDoc(); var ex = (Array.isArray(d.extra) ? d.extra : []).concat([{ n: v.n, p: M.num(v.p), req: v.req }]); M.op({ op: 'set', coll: 'abzListe', item: Object.assign({}, d, { id: 'main', extra: ex }) }); } }); },
       abzpreis: function (it, el) {
         var n = el.closest('[data-abz]').getAttribute('data-abz'); var c = catOf(n); var d = abzDoc();
-        M.openForm({ title: n, fields: [{ k: 'p', t: 'num', label: 'Preis (€)' }, { k: 'b', t: 'num', label: 'Bestand (Stück)', hint: 'Leer lassen, wenn der Bestand nicht geführt wird.' }, { k: 'min', t: 'num', label: 'Bestellen ab (Stück, für alle Abzeichen)' }, { k: 'req', t: 'lines', label: 'Anforderungen (eine pro Zeile)', rows: 8 }], item: { p: c.p, b: (d.bestand || {})[n], min: d.minBestand, req: c.req }, onSave: function (v) {
-          var pr = Object.assign({}, d.preise || {}); pr[n] = M.num(v.p); var rq = Object.assign({}, d.req || {}); rq[n] = v.req; var bs = Object.assign({}, d.bestand || {}); if (v.b === '' || v.b === null || v.b === undefined) delete bs[n]; else bs[n] = M.num(v.b);
-          M.op({ op: 'set', coll: 'abzListe', item: Object.assign({}, d, { id: 'main', preise: pr, req: rq, bestand: bs, minBestand: v.min === '' ? '' : M.num(v.min) }) });
+        M.openForm({ title: n, fields: [{ k: 'p', t: 'num', label: 'Preis (€)' }, { k: 'req', t: 'lines', label: 'Anforderungen (eine pro Zeile)', rows: 8 }], item: { p: c.p, req: c.req }, onSave: function (v) {
+          var pr = Object.assign({}, d.preise || {}); pr[n] = M.num(v.p); var rq = Object.assign({}, d.req || {}); rq[n] = v.req;           M.op({ op: 'set', coll: 'abzListe', item: Object.assign({}, d, { id: 'main', preise: pr, req: rq }) });
         } });
       },
       abzliste: function () { M.openForm({ title: 'Abzeichen-Liste', fields: [{ k: 'list', t: 'lines', label: 'Abzeichen (eins pro Zeile)', rows: 6 }], item: { list: abzList() }, onSave: function (v) { if (!v.list.length) { M.toast('Mindestens ein Abzeichen.'); return false; } M.op({ op: 'set', coll: 'abzListe', item: { id: 'main', list: v.list } }); } }); },

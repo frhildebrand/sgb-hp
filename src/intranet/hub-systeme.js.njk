@@ -609,7 +609,7 @@ templateEngineOverride: false
   function avail(it) {
     var units = it.units || [];
     if (units.length) return units.length - openLoans(it).length;
-    var out = openLoans(it).reduce(function (s, l) { return s + (Number(l.n) || 0); }, 0); return (Number(it.bestand) || 0) - out;
+    var out = openLoans(it).reduce(function (s, l) { return s + (Number(l.n) || 0); }, 0) + brettOutOf(it); return (Number(it.bestand) || 0) - out;
   }
   function low(it) { return it.min !== '' && it.min !== undefined && !(it.units || []).length && avail(it) < Number(it.min); }
   function needList(l) { return l.filter(function (it) { return it.kaufen || low(it); }); }
@@ -619,10 +619,12 @@ templateEngineOverride: false
     var units = it.units || []; var used = {}; openLoans(it).forEach(function (l) { used[l.unit] = 1; });
     var free = units.filter(function (u) { return !used[u]; });
     if (units.length && !free.length) { M.toast('Alle Stücke sind verliehen.'); return; }
-    var fields = [{ k: 'who', t: 'text', label: 'Wer', req: true, list: 'mPeople', ph: 'Name aus der Liste oder frei eintippen' }].concat(units.length ? [{ k: 'unit', t: 'sel', label: 'Welches Stück', opts: free }] : [{ k: 'n', t: 'num', label: 'Anzahl', req: true }]).concat([{ k: 'notiz', t: 'text', label: 'Notiz (optional)' }]);
-    M.openForm({ title: 'Verleihen: ' + it.title, fields: fields, item: { n: 1 }, saveLabel: 'Verleihen', onSave: function (v) {
+    var fields = [{ k: 'who', t: 'text', label: 'Wer (Name oder Mitgliedsnummer)', req: true }].concat(units.length ? [{ k: 'unit', t: 'sel', label: 'Welches Stück', opts: free }] : [{ k: 'n', t: 'num', label: 'Anzahl', req: true }]).concat([{ k: 'at', t: 'date', label: 'Ausgabedatum' }, { k: 'bis', t: 'date', label: 'Rückgabedatum (optional)' }, { k: 'notiz', t: 'text', label: 'Notiz (optional)' }]);
+    setTimeout(function () { M.memberSuggest('mf_who'); }, 60);
+    M.openForm({ title: 'Ausgeben / Verleihen: ' + it.title, fields: fields, item: { n: 1, at: M.today() }, saveLabel: 'Ausgeben', onSave: function (v) {
+      var rn = M.memberResolve(v.who); if (!rn) { M.toast('„' + v.who + '“ steht nicht in der Mitgliederliste. Bitte Namen oder Mitgliedsnummer aus der Vorschlagsliste wählen.'); return false; } v.who = rn;
       if (!units.length) { if (!(v.n > 0)) { M.toast('Anzahl prüfen.'); return false; } if (v.n > avail(it)) { M.toast('So viele sind nicht verfügbar (' + avail(it) + ').'); return false; } }
-      var loans = M.clone(it.loans || []).filter(function (l) { return !l.back; }); loans.push({ id: M.uid(), who: v.who, n: units.length ? 1 : v.n, unit: units.length ? v.unit : '', at: M.today(), bis: '', notiz: v.notiz || '', back: false, by: me() });
+      var loans = M.clone(it.loans || []).filter(function (l) { return !l.back; }); loans.push({ id: M.uid(), who: v.who, n: units.length ? 1 : v.n, unit: units.length ? v.unit : '', at: v.at || M.today(), bis: v.bis || '', notiz: v.notiz || '', back: false, by: me() });
       M.op({ op: 'patch', coll: 'material', id: it.id, fields: { loans: loans } });
     } });
   }
@@ -632,15 +634,28 @@ templateEngineOverride: false
     var hist = M.clone(it.hist || []); hist.unshift({ who: l.who, n: l.n, unit: l.unit || '', at: l.at, back: M.today() }); hist = hist.slice(0, 15);
     M.op({ op: 'patch', coll: 'material', id: it.id, fields: { loans: loans, hist: hist } });
   }
+  function abzNames(d) {
+    var l = ['DSA Bronze', 'DSA Silber', 'DSA Gold', 'DLA Hai', 'DLA Silber', 'DLA Gold', 'Totenkopf 1 Std.', 'Totenkopf 1,5 Std.', 'Totenkopf 2 Std.'];
+    (Array.isArray(d.extra) ? d.extra : []).forEach(function (x) { if (x && x.n && l.indexOf(x.n) < 0) l.push(x.n); });
+    Object.keys(d.bestand || {}).forEach(function (k) { if (l.indexOf(k) < 0) l.push(k); }); return l;
+  }
+  // Schwimmbretter aus der Mitgliederliste: ausgegeben, noch nicht zurueck
+  function brettOut() { return M.items('wgMitglieder').filter(function (m) { return m.brettArt && !m.brettRueck; }); }
+  function brettOutOf(it) { var t = lower(it.title); return brettOut().filter(function (m) { return lower(m.brettArt) === t; }).length; }
+  // Kompakter Block: Bretter und Kappen laut Mitgliederliste (Einzelliste klappbar)
+  var WER = { q: '', open: {} };
+  function brettBlock() {
+    var ms = M.items('wgMitglieder'); if (!ms.length) return '';
+    var bo = brettOut(), kap = ms.filter(function (m) { return m.kappe || m.kappeDatum; }).length, by = {};
+    bo.forEach(function (m) { by[m.brettArt] = (by[m.brettArt] || 0) + 1; });
+    var ks = Object.keys(by).sort(function (a, b) { return a.localeCompare(b, 'de'); });
+    return '<div class="mb-hint"><b>Aus der Mitgliederliste:</b> ' + (ks.length ? ks.map(function (k) { return by[k] + '× ' + esc(k); }).join(', ') + ' ausgegeben' : 'keine Schwimmbretter ausgegeben') + ' · ' + kap + ' Vereinsbadekappe' + (kap === 1 ? '' : 'n') + ' ausgegeben' +
+      (bo.length ? '<details><summary>Wer hat ein Schwimmbrett? (' + bo.length + ')</summary>' + bo.slice().sort(function (a, b) { return String(a.name).localeCompare(String(b.name), 'de'); }).map(function (m) { return '<div class="wm-sub">' + esc(m.name) + ' · ' + esc(m.brettArt) + (m.brettAus ? ' · seit ' + fmtShort(m.brettAus) : '') + '</div>'; }).join('') + '</details>' : '') + '</div>';
+  }
   M.register('material', {
-    title: 'Material', icon: '📦', colls: ['material', 'abzListe'],
+    title: 'Material', icon: '📦', colls: ['material', 'abzListe', 'wgMitglieder'],
+    onInput: function (ev) { var t = ev.target; if (!t || !t.getAttribute || !t.getAttribute('data-wq')) return; WER.q = t.value; clearTimeout(WER.t); WER.t = setTimeout(function () { M.S.forceTyping = true; M.render(true); M.S.forceTyping = false; var n = document.querySelector('#mMain [data-wq]'); if (n) { n.focus(); try { n.setSelectionRange(n.value.length, n.value.length); } catch (e) { /* egal */ } } }, 250); },
     tabs: [
-      { id: 'abzb', label: '🏅 Abzeichen', view: ['material.view'], render: function () {
-        var d = M.find('abzListe', 'main') || {}; var b = d.bestand || {}, mn = d.minBestand || {}; var ks = Object.keys(b).sort(function (x, y) { return x.localeCompare(y, 'de'); });
-        var low = ks.filter(function (k) { return M.num(b[k]) <= M.num(mn[k]) && mn[k] !== undefined && mn[k] !== ''; });
-        return '<section class="wm-card"><div class="wm-bar"><h3>Abzeichen-Bestand</h3><a class="wm-btn" href="/intranet/jugend/">Bestand ändern in Jugend →</a></div>' +
-          (low.length ? '<p class="wm-note"><b>Nachbestellen:</b> ' + low.map(function (k) { return M.esc(k) + ' (' + M.num(b[k]) + ')'; }).join(', ') + '</p>' : '') +
-          (ks.length ? '<div class="m-twrap"><table><tr><th>Abzeichen</th><th>Bestand</th><th>Mindestbestand</th></tr>' + ks.map(function (k) { var l = low.indexOf(k) >= 0; return '<tr><td><b>' + M.esc(k) + '</b></td><td>' + (l ? '<span class="m-over">' + M.num(b[k]) + '</span>' : M.num(b[k])) + '</td><td>' + (mn[k] !== undefined && mn[k] !== '' ? M.num(mn[k]) : '–') + '</td></tr>'; }).join('') + '</table></div>' : '<p class="wm-note">Es ist noch kein Abzeichenbestand eingetragen. Er wird in der Jugend unter „Preise &amp; Bestand“ gepflegt und erscheint hier automatisch.</p>') + '</section>'; } },
       { id: 'geg', label: 'Gegenstände', coll: 'material', view: ['material.view'], edit: ['material.edit'], add: ['material.edit', 'material.anlegen'], del: ['material.edit', 'material.loeschen'], print: ['material.print'], addLabel: 'Neuer Gegenstand', search: ['title', 'kategorie', 'ort', 'notiz'],
         filter: function (it, f) { return (!f.low || low(it) || it.kaufen) && (!f.out || openLoans(it).length); },
         summary: function (all) { var n = needList(all).length, out = all.filter(function (x) { return openLoans(x).length; }).length, ov = all.reduce(function (s, x) { return s + (x.loans || []).filter(overdueLoan).length; }, 0); return '<div class="m-chips"><button type="button" class="m-chip' + (M.S.filter.low ? ' on' : '') + '" data-ma="lowf">⚠️ Nachkaufen (' + n + ')</button><button type="button" class="m-chip' + (M.S.filter.out ? ' on' : '') + '" data-ma="outf">Verliehen (' + out + ')</button>' + (ov ? '<span class="m-over" style="align-self:center">⏰ ' + ov + ' überfällig</span>' : '') + '</div>'; },
@@ -665,38 +680,94 @@ templateEngineOverride: false
           back: function (it, el) { if (it) giveBack(it, el.getAttribute('data-lid')); },
           stock: function (it) { if (!it) return; M.openForm({ title: 'Bestand: ' + it.title, fields: [{ k: 'bestand', t: 'num', label: 'Neuer Gesamtbestand', req: true }], item: { bestand: it.bestand }, onSave: function (v) { if (v.bestand === '' || v.bestand < 0) return false; M.op({ op: 'patch', coll: 'material', id: it.id, fields: { bestand: v.bestand } }); } }); }
         },
-        printAll: function (l) { return { title: 'Material', body: printHead('Materialliste', 'Stand ' + fmtShort(M.today())) + '<table><tr><th>Gegenstand</th><th>Kategorie</th><th>Ort</th><th>Bestand</th><th>Verfügbar</th></tr>' + l.map(function (it) { return '<tr><td>' + esc(it.title) + '</td><td>' + esc(it.kategorie || '') + '</td><td>' + esc(it.ort || '') + '</td><td>' + esc(it.bestand || 0) + '</td><td>' + avail(it) + '</td></tr>'; }).join('') + '</table>' }; } },
-      { id: 'wer', label: 'Wer hat was', coll: 'material', view: ['material.view'],
+        xlsxAll: function (l) {
+          var d = function (v) { return v ? String(v).split('-').reverse().join('.') : ''; };
+          M.xlsxList({ file: 'Materialliste.xlsx', title: 'Materialliste', sub: 'Stand ' + d(M.today()), sheets: [{ name: 'Material', portrait: true, head: ['Gegenstand', 'Kategorie', 'Lagerort', 'Bestand', 'Einheit', 'Verfügbar', 'Mindestbestand'], w: [28, 14, 16, 9, 9, 10, 15],
+            rows: l.slice().sort(function (x, y) { return String(x.title).localeCompare(String(y.title), 'de'); }).map(function (it) { return [it.title || '', it.kategorie || '', it.ort || '', M.num(it.bestand), it.einheit || '', avail(it), it.min === '' || it.min === undefined ? '' : M.num(it.min)]; }) }] });
+        } },
+      { id: 'wer', label: 'Ausgabe & Verleih', coll: 'material', view: ['material.view'],
         render: function () {
-          var by = {}; M.items('material').forEach(function (it) { openLoans(it).forEach(function (l) { (by[l.who] = by[l.who] || []).push({ it: it, l: l }); }); });
-          var names = Object.keys(by).sort(function (a, b) { return a.localeCompare(b, 'de'); });
+          var by = {}, mem = {}; M.items('wgMitglieder').forEach(function (m) { mem[M.nameKey(m.name)] = m; });
+          var get = function (n) { var k = M.nameKey(n); return by[k] = by[k] || { name: n, nr: (mem[k] || {}).mnr || '', loans: [], brett: null }; };
+          M.items('material').forEach(function (it) { openLoans(it).forEach(function (l) { get(l.who).loans.push({ it: it, l: l }); }); });
+          brettOut().forEach(function (m) { get(m.name).brett = m; });
+          var q = M.lower(WER.q || '');
+          var ps = Object.keys(by).map(function (k) { return by[k]; }).filter(function (p) { return !q || M.lower(p.name).indexOf(q) >= 0 || String(p.nr).indexOf(q) >= 0; }).sort(function (a, b) { return a.name.localeCompare(b.name, 'de'); });
           var canL = M.anyCan(['material.ausleihe', 'material.edit']);
-          var out = '<section class="wm-card"><div class="wm-bar"><h3>Wer hat was</h3><span class="m-actions"><button type="button" class="wm-btn" data-ma="printwer">🖨️ Drucken</button></span></div>';
-          if (!names.length) return out + '<p class="wm-note">Im Moment ist nichts verliehen.</p></section>';
-          names.forEach(function (n) {
-            out += '<article class="m-card"><div class="m-head"><div class="m-main"><div class="m-title">' + M.avatar(n) + ' &nbsp; ' + esc(n) + '</div><div class="wm-sub">' + by[n].length + ' Teil(e)</div></div></div><div class="m-body">' + by[n].map(function (x) { return '<div class="m-chk" data-id="' + esc(x.it.id) + '"><span style="flex:1"><b>' + loanText(x.it, x.l) + '</b><div class="wm-sub">seit ' + fmtShort(x.l.at) + (x.l.bis ? ' · <span class="' + (overdueLoan(x.l) ? 'm-over' : '') + '">' + (overdueLoan(x.l) ? '⏰ überfällig, ' : '') + 'zurück bis ' + fmtShort(x.l.bis) + '</span>' : '') + '</div></span>' + (canL ? '<button type="button" class="wm-btn" data-ma="werback" data-lid="' + esc(x.l.id) + '">↩︎ zurück</button>' : '') + '</div>'; }).join('') + '</div></article>';
+          var out = '<section class="wm-card"><div class="wm-bar"><h3>Ausgabe &amp; Verleih</h3><span class="m-actions"><button type="button" class="wm-btn" data-ma="printwer">📊 Excel „Wer hat was“</button></span></div>' + brettBlock() +
+            '<div class="pl-bar"><input class="pl-q" type="search" data-wq="1" placeholder="🔍 Name oder Mitgliedsnummer …" value="' + esc(WER.q || '') + '" autocomplete="off"></div>';
+          if (!ps.length) return out + '<p class="wm-note">' + (q ? 'Keine Treffer.' : 'Im Moment ist nichts ausgegeben oder verliehen.') + '</p></section>';
+          out += '<div class="pl-wrap"><table class="pl-t" style="min-width:560px"><tr><th style="width:20px;cursor:default"></th><th style="cursor:default">Name</th><th style="cursor:default">Nr.</th><th style="cursor:default">Material</th><th style="cursor:default">Rückgabe</th><th style="cursor:default"></th></tr>';
+          ps.forEach(function (p) {
+            var k = M.nameKey(p.name), open = !!WER.open[k], over = p.loans.some(function (x) { return overdueLoan(x.l); });
+            var chipsH = p.loans.map(function (x) { return '<span class="pl-c ' + (overdueLoan(x.l) ? 'pl-w' : 'pl-tr') + '">' + loanText(x.it, x.l).replace(/<[^>]*>/g, '') + '</span>'; }).join('') + (p.brett ? '<span class="pl-c pl-s">' + esc(p.brett.brettArt) + '</span>' : '');
+            var bis = p.loans.map(function (x) { return x.l.bis; }).filter(Boolean).sort()[0];
+            out += '<tr class="pl-r" data-k="' + esc(k) + '" data-ma="wopen"><td><span class="pl-dot ' + (over ? 'amber' : '') + '"></span></td><td><b>' + esc(p.name) + '</b></td><td>' + esc(p.nr) + '</td><td>' + chipsH + '</td><td>' + (bis ? '<span class="' + (over ? 'm-over' : '') + '">' + fmtShort(bis) + '</span>' : '<span class="pl-none">–</span>') + '</td><td style="white-space:nowrap"><button type="button" class="pl-ic" data-ma="wopen" aria-label="Details">' + (open ? '⌃' : '⌄') + '</button></td></tr>';
+            if (open) out += '<tr class="pl-d"><td></td><td colspan="5"><div class="pl-grid">' +
+              (p.loans.length ? '<div class="pl-bl"><h4>📦 Material</h4>' + p.loans.map(function (x) { return '<div class="m-chk" data-id="' + esc(x.it.id) + '"><span style="flex:1"><b>' + loanText(x.it, x.l) + '</b><div class="wm-sub">Ausgabedatum ' + fmtShort(x.l.at) + (x.l.bis ? ' · <span class="' + (overdueLoan(x.l) ? 'm-over' : '') + '">' + (overdueLoan(x.l) ? '⏰ überfällig, ' : '') + 'Rückgabedatum ' + fmtShort(x.l.bis) + '</span>' : '') + '</div></span>' + (canL ? '<button type="button" class="wm-btn" data-ma="werback" data-lid="' + esc(x.l.id) + '">↩︎ zurück</button>' : '') + '</div>'; }).join('') + '</div>' : '') +
+              (p.brett ? '<div class="pl-bl"><h4>🏊 Schwimmbrett</h4><div class="wm-sub">' + esc(p.brett.brettArt) + (p.brett.brettAus ? ' · Ausgabedatum ' + fmtShort(p.brett.brettAus) : '') + '</div><div class="wm-sub">Rückgabe wird in der Mitgliederliste eingetragen.</div></div>' : '') + '</div></td></tr>';
           });
-          return out + '</section>';
+          return out + '</table></div></section>';
         },
         actions: {
+          wopen: function (it, el) { var k = el.closest('tr').getAttribute('data-k'); WER.open[k] = !WER.open[k]; M.render(true); },
           werback: function (it, el) { if (it) giveBack(it, el.getAttribute('data-lid')); },
-          printwer: function () { var rows = []; M.items('material').forEach(function (it) { openLoans(it).forEach(function (l) { rows.push([l.who, loanText(it, l), l.at, l.bis]); }); }); rows.sort(function (a, b) { return a[0].localeCompare(b[0], 'de'); }); M.print('Wer hat was', printHead('Wer hat was', 'Stand ' + fmtShort(M.today())) + '<table><tr><th>Wer</th><th>Was</th><th>Seit</th><th>Zurück bis</th></tr>' + rows.map(function (r) { return '<tr><td>' + esc(r[0]) + '</td><td>' + r[1] + '</td><td class="nowrap">' + fmtShort(r[2]) + '</td><td class="nowrap">' + fmtShort(r[3]) + '</td></tr>'; }).join('') + '</table>'); }
+          printwer: function () {
+            var d = function (v) { return v ? String(v).split('-').reverse().join('.') : ''; }, rows = []; M.items('material').forEach(function (it) { openLoans(it).forEach(function (l) { rows.push([l.who || '', it.title + (l.unit ? ' ' + l.unit : (it.units && it.units.length ? '' : ' (' + l.n + '×)')), d(l.at), d(l.bis)]); }); });
+            var bs = brettOut().sort(function (x, y) { return String(x.name).localeCompare(String(y.name), 'de'); }).map(function (m) { return [m.name, m.brettArt, d(m.brettAus), d(m.brettRueck)]; });
+            if (!rows.length && !bs.length) { M.toast('Im Moment ist nichts verliehen.'); return; }
+            rows.sort(function (x, y) { return String(x[0]).localeCompare(String(y[0]), 'de'); });
+            M.xlsxList({ file: 'Ausgabe_Verleih.xlsx', title: 'Wer hat was', sub: 'Stand ' + d(M.today()), sheets: [{ name: 'Verliehen', head: ['Wer', 'Was', 'Ausgabedatum', 'Rückgabedatum'], rows: rows, w: [26, 40, 15, 15] }].concat(bs.length ? [{ name: 'Bretter', head: ['Name', 'Schwimmbrett', 'Ausgabedatum', 'Rückgabedatum'], rows: bs, w: [26, 30, 15, 15] }] : []) });
+          }
         } },
       { id: 'kauf', label: 'Einkaufsliste', coll: 'material', view: ['material.view'], edit: ['material.edit'], print: ['material.print'],
         render: function () {
           var l = needList(M.items('material'));
-          var out = '<section class="wm-card"><div class="wm-bar"><h3>Nachkaufen (' + l.length + ')</h3><span class="m-actions"><button type="button" class="wm-btn" data-ma="printkauf">🖨️ Drucken</button></span></div><p class="wm-note">Hier stehen alle Gegenstände, die unter dem Mindestbestand sind oder manuell auf die Liste gesetzt wurden.</p>';
+          var out = '<section class="wm-card"><div class="wm-bar"><h3>Nachkaufen (' + l.length + ')</h3><span class="m-actions"><button type="button" class="wm-btn" data-ma="printkauf">📊 Excel</button></span></div><p class="wm-note">Hier stehen alle Gegenstände, die unter dem Mindestbestand sind oder manuell auf die Liste gesetzt wurden.</p>';
           if (!l.length) return out + '<p class="wm-note">Nichts nachzukaufen. 🎉</p></section>';
           out += '<table class="m-table"><tr><th>Gegenstand</th><th>Verfügbar</th><th>Fehlt</th><th></th></tr>' + l.map(function (it) { var miss = low(it) ? Number(it.min) - avail(it) : 0; return '<tr data-id="' + esc(it.id) + '"><td><b>' + esc(it.title) + '</b><div class="wm-sub">' + esc(it.ort || '') + '</div></td><td>' + avail(it) + '</td><td>' + (miss ? miss + ' ' + esc(it.einheit || '') : '–') + '</td><td>' + (M.can('material.edit') ? '<button type="button" class="wm-btn" data-ma="gekauft">✓ gekauft</button>' : '') + '</td></tr>'; }).join('') + '</table></section>';
           return out;
         },
         actions: {
           gekauft: function (it, el) { var id = el.closest('[data-id]').getAttribute('data-id'); var x = M.find('material', id); if (!x) return; var need = low(x) ? Number(x.min) - avail(x) : 0; M.confirm('Wie viele „' + x.title + '“ wurden gekauft? Der Bestand wird um ' + (need || 'die gekaufte Menge') + ' erhöht.', 'Gekauft', function () { M.op({ op: 'patch', coll: 'material', id: id, fields: { kaufen: false, bestand: (Number(x.bestand) || 0) + need } }); }); },
-          printkauf: function () { var l = needList(M.items('material')); M.print('Einkaufsliste', printHead('Einkaufsliste Material', 'Stand ' + fmtShort(M.today())) + '<table><tr><th>✓</th><th>Gegenstand</th><th>Menge</th><th>Ort</th></tr>' + l.map(function (it) { var miss = low(it) ? Number(it.min) - avail(it) : ''; return '<tr><td>☐</td><td>' + esc(it.title) + '</td><td>' + esc(miss) + ' ' + esc(it.einheit || '') + '</td><td>' + esc(it.ort || '') + '</td></tr>'; }).join('') + '</table>'); }
+          printkauf: function () {
+            var d = function (v) { return v ? String(v).split('-').reverse().join('.') : ''; }, l = needList(M.items('material')); if (!l.length) { M.toast('Nichts nachzukaufen.'); return; }
+            M.xlsxList({ file: 'Einkaufsliste_Material.xlsx', title: 'Einkaufsliste Material', sub: 'Stand ' + d(M.today()), sheets: [{ name: 'Einkaufsliste', head: ['Gegenstand', 'Menge', 'Einheit', 'Lagerort', 'Erledigt'], rows: l.map(function (it) { return [it.title || '', low(it) ? Number(it.min) - avail(it) : '', it.einheit || '', it.ort || '', '']; }), w: [34, 10, 12, 20, 12] }] });
+          }
+        } },
+      { id: 'abzb', label: '🏅 Abzeichen', coll: 'abzListe', view: ['material.view'],
+        render: function () {
+          var d = M.find('abzListe', 'main') || {}, b = d.bestand || {}, mp = d.minPro || {}; var canB = M.anyCan(['material.bestand', 'material.edit']);
+          var ks = abzNames(d);
+          var minOf = function (k) { var v = mp[k] !== undefined && mp[k] !== '' ? mp[k] : d.minBestand; return v === undefined || v === '' ? null : M.num(v); };
+          var has = function (k) { return b[k] !== undefined && b[k] !== ''; };
+          var lowK = ks.filter(function (k) { return has(k) && minOf(k) !== null && M.num(b[k]) <= minOf(k); });
+          var top = Math.max(10, ks.reduce(function (m, k) { return Math.max(m, has(k) ? M.num(b[k]) : 0, (minOf(k) || 0) * 2); }, 0));
+          var out = '<section class="wm-card"><div class="wm-bar"><h3>Abzeichen-Bestand</h3><span class="m-actions"><a class="wm-btn" href="/intranet/jugend/">Preise &amp; Vergabe (Jugend) →</a></span></div>' +
+            (lowK.length ? '<p class="wm-note"><b>Nachbestellen:</b> ' + lowK.map(function (k) { return esc(k) + ' (' + M.num(b[k]) + ')'; }).join(', ') + '</p>' : '<p class="wm-note">Bei allen Abzeichen reicht der Bestand. Beim Bezahlen in der Jugend wird automatisch ein Stück abgezogen.</p>') +
+            '<div class="mb-grid">';
+          ks.forEach(function (k) {
+            var n = has(k) ? M.num(b[k]) : null, mn = minOf(k), isLow = lowK.indexOf(k) >= 0, w = n === null ? 0 : Math.max(n ? 3 : 0, Math.round(n / top * 100)), mk = mn ? Math.min(100, Math.round(mn / top * 100)) : 0;
+            out += '<div class="mb-tile' + (isLow ? ' low' : '') + '" data-abz="' + esc(k) + '"><div class="mb-name">' + esc(k) + '</div><div class="mb-n">' + (n === null ? '–' : n) + '<small>' + (n === null ? ' nicht geführt' : ' Stück') + '</small></div>' +
+              '<div class="mb-bar" title="' + (mn ? 'Mindestbestand ' + mn : '') + '"><i style="width:' + w + '%"></i>' + (mk ? '<u style="left:' + mk + '%"></u>' : '') + '</div>' +
+              '<div class="mb-foot">' + (mn !== null ? 'ab ' + mn + ' nachbestellen' : 'kein Minimum') + (canB ? ' · <button type="button" class="mb-edit" data-ma="abzbest">ändern</button>' : '') + '</div></div>';
+          });
+          return out + '</div></section>';
+        },
+        actions: {
+          abzbest: function (it, el) {
+            var k = el.closest('[data-abz]').getAttribute('data-abz'); var d = M.find('abzListe', 'main') || { id: 'main' }; var mp = d.minPro || {};
+            M.openForm({ title: 'Bestand: ' + k, fields: [{ k: 'b', t: 'num', label: 'Bestand (Stück)', hint: 'Leer lassen, wenn der Bestand nicht geführt wird.' }, { k: 'min', t: 'num', label: 'Nachbestellen ab (Stück)', hint: 'Leer lassen für keinen Hinweis.' }],
+              item: { b: (d.bestand || {})[k], min: mp[k] !== undefined ? mp[k] : d.minBestand }, onSave: function (v) {
+                var bs = Object.assign({}, d.bestand || {}), m2 = Object.assign({}, d.minPro || {});
+                if (v.b === '' || v.b === null || v.b === undefined) delete bs[k]; else bs[k] = M.num(v.b);
+                if (v.min === '' || v.min === null || v.min === undefined) { delete m2[k]; if (d.minBestand !== undefined && d.minBestand !== '') m2[k] = ''; } else m2[k] = M.num(v.min);
+                M.op({ op: 'set', coll: 'abzListe', item: Object.assign({}, d, { id: 'main', bestand: bs, minPro: m2 }) });
+              } });
+          }
         } }
     ]
   });
-  (function () { var md = M.mod('material'); if (md && md.tabs.length > 1 && md.tabs[0].id === 'abzb') md.tabs.push(md.tabs.shift()); })();
   // Eingabevorschlaege fuer Gruppen
   if (!document.getElementById('mGruppen')) { var dl = document.createElement('datalist'); dl.id = 'mGruppen'; dl.innerHTML = ['Wettkampfgruppe', 'Frösche', 'Seepferdchen', 'Anfänger', 'Fortgeschrittene', 'Erwachsene'].map(function (g) { return '<option value="' + g + '">'; }).join(''); document.body.appendChild(dl); }
 })();
