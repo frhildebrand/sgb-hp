@@ -152,6 +152,8 @@ templateEngineOverride: false
     f.push({ k: 'notiz', t: 'area', label: 'Notiz (z. B. „Theorie fehlt“)', rows: 2 });
     M.openForm({ title: isNew ? 'Abzeichen eintragen' : 'Eintrag ändern', fields: f, item: base, onSave: function (v) {
       var byNr = /^\d+$/.test(String(v.name || '').trim()) ? M.items('wgMitglieder').filter(function (m) { return String(m.mnr) === String(v.name).trim(); })[0] : null; if (byNr) v.name = byNr.name;
+      var known = M.items('wgMitglieder').some(function (m) { return M.nameKey(m.name) === M.nameKey(v.name); });
+      if (!known && !(!isNew && M.nameKey(v.name) === M.nameKey(item.name))) { M.toast('„' + v.name + '“ steht nicht in der Mitgliederliste. Bitte Namen oder Mitgliedsnummer aus der Vorschlagsliste wählen.'); return false; }
       v.title = v.name; if (v.preis === '' || v.preis === undefined || v.preis === null) v.preis = catOf(v.abz).p;
       var mm = M.items('wgMitglieder').filter(function (m) { return M.nameKey(m.name) === M.nameKey(v.name); })[0]; if (mm && mm.mnr) v.mnr = mm.mnr;
       var stand = v.stand; delete v.stand;
@@ -171,13 +173,18 @@ templateEngineOverride: false
   }
 
   function abOpenXlsx() {
-    var rows = []; M.items('abzeichen').filter(function (x) { return x.status && aStatus(x) !== 'bezahlt'; }).forEach(function (x) {
-      var m = M.items('wgMitglieder').filter(function (q) { return (x.mnr && String(q.mnr) === String(x.mnr)) || M.nameKey(q.name) === M.nameKey(x.name); })[0];
-      rows.push([x.name || '', (m && m.mnr) || x.mnr || '', x.abz || '', aStatus(x) === 'bestanden' ? 'Zahlung offen' : 'In Arbeit', aPreis(x), x.date ? String(x.date).split('-').reverse().join('.') : '', x.notiz || '']);
-    });
-    rows.sort(function (a, b) { return (a[3] < b[3] ? 1 : a[3] > b[3] ? -1 : 0) || String(a[0]).localeCompare(String(b[0]), 'de'); });
-    if (!rows.length) { M.toast('Keine offenen Abzeichen.'); return; }
-    M.xlsxList({ file: 'Offene_Abzeichen.xlsx', title: 'Offene Schwimmabzeichen', sub: 'Stand ' + M.today().split('-').reverse().join('.'), sheets: [{ name: 'Offen', head: ['Name', 'Mitgl.-Nr.', 'Abzeichen', 'Stand', 'Preis', 'Datum', 'Notiz'], rows: rows, f: ['', '', '', '', 'eur', '', ''], w: [26, 12, 20, 16, 10, 12, 36] }] });
+    var all = M.items('abzeichen').filter(function (x) { return x.status && aStatus(x) !== 'bezahlt'; }), mem = M.items('wgMitglieder');
+    if (!all.length) { M.toast('Keine offenen Abzeichen.'); return; }
+    var nr = function (x) { var m = mem.filter(function (q) { return (x.mnr && String(q.mnr) === String(x.mnr)) || M.nameKey(q.name) === M.nameKey(x.name); })[0]; return (m && m.mnr) || x.mnr || ''; };
+    var prog = function (x) { var c = catOf(x.abz), t = x.teil || {}; return c.req.length ? c.req.filter(function (r, i) { return t[i]; }).length + ' von ' + c.req.length : ''; };
+    var cmp = function (a, b) { return (aStatus(a) < aStatus(b) ? 1 : aStatus(a) > aStatus(b) ? -1 : 0) || String(a.name).localeCompare(String(b.name), 'de'); };
+    var d = function (x) { return x.date ? String(x.date).split('-').reverse().join('.') : ''; };
+    var sheets = [{ name: 'Offen', land: true, head: ['Name', 'Mitgl.-Nr.', 'Abzeichen', 'Stand', 'Fortschritt', 'Preis', 'Datum', 'Notiz'], rows: all.slice().sort(cmp).map(function (x) { return [x.name || '', nr(x), x.abz || '', aStatus(x) === 'bestanden' ? 'Zahlung offen' : 'In Arbeit', prog(x), aPreis(x), d(x), x.notiz || '']; }), f: ['', '', '', '', '', 'eur', '', ''], w: [26, 12, 20, 16, 13, 10, 12, 34] }];
+    var seen = {}; all.forEach(function (x) { if (seen[x.abz]) return; seen[x.abz] = 1; var c = catOf(x.abz); if (!c.req.length) return;
+      var mine = all.filter(function (y) { return y.abz === x.abz; }).sort(cmp);
+      sheets.push({ name: String(x.abz).replace(/[\\\/?*\[\]:]/g, ' ').slice(0, 31), land: true, head: ['Name', 'Mitgl.-Nr.', 'Stand'].concat(c.req), f: [], w: [26, 12, 16].concat(c.req.map(function (r) { return Math.min(36, Math.max(14, String(r).length + 3)); })),
+        rows: mine.map(function (y) { var t = y.teil || {}; return [y.name || '', nr(y), aStatus(y) === 'bestanden' ? 'Zahlung offen' : 'In Arbeit'].concat(c.req.map(function (r, i) { return t[i] ? '✓' : ''; })); }) }); });
+    M.xlsxList({ file: 'Offene_Abzeichen.xlsx', title: 'Offene Schwimmabzeichen', sub: 'Stand ' + M.today().split('-').reverse().join('.'), sheets: sheets });
   }
 
   /* ================= Jugendkasse ================= */
