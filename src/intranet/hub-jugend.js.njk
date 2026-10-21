@@ -140,16 +140,28 @@ templateEngineOverride: false
     if (pr > 0 && isClosed(M.today())) { M.toast('Der Monat in der Jugendkasse ist abgeschlossen.'); return false; }
     return true;
   }
+  /* Vorschlagsliste unter dem Namensfeld: Name oder Mitgliedsnummer tippen, passende Mitglieder antippen */
+  function abSuggest() {
+    var inp = document.getElementById('mf_name'); if (!inp || inp.getAttribute('data-sg')) return; inp.setAttribute('data-sg', '1'); inp.setAttribute('autocomplete', 'off');
+    var box = document.createElement('div'); box.className = 'ab-sg'; inp.parentNode.insertBefore(box, inp.nextSibling);
+    var show = function () {
+      var q = M.lower(inp.value).trim(); box.innerHTML = ''; if (!q) return;
+      var hits = M.items('wgMitglieder').filter(function (m) { return M.isActive(m) && M.lower(m.name) !== q && (M.lower(m.name).indexOf(q) >= 0 || (m.mnr && String(m.mnr).indexOf(q) >= 0)); }).sort(function (a, b) { return String(a.name).localeCompare(String(b.name), 'de'); }).slice(0, 6);
+      hits.forEach(function (m) { var b = document.createElement('button'); b.type = 'button'; b.className = 'wm-btn'; b.style.cssText = 'display:block;width:100%;text-align:left;margin:4px 0;min-height:44px'; b.textContent = m.name + (m.mnr ? '  ·  Nr. ' + m.mnr : ''); b.addEventListener('click', function () { inp.value = m.name; box.innerHTML = ''; }); box.appendChild(b); });
+      if (!hits.length && !M.items('wgMitglieder').some(function (m) { return M.lower(m.name) === q || String(m.mnr) === q; })) box.innerHTML = '<p class="wm-sub" style="margin:6px 0">Kein passendes Mitglied gefunden.</p>';
+    };
+    inp.addEventListener('input', show);
+  }
   function abzForm(item, isNew) {
-    var old = document.getElementById('abPeople'); if (old) old.remove(); var dl = document.createElement('datalist'); dl.id = 'abPeople'; dl.innerHTML = M.items('wgMitglieder').filter(function (m) { return M.isActive(m); }).map(function (m) { return '<option value="' + esc(m.name) + '" label="' + esc(m.mnr ? 'Nr. ' + m.mnr : '') + '">' + (m.mnr ? '<option value="' + esc(m.mnr) + '" label="' + esc(m.name) + '">' : ''); }).join(''); document.body.appendChild(dl);
     var opts = catalog().map(function (c) { return [c.n, c.n + ' – ' + M.euro(c.p)]; });
     if (item.abz && !opts.some(function (o) { return o[0] === item.abz; })) opts.push([item.abz, item.abz]);
     var base = Object.assign({ stand: 'laufend' }, item); if (isNew && (base.preis === undefined || base.preis === '')) base.preis = catOf(base.abz).p;
-    var f = [{ k: '_s1', t: 'sec', label: 'Wer' }, { k: 'name', t: 'text', label: 'Person (Name oder Mitgliedsnummer)', req: true, list: 'abPeople' },
+    var f = [{ k: '_s1', t: 'sec', label: 'Wer' }, { k: 'name', t: 'text', label: 'Person (Name oder Mitgliedsnummer)', req: true },
       { k: '_s2', t: 'sec', label: 'Abzeichen' }, { k: 'abz', t: 'sel', label: 'Abzeichen (mit Preis)', opts: opts }, { k: 'date', t: 'date', label: 'Datum' },
       { k: '_s3', t: 'sec', label: 'Preis und Zahlung' }, { k: 'preis', t: 'num', label: 'Preis (€)', hint: 'Kommt automatisch vom Abzeichen, kann hier geändert werden.' }];
     if (isNew) f.push({ k: 'stand', t: 'sel', label: 'Stand', opts: [['laufend', 'In Arbeit'], ['bestanden', 'Bestanden – Zahlung offen'], ['bezahlt', 'Bestanden und bezahlt (bar)']] });
     f.push({ k: 'notiz', t: 'area', label: 'Notiz (z. B. „Theorie fehlt“)', rows: 2 });
+    setTimeout(abSuggest, 60);
     M.openForm({ title: isNew ? 'Abzeichen eintragen' : 'Eintrag ändern', fields: f, item: base, onSave: function (v) {
       var byNr = /^\d+$/.test(String(v.name || '').trim()) ? M.items('wgMitglieder').filter(function (m) { return String(m.mnr) === String(v.name).trim(); })[0] : null; if (byNr) v.name = byNr.name;
       var known = M.items('wgMitglieder').some(function (m) { return M.nameKey(m.name) === M.nameKey(v.name); });
