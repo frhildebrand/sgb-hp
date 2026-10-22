@@ -249,7 +249,7 @@ templateEngineOverride: false
   function planOf(wk) { return (wk.staffelPlan && typeof wk.staffelPlan === 'object') ? wk.staffelPlan : {}; }
   function staffelEvents(wk) {
     var no = {}; ((wk.meld && wk.meld.starts) || []).forEach(function (st) { if (st.j === 'Staffel') no[st.e] = 1; });
-    return ((wk.meld && wk.meld.events) || []).filter(function (e) { return e.staffel || no[e.no]; });
+    return ((wk.meld && wk.meld.events) || []).filter(function (e) { return e.staffel || no[e.no] || /^\s*\d+\s*[xX×]\s*\d+/.test(e.name || '') || /staffel/i.test(e.name || ''); });
   }
   function teamsOf(wk, no) {
     var l = []; wk.meld.starts.forEach(function (s) { if (s.e === no && s.j === 'Staffel' && l.indexOf(s.n) < 0) l.push(s.n); });
@@ -257,7 +257,7 @@ templateEngineOverride: false
     return l.length ? l : ['1. Mannschaft'];
   }
   function staffelPlan(wk) {
-    var evs = staffelEvents(wk); if (!evs.length) return '<section class="wm-card"><div class="wm-bar"><h3>Staffelplanung</h3></div><p class="wm-note">In der Meldedatei wurden keine Staffelstrecken erkannt. Bitte unter „Unterlagen“ das Meldeergebnis (DSV7- oder PDF-Datei) einlesen.</p></section>';
+    var evs = staffelEvents(wk); if (!evs.length) return '<section class="wm-card"><div class="wm-bar"><h3>Staffelplanung</h3></div><p class="wm-note">In der Meldedatei wurden keine Staffelstrecken erkannt (' + (((wk.meld && wk.meld.events) || []).length) + ' Wettkämpfe in der Datei' + (((wk.meld && wk.meld.events) || []).length ? ', z. B. „' + esc(String(((wk.meld.events[wk.meld.events.length - 1]) || {}).name || '')) + '“' : '') + '). Bitte unter „Unterlagen“ die Meldedatei (DSV7 oder PDF) noch einmal einlesen, denn ältere Einlesungen kennen die Staffeln nicht.</p></section>';
     var can = M.anyCan(['wettkaempfe.check', 'wettkaempfe.teilnahme']); var pl = planOf(wk);
     var out = '<section class="wm-card"><div class="wm-bar"><h3>Staffelplanung</h3><span class="m-actions"><button type="button" class="wm-btn" data-ma="stxlsx">📊 Excel</button></span></div><p class="wm-note">Die Zeiten kommen aus den Meldezeiten der Einzelstrecken (gleiche Teilstrecke). „Vorschlag“ wählt die schnellste Besetzung. Fehlt eine Meldezeit, steht „–“, und die Summe ist nicht vollständig.</p>';
     evs.forEach(function (e) {

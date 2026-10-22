@@ -154,8 +154,8 @@ templateEngineOverride: false
     var multi = !set || set.length > 1;
     if (M.anyCan(['training.tage.view'])) out += warnCard(set) + weekCard() + coll('training', 'Training', tageTab(multi));
     if (one && M.anyCan(['training.mitglieder.view']) && M.listWidget) out += coll('mitglieder', 'Mitglieder', M.listWidget.render(set[0], M.can('training.mitglieder.edit') ? '<button type="button" class="wm-btn" data-ma="wgmadd" data-g="' + esc(set[0]) + '">+ Vorhandenes Mitglied</button>' : ''));
-    if (!multi && M.anyCan(['training.tage.view'])) out += coll('anwesenheit', 'Anwesenheit', statistikTab());
-    if (wkIn && M.anyCan(['training.tage.view'])) out += coll('fahrten', 'Fahrten · Wettkampfgruppe', fahrtenCard());
+    if (M.anyCan(['training.tage.view'])) out += coll('anwesenheit', 'Anwesenheit', statistikTab());
+    if (wkIn && set && set.length === 1 && M.anyCan(['training.tage.view'])) out += coll('fahrten', 'Fahrten · Wettkampfgruppe', fahrtenCard());
     return out;
   }
 
@@ -216,7 +216,7 @@ templateEngineOverride: false
     var asc = list.slice().sort(function (x, y) { return (y.date + (y.time || '')) < (x.date + (x.time || '')) ? -1 : 1; });
     asc.forEach(function (t) {
       var w = isoWeek(t.date); var wk = w[0] + '-' + w[1];
-      if (wk !== lastW) { lastW = wk; rows += '<tr class="tt-wk"><td colspan="7">Woche ' + w[1] + ' · ' + esc(weekRange(t.date)) + '</td></tr>'; }
+      if (multi && wk !== lastW) { lastW = wk; rows += '<tr class="tt-wk"><td colspan="7">Woche ' + w[1] + ' · ' + esc(weekRange(t.date)) + '</td></tr>'; }
       var c = counts(t); var tr = (t.trainer || []); var open = !!M.S.open[t.id]; var tot = c.a + c.e + c.f; var pastDay = t.date <= M.today();
       var anw = tot || pastDay ? '<span class="tt-bar' + (tot && c.a / tot < 0.6 ? ' tt-warn' : '') + '"><i style="width:' + (tot ? Math.round(c.a / tot * 100) : 0) + '%"></i></span>' + c.a + (tot ? ' von ' + tot : '') : '<span class="wm-sub">offen</span>';
       var d = new Date(t.date + 'T12:00:00');

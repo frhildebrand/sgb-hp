@@ -17,6 +17,7 @@ templateEngineOverride: false
   function todayIso() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function daysTo(iso) { if (!iso) return null; return Math.round((new Date(iso + 'T12:00:00') - new Date(todayIso() + 'T12:00:00')) / 86400000); }
   function fmtD(iso) { if (!iso) return ''; var d = new Date(iso + 'T12:00:00'); return ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][d.getDay()] + ', ' + ('0' + d.getDate()).slice(-2) + '.' + ('0' + (d.getMonth() + 1)).slice(-2) + '.'; }
+  function fmtWD(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '')); if (!m) return String(iso || ''); var d = new Date(iso + 'T12:00:00'); return ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][d.getDay()] + ', ' + m[3] + '.' + m[2] + '.' + m[1]; }
   function fmtDMY(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '')); return m ? m[3] + '.' + m[2] + '.' + m[1] : String(iso || ''); }
   function inDays(n) { return n === 0 ? 'heute' : n === 1 ? 'morgen' : 'in ' + n + ' Tagen'; }
 
@@ -65,7 +66,7 @@ templateEngineOverride: false
     var l = brettLive(), shown = l.slice(0, 6), eo = { attr: 'data-act', save: 'bsave', cancel: 'bcancel', me: SH.S.me && SH.S.me.user, groups: grpNames() };
     var head = HB.head(can, state.bform);
     var rows = (state.bform && !state.bedit ? HB.editRow(null, eo) : '') + shown.map(function (b, i) {
-      return HB.row(b, { A: 'data-act', pre: 'b', can: can, del: del, fmt: fmtDMY, edit: eo, editing: state.bform && state.bedit === b.id, up: i > 0 && !!shown[i - 1].wichtig === !!b.wichtig, dn: i < shown.length - 1 && !!shown[i + 1].wichtig === !!b.wichtig });
+      return HB.row(b, { A: 'data-act', pre: 'b', can: can, del: del, fmt: fmtWD, edit: eo, editing: state.bform && state.bedit === b.id, up: i > 0 && !!shown[i - 1].wichtig === !!b.wichtig, dn: i < shown.length - 1 && !!shown[i + 1].wichtig === !!b.wichtig });
     }).join('');
     return '<section class="hub-card2" id="brett"><div class="hub-c2h"><h3>📌 Schwarzes Brett</h3><span class="hub-c2b">' + (can && !state.bform ? '<button type="button" class="hub-btn hub-gold" data-act="bnew">+ Neue Mitteilung</button>' : '') + '<a class="hub-btn hub-ghost" href="/intranet/brett/">' + (can ? 'Verwalten →' : 'Alle ansehen →') + '</a></span></div>' +
             (rows ? '<div class="hub-bwrap' + (state.bform ? ' pin' : '') + '"><table class="hub-bt' + (state.bform ? ' pin' : '') + '">' + head + rows + '</table></div>' + (l.length > shown.length ? '<p class="hub-sub" style="margin:8px 0 0">Weitere ' + (l.length - shown.length) + ' Mitteilungen unter „' + (can ? 'Verwalten' : 'Alle ansehen') + '“.</p>' : '') : '<p class="hub-sub" style="margin:6px 0 0">Zurzeit gibt es keine Mitteilungen.</p>') + '</section>';

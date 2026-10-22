@@ -928,6 +928,7 @@ intranetSeiten:
     #hubRoot { padding-left: 304px; }
     #hubRoot .hub-narrow { display: none; }
     #hubRoot .hub-drawer-bg { position: fixed; inset: 0 auto 0 0; width: 304px; z-index: 60; display: block; background: none; backdrop-filter: none; -webkit-backdrop-filter: none; animation: none; pointer-events: none; }
+    #hubRoot .hub-drawer-bg { -webkit-transform: translateZ(0); transform: translateZ(0); }
     #hubRoot .hub-drawer { pointer-events: auto; width: 304px; height: 100%; animation: none; box-shadow: none; border-right: 1px solid var(--line); border-radius: 0; }
     #hubRoot .hub-head .hub-burger, #hubRoot .hub-burger, #hubRoot .hub-dtop { display: none; }
     #hubRoot .hub-head, #hubRoot .hub-hin { max-width: none; }
@@ -1056,6 +1057,8 @@ intranetSeiten:
   #hubRoot .wg-t tr:last-child td { border-bottom: 0; } #hubRoot .wg-t tr:hover td { background: color-mix(in srgb, currentColor 4%, transparent); }
   #hubRoot .wg-tbl .wm-bar { margin-bottom: 4px; }
   #hubRoot .wg-ic { border: 0; background: none; cursor: pointer; font-size: 15px; padding: 2px 6px; color: inherit; opacity: .75; }
+  #hubRoot .wm-card select, #hubRoot .pl-bar select, #hubRoot .m-f select { appearance: auto; font: inherit; font-size: 14px; font-weight: 600; padding: 7px 10px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--gold, #d6a23a) 55%, var(--line)); background: color-mix(in srgb, var(--gold, #d6a23a) 14%, var(--card)); color: inherit; min-height: 38px; }
+  #hubRoot .wm-card select:focus { outline: 2px solid color-mix(in srgb, var(--gold, #d6a23a) 70%, transparent); outline-offset: 1px; }
   #hubRoot .wg-ct { appearance: none; background: transparent; border: 0; color: inherit; font-size: 15px; padding: 2px 8px 2px 0; cursor: pointer; }
   #hubRoot .wg-closed { padding-top: 10px; padding-bottom: 10px; }
   #hubRoot .wg-closed .wm-bar { margin: 0; }
@@ -2083,12 +2086,12 @@ class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-
 </div>
 
 <!-- Skripte für Daten und Logik -->
-<script src="/intranet/js/weihnachtsmarkt-data.js?v=10222213"></script>
-<script src="/intranet/js/hub-config.js?v=10222213"></script>
-<script src="/intranet/js/hub-common.js?v=10222213"></script>
-<script src="/intranet/js/weihnachtsmarkt.js?v=10222213"></script>
+<script src="/intranet/js/weihnachtsmarkt-data.js?v=10222251"></script>
+<script src="/intranet/js/hub-config.js?v=10222251"></script>
+<script src="/intranet/js/hub-common.js?v=10222251"></script>
+<script src="/intranet/js/weihnachtsmarkt.js?v=10222251"></script>
 
 {% else %}
 <div id="hubRoot" {% if pg.modul %}data-modul="{{ pg.modul }}"{% else %}data-system=""{% endif %}><noscript><p style="padding:24px">Dafür wird JavaScript gebraucht.</p></noscript></div>
-{% for s in pg.scripts %}<script src="/intranet/js/{{ s }}.js?v=10222213" defer></script>
+{% for s in pg.scripts %}<script src="/intranet/js/{{ s }}.js?v=10222251" defer></script>
 {% endfor %}{% endif %}
