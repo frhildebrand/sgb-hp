@@ -5,4 +5,4 @@ eleventyExcludeFromCollections: true
 templateEngineOverride: false
 ---
 /* Adresse des Google-Scripts: nur hier eintragen (gilt fuer Hub, Verwaltung und Weihnachtsmarkt). */
-window.HUB_API = 'https://script.google.com/macros/s/AKfycby8uKP6B9EY8QfoYg4TMQWLt7B_0emzh0xrE1O32Tjink0tRDz9KJMlMZQkhBYDjsC3/exec';
+window.HUB_API = 'https://script.google.com/macros/s/AKfycbzp1Hdftrj2wAmWn02lamNbGb_W9wHf4Lm51uFI5La_F5lvcW0vEFF-Pgtd7NsQKUsG/exec';
