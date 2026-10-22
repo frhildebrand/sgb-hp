@@ -117,7 +117,7 @@ templateEngineOverride: false
   function listRender() {
     var can = M.anyCan(['mitglieder.edit', 'mitglieder.anlegen']);
     var sel = function (id, cur, opts) { return '<select data-pl="' + id + '">' + opts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(cur) === String(o[0]) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>'; };
-    return '<section class="wm-card"><div class="wm-bar"><h3>' + (LW ? '👥 Mitglieder · ' + esc(LW.g) : 'Personen') + ' <span class="wm-sub" id="plCnt"></span></h3><span class="m-actions">' + (LW && LW.extra ? LW.extra : '') + '<button type="button" class="wm-btn" data-ma="plxlsx">📊 Excel</button>' + (can ? '<button type="button" class="wm-btn" data-ma="plnew">+ Person</button>' : '') + '</span></div>' +
+    return '<section class="wm-card"><div class="wm-bar"><h3>' + (LW ? '👥 Mitglieder · ' + esc(LW.g) : 'Personen') + ' <span class="wm-sub" id="plCnt"></span></h3><span class="m-actions">' + (LW && LW.extra ? LW.extra : '') + (M.anyCan(['mitglieder.import']) ? '<button type="button" class="wm-btn" data-ma="gotoimport">📥 Import (WebClub / DSGVO)</button>' : '') + '<button type="button" class="wm-btn" data-ma="plxlsx">📊 Excel</button>' + (can ? '<button type="button" class="wm-btn" data-ma="plnew">+ Person</button>' : '') + '</span></div>' +
       '<div class="pl-bar"><input class="pl-q" type="search" data-pl="q" placeholder="🔍 Name suchen …" value="' + esc(PL.q) + '" autocomplete="off"><input class="pl-n" type="search" data-pl="nr" placeholder="Mitgl.-Nr." value="' + esc(PL.nr) + '" inputmode="numeric" autocomplete="off">' +
       sel('r', PL.r, [['', 'Alle Rollen']].concat(ROLLEN.map(function (r) { return [r, r]; }))) + (LW ? '' : sel('g', PL.g, [['', 'Alle Gruppen']].concat(GR.map(function (g) { return [g, g]; })))) +
       sel('st', PL.st, [['aktiv', 'Aktive'], ['pausiert', 'Pausierte'], ['ausgetreten', 'Ausgetretene'], ['alle', 'Alle']]) + sel('sort', PL.sort, SORTS.map(function (s) { return ['' + s[0], 'Sortieren: ' + s[1]]; })) + '</div>' +
@@ -231,7 +231,7 @@ templateEngineOverride: false
   function importTab() {
     var can = M.anyCan(['mitglieder.import']);
     if (!can) return '<section class="wm-card"><p class="wm-note">Für den Import fehlt dir die Berechtigung.</p></section>';
-    return '<section class="wm-card"><div class="wm-bar"><h3>Import aus WebClub</h3></div><p class="wm-note">Ein Import für alles. Wähle die Datei(en), die Art wird erkannt:</p><ul class="wm-note" style="margin:0 0 8px 18px"><li><b>PDF „Gruppenliste“</b> (viele Personen einer Gruppe auf einmal, Schwimmer und Trainer zusammen möglich). Wähle dazu unten die Gruppe.</li><li><b>ZIP „Datenauskunft“</b> oder die Dateien <b>stammdaten.csv</b> und <b>gruppenzuordnung.csv</b> (eine Einzelperson mit allen Angaben, Rollen, Lizenzen und Ausrüstung). Bank- und Adressdaten werden nicht gelesen.</li></ul><p class="wm-note">Du siehst immer zuerst eine Vorschau. Es wird nie automatisch gelöscht.</p>' +
+    return '<section class="wm-card"><div class="wm-bar"><h3>Import aus WebClub</h3></div><p class="wm-note">Ein Import für alles. Wähle die Datei(en), die Art wird erkannt:</p><ul class="wm-note" style="margin:0 0 8px 18px"><li><b>PDF „Gruppenliste“</b> (viele Personen einer Gruppe auf einmal, Schwimmer und Trainer zusammen möglich). Wähle dazu unten die Gruppe.</li><li><b>ZIP „Datenauskunft“</b> oder die Dateien <b>stammdaten.csv</b> und <b>gruppenzuordnung.csv</b> (eine Einzelperson mit allen Angaben, Rollen, Lizenzen und Ausrüstung). Bank- und Adressdaten werden nicht gelesen.</li></ul><p class="wm-note"><b>Mehrere Personen auf einmal (z. B. alle Trainer):</b> Beim Auswählen mehrere ZIP-Dateien gleichzeitig markieren (am iPad: „Auswählen“ antippen und alle Dateien anhaken). Du siehst immer zuerst eine Vorschau. Es wird nie automatisch gelöscht.</p>' +
       '<div class="m-fgrid"><label class="m-f"><span>Gruppe (nur für PDF-Gruppenlisten)</span><select id="mi_g">' + GR.map(function (g) { return '<option>' + esc(g) + '</option>'; }).join('') + '</select></label><label class="m-f wide"><span>Datei(en)</span><input type="file" id="mi_f" accept=".pdf,.zip,.csv,application/pdf,application/zip,text/csv" multiple></label></div><div class="m-btns"><button type="button" class="wm-amber" data-ma="mimpread">Vorschau erstellen</button></div><div id="mi_msg" class="wm-sub" style="margin-top:8px"></div></section>';
   }
   function impRead() {
@@ -381,7 +381,7 @@ templateEngineOverride: false
   M.register('mitglieder', {
     title: 'Mitglieder', icon: '👥', colls: ['wgMitglieder', 'trainer', 'profile', 'trainingCfg'],
     onInput: function (ev) { plInput(ev); }, onChange: function (ev) { plInput(ev); },
-    tabs: [listTab, { id: 'listen', label: 'Listen', view: ['mitglieder.view'], render: function () { return listenRender(); } }, { id: 'import', label: 'WebClub-Import', view: ['mitglieder.import'], render: function () { return importTab(); } }],
+    tabs: [listTab, { id: 'listen', label: 'Listen', view: ['mitglieder.view'], render: function () { return listenRender(); } }, { id: 'import', label: '📥 Import (WebClub/DSGVO)', view: ['mitglieder.import'], render: function () { return importTab(); } }],
     actions: {
       plopen: function (it, el, ev, c) { if (ev && ev.target.closest && ev.target.closest('.pl-d')) return; var id = c.id; PL.open[id] = !PL.open[id]; plRefresh(); },
       plsort: function (it, el) { var k = el.getAttribute('data-v'); if (PL.sort === k) PL.dir = -PL.dir; else { PL.sort = k; PL.dir = 1; } PL.page = 0; M.render(true); },
@@ -389,7 +389,7 @@ templateEngineOverride: false
       plnew: function () { editPerson(null); }, plxlsx: function () { exportXlsx(); }, plcfg: function () { editCfg(); }, pledit: function (it, el, ev, c) { var p = personById(c.id); if (p) editPerson(p); }, pldel: function (it, el, ev, c) { var p = personById(c.id); if (p) delPerson(p); },
       mgf: function (it, el) { var f = flt(); var k = el.getAttribute('data-k'), v = el.getAttribute('data-v'); if (v) f[k] = v; else delete f[k]; M.render(true); },
       mgall: function () { var f = flt(); f.alle = !f.alle; M.render(true); },
-      mimpread: function () { impRead(); }, mcsvread: function () { csvRead(); }, mcsvsave: function () { csvSave(); },
+      gotoimport: function () { window.HubShell.S.onMenu('tab:import'); }, mimpread: function () { impRead(); }, mcsvread: function () { csvRead(); }, mcsvsave: function () { csvSave(); },
       mimpsave: function () { impSave(); }
     }
   });

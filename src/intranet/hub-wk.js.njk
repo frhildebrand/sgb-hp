@@ -218,7 +218,7 @@ templateEngineOverride: false
   var LEGS_LAGEN = ['Rücken', 'Brust', 'Schmetterling', 'Freistil'];
   function evMeld(wk, no) { var l = (wk.meld && wk.meld.events) || []; for (var i = 0; i < l.length; i++) if (l[i].no === no) return l[i]; return ev(wk, no); }
   function relayInfo(e) {
-    var m = /^(\d+)\s*x\s*(\d+)\s*m\s+(\S+)/.exec(e.name || ''); if (!m) return null;
+    var m = /^(\d+)\s*[xX×]\s*(\d+)\s*m?\s+(\S+)/.exec(e.name || ''); if (!m) return null;
     var sx = /weiblich/.test(e.name) ? 'W' : /männlich/.test(e.name) ? 'M' : 'X';
     return { n: +m[1], dist: +m[2], stroke: m[3], sex: sx, legs: m[3] === 'Lagen' ? LEGS_LAGEN.slice(0, +m[1]) : Array.apply(null, Array(+m[1])).map(function () { return m[3]; }) };
   }
@@ -247,18 +247,21 @@ templateEngineOverride: false
     return best ? best.pick.map(function (c) { return pool[c].n; }) : null;
   }
   function planOf(wk) { return (wk.staffelPlan && typeof wk.staffelPlan === 'object') ? wk.staffelPlan : {}; }
-  function staffelEvents(wk) { return ((wk.meld && wk.meld.events) || []).filter(function (e) { return e.staffel; }); }
+  function staffelEvents(wk) {
+    var no = {}; ((wk.meld && wk.meld.starts) || []).forEach(function (st) { if (st.j === 'Staffel') no[st.e] = 1; });
+    return ((wk.meld && wk.meld.events) || []).filter(function (e) { return e.staffel || no[e.no]; });
+  }
   function teamsOf(wk, no) {
     var l = []; wk.meld.starts.forEach(function (s) { if (s.e === no && s.j === 'Staffel' && l.indexOf(s.n) < 0) l.push(s.n); });
     var pl = planOf(wk); Object.keys(pl).forEach(function (k) { var a = k.split('|'); if (+a[0] === no && l.indexOf(a[1]) < 0) l.push(a[1]); });
     return l.length ? l : ['1. Mannschaft'];
   }
   function staffelPlan(wk) {
-    var evs = staffelEvents(wk); if (!evs.length) return '';
+    var evs = staffelEvents(wk); if (!evs.length) return '<section class="wm-card"><div class="wm-bar"><h3>Staffelplanung</h3></div><p class="wm-note">In der Meldedatei wurden keine Staffelstrecken erkannt. Bitte unter „Unterlagen“ das Meldeergebnis (DSV7- oder PDF-Datei) einlesen.</p></section>';
     var can = M.anyCan(['wettkaempfe.check', 'wettkaempfe.teilnahme']); var pl = planOf(wk);
     var out = '<section class="wm-card"><div class="wm-bar"><h3>Staffelplanung</h3><span class="m-actions"><button type="button" class="wm-btn" data-ma="stxlsx">📊 Excel</button></span></div><p class="wm-note">Die Zeiten kommen aus den Meldezeiten der Einzelstrecken (gleiche Teilstrecke). „Vorschlag“ wählt die schnellste Besetzung. Fehlt eine Meldezeit, steht „–“, und die Summe ist nicht vollständig.</p>';
     evs.forEach(function (e) {
-      var info = relayInfo(e); if (!info) return; var pool = relayPool(wk, info);
+      var info = relayInfo(e); if (!info) { out += '<article class="m-card"><div class="m-head"><div class="m-main"><div class="m-title">WK ' + e.no + ' · ' + esc(e.name || '') + '</div><div class="wm-sub">Staffelart nicht erkannt, bitte von Hand planen.</div></div></div></article>'; return; } var pool = relayPool(wk, info);
       out += '<article class="m-card"><div class="m-head"><div class="m-main"><div class="m-title">WK ' + e.no + ' · ' + esc(e.name) + '</div><div class="wm-sub">Abschnitt ' + (e.ab || 1) + ' · ' + pool.length + ' mögliche Schwimmer:innen</div></div></div><div class="m-body">';
       teamsOf(wk, e.no).forEach(function (team) {
         var key = e.no + '|' + team; var sel = pl[key] || []; var sum = 0, miss = 0, n = 0;

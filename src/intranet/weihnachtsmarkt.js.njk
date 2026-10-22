@@ -4346,10 +4346,11 @@ function updateNavVersion() {
 }
 // Beim Start: passt das Script zur App? (sonst klare Meldung statt stiller Fehler)
 async function checkScriptVersion() {
-  const ping = await getJson('ping');
+  let ping = await getJson('ping');
+  if (!ping && navigator.onLine !== false) { await new Promise(function (r) { setTimeout(r, 2500); }); ping = await getJson('ping'); }   // ein zweiter Versuch, bevor eine Meldung erscheint
   window.scriptVersion = ping ? Number(ping.version) || 0 : 0;
   updateNavVersion();
-  if (!ping && window.isLoggedIn() && window.wmBanner && navigator.onLine !== false) window.wmBanner('script', 'Das Google-Script antwortet nicht. Stimmt die Script-URL in weihnachtsmarkt.js und ist das Script als Web-App für alle freigegeben?');
+  if (!ping && window.isLoggedIn() && window.wmBanner && navigator.onLine !== false) window.wmBanner('script', 'Das Google-Script hat gerade nicht geantwortet (langsame Verbindung oder Script kurz nicht erreichbar). Bitte die Seite neu laden. Hilft das nicht mehrmals, das Script in Apps Script neu bereitstellen (Neue Version).');
   if (ping && window.scriptVersion < SCRIPT_VERSION_NEEDED && window.isLoggedIn()) {
     const txt = 'Das Google-Script ist noch Version ' + window.scriptVersion + ', die App braucht mindestens ' + SCRIPT_VERSION_NEEDED + '. Bitte Code.gs als Neue Version bereitstellen. Bis dahin funktionieren einzelne Bereiche nicht.';
     notify(txt);

@@ -832,7 +832,11 @@ intranetSeiten:
   #hubRoot .hub-bt { width: 100%; border-collapse: collapse; margin-top: 6px; }
   #hubRoot .hub-bt th, #hubRoot .hub-bt td { border: 1px solid var(--line); padding: 9px 12px; text-align: center; vertical-align: middle; }
   #hubRoot .hub-bt th { font-size: 13px; color: var(--soft); background: color-mix(in srgb, var(--soft) 8%, var(--card)); }
-  #hubRoot .hub-bt td:nth-child(1), #hubRoot .hub-bt td:nth-child(2) { white-space: nowrap; width: 1%; font-size: 14px; }
+  #hubRoot .hub-bt td:nth-child(1), #hubRoot .hub-bt td:nth-child(2) { font-size: 14px; }
+  #hubRoot .hub-bt td:nth-child(1), #hubRoot .hub-bt th:nth-child(1) { min-width: 9rem; width: 11%; }
+  #hubRoot .hub-bt td:nth-child(2), #hubRoot .hub-bt th:nth-child(2) { min-width: 7.5rem; width: 9%; white-space: nowrap; }
+  #hubRoot .hub-bt input.hub-by { width: 100%; min-width: 8rem; box-sizing: border-box; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: transparent; color: inherit; font-size: 14px; }
+  #hubRoot .hub-bt tr.ed input[type=text].hub-datefld, #hubRoot .hub-bt tr.ed input[data-bb=date] { min-width: 7rem; }
   #hubRoot .hub-bt td.m { text-align: left; }
   #hubRoot .hub-bt td.m .hub-rtc { margin: 4px 0 0; }
   #hubRoot .hub-bt tr.ed .hub-rtw { margin-top: 6px; }
@@ -1052,6 +1056,9 @@ intranetSeiten:
   #hubRoot .wg-t tr:last-child td { border-bottom: 0; } #hubRoot .wg-t tr:hover td { background: color-mix(in srgb, currentColor 4%, transparent); }
   #hubRoot .wg-tbl .wm-bar { margin-bottom: 4px; }
   #hubRoot .wg-ic { border: 0; background: none; cursor: pointer; font-size: 15px; padding: 2px 6px; color: inherit; opacity: .75; }
+  #hubRoot .wg-ct { appearance: none; background: transparent; border: 0; color: inherit; font-size: 15px; padding: 2px 8px 2px 0; cursor: pointer; }
+  #hubRoot .wg-closed { padding-top: 10px; padding-bottom: 10px; }
+  #hubRoot .wg-closed .wm-bar { margin: 0; }
   #hubRoot .wg-warn { border-left: 4px solid #dc2626; background: color-mix(in srgb, #dc2626 6%, var(--card)); padding-bottom: 8px; }
   #hubRoot .wg-warn.ok { border-left-color: #16a34a; background: color-mix(in srgb, #16a34a 6%, var(--card)); padding-bottom: 18px; }
   #hubRoot .wg-wh { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 6px; }
@@ -2076,12 +2083,12 @@ class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-
 </div>
 
 <!-- Skripte für Daten und Logik -->
-<script src="/intranet/js/weihnachtsmarkt-data.js?v=10222141"></script>
-<script src="/intranet/js/hub-config.js?v=10222141"></script>
-<script src="/intranet/js/hub-common.js?v=10222141"></script>
-<script src="/intranet/js/weihnachtsmarkt.js?v=10222141"></script>
+<script src="/intranet/js/weihnachtsmarkt-data.js?v=10222213"></script>
+<script src="/intranet/js/hub-config.js?v=10222213"></script>
+<script src="/intranet/js/hub-common.js?v=10222213"></script>
+<script src="/intranet/js/weihnachtsmarkt.js?v=10222213"></script>
 
 {% else %}
 <div id="hubRoot" {% if pg.modul %}data-modul="{{ pg.modul }}"{% else %}data-system=""{% endif %}><noscript><p style="padding:24px">Dafür wird JavaScript gebraucht.</p></noscript></div>
-{% for s in pg.scripts %}<script src="/intranet/js/{{ s }}.js?v=10222141" defer></script>
+{% for s in pg.scripts %}<script src="/intranet/js/{{ s }}.js?v=10222213" defer></script>
 {% endfor %}{% endif %}

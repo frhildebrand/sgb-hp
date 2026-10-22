@@ -191,14 +191,14 @@ window.HubBrett = (function () {
   function editRow(ex, o) {
     ex = ex || {}; var R = window.HubRich, A = o.attr;
     var bs = okBgC(ex.bg) ? ' style="background:' + okBgC(ex.bg) + '"' : '';
-    return '<tr class="ed"><td' + bs + '>' + esc(ex.by || o.me || '') + '</td><td' + bs + '><input type="date" data-bb="date" value="' + esc(ex.date || today()) + '"></td><td class="m">' + R.titleEditor(ex.titleHtml || esc(ex.title || '')) + R.editor(ex.html || R.plain(ex.text || ''), ex.bg) + picker(ex, o.groups) + '</td>' +
+    return '<tr class="ed"><td' + bs + '><input type="text" class="hub-by" data-bb="by" maxlength="60" value="' + esc(ex.by || o.me || '') + '" placeholder="Name, z. B. Jan i. A. Frieda" title="Von wem? Frei änderbar, z. B. „Jan, i. A. Frieda“"></td><td' + bs + '><input type="date" data-bb="date" value="' + esc(ex.date || today()) + '"></td><td class="m">' + R.titleEditor(ex.titleHtml || esc(ex.title || '')) + R.editor(ex.html || R.plain(ex.text || ''), ex.bg) + picker(ex, o.groups) + '</td>' +
       '<td class="a"' + bs + '><label class="hub-wch"><input type="checkbox" data-bb="wichtig"' + (ex.wichtig ? ' checked' : '') + '><span>📣 Wichtig</span></label><div><button type="button" class="hub-bx" ' + A + '="' + o.save + '" aria-label="Speichern" title="Speichern">💾</button><button type="button" class="hub-bx" ' + A + '="' + o.cancel + '" aria-label="Abbrechen" title="Abbrechen">✕</button></div></td></tr>';
   }
   // Werte der Bearbeitungszeile; null, wenn die Überschrift fehlt
   function collect(scope) {
     var R = window.HubRich, tt = R.valTitle(scope), bd = R.val(scope), pk = read(scope), d = scope.querySelector('input[data-bb=date]'), w = scope.querySelector('input[data-bb=wichtig]');
     if (!tt.text) return null;
-    return { title: tt.text, titleHtml: /<[^>]+>/.test(tt.html) ? tt.html : '', text: bd.text, html: bd.html, bg: bd.bg, wichtig: !!(w && w.checked), date: d && /^\d{4}-\d{2}-\d{2}$/.test(d.value) ? d.value : today(), until: pk.until, aud: pk.aud };
+    var by = scope.querySelector('input[data-bb=by]'); return { by: by && by.value.trim() ? by.value.trim() : undefined, title: tt.text, titleHtml: /<[^>]+>/.test(tt.html) ? tt.html : '', text: bd.text, html: bd.html, bg: bd.bg, wichtig: !!(w && w.checked), date: d && /^\d{4}-\d{2}-\d{2}$/.test(d.value) ? d.value : today(), until: pk.until, aud: pk.aud };
   }
   // Abstände für die angeheftete Formatierleiste (unter Kopfzeile und Spaltenüberschriften)
   function pin() {
@@ -381,7 +381,7 @@ window.HubShell = (function () {
   // Weihnachtsmarkt: die Unterseiten stehen als Menüpunkte unter „Weihnachtsmarkt“ (Schlüssel = Ansicht, Recht = Seite ansehen)
   var WMSUB = [['aushang', '📌', 'Aushang', 'view.aushang'], ['verkauf', '💶', 'Kasse', 'view.verkauf'], ['statistik', '📊', 'Statistik', 'view.statistik'], ['rezepte', '🧇', 'Rezepte', 'view.rezepte'],
     ['aufbau', '🧰', 'Auf- & Abbau', 'view.aufbau'], ['inventar', '📦', 'Inventar', 'view.inventar'], ['einkaufsliste', '🛒', 'Einkaufsliste', 'view.einkaufsliste'], ['verkabelung', '⚡', 'Strom & Verkabelung', 'view.verkabelung'],
-    ['lagerbestand', '🏬', 'Lagerbestand', 'view.lagerbestand'], ['boxen', '📥', 'Kisten & Boxen', 'view.boxen'], ['leihgaben', '🤝', 'Leihgaben', 'view.leihgaben'], ['admin', '🛡️', 'Markt-Verwaltung', 'view.admin'], ['hilfe', '❓', 'Markt-Hilfe', 'view.hilfe']];
+    ['lagerbestand', '🏬', 'Lagerbestand', 'view.lagerbestand'], ['boxen', '📥', 'Kisten & Boxen', 'view.boxen'], ['leihgaben', '🤝', 'Leihgaben', 'view.leihgaben'], ['admin', '🛡️', 'Markt-Verwaltung', 'view.admin']];
   function itemHtml(s, color, here) {
     var u = hereOf(s.url); var out = link(esc(s.url), esc(s.icon || '•'), /\/training\/$/.test(u) ? 'Gruppen' : s.name, here === u && !/\/training\/$/.test(u), color);
     if (/\/training\/$/.test(u)) {
@@ -440,9 +440,10 @@ window.HubShell = (function () {
       [['mitglieder.anlegen'], 'Mit „+ Person“ legst du eine Person an. Oben stehen immer die Stammdaten mit den Rollen. Darunter klappst du die Abschnitte der gewählten Rollen auf (Schwimmer, Trainer, Kampfrichter, Funktionär), dazu Ausrüstung und Notiz.'],
       [['mitglieder.edit'], 'Mit dem Stift änderst du die Angaben. Die Mitgliedsnummer verbindet die Person mit ihren Trainerdaten.'],
       [['mitglieder.view'], 'Gesponserte Vereinsbadekappe (Ausgabedatum) und Schwimmbrett (Art, Ausgabe, Rückgabe) trägst du unter „Ausrüstung“ ein. Das Material zeigt daraus, wer ein Brett hat.'],
-      [['mitglieder.import'], 'Im Reiter „WebClub-Import“ liest du die Gruppenliste (PDF) oder die WebClub-Datei ein. Du siehst vorher, wer neu ist, wer sich geändert hat und wer nicht mehr in der Liste steht. Bankdaten und Adressen werden nicht übernommen.'],
+      [['mitglieder.import'], 'Import: Oben in der Mitgliederliste steht der Knopf „📥 Import (WebClub / DSGVO)“ (gleich der Reiter daneben). Dort wählst du die Gruppenliste (PDF) oder die WebClub-Datenauskunft (ZIP, DSGVO) aus. Für mehrere Personen auf einmal, z. B. alle Trainer, markierst du beim Auswählen mehrere ZIP-Dateien gleichzeitig. Du siehst vorher eine Vorschau (neu, geändert, nicht mehr in der Liste). Bank- und Adressdaten werden nie gelesen oder gespeichert.'],
       [['mitglieder.view'], '„📊 Excel“ erzeugt die Liste in mehreren Blättern.']] },
     { id: 'anwesenheit', icon: '📋', title: 'Anwesenheit', text: 'Anwesenheitslisten aus WebClub je Gruppe. Die Übersicht zeigt pro Monat, wer da war, und welche Gruppe schon eine Liste hat.', steps: [
+      [['anwesenheit.view'], 'Den Zeitraum stellst du mit „von“ und „bis“ ein (ein Monat oder z. B. September bis Dezember). Mit ‹ und › verschiebst du den ganzen Zeitraum. „📊 Excel“ gilt für den eingestellten Zeitraum.'],
       [['anwesenheit.upload'], 'Die Anwesenheit kommt aus den Trainingsterminen der Gruppe. Im Reiter „Termine einlesen“ kannst du aus einer WebClub-PDF fehlende Trainingstage anlegen. „📊 Excel“ erzeugt die Anwesenheitsliste mit der Vorlage der SG.']] },
     { id: 'auswertung', icon: '📈', title: 'Jahresauswertung', text: 'Rangliste, Einzelblätter und Ehrungen aus der Punkteliste (World Aquatics). Gewertet wird je Strecke die punktbeste Leistung aus Lang- und Kurzbahn.', steps: [
       [['auswertung.upload'], 'Im Reiter „Hochladen“ liest du die Punkteliste je Saison ein, getrennt für Langbahn und Kurzbahn.'],
@@ -480,6 +481,7 @@ window.HubShell = (function () {
       [['training.tage.anlegen', 'training.anlegen'], 'Mit „+“ legst du einen neuen Trainingstag an.'],
       [['training.mitglieder.view'], 'Unter „Mitglieder“ steht die Liste der Gruppe mit Jahrgang und DSV-ID.'],
       [['training.beobachtung'], 'Beobachtungen zu einzelnen Schwimmern hältst du am Trainingstag fest.'],
+      [['training.view'], 'Die Karten (Anwesenheit, Fahrten, Mitglieder, Training) klappst du mit dem kleinen Pfeil zu und wieder auf. Bei „Alle Gruppen“ gibt es keine Anwesenheitsliste und kein Farbenformular.'],
       [['training.view'], 'Oben wählst du die Gruppe. Training, Mitglieder und Fahrten findest du auf der Gruppenseite untereinander.']] },
     { id: 'jugend', icon: '🏊', title: 'Jugend', text: 'Schwimmabzeichen und die Jugendkasse.', steps: [
       [['jugend.abzeichen.view'], 'Reiter „Abzeichen“ mit den Ansichten „Abnahme“ (Personen als Tabelle, Fortschritt je Anforderung), „Übersicht“ und „Preise & Anforderungen“. Mit dem Stift änderst du Einträge.'],
@@ -511,7 +513,19 @@ window.HubShell = (function () {
       [['veranstaltungen.edit'], 'Offene Punkte kannst du als Aufgaben anlegen. Weitere Punkte kommen mit „+ Punkt“ oder „Punkte aus PDF“ dazu.'],
       [['veranstaltungen.edit', 'veranstaltungen.vorlagen'], 'Reiter „Vorlagen“: Checklisten, die du für neue Veranstaltungen wiederverwendest.'],
       [['veranstaltungen.print'], '„📊 Excel“ erzeugt Checkliste und Helferliste einer Veranstaltung.']] },
-    { id: 'weihnachtsmarkt', icon: '🎄', title: 'Weihnachtsmarkt', text: 'Aushang, Kasse, Inventar, Aufbau und mehr. Die Seiten des Marktes stehen im Menü links unter „Weihnachtsmarkt“ als Unterpunkte. Der Markt hat eine eigene Hilfe („Markt-Hilfe“).', steps: [] }
+    { id: 'weihnachtsmarkt', icon: '🎄', title: 'Weihnachtsmarkt', text: 'Alles zum Stand: Aushang, Kasse, Statistik, Rezepte, Auf- und Abbau, Inventar, Einkaufsliste, Strom, Lager, Kisten, Leihgaben und die Markt-Verwaltung. Die Seiten stehen im Menü links unter „Weihnachtsmarkt“ (am iPad: ☰). Du siehst nur die Seiten, die für dein Konto freigegeben sind. Änderungen gehen sofort an alle Geräte; ohne Internet speichert das Gerät zuerst lokal und schickt später nach.', steps: [
+      [['view.aushang'], '📌 Aushang: Wer hilft wann am Stand. „Eintragen“ antippen, Namen eingeben, fertig; mit ✕ trägst du dich wieder aus. Beim Waffelteig tippst du auf einen freien Platz. Mit „Drucken“ entsteht ein DIN-A4-Blatt je Tag (am iPad über Teilen als PDF sichern).'],
+      [['view.verkauf'], '💶 Kasse: + bucht, − oder „Rückgängig“ nimmt die letzte Buchung zurück. Alle Geräte buchen auf denselben Stand. Der Übungsmodus zählt nichts. Beim Kassensturz zählst du das Bargeld, die App zeigt die Differenz. Mit „Tag abschließen“ sperrst du den Tag (lässt sich wieder öffnen). Der Tagesbericht lässt sich drucken oder als PDF sichern.'],
+      [['view.statistik'], '📊 Statistik: Umsatz, Ausgaben und Gewinn je Tag und gesamt, dazu die Verkäufe pro Stunde. Ausgaben trägst du mit Betrag und Zweck ein (Beleg als Foto möglich); die Abrechnung gibt es als CSV oder zum Drucken und kann in die Jugendkasse gebucht werden.'],
+      [['view.rezepte'], '🧇 Rezepte: Waffeln und Punsch mit Zutaten und Mengen. Der Punsch-Rechner rechnet auf die gewünschte Menge um.'],
+      [['view.aufbau'], '🧰 Auf- & Abbau: Ablauf zum Abhaken, Abnahme-Checkliste (mit Name und Uhrzeit), Standskizze zum Verschieben mit dem Finger. Erledigtes sehen alle Geräte sofort.'],
+      [['view.inventar'], '📦 Inventar: Alles, was der Stand braucht, nach Kategorien mit Bedarf, Lager und Box. Zahl und Einheit stehen zusammen („12 Kartons“).'],
+      [['view.einkaufsliste'], '🛒 Einkaufsliste: Bedarf minus Lager, also was noch gekauft werden muss.'],
+      [['view.verkabelung'], '⚡ Strom & Verkabelung: Kabel, Mehrfachstecker und Geräte auf die Stecker ziehen. Grün ist in Ordnung, Gelb über 80 %, Rot überlastet.'],
+      [['view.lagerbestand', 'view.boxen'], '🏬 Lagerbestand und 📥 Kisten & Boxen zeigen den Bestand und was in welcher Kiste liegt (kommt aus dem Inventar).'],
+      [['view.leihgaben'], '🤝 Leihgaben: Geliehene Sachen mit Verleiher, Abholung und Rückgabe; Stand mit „Offen“, „Vor Ort“, „Zurück“ festhalten.'],
+      [['view.admin'], '🛡️ Markt-Verwaltung: Preise und Produkte, Countdown, Aushang, Saison-Archiv und Saison-Reset, Sicherungen. Benutzer und Rechte werden zentral unter „Verwaltung“ gepflegt.'],
+      [['view.status', 'view.protokoll'], '🩺 Systemstatus und 📝 Änderungsprotokoll zeigen den Zustand des Systems und wer wann was geändert hat.']] }
   ];
   function anyOf(list) { return !list || !list.length || list.some(has); }
   function helpHtml() {
@@ -533,11 +547,12 @@ window.HubShell = (function () {
     var extra = '', prof = '';
     if (m && m.user) prof += '<section class="hub-help-card"><div class="hub-help-top"><h4>👤 Mein Profil</h4><a class="hub-btn hub-ghost" href="' + HUB_URL + 'profil/">Öffnen</a></div><p>Hier stehen deine Daten in Reitern: Schwimmer, Trainer, Kampfrichter, Funktionär, Kontakt und Bank sowie deine Unterschrift. Mit „Bearbeiten“ trägst du alles ein. Die Angaben zu Schwimmer, Kampfrichter und Funktionär werden automatisch mit der Mitgliederliste abgeglichen, in beide Richtungen. Daten lassen sich aus einer WebClub-Datei übernehmen. Die Abrechnung nutzt sie für Stundensatz, Excel-Formulare und Überweisung.</p></section>';
     if (canAdmin()) extra += '<section class="hub-help-card"><div class="hub-help-top"><h4>🛡️ Verwaltung</h4><a class="hub-btn hub-ghost" href="' + HUB_URL + 'verwaltung/">Öffnen</a></div><p>Benutzer, Rollen und Rechte. Mit den Rechten steuerst du, welche Bereiche und Funktionen jede Person sieht. Die Reihenfolge der Rollen legst du mit ▲▼ fest; sie bestimmt auch die Benutzerliste.</p><ul>' +
-      (has('system.users') ? '<li>Benutzer anlegen, Startpasswort setzen, Rollen und Sonderrechte zuweisen.</li>' : '') +
+      (has('system.users') ? '<li>Benutzer anlegen, Startpasswort setzen, Rollen und Sonderrechte zuweisen. „🪪 Namen angleichen“ zeigt sofort alle Konten mit einem Vorschlag für Vor- und Nachname aus der Mitgliederliste (lädt im Hintergrund nach). Du prüfst die Vorschläge, ändern kannst du alles von Hand, und mit „Übernehmen“ werden Name und Anmeldename (vorname.nachname) gespeichert. Passwörter bleiben, die Daten der Person werden mit umbenannt.</li>' : '') +
       (has('system.roles') || has('system.rechte') ? '<li>Rollen anlegen und Rechte je Bereich einzeln freischalten.</li>' : '') +
       (has('system.passwords') ? '<li>Passwörter von Benutzern zurücksetzen.</li>' : '') +
       (has('system.users') ? '<li>„Personenauswahl“: Du stellst je Bereich ein, wer in den Namensvorschlägen erscheint (z. B. bei Aufgaben nur Trainer).</li>' : '') +
-      (has('view.status') ? '<li>Der Systemstatus zeigt Verbindung, Versionen und die Datenmenge je Bereich.</li>' : '') +
+      (has('view.status') ? '<li>Der Systemstatus zeigt Verbindung, Versionen und die Datenmenge je Bereich. Beim ersten Aufruf braucht er etwas; danach erscheint der zuletzt gesehene Stand sofort und wird im Hintergrund aktualisiert.</li>' : '') +
+      (has('system.backup') ? '<li>Unter „Backups“ sicherst du den Stand jetzt oder richtest den täglichen Zeitplan (03:00 Uhr) ein. Klappt das nicht, braucht das Apps-Script einmal eine Freigabe: im Editor die Funktion „zeitplanFreigeben“ ausführen und danach eine neue Version bereitstellen.</li>' : '') +
       (has('view.protokoll') ? '<li>Das Änderungsprotokoll zeigt, wer wann was geändert hat.</li>' : '') + '</ul></section>';
     return '<div class="ha-overlay" data-sh="cancelbg"><div class="ha-dialog wide hub-help"><div class="hub-dhead"><h3>❓ Hilfe</h3><button type="button" class="hub-btn hub-ghost" data-sh="cancel" aria-label="Schließen">✕</button></div><div class="hub-help-body">' + gen + secs + extra + '</div></div></div>';
   }

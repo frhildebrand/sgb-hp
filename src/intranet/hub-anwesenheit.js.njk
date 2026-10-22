@@ -14,6 +14,14 @@ templateEngineOverride: false
   var slug = M.slug, fd = M.fd, ym = M.ym;
   function sub() { var s = M.S.sub; if (!s.ag) s.ag = GR[0]; if (!s.am) s.am = ym(M.today()); return s; }
   function shift(m, n) { var p = m.split('-'); var d = new Date(+p[0], +p[1] - 1 + n, 1); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); }
+  function aeOf(s) { return s.ae && s.ae >= s.am ? s.ae : s.am; }
+  function inRange(k, s) { var m = ym(k); return m >= s.am && m <= aeOf(s); }
+  function rangeLabel(s) { var e = aeOf(s); return e === s.am ? M.monthLabel(s.am) : M.monthLabel(s.am) + ' – ' + M.monthLabel(e); }
+  function monthOpts(mg, cur) {
+    var set = {}; mg.keys.forEach(function (k) { set[ym(k)] = 1; }); set[ym(M.today())] = 1; set[s0().am] = 1; set[aeOf(s0())] = 1;
+    return Object.keys(set).sort().map(function (m) { return '<option value="' + m + '"' + (m === cur ? ' selected' : '') + '>' + esc(M.monthLabel(m)) + '</option>'; }).join('');
+  }
+  function s0() { return M.S.sub; }
   function lists(g) { return M.items('anwesenheit').filter(function (x) { return x.gruppe === g; }); }
   var CODE = { a: ['a', '✓'], e: ['e', 'e'], f: ['o', 'x'], k: ['k', 'k'] };
   function cell(c) { if (!c || c === '.') return '<span class="st n" style="display:inline-block;width:22px;text-align:center;color:#94a3b8">·</span>'; var x = CODE[c] || ['n', c]; var col = { a: '#d1fae5;color:#047857', e: '#fef3c7;color:#92400e', o: '#fee2e2;color:#b91c1c', k: '#dbeafe;color:#1d4ed8', n: '#eef1f6;color:#94a3b8' }[x[0]]; return '<span style="display:inline-block;width:22px;border-radius:7px;text-align:center;font-weight:800;font-size:12px;background:' + col + '">' + x[1] + '</span>'; }
@@ -44,9 +52,9 @@ templateEngineOverride: false
     var keys = Object.keys(sess).sort(); return { keys: keys, sess: sess, ppl: Object.keys(ppl).map(function (k) { return ppl[k]; }).sort(function (a, b) { return (a.trainer === b.trainer ? 0 : a.trainer ? -1 : 1) || a.name.localeCompare(b.name, 'de'); }) };
   }
   function uebersicht() {
-    var s = sub(); var g = s.ag; var mg = merged(g); var keys = mg.keys.filter(function (k) { return ym(k) === s.am; });
+    var s = sub(); var g = s.ag; var mg = merged(g); var keys = mg.keys.filter(function (k) { return inRange(k, s); });
     var out = '<section class="wm-card"><div class="wm-bar"><h3>Anwesenheit</h3><span class="m-actions"><button type="button" class="wm-btn" data-ma="awxlsx">📊 Excel</button></span></div><div class="m-chips">' + GR.map(function (x) { return '<button type="button" class="m-chip' + (x === g ? ' on' : '') + '" data-ma="awg" data-v="' + esc(x) + '">' + esc(x) + '</button>'; }).join('') + '</div>' +
-      '<div class="m-chips" style="align-items:center"><button type="button" class="m-chip" data-ma="awm" data-d="-1">‹</button><b>' + esc(M.monthLabel(s.am)) + '</b><button type="button" class="m-chip" data-ma="awm" data-d="1">›</button><span class="wm-sub">' + keys.length + ' Termine</span></div>';
+      '<div class="m-chips" style="align-items:center"><button type="button" class="m-chip" data-ma="awm" data-d="-1" title="Zeitraum einen Monat zurück">‹</button><label class="wm-sub">von <select data-aw="am">' + monthOpts(mg, s.am) + '</select></label><label class="wm-sub">bis <select data-aw="ae">' + monthOpts(mg, aeOf(s)) + '</select></label><button type="button" class="m-chip" data-ma="awm" data-d="1" title="Zeitraum einen Monat vor">›</button><span class="wm-sub">' + keys.length + ' Termine</span></div>';
     if (!keys.length) out += '<p class="wm-note">Für ' + esc(g) + ' gibt es in diesem Monat noch keine Liste. Lege den Trainingstag in der Gruppenseite an (Menü „Gruppen“) oder lies eine WebClub-Liste im Reiter „Termine einlesen“ ein.</p>';
     else {
       out += '<div class="m-twrap"><table><tr><th>Name</th>' + keys.map(function (k) { return '<th class="nowrap">' + esc(M.fmtDate(mg.sess[k].date, true)) + '<br>' + esc(mg.sess[k].time) + '</th>'; }).join('') + '<th>Quote</th></tr>';
@@ -61,15 +69,15 @@ templateEngineOverride: false
   }
   // Excel mit SG-Kopf: Anwesenheit der gewählten Gruppe im gewählten Monat
   function exportXlsx() {
-    var s = sub(), g = s.ag, mg = merged(g), keys = mg.keys.filter(function (k) { return ym(k) === s.am; });
-    if (!keys.length) { M.toast('In diesem Monat gibt es keine Termine.'); return; }
+    var s = sub(), g = s.ag, mg = merged(g), keys = mg.keys.filter(function (k) { return inRange(k, s); });
+    if (!keys.length) { M.toast('Im gewählten Zeitraum gibt es keine Termine.'); return; }
     var X = { a: '✓', e: 'E', f: 'x', k: 'k' };
     var head = ['Name'].concat(keys.map(function (k) { return M.fmtDate(mg.sess[k].date, true) + (mg.sess[k].time ? '\n' + mg.sess[k].time : ''); })).concat(['Quote']);
     var rows = mg.ppl.map(function (p) {
       var a = 0, t = 0; keys.forEach(function (k) { var c = p.st[k]; if (c && c !== '.') { t++; if (c === 'a') a++; } });
       return [p.name + (p.trainer ? ' (Trainer)' : '')].concat(keys.map(function (k) { var c = p.st[k]; return c && c !== '.' ? (X[c] || c) : ''; })).concat([t ? Math.round(a * 100 / t) + ' %' : '']);
     });
-    M.xlsxList({ file: 'Anwesenheit_' + g.replace(/\s+/g, '') + '_' + s.am + '.xlsx', title: 'Anwesenheit ' + g + ' · ' + M.monthLabel(s.am), sub: '✓ anwesend · E entschuldigt · x fehlt', sheets: [{ name: 'Anwesenheit', head: head, rows: rows, w: [30].concat(keys.map(function () { return 13; })).concat([9]) }] });
+    M.xlsxList({ file: 'Anwesenheit_' + g.replace(/\s+/g, '') + '_' + s.am + (aeOf(s) !== s.am ? '_bis_' + aeOf(s) : '') + '.xlsx', title: 'Anwesenheit ' + g + ' · ' + rangeLabel(s), sub: '✓ anwesend · E entschuldigt · x fehlt', sheets: [{ name: 'Anwesenheit', head: head, rows: rows, w: [30].concat(keys.map(function () { return 13; })).concat([9]) }] });
   }
   var UP = null;
   function hochladen() {
@@ -141,11 +149,12 @@ templateEngineOverride: false
     return '<section class="wm-card"><div class="wm-bar"><h3>Hochgeladene Listen</h3></div>' + (l.length ? l.map(function (x) { return '<div class="m-chk" data-id="' + esc(x.id) + '"><span style="flex:1"><b>' + esc(x.gruppe) + '</b> · ' + fd(x.von) + ' – ' + fd(x.bis) + ' <span class="wm-sub">' + (x.people || []).length + ' Personen</span></span>' + (x.pdfUrl && /^https:\/\//.test(x.pdfUrl) ? '<a class="wm-btn" href="' + esc(x.pdfUrl) + '" target="_blank" rel="noopener">📎 PDF</a>' : '') + (M.anyCan(['anwesenheit.edit', 'anwesenheit.loeschen']) ? ' <button type="button" class="wm-btn m-danger" data-ma="awdel">🗑️</button>' : '') + '</div>'; }).join('') : '<p class="wm-note">Noch keine Liste hochgeladen.</p>') + '</section>';
   }
   M.register('anwesenheit', {
+    onChange: function (ev) { var t = ev.target, k = t && t.getAttribute && t.getAttribute('data-aw'); if (!k) return; var s = sub(); s[k] = t.value; if (k === 'am' && aeOf(s) < s.am) s.ae = s.am; if (k === 'ae' && t.value < s.am) s.am = t.value; M.render(true); },
     title: 'Anwesenheit', icon: '📋', colls: ['anwesenheit', 'trainingTage', 'wgMitglieder', 'saetze'],
     tabs: [{ id: 'uebersicht', label: 'Übersicht', view: ['anwesenheit.view'], render: uebersicht }, { id: 'hochladen', label: 'Termine einlesen', view: ['anwesenheit.upload'], render: function () { return hochladen() + verwalten(); } }],
     actions: {
       awg: function (it, el) { sub().ag = el.getAttribute('data-v'); M.render(true); },
-      awm: function (it, el) { var s = sub(); s.am = shift(s.am, +el.getAttribute('data-d')); M.render(true); },
+      awm: function (it, el) { var s = sub(), d = +el.getAttribute('data-d'), e = aeOf(s); s.am = shift(s.am, d); s.ae = shift(e, d); M.render(true); },
       awxlsx: function () { exportXlsx(); },
       awread: function () { read(); }, awsave: function () { save(); },
       awdel: function (it, el, ev, c) { var id = c.id || el.closest('[data-id]').getAttribute('data-id'); M.confirm('Diese Liste löschen?', 'Löschen', function () { M.op({ op: 'del', coll: 'anwesenheit', id: id }); }); }

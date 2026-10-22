@@ -171,23 +171,30 @@ templateEngineOverride: false
   var RN = { open: false, loading: false, rows: null, err: '', busy: false };
   function slug(t) { return String(t || '').toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ''); }
   function loginOf(full) { var w = String(full || '').trim().split(/\s+/).filter(Boolean); if (w.length < 2) return ''; return slug(w[0]) + '.' + slug(w[w.length - 1]); }
+  // Sofort anzeigen (Liste der Konten), Vorschläge aus der Mitgliederliste kommen danach dazu und überschreiben nur Zeilen, die noch nicht bearbeitet wurden.
+  function rnSuggest(names) {
+    var used = {}; S.users.forEach(function (u) { if (u.login) used[String(u.login).toLowerCase()] = u.id; });
+    (RN.rows || []).forEach(function (r) {
+      if (r.touched) return;
+      var key = slug(r.old), hit = [];
+      names.forEach(function (n) { var w = n.split(/\s+/); if (slug(n) === key || (w.length > 1 && (slug(w[0]) === key || slug(w[w.length - 1]) === key || slug(w[0] + w[w.length - 1]) === key))) hit.push(n); });
+      hit = hit.filter(function (x, i) { return hit.indexOf(x) === i; });
+      var full = hit.length === 1 ? hit[0] : (/\s/.test(r.old) ? r.old : '');
+      r.name = full; r.login = full ? loginOf(full) : (r.login || '');
+      r.hint = hit.length > 1 ? 'Mehrere Treffer: ' + hit.join(', ') : (hit.length ? '' : 'Kein Treffer in der Mitgliederliste');
+      if (r.login) { var base = r.login, n = 1; while (used[r.login] && used[r.login] !== r.id) { n++; r.login = base + n; r.hint = (r.hint ? r.hint + ' · ' : '') + 'Anmeldename war schon vergeben, Ziffer angehängt'; } used[r.login] = r.id; }
+    });
+  }
   function rnLoad() {
-    RN.open = true; RN.loading = true; RN.err = ''; render();
+    RN.open = true; RN.err = ''; RN.loading = false;
+    RN.rows = S.users.map(function (u) { return { id: u.id, old: u.name, name: /\s/.test(u.name) ? u.name : '', login: u.login || '', hint: RN.names ? '' : 'Vorschläge werden geladen …', touched: false }; });
+    if (RN.names) { rnSuggest(RN.names); render(); return; }
+    render();
     get('data', { colls: 'wgMitglieder' }).then(function (r) {
-      RN.loading = false;
       var mem = r && r.status === 'success' && r.data ? (r.data.wgMitglieder || []) : [];
-      if (!r || r.status !== 'success') RN.err = 'Die Mitgliederliste konnte nicht geladen werden. Namen lassen sich trotzdem von Hand eintragen.';
-      var names = mem.map(function (m) { return String(m.name || '').trim(); }).filter(Boolean);
-      RN.rows = S.users.map(function (u) {
-        var key = slug(u.name), hit = [];
-        names.forEach(function (n) { var w = n.split(/\s+/); if (slug(n) === key || (w.length > 1 && (slug(w[0]) === key || slug(w[w.length - 1]) === key || slug(w[0] + w[w.length - 1]) === key))) hit.push(n); });
-        hit = hit.filter(function (x, i) { return hit.indexOf(x) === i; });
-        var full = hit.length === 1 ? hit[0] : (/\s/.test(u.name) ? u.name : '');
-        return { id: u.id, old: u.name, name: full, login: full ? loginOf(full) : (u.login || ''), hint: hit.length > 1 ? 'Mehrere Treffer: ' + hit.join(', ') : (hit.length ? '' : 'Kein Treffer in der Mitgliederliste'), ok: true };
-      });
-      var used = {}; S.users.forEach(function (u) { if (u.login) used[String(u.login).toLowerCase()] = u.id; });
-      RN.rows.forEach(function (r) { if (!r.login) return; var base = r.login, n = 1; while (used[r.login] && used[r.login] !== r.id) { n++; r.login = base + n; r.hint = (r.hint ? r.hint + ' · ' : '') + 'Anmeldename war schon vergeben, Ziffer angehängt'; } used[r.login] = r.id; });
-      render();
+      if (!r || r.status !== 'success') { RN.err = 'Die Mitgliederliste konnte nicht geladen werden. Namen lassen sich trotzdem von Hand eintragen.'; (RN.rows || []).forEach(function (x) { x.hint = ''; }); render(); return; }
+      RN.names = mem.map(function (m) { return String(m.name || '').trim(); }).filter(Boolean);
+      if (RN.open) { rnSuggest(RN.names); render(); }
     });
   }
   function rnHtml() {
@@ -213,48 +220,6 @@ templateEngineOverride: false
     access(ops).then(function (r) { RN.busy = false; if (r && !(r.errors && r.errors.length)) { RN.open = false; RN.rows = null; S.msg = ''; } else if (r) RN.err = (r.errors || []).join(' '); render(); });
   }
 
-  // ---------- Empfohlene Rechte für die neun Standardrollen ----------
-  var REC = { open: false, plan: null, busy: false, err: '' };
-  var NOSYS = /^(system\.|view\.(admin|status|protokoll)|account\.)/;
-  var RULES = {
-    geschaeftsfuehrung: { all: true, not: /^(system\.|account\.|view\.admin)/ },
-    kassenwart: { re: /^(hub\.(jugend|abrechnung|fahrten|vorstand|wettkaempfe|mitglieder|aufgaben|dokumente|auswertung|veranstaltungen|material)$|brett\.view$|startseite\.brett$|jugend\.kasse\.|jugend\.abzeichen\.view$|abrechnung\.|fahrten\.|vorstand\.(view|print)$|vorstand\.(antraege|sitzungen|protokolle|beschluesse)\.view$|vorstand\.antrag$|mitglieder\.view$|aufgaben\.(view|own)$|wettkaempfe\.(view|print|meldegeld)$|auswertung\.(view|print)$|dokumente\.view$|veranstaltungen\.(view|print)$|material\.(view|print)$)/ },
-    vorstand: { re: /^(hub\.(?!weihnachtsmarkt)|brett\.|startseite\.brett$|vorstand\.|aufgaben\.|veranstaltungen\.|dokumente\.|mitglieder\.view$|wettkaempfe\.(view|print|artikel)$|auswertung\.(view|print)$|training\.(view|print|mitglieder\.view|tage\.view)$|jugend\.(kasse\.view|kasse\.print|abzeichen\.view)$|material\.(view|print)$|abrechnung\.(ansehen)$|fahrten\.ansehen$|trainer\.view$|anwesenheit\.view$)/ },
-    jugendvertretung: { re: /^(hub\.(jugend|aufgaben|veranstaltungen|material|wettkaempfe|mitglieder|dokumente|training)$|brett\.view$|startseite\.brett$|jugend\.abzeichen\.|jugend\.kasse\.(view|buchen|print)$|veranstaltungen\.|aufgaben\.(view|own|edit|anlegen)$|material\.(view|ausleihe|bestand|print)$|wettkaempfe\.(view|print)$|mitglieder\.view$|dokumente\.view$|training\.mitglieder\.view$)/ },
-    trainer: { re: /^(hub\.(?!vorstand|weihnachtsmarkt)|brett\.view$|startseite\.brett$|training\.(?!rueckblick)|anwesenheit\.|trainer\.eigene$|abrechnung\.(eigene|termine)$|fahrten\.eigene$|material\.(view|edit|ausleihe|bestand|print)$|aufgaben\.(view|own|edit|anlegen)$|jugend\.abzeichen\.|mitglieder\.(view|trainer)$|wettkaempfe\.(view|print|check|teilnahme|krzahl|zeiten|vorort|kampfgericht)$|auswertung\.(view|print)$|veranstaltungen\.(view|print|check)$|dokumente\.view$)/, not: /(loeschen)$/ },
-    helfer: { re: /^(hub\.(aufgaben|veranstaltungen|material|wettkaempfe|dokumente|weihnachtsmarkt)$|brett\.view$|aufgaben\.(view|own)$|veranstaltungen\.(view|check)$|material\.view$|wettkaempfe\.view$|dokumente\.view$)/, def: 'h' },
-    fahrer: { re: /^(hub\.(fahrten|abrechnung|wettkaempfe|aufgaben)$|brett\.view$|fahrten\.eigene$|aufgaben\.(view|own)$|wettkaempfe\.view$)/, def: 'h' },
-    gast: { re: /^(hub\.(wettkaempfe|auswertung|veranstaltungen|dokumente)$|brett\.view$|wettkaempfe\.view$|auswertung\.view$|veranstaltungen\.view$|dokumente\.view$)/, def: 'g' }
-  };
-  var ORGA = { geschaeftsfuehrung: 1, kassenwart: 1, vorstand: 1, jugendvertretung: 1, trainer: 1 };
-  function ruleKey(name) { var n = slug(name); if (/^admin/.test(n)) return ''; if (/gesch/.test(n)) return 'geschaeftsfuehrung'; if (/kasse/.test(n)) return 'kassenwart'; if (/vorstand/.test(n)) return 'vorstand'; if (/jugend/.test(n)) return 'jugendvertretung'; if (/trainer/.test(n)) return 'trainer'; if (/helfer/.test(n)) return 'helfer'; if (/fahrer/.test(n)) return 'fahrer'; if (/^gast/.test(n)) return 'gast'; return ''; }
-  function recPerms(rk) {
-    var r = RULES[rk], out = [];
-    S.catalog.groups.forEach(function (g) { g.perms.forEach(function (q) {
-      var k = q.key, wm = g.system === 'weihnachtsmarkt', on = false;
-      if (NOSYS.test(k) && !(r.all && !(r.not && r.not.test(k)))) return;
-      if (wm) { var d = String(q.def || ''); on = rk === 'geschaeftsfuehrung' || (ORGA[rk] ? d.indexOf('o') >= 0 : d.indexOf(r.def || 'h') >= 0); if (rk === 'kassenwart' || rk === 'vorstand') on = d.indexOf('o') >= 0; if (rk === 'trainer' || rk === 'jugendvertretung') on = d.indexOf('h') >= 0; }
-      else if (r.all) on = true; else on = r.re.test(k);
-      if (on && r.not && r.not.test(k)) on = false;
-      if (on) out.push(k);
-    }); });
-    return out;
-  }
-  function recOpen() {
-    REC.plan = S.roles.map(function (r) { var rk = ruleKey(r.name); return rk && !r.builtin ? { id: r.id, name: r.name, desc: r.desc, old: (r.perms || []).length, perms: recPerms(rk), on: true } : (rk ? { id: r.id, name: r.name, desc: r.desc, old: (r.perms || []).length, perms: recPerms(rk), on: true } : null); }).filter(Boolean);
-    REC.open = true; REC.err = REC.plan.length ? '' : 'Keine der neun Standardrollen gefunden (Administrator wird nie geändert).'; render();
-  }
-  function recHtml() {
-    if (!REC.open) return '';
-    var rows = (REC.plan || []).map(function (p, i) { return '<label class="vw-row"><span><input type="checkbox" data-rec="' + i + '"' + (p.on ? ' checked' : '') + '> <b>' + esc(p.name) + '</b></span><span>' + p.old + ' → <b>' + p.perms.length + '</b> Rechte</span></label>'; }).join('');
-    return '<div class="wm-card"><div class="wm-bar"><h3>✅ Empfohlene Rechte setzen</h3><span><button type="button" class="wm-btn" data-act="recclose">Abbrechen</button> <button type="button" class="wm-amber" data-act="recgo"' + (REC.busy ? ' disabled' : '') + '>' + (REC.busy ? 'Speichere …' : 'Anwenden') + '</button></span></div><p class="wm-note">Setzt die Rechte der angehakten Rollen auf einen sinnvollen Vorschlag (Geschäftsführung, Kassenwart, Vorstand, Jugendvertretung, Trainer, Helfer, Fahrer, Gast). Die bisherigen Rechte dieser Rollen werden ersetzt. Der Administrator bleibt unangetastet. Danach kann jede Rolle einzeln nachgestellt werden.</p>' + (REC.err ? '<div class="hub-err">' + esc(REC.err) + '</div>' : '') + rows + '</div>';
-  }
-  function recGo() {
-    var ops = (REC.plan || []).filter(function (p) { return p.on; }).map(function (p) { return { op: 'saveRole', role: { id: p.id, name: p.name, desc: p.desc, perms: p.perms } }; });
-    if (!ops.length) { REC.err = 'Keine Rolle ausgewählt.'; render(); return; }
-    REC.busy = true; render();
-    access(ops).then(function (r) { REC.busy = false; if (r && !(r.errors && r.errors.length)) REC.open = false; else if (r) REC.err = (r.errors || []).join(' '); render(); });
-  }
   function openDialog(cfg) { S.dialog = cfg; render(); }
   function closeDialog() { S.dialog = null; render(); }
   function dialogHtml() {
@@ -430,11 +395,10 @@ templateEngineOverride: false
     var n = e.getAttribute('data-pkn');
     if (n) { var c2 = PK.c[n] || (PK.c[n] = { m: 'filter', b: [], g: [], n: [] }); c2.n = String(e.value || '').split(/[,;\n]/).map(function (x) { return x.trim(); }).filter(Boolean); PK.dirty = true; PK.ok = ''; render(); }
   });
-  root.addEventListener('change', function (ev) { var e = ev.target; var rc = e.getAttribute && e.getAttribute('data-rec'); if (rc !== null && rc !== undefined && REC.plan && REC.plan[+rc]) REC.plan[+rc].on = e.checked; });
-  root.addEventListener('input', function (ev) {
-    var e = ev.target; var rc = e.getAttribute && e.getAttribute('data-rec'); if (rc !== null && rc !== undefined && REC.plan && REC.plan[+rc]) { REC.plan[+rc].on = e.checked; return; }
+    root.addEventListener('input', function (ev) {
+    var e = ev.target;
     var k = e.getAttribute && e.getAttribute('data-rn'); if (!k) return;
-    var r = RN.rows && RN.rows[+e.getAttribute('data-i')]; if (!r) return; r[k] = e.value;
+    var r = RN.rows && RN.rows[+e.getAttribute('data-i')]; if (!r) return; r[k] = e.value; r.touched = true;
     if (k === 'name') { r.login = loginOf(e.value); var l = e.parentNode.querySelector('[data-rn=login]'); if (l) l.value = r.login; }
   });
   root.addEventListener('click', function (ev) {
@@ -453,7 +417,7 @@ templateEngineOverride: false
   window.addEventListener('hashchange', function () { var hh = (location.hash || '').replace('#', ''); if (['benutzer', 'zugang', 'status', 'protokoll', 'backups', 'personen'].indexOf(hh) >= 0) { S.tab = hh; S.msg = ''; render(); } });
   var L = { entries: [], areas: [], more: false, error: '', loading: false, area: '', q: '', from: '', to: '' }; var ST = { d: null, error: '', loading: false };
   function fmtDT(t) { var d = new Date(+t); if (isNaN(d)) return ''; var p = function (n) { return String(n).padStart(2, '0'); }; return p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + String(d.getFullYear()).slice(2) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
-  function loadStatus() { if (ST.loading) return; ST.loading = true; ST.error = ''; render(); get('status', ST.fresh ? { refresh: '1' } : {}).then(function (r) { ST.loading = false; if (!r) ST.error = 'Keine Verbindung.'; else if (r.code === 'perm') ST.error = 'Dafür fehlt dir die Berechtigung.'; else if (r.code === 'auth') ST.error = 'Bitte neu anmelden.'; else ST.d = r; render(); }); }
+  function loadStatus() { if (ST.loading) return; ST.loading = true; ST.error = ''; ST.tried = true; if (!ST.d) { try { ST.d = JSON.parse(localStorage.getItem('vw_st') || 'null'); } catch (e) {} } render(); get('status', ST.fresh ? { refresh: '1' } : {}).then(function (r) { ST.loading = false; if (!r) ST.error = 'Keine Verbindung.'; else if (r.code === 'perm') ST.error = 'Dafür fehlt dir die Berechtigung.'; else if (r.code === 'auth') ST.error = 'Bitte neu anmelden.'; else { ST.d = r; try { localStorage.setItem('vw_st', JSON.stringify(r)); } catch (e) {} } render(); }); }
   // Datum frei eintippen: 5.3.2026, 05.03.26, 2026-03-05 oder nur 5.3. (laufendes Jahr)
   function parseD(t) { t = String(t || '').trim(); if (!t) return ''; var m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(t), d, mo, y; if (m) { y = +m[1]; mo = +m[2]; d = +m[3]; } else { m = /^(\d{1,2})\.\s*(\d{1,2})\.?\s*(\d{2,4})?$/.exec(t); if (!m) return ''; d = +m[1]; mo = +m[2]; y = m[3] ? +m[3] : new Date().getFullYear(); if (y < 100) y += 2000; } if (mo < 1 || mo > 12 || d < 1 || d > 31) return ''; var p2 = function (n) { return String(n).padStart(2, '0'); }; return y + '-' + p2(mo) + '-' + p2(d); }
   function loadLog(reset) {
@@ -464,8 +428,8 @@ templateEngineOverride: false
   var BK = { list: null, triggers: null, mail: null, error: '', loading: false, msg: '' };
   var BK_KIND = { auto: 'automatisch', manuell: 'von Hand', 'vor-wiederherstellung': 'vor Wiederherstellung', 'vor-reset': 'vor Saison-Reset' };
   function loadBackups() {
-    if (BK.loading) return; BK.loading = true; BK.error = ''; render();
-    get('backups').then(function (r) { BK.loading = false; if (!r) BK.error = 'Keine Verbindung.'; else if (r.code === 'perm') BK.error = 'Dafür fehlt dir die Berechtigung.'; else if (r.code === 'auth') BK.error = 'Bitte neu anmelden.'; else { BK.list = r.backups || []; BK.triggers = r.triggers || {}; BK.mail = r.mail || { to: '', aus: false }; } render(); });
+    if (BK.loading) return; BK.loading = true; BK.error = ''; BK.tried = true; if (!BK.list) { try { var cb = JSON.parse(localStorage.getItem('vw_bk') || 'null'); if (cb) { BK.list = cb.backups || []; BK.triggers = cb.triggers || {}; BK.mail = cb.mail || { to: '', aus: false }; } } catch (e) {} } render();
+    get('backups').then(function (r) { BK.loading = false; if (!r) BK.error = 'Keine Verbindung.'; else if (r.code === 'perm') BK.error = 'Dafür fehlt dir die Berechtigung.'; else if (r.code === 'auth') BK.error = 'Bitte neu anmelden.'; else { BK.list = r.backups || []; BK.triggers = r.triggers || {}; BK.mail = r.mail || { to: '', aus: false }; try { localStorage.setItem('vw_bk', JSON.stringify(r)); } catch (e) {} } render(); });
   }
   function bkAge(ts) { if (!ts) return '<p class="wm-note"><b style="color:#dc2626">⚠️ Es gibt noch keine Sicherung.</b></p>'; var h = Math.round((Date.now() - ts) / 3600000); var old = h > 36; return '<p class="wm-note">' + (old ? '<b style="color:#dc2626">⚠️ Letzte Sicherung vor ' + (h >= 48 ? Math.round(h / 24) + ' Tagen' : h + ' Stunden') + '. Läuft die tägliche Sicherung? Prüfe die Zeitpläne.</b>' : '✅ Letzte Sicherung vor ' + (h < 1 ? 'weniger als einer Stunde' : h + ' Stunden') + '.') + '</p>'; }
   function backupsHtml() {
@@ -481,7 +445,7 @@ templateEngineOverride: false
   function bar(label, used, max, note) { var pc = max ? Math.min(100, Math.round(used / max * 100)) : 0; return '<div class="wm-sub" style="margin-top:10px"><b>' + esc(label) + '</b> · ' + esc(note) + '</div><div style="height:10px;border-radius:6px;background:rgba(148,163,184,.25);overflow:hidden"><div style="height:100%;width:' + pc + '%;background:' + (pc > 80 ? '#dc2626' : pc > 60 ? '#f59e0b' : '#16a34a') + '"></div></div>'; }
   function statusHtml() {
     if (ST.error) return '<div class="wm-card"><p class="wm-note">' + esc(ST.error) + '</p></div>';
-    var d = ST.d; if (!d) return '<div class="wm-card"><p class="wm-note">' + (ST.loading ? 'Lade …' : 'Noch nicht geladen.') + '</p></div>';
+    var d = ST.d; if (!d) return '<div class="wm-card"><p class="wm-note">' + (ST.loading ? 'Lade … (beim ersten Mal kann das etwas dauern, danach erscheint der letzte Stand sofort)' : 'Noch nicht geladen.') + '</p></div>';
     var last = d.backups && d.backups.last ? fmtDT(d.backups.last.ts) + ' (' + esc(d.backups.last.kind || '') + ')' : 'noch keine';
     var rows = [['Script-Version', d.version], ['Benutzer', d.users], ['Aktive Anmeldungen', d.sessions], ['Protokoll-Einträge', d.logRows], ['Sicherungen', (d.backups ? d.backups.count : 0) + ' · letzte: ' + last], ['Stand', fmtDT(d.now)]];
     var mx = Math.max.apply(null, [1].concat((d.parts || []).map(function (x) { return x.chars; })));
@@ -509,12 +473,12 @@ templateEngineOverride: false
     var inner = '';
     if (S.tab === 'benutzer') {
       inner = rnHtml() + '<div class="wm-card"><div class="wm-bar"><h3>👤 Benutzer</h3>' + (has('system.users') ? '<span><button type="button" class="wm-btn" data-act="rnopen">🪪 Namen angleichen</button> <button type="button" class="wm-amber" data-ed="newuser">➕ Neuer Benutzer</button></span>' : '') + '</div><p class="wm-note">Benutzer haben einen eigenen Namen und ein eigenes Passwort, eine oder mehrere Rollen und auf Wunsch Sonderrechte. Die Rechte aus allen Rollen und Sonderrechten zählen zusammen.</p>' + (canAny(['system.users', 'system.rechte', 'system.roles']) ? usersHtml() : '<p class="wm-note">Du darfst Benutzer nicht ansehen.</p>') + '</div>';
-    } else if (S.tab === 'status') { inner = statusHtml(); if (!ST.d && !ST.loading && !ST.error) setTimeout(loadStatus, 0);
+    } else if (S.tab === 'status') { inner = statusHtml(); if (!ST.tried && !ST.loading && !ST.error) setTimeout(loadStatus, 0);
     } else if (S.tab === 'personen') { inner = pickHtml(); if (!PK.loaded && !PK.loading) setTimeout(loadPick, 0);
-    } else if (S.tab === 'backups') { inner = backupsHtml(); if (!BK.list && !BK.loading && !BK.error) setTimeout(loadBackups, 0);
+    } else if (S.tab === 'backups') { inner = backupsHtml(); if (!BK.tried && !BK.loading && !BK.error) setTimeout(loadBackups, 0);
     } else if (S.tab === 'protokoll') { inner = logHtml(); if (!L.done && !L.loading && !L.error) setTimeout(function () { loadLog(true); }, 0);
     } else {
-      inner = recHtml() + '<div class="wm-card"><div class="wm-bar"><h3>🛡️ Rollen</h3>' + (has('system.roles') ? '<span><button type="button" class="wm-btn" data-act="recopen">✅ Empfohlene Rechte</button> <button type="button" class="wm-amber" data-ed="newrole">➕ Neue Rolle</button></span>' : '') + '</div><p class="wm-note">Die Reihenfolge (▲▼) bestimmt auch die Benutzerliste: oben steht die höchste Rolle. Pro Rolle lassen sich Name, Beschreibung, Passwort und alle einzelnen Rechte einstellen. Die Rechte gelten sofort auf allen Geräten.</p>' + rolesHtml() + '</div>' +
+      inner = '<div class="wm-card"><div class="wm-bar"><h3>🛡️ Rollen</h3>' + (has('system.roles') ? '<span><button type="button" class="wm-amber" data-ed="newrole">➕ Neue Rolle</button></span>' : '') + '</div><p class="wm-note">Die Reihenfolge (▲▼) bestimmt auch die Benutzerliste: oben steht die höchste Rolle. Pro Rolle lassen sich Name, Beschreibung, Passwort und alle einzelnen Rechte einstellen. Die Rechte gelten sofort auf allen Geräten.</p>' + rolesHtml() + '</div>' +
         '<div class="wm-card"><div class="wm-bar"><h3>✨ Sonderrechte</h3>' + (has('system.rechte') ? '<button type="button" class="wm-amber" data-ed="newextra">➕ Neues Sonderrecht</button>' : '') + '</div><p class="wm-note">Ein Sonderrecht ist ein eigenes Rechte-Paket, das man einzelnen Benutzern zusätzlich zu ihren Rollen gibt, zum Beispiel „Statistik bearbeiten“ für einen Helfer. Es gilt nur bei persönlicher Anmeldung mit Benutzername, nicht bei der Anmeldung mit dem Passwort der Rolle.</p>' + extrasHtml() + '</div>';
 
     }
@@ -544,9 +508,6 @@ templateEngineOverride: false
     if (SH.click(ev, render, load)) return;
     var t = ev.target.closest ? ev.target.closest('[data-tab],[data-ed],[data-mv],[data-dx],[data-cf],[data-act]') : null; if (!t) return;
     if (t.getAttribute('data-tab')) { S.tab = t.getAttribute('data-tab'); S.msg = ''; render(); return; }
-    if (t.getAttribute('data-act') === 'recopen') { recOpen(); return; }
-    if (t.getAttribute('data-act') === 'recclose') { REC.open = false; render(); return; }
-    if (t.getAttribute('data-act') === 'recgo') { recGo(); return; }
     if (t.getAttribute('data-act') === 'rnopen') { rnLoad(); return; }
     if (t.getAttribute('data-act') === 'rnclose') { RN.open = false; render(); return; }
     if (t.getAttribute('data-act') === 'rnsave') { rnSave(); return; }
