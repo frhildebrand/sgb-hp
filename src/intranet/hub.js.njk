@@ -1,0 +1,236 @@
+---
+permalink: /intranet/js/hub.js
+layout: false
+eleventyExcludeFromCollections: true
+templateEngineOverride: false
+---
+/* Hub der SG Barnstorf: Auswahl der Systeme in Gruppen, mit kleinen Hinweisen. Anmeldung und Menü stecken in der Kopfzeile (hub-common.js). */
+(function () {
+  'use strict';
+  var root = document.getElementById('hubRoot');
+  if (!root) return;
+  var SH = window.HubShell;
+  if (!SH) { root.textContent = 'Der Grundbaustein hub-common.js fehlt.'; return; }
+  var state = { loaded: false, next: SH.lsGet('hubnext', null), pgrp: ((SH.lsGet('hubnext', null) || {}).pgrp) || null, brett: SH.lsGet('hubbrett', []) };
+  var esc = SH.esc;
+
+  function todayIso() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function daysTo(iso) { if (!iso) return null; return Math.round((new Date(iso + 'T12:00:00') - new Date(todayIso() + 'T12:00:00')) / 86400000); }
+  function fmtD(iso) { if (!iso) return ''; var d = new Date(iso + 'T12:00:00'); return ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][d.getDay()] + ', ' + ('0' + d.getDate()).slice(-2) + '.' + ('0' + (d.getMonth() + 1)).slice(-2) + '.'; }
+  function fmtDMY(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '')); return m ? m[3] + '.' + m[2] + '.' + m[1] : String(iso || ''); }
+  function inDays(n) { return n === 0 ? 'heute' : n === 1 ? 'morgen' : 'in ' + n + ' Tagen'; }
+
+  function hintOf(s) {
+    var h = state.next && state.next.token === SH.token() ? (state.next.hints || {})[s.id] : null;
+    if (!h) return '';
+    return '<span class="hub-t2h ' + esc(h.c || '') + '">' + esc(h.t) + '</span>';
+  }
+  function tile(s, color) {
+    return '<a class="hub-t2" href="' + esc(s.url) + '" style="--acc:' + esc(color || s.color || '#94a3b8') + '"><span class="hub-t2ic">' + esc(s.icon || '•') + '</span><span class="hub-t2n">' + esc(s.name) + '</span><span class="hub-t2d">' + esc(s.desc || '') + '</span>' + hintOf(s) + '</a>';
+  }
+  function groupsHtml(systems) {
+    var by = {}; systems.forEach(function (s) { var g = SH.catOf(s); (by[g] = by[g] || []).push(s); });
+    var names = SH.CATS.map(function (c) { return c.name; }).filter(function (g) { return by[g]; }).concat(Object.keys(by).filter(function (g) { return !SH.CATS.some(function (c) { return c.name === g; }); }));
+    return names.map(function (g) { var ci = SH.catInfo(g); return '<section class="hub-sec" style="--cat:' + esc(ci.color) + '"><h3 class="hub-sech"><span class="hub-sechi">' + ci.icon + '</span>' + esc(g) + '</h3><div class="hub-tiles">' + by[g].map(function (x) { return tile(x, ci.color); }).join('') + '</div></section>'; }).join('');
+  }
+  var WD = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'], MO = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+  function longDate() { var d = new Date(); return WD[d.getDay()] + ', ' + d.getDate() + '. ' + MO[d.getMonth()] + ' ' + d.getFullYear(); }
+  function greet() { var h = new Date().getHours(); return h < 5 ? 'Gute Nacht' : h < 11 ? 'Guten Morgen' : h < 17 ? 'Hallo' : 'Guten Abend'; }
+  function cdBadge(n) { if (n === null || n === undefined) return ''; if (n <= 0) return '<span class="hub-hcd hub-hcd0"><b>' + (n === 0 ? 'Heute' : 'Jetzt') + '</b></span>'; return '<span class="hub-hcd"><b>' + n + '</b><i>' + (n === 1 ? 'Tag' : 'Tage') + '</i></span>'; }
+  function hero() {
+    var S = SH.S; var nm = S.me ? String(S.me.user || (S.me.role && S.me.role.name) || '') : '';
+    var first = nm.split(/\s+/)[0];
+    var n = state.next && state.next.token === SH.token() ? state.next : null;
+    var items = [];
+    if (n) {
+      (n.wk || []).forEach(function (w) { items.push({ date: w.date, ic: '🏁', t: w.title, s: [fmtD(w.date), w.ort || ''].filter(Boolean).join(' · '), href: '/intranet/wettkaempfe/' }); });
+      (n.ev || []).forEach(function (e) { items.push({ date: e.date, ic: '🎪', t: e.title, s: [fmtD(e.date), e.prog || ''].filter(Boolean).join(' · '), href: '/intranet/veranstaltungen/' }); });
+    }
+    var wm = state.wm; if (wm && wm.at) { var wiso = String(wm.at).slice(0, 10); var wend = String(wm.endAt || wm.at).slice(0, 10); if (daysTo(wiso) !== null && daysTo(wend) !== null && daysTo(wend) >= 0) { var wdt = new Date(wiso + 'T12:00:00'); var wtime = /T(\d{2}:\d{2})/.exec(wm.at); items.push({ date: wiso, ic: '🎄', t: wm.label || 'Weihnachtsmarkt', s: [WD[wdt.getDay()].slice(0, 2) + ', ' + String(wdt.getDate()).padStart(2, '0') + '.' + String(wdt.getMonth() + 1).padStart(2, '0') + '.', wtime ? wtime[1] + ' Uhr' : ''].filter(Boolean).join(' · '), href: '/intranet/weihnachtsmarkt/' }); } }
+    items.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+    var line = items.length ? '<div class="hub-hline">' + items.slice(0, 3).map(function (x) { return '<a class="hub-hnext" href="' + x.href + '"><span class="hub-hic">' + x.ic + '</span><span class="hub-htx"><b>' + esc(x.t) + '</b><i>' + esc(x.s) + '</i></span>' + cdBadge(daysTo(x.date)) + '</a>'; }).join('') + '</div>' : '';
+    return '<section class="hub-hero"><div class="hub-hero-t"><div class="hub-hdate">' + esc(longDate()) + '</div><h2 class="hub-hello">' + (S.me ? greet() + ', ' + esc(first) + ' 👋' : 'Willkommen') + '</h2></div>' + line + '</section>';
+  }
+  function fristHtml() {
+    var n = state.next && state.next.token === SH.token() ? state.next : null; if (!n) return '';
+    var fr = n.fr || [];
+    return '<section class="hub-card2"><div class="hub-c2h"><h3>⏰ Fristen &amp; Hinweise</h3></div>' + (fr.length ? fr.map(function (f) { return '<a class="hub-ti" href="' + esc(f.href || '/intranet/') + '"><span class="hub-dbx hub-fb ' + esc(f.c || '') + '"><b>' + (f.c === 'bad' ? '⚠️' : f.c === 'warn' ? '⏳' : 'ℹ️') + '</b></span><span class="hub-tit"><b>' + esc(f.t) + '</b>' + (f.s ? '<i>' + esc(f.s) + '</i>' : '') + '</span></a>'; }).join('') : '<p class="hub-sub" style="margin:6px 0 0">Keine Fristen in Sicht.</p>') + '</section>';
+  }
+  // ---------- Startseite: zwei Spalten ----------
+  function dayBox(iso) { var d = new Date(iso + 'T12:00:00'); return '<span class="hub-dbx"><b>' + ('0' + d.getDate()).slice(-2) + '</b><i>' + ['JAN', 'FEB', 'MÄR', 'APR', 'MAI', 'JUN', 'JUL', 'AUG', 'SEP', 'OKT', 'NOV', 'DEZ'][d.getMonth()] + '</i></span>'; }
+  function grpNames() { return state.next && state.next.grp ? state.next.grp.all.map(function (g) { return g.name; }) : null; }
+  function brettLive() { return window.HubBrett.live(state.brett); }
+  function brettHtml() {
+    var HB = window.HubBrett, can = SH.has('startseite.brett'), del = SH.has('brett.loeschen') || can; if (!SH.has('brett.view') && !can) return '';
+    var l = brettLive(), shown = l.slice(0, 6), eo = { attr: 'data-act', save: 'bsave', cancel: 'bcancel', me: SH.S.me && SH.S.me.user, groups: grpNames() };
+    var head = HB.head(can, state.bform);
+    var rows = (state.bform && !state.bedit ? HB.editRow(null, eo) : '') + shown.map(function (b, i) {
+      return HB.row(b, { A: 'data-act', pre: 'b', can: can, del: del, fmt: fmtDMY, edit: eo, editing: state.bform && state.bedit === b.id, up: i > 0 && !!shown[i - 1].wichtig === !!b.wichtig, dn: i < shown.length - 1 && !!shown[i + 1].wichtig === !!b.wichtig });
+    }).join('');
+    return '<section class="hub-card2" id="brett"><div class="hub-c2h"><h3>📌 Schwarzes Brett</h3><span class="hub-c2b">' + (can && !state.bform ? '<button type="button" class="hub-btn hub-gold" data-act="bnew">+ Neue Mitteilung</button>' : '') + '<a class="hub-btn hub-ghost" href="/intranet/brett/">' + (can ? 'Verwalten →' : 'Alle ansehen →') + '</a></span></div>' +
+            (rows ? '<div class="hub-bwrap' + (state.bform ? ' pin' : '') + '"><table class="hub-bt' + (state.bform ? ' pin' : '') + '">' + head + rows + '</table></div>' + (l.length > shown.length ? '<p class="hub-sub" style="margin:8px 0 0">Weitere ' + (l.length - shown.length) + ' Mitteilungen unter „' + (can ? 'Verwalten' : 'Alle ansehen') + '“.</p>' : '') : '<p class="hub-sub" style="margin:6px 0 0">Zurzeit gibt es keine Mitteilungen.</p>') + '</section>';
+  }
+  function termineHtml() {
+    var n = state.next && state.next.token === SH.token() ? state.next : null; var items = [];
+    if (n) {
+      (n.wk || []).forEach(function (w) { var sub = 'Wettkampf ' + fmtDMY(w.date).slice(0, 5); items.push({ date: w.date, t: w.title, s: w.ort || '', href: '/intranet/wettkaempfe/' }); });
+      (n.ev || []).forEach(function (e) { items.push({ date: e.date, t: e.title, s: e.prog || '', href: '/intranet/veranstaltungen/' }); });
+    }
+    var wm = state.wm; if (wm && wm.at) { var wiso = String(wm.at).slice(0, 10); if (daysTo(wiso) !== null && daysTo(wiso) >= 0) items.push({ date: wiso, t: wm.label || 'Weihnachtsmarkt', s: '', href: '/intranet/weihnachtsmarkt/' }); }
+    items.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+    return '<section class="hub-card2"><div class="hub-c2h"><h3>📅 Nächste Termine</h3></div>' + (items.length ? items.slice(0, 5).map(function (x) { return '<a class="hub-ti" href="' + x.href + '">' + dayBox(x.date) + '<span class="hub-tit"><b>' + esc(x.t) + '</b>' + (x.s ? '<i>' + esc(x.s) + '</i>' : '') + '</span></a>'; }).join('') : '<p class="hub-sub" style="margin:6px 0 0">Keine Termine in Sicht.</p>') + '</section>';
+  }
+  function aufgabenCard() {
+    var n = state.next && state.next.token === SH.token() ? state.next : null; if (!n) return '';
+    var tl = n.tl || { all: { l: n.tasks || [], n: n.open }, mine: { l: [], n: 0 } };
+    var mode = !n.canAll ? 'mine' : (state.tmode || SH.lsGet('hubtmode', '') || (tl.mine.n ? 'mine' : 'all')); if (mode !== 'mine' && mode !== 'all') mode = 'all';
+    var cur = tl[mode], l = cur.l || [], tot = cur.n;
+    var tog = n.canAll ? '<div class="hub-seg"><button type="button" data-act="tmode" data-m="mine" class="' + (mode === 'mine' ? 'on' : '') + '">Meine (' + tl.mine.n + ')</button><button type="button" data-act="tmode" data-m="all" class="' + (mode === 'all' ? 'on' : '') + '">Alle (' + tl.all.n + ')</button></div>' : '';
+    return '<section class="hub-card2 hub-big"><div class="hub-c2h"><h3>✅ ' + (mode === 'mine' ? 'Meine Aufgaben' : 'Offene Aufgaben') + '</h3><a href="/intranet/aufgaben/" class="hub-sub">' + tot + ' offen →</a></div>' + tog + (l.length ? l.map(function (x) { var d = x.due ? daysTo(x.due) : null; var bc = d === null ? '' : d < 0 ? 'bad' : d === 0 ? 'bad' : d <= 7 ? 'warn' : 'info'; return '<a class="hub-ai" href="/intranet/aufgaben/"><span>' + (x.prio === 'hoch' ? '❗ ' : '') + esc(x.title || x.t || '') + '</span>' + (x.due ? '<em class="hub-ab ' + bc + '">' + (d === 0 ? 'heute' : d < 0 ? 'überfällig' : 'bis ' + esc(fmtDMY(x.due).slice(0, 6))) + '</em>' : '') + '</a>'; }).join('') + (tot > l.length ? '<p class="hub-sub" style="margin:8px 0 0">und ' + (tot - l.length) + ' weitere</p>' : '') : '<p class="hub-sub" style="margin:6px 0 0">' + (mode === 'mine' ? 'Dir ist nichts zugewiesen.' : 'Alles erledigt.') + '</p>') + '</section>';
+  }
+  function blickHtml() {
+    var n = state.next && state.next.token === SH.token() ? state.next : null; if (!n || !n.cnt) return '';
+    return '<section class="hub-stats"><div class="hub-stt"><i>👥 Mitglieder</i><b>' + n.cnt.mem + '</b></div>' + (n.cnt.gr ? '<div class="hub-stt"><i>🦈 Gruppen</i><b>' + n.cnt.gr + '</b></div>' : '') + (n.cnt.tr ? '<div class="hub-stt"><i>🎓 Trainer:innen</i><b>' + n.cnt.tr + '</b></div>' : '') + '</section>';
+  }
+  function tip(msg, bad) { var d = document.createElement('div'); d.textContent = msg; d.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:9999;padding:10px 16px;border-radius:12px;font:600 14px system-ui,sans-serif;color:#fff;box-shadow:0 6px 20px rgba(0,0,0,.25);background:' + (bad ? '#b91c1c' : '#15803d'); document.body.appendChild(d); setTimeout(function () { d.remove(); }, 2200); }
+  function pidOf(n) { return 'p-' + String(n || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 36); }
+  function saveProf(f) {
+    var u = SH.S.me && SH.S.me.user; if (!u) return; var id = pidOf(u);
+    var o = state.hasProfile ? { op: 'patch', coll: 'profile', id: id, fields: f } : { op: 'set', coll: 'profile', item: Object.assign({ id: id, owner: u }, f) };
+    SH.post({ action: 'dataOps', token: SH.token(), ops: [o] }).then(function (r) { if (r && r.status === 'success') { state.hasProfile = true; tip('✓ Gruppenauswahl gespeichert'); } else tip('Speichern hat nicht geklappt. Bitte nochmal versuchen.', true); });
+  }
+  // Welche Gruppen auf der Startseite stehen: eigene Auswahl, sonst die Gruppen, in denen man Trainer ist, sonst keine
+  function groupSel(n) { return Array.isArray(state.pgrp) ? state.pgrp : (n.grp && n.grp.mine && n.grp.mine.length ? n.grp.mine : []); }
+  function wgCard() {
+    var n = state.next && state.next.token === SH.token() ? state.next : null; if (!n || !n.grp || !(n.grp.all || []).length) return '';
+    var sel = groupSel(n), cnt = {}; n.grp.all.forEach(function (g) { cnt[g.name] = g.n; });
+    if (state.gedit) return '<section class="hub-card2"><div class="hub-c2h"><h3>🏊 Gruppen auswählen</h3><button type="button" class="hub-btn hub-gold" data-act="gdone" style="padding:4px 12px;font-size:13px">Fertig</button></div><p class="hub-sub" style="margin:0 0 8px">Diese Gruppen erscheinen auf deiner Startseite.</p><div class="hub-gl">' + n.grp.all.map(function (g) { return '<label class="hub-gk"><input type="checkbox" data-act="gtog" data-g="' + esc(g.name) + '"' + (sel.indexOf(g.name) >= 0 ? ' checked' : '') + '><span>' + esc(g.name) + ' <i>(' + g.n + ')</i></span></label>'; }).join('') + '</div><button type="button" class="hub-btn hub-ghost" data-act="greset" style="margin-top:10px;padding:4px 12px;font-size:13px">Zurücksetzen (Gruppen, in denen ich Trainer bin)</button></section>';
+    var rows = sel.filter(function (g) { return cnt[g] !== undefined; }).map(function (g) { return '<div class="hub-gr"><span>' + esc(g) + '</span><b>' + cnt[g] + '</b></div>'; }).join('');
+    return '<section class="hub-card2"><div class="hub-c2h"><h3>🏊 Gruppen</h3><button type="button" class="hub-btn hub-ghost" data-act="gedit" style="padding:4px 10px;font-size:12px">✏️ Auswählen</button></div>' + (rows ? '<div class="hub-grl">' + rows + '</div>' : '<p class="hub-sub" style="margin:6px 0 0">Keine Gruppe ausgewählt.</p>') + '</section>';
+  }
+  function startsCard() {
+    var n = state.next && state.next.token === SH.token() ? state.next : null; if (!n || !n.sw) return '';
+    var w = n.sw, d = daysTo(w.date), names = w.names || [];
+    var head = '<div class="hub-c2h"><h3>🏁 Wer startet beim nächsten WK?</h3><a href="/intranet/wettkaempfe/" class="hub-sub">Details →</a></div><p class="hub-sub" style="margin:0 0 8px"><b>' + esc(w.title || '') + '</b> · ' + esc(fmtDMY(w.date).slice(0, 6)) + (d !== null ? ' (' + inDays(d) + ')' : '') + (w.ort ? ' · ' + esc(w.ort) : '') + '</p>';
+    if (!names.length) return '<section class="hub-card2">' + head + '<p class="hub-sub" style="margin:0">Noch keine Meldung hochgeladen.</p></section>';
+    return '<section class="hub-card2">' + head + '<p class="hub-sub" style="margin:0 0 8px">' + names.length + ' Schwimmer:innen · ' + w.m + ' Starts</p><div class="hub-chips">' + names.map(function (x) { return '<span class="hub-chip">' + esc(x.n) + (x.c > 1 ? ' <i>' + x.c + '</i>' : '') + '</span>'; }).join('') + '</div></section>';
+  }
+  function greetRow() { var nm = SH.S.me ? String(SH.S.me.user || '').split(/\s+/)[0] : ''; return '<div class="hub-greet"><h2>' + (nm ? 'Hallo ' + esc(nm) + ' 👋' : 'Willkommen') + '</h2><span>' + esc(longDate()) + '</span></div>'; }
+  function body() {
+    var S = SH.S;
+    if (!state.loaded) return '<section class="hub-tiles"><div class="hub-skel"></div><div class="hub-skel"></div><div class="hub-skel"></div></section>';
+    if (S.offline) return '<section class="hub-card hub-offline"><h2>Keine Verbindung</h2><p class="hub-sub">Das Konto-System ist gerade nicht erreichbar. Bitte prüfe das Internet und versuche es nochmal.</p><button type="button" class="hub-btn hub-gold" data-act="retry">Nochmal versuchen</button><details class="hub-diag"><summary>Technische Details</summary><pre>' + esc(SH.DIAG.length ? SH.DIAG.join('\n') : 'Keine Angaben.') + '</pre></details></section>';
+    var out = greetRow();
+    if (S.me) out += '<div class="hub-stack">' + brettHtml() + blickHtml() + '<div class="hub-home2"><div class="hub-stack">' + termineHtml() + fristHtml() + startsCard() + '</div><div class="hub-stack">' + aufgabenCard() + wgCard() + '</div></div></div>';
+    else out += hero();
+    out += S.systems.length ? '<div class="hub-narrow">' + groupsHtml(S.systems) + '</div>' : '<section class="hub-card"><p class="hub-sub">Für dein Konto sind noch keine Systeme freigeschaltet.</p></section>';
+    return out;
+  }
+  function wkProgress(w) {
+    var KEYS = ['webclub', 'krabfrage', 'bekWA', 'lizenzen', 'geprueft', 'versendet', 'bestaetigung', 'waGruppe', 'meWA', 'urkGedruckt', 'urkVerteilt', 'artikel'];
+    var chk = w.chk || {}; var done = KEYS.filter(function (k) { return chk[k]; }).length;
+    if (w.meldegeldStatus === 'bezahlt') done++; return done + '/' + (KEYS.length + 1) + ' erledigt';
+  }
+  function loadNext() {
+    var want = [];
+    if (SH.has('wettkaempfe.view')) want.push('wettkaempfe');
+    if (SH.has('aufgaben.view') || SH.has('aufgaben.own')) want.push('aufgaben');
+    if (SH.has('material.view')) want.push('material');
+    if (SH.has('veranstaltungen.view')) want.push('veranstaltungen');
+    if (SH.has('vorstand.view') || SH.has('vorstand.antrag')) want.push('vorstandAntraege');
+    if (['abrechnung.eigene', 'abrechnung.alle', 'abrechnung.ansehen', 'abrechnung.bezahlen'].some(function (k) { return SH.has(k); })) want.push('abrechnungen');
+    if (['fahrten.eigene', 'fahrten.alle', 'fahrten.ansehen', 'fahrten.abrechnen'].some(function (k) { return SH.has(k); })) want.push('fahrten');
+    if (SH.has('training.tage.view')) want.push('trainingTage');
+    if (SH.S.me && SH.S.me.user) want.push('profile');
+    if (SH.S.me && SH.has('brett.view')) want.push('brett');
+    if (!want.length) { if (state.next) { state.next = null; SH.lsSet('hubnext', null); render(); } return; }
+    SH.startData(want.join(',')).then(function (r) {
+      if (!r || r.status !== 'success') return;
+      var t = todayIso(); var d = r.data || {}; var me = (SH.S.me && (SH.S.me.user || '')).toLowerCase();
+      var comps = d.wettkaempfe || [];
+      var pastIds = {}; comps.forEach(function (w) { if ((w.date || '9999') < t) pastIds[w.id] = 1; });
+      var up = comps.filter(function (w) { return (w.date || '') >= t; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+      var wk = up.slice(0, 3).map(function (w) { return { date: w.date, title: w.title, ort: w.ort, prog: wkProgress(w), ims: (w.intMs && w.intMs >= t) ? w.intMs : '', ms: (w.meldeschluss && w.meldeschluss >= t) ? w.meldeschluss : '' }; });
+      var canAll = SH.has('aufgaben.view');
+      var tasks = (d.aufgaben || []).filter(function (x) { return x.status !== 'erledigt' && !(x.ref && x.ref.indexOf('wk:') === 0 && pastIds[x.ref.slice(3)]); });
+      var tMine = me ? tasks.filter(function (x) { return (x.who || []).some(function (w) { return String(w).toLowerCase() === me; }); }) : [];
+      var tsort = function (l) { return l.slice().sort(function (a, b) { var pa = a.prio === 'hoch' ? 0 : 1, pb = b.prio === 'hoch' ? 0 : 1; if (pa !== pb) return pa - pb; return (a.due || '9999') < (b.due || '9999') ? -1 : 1; }).slice(0, 10).map(function (x) { return { title: x.title, due: x.due, prio: x.prio }; }); };
+      var mine = !canAll;
+      if (!canAll) tasks = tMine;
+      var overdue = tasks.filter(function (x) { return x.due && x.due < t; }).length;
+      var open = tasks.length;
+      var tl = { all: { l: tsort(tasks), n: tasks.length }, mine: { l: tsort(tMine), n: tMine.length } };
+      tasks = tl.all.l;
+      var evs = (d.veranstaltungen || []).filter(function (e) { return (e.date || '') >= t && e.status !== 'Abgeschlossen'; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+      var ev = evs.slice(0, 3).map(function (e) { var c = e.check || []; var dn = c.filter(function (x) { return x.d; }).length; return { date: e.date, title: e.title, prog: c.length ? dn + '/' + c.length + ' erledigt' : '' }; });
+      var hints = {};
+      if (d.aufgaben) hints.aufgaben = open ? { t: open + ' offen' + (overdue ? ', ' + overdue + ' überfällig' : ''), c: overdue ? 'bad' : 'warn' } : { t: 'Alles erledigt', c: '' };
+      if (d.wettkaempfe) hints.wettkaempfe = up.length ? (function () { var dd = daysTo(up[0].date); return { t: 'Nächster ' + inDays(dd), c: dd <= 7 ? 'warn' : 'info' }; })() : { t: 'Kein Termin', c: 'none' };
+      if (d.material) { var out = d.material.filter(function (x) { return (x.loans || []).some(function (l) { return !l.back; }); }).length; hints.material = { t: out ? out + ' verliehen' : 'Nichts verliehen', c: out ? 'info' : 'none' }; }
+      if (d.veranstaltungen) hints.veranstaltungen = evs.length ? (function () { var dd = daysTo(evs[0].date); return { t: 'Nächste ' + inDays(dd), c: 'info' }; })() : { t: 'Nichts geplant', c: 'none' };
+      if (d.vorstandAntraege) { var oa = d.vorstandAntraege.filter(function (x) { return x.status === 'Eingereicht'; }).length; hints.vorstand = oa ? { t: oa + (oa > 1 ? ' Anträge' : ' Antrag') + ' offen', c: 'warn' } : { t: 'Keine offenen Anträge', c: 'none' }; }
+      if (d.abrechnungen || d.fahrten) { var ent = (d.abrechnungen || []).filter(function (x) { return x.status === 'entwurf' || x.status === 'eingereicht'; }).length; var fo = (d.fahrten || []).filter(function (x) { return x.status !== 'abgerechnet'; }).length; var parts = []; if (ent) parts.push(ent + ' in Arbeit'); if (fo) parts.push(fo + (fo === 1 ? ' Fahrt' : ' Fahrten') + ' offen'); hints.abrechnung = parts.length ? { t: parts.join(', '), c: 'warn' } : { t: 'Alles abgerechnet', c: 'none' }; }
+      if (d.trainingTage) { var last = d.trainingTage.slice().sort(function (a, b) { return String(b.date) < String(a.date) ? -1 : 1; }).filter(function (x) { return (x.date || '') <= t; })[0]; if (last) { var an = Object.keys(last.anw || {}).filter(function (k) { return last.anw[k] === 'a'; }).length; hints.training = { t: 'Zuletzt ' + fmtD(last.date) + ', ' + an + ' da', c: 'none' }; } }
+      var warn = []; var pf = (d.profile || [])[0]; state.hasProfile = !!pf; if (pf && pf.brettSeen) window.HubBrett.adoptSeen(pf.brettSeen); state.pgrp = pf && Array.isArray(pf.grp) ? pf.grp : null; 
+      if (pf) [['lizBis', 'Trainerlizenz'], ['ersteHilfeBis', 'Erste Hilfe'], ['rettungBis', 'Rettungsnachweis'], ['kariBis', 'Kampfrichter-Lizenz']].forEach(function (x) { var iso = pf[x[0]]; if (/^\d{4}-\d{2}-\d{2}$/.test(iso || '')) { var dd = daysTo(iso); if (dd !== null && dd <= 60) warn.push({ label: x[1], iso: iso, days: dd }); } });
+      warn.sort(function (a, b) { return a.days - b.days; });
+      var fr = [];
+      warn.forEach(function (w) { fr.push({ t: w.label, s: w.days < 0 ? 'abgelaufen seit ' + fmtDMY(w.iso) : (w.days === 0 ? 'läuft heute ab' : 'noch ' + w.days + ' Tage'), c: w.days < 0 ? 'bad' : w.days <= 14 ? 'warn' : '', href: '/intranet/profil/', k: w.days }); });
+      up.forEach(function (w) {
+        var sent = !!((w.chk || {}).versendet || {}).d;
+        [['Interner Meldeschluss ', w.intMs], ['Meldeschluss ', w.meldeschluss]].forEach(function (z) {
+          var ms = z[1] && z[1] >= t ? z[1] : ''; var dm = ms ? daysTo(ms) : null;
+          if (dm !== null && dm <= 30 && !sent) fr.push({ t: z[0] + String(w.title || '').slice(0, 26), s: (dm === 0 ? 'heute' : 'in ' + dm + ' Tagen') + ' · ' + fmtDMY(ms).slice(0, 5), c: dm <= 3 ? 'bad' : 'warn', href: '/intranet/wettkaempfe/', k: dm });
+        });
+        if ((w.meldegeld === 'mail' || w.meldegeld === 'offen') && ((w.chk || {}).versendet || {}).d) fr.push({ t: 'Meldegeld ' + String(w.title || '').slice(0, 24), s: w.meldegeld === 'mail' ? 'Mail versendet, nicht bezahlt' : 'noch offen', c: 'warn', href: '/intranet/wettkaempfe/', k: 20 });
+      });
+      var mineAb = (d.abrechnungen || []).filter(function (x) { return x.status === 'entwurf' && x.ts && (Date.now() - x.ts) > 21 * 86400000; });
+      if (mineAb.length) fr.push({ t: mineAb.length === 1 ? 'Abrechnung nicht eingereicht' : mineAb.length + ' Abrechnungen nicht eingereicht', s: 'Entwurf seit über 3 Wochen', c: 'warn', href: '/intranet/abrechnung/', k: 25 });
+      fr.sort(function (a, b) { return a.k - b.k; });
+      state.brett = d.brett || state.brett || []; var grp = r.counts ? { all: r.counts.all, mine: r.counts.mine } : null, cnt = r.counts ? r.counts.cnt : null; SH.lsSet('hubbrett', state.brett);
+      var sw = null; if (up[0]) { var u0 = up[0], src = (u0.starts || []).length ? u0.starts : ((u0.meld && u0.meld.starts) || []), mp = {}; src.forEach(function (s0) { var k0 = s0.n || ''; if (k0) mp[k0] = (mp[k0] || 0) + 1; }); sw = { title: u0.title, date: u0.date, ort: u0.ort, m: src.length, names: Object.keys(mp).sort(function (a, b) { return a.localeCompare(b, 'de'); }).map(function (k0) { return { n: k0, c: mp[k0] }; }) }; }
+      state.next = { token: SH.token(), pgrp: state.pgrp, cnt: cnt, grp: grp, sw: sw, wk: wk, tasks: tasks, open: open, tl: tl, canAll: canAll, ev: ev, mine: mine, hints: hints, warn: warn, fr: fr.slice(0, 6) }; SH.lsSet('hubnext', state.next); softRender(); setTimeout(SH.prefetch, 800);
+    });
+  }
+  function loadWm() {
+    SH.get('list', { name: 'aushang' }).then(function (r) {
+      if (!r || !r.items) return; var c = r.items.filter(function (x) { return x.kind === 'countdown'; })[0];
+      state.wm = c ? { at: c.at, endAt: c.endAt, label: c.label } : null; SH.lsSet('hubwm', state.wm); softRender();
+    });
+  }
+  function render() { root.innerHTML = SH.header('SG Barnstorf · Intranet') + '<main class="hub-main">' + body() + '</main>' + SH.overlay(); if (state.bform) window.HubBrett.pin(); }
+  function softRender() { if (state.bform) return; render(); }
+  function load() { var fast = SH.restore(); state.loaded = fast; state.wm = SH.lsGet('hubwm', null); render(); if (fast) { loadNext(); loadWm(); } setTimeout(function () { if (SH.has('startseite.brett')) window.HubBrett.loadRoles(function () { }); }, 1500); return SH.loadAccount().then(function () { state.loaded = true; render(); if (!fast) { loadNext(); loadWm(); } }); }
+
+  root.addEventListener('click', function (ev) {
+    if (SH.click(ev, render, load)) return;
+    var t = ev.target.closest ? ev.target.closest('[data-act]') : null;
+    if (!t) return; var a = t.getAttribute('data-act');
+    if (a === 'retry') load();
+    else if (a === 'tmode') { state.tmode = t.getAttribute('data-m'); SH.lsSet('hubtmode', state.tmode); render(); }
+    else if (a === 'gedit') { state.gedit = true; render(); }
+    else if (a === 'gdone') { state.gedit = false; render(); }
+    else if (a === 'greset') { state.pgrp = null; saveProf({ grp: null }); render(); }
+    else if (a === 'gtog') { var gg = t.getAttribute('data-g'), gcur = groupSel(state.next || {}).slice(), gi = gcur.indexOf(gg); if (gi >= 0) gcur.splice(gi, 1); else gcur.push(gg); state.pgrp = gcur; saveProf({ grp: gcur }); render(); }
+    else if (a === 'bnew') { state.bform = true; state.bedit = null; render(); window.HubBrett.refreshPicker(root.querySelector('tr.ed'), null, grpNames()); var te = root.querySelector('.hub-rtt'); if (te) te.focus(); }
+    else if (a === 'bedit') { state.bform = true; state.bedit = t.getAttribute('data-id'); render(); var cb = (state.brett || []).filter(function (b) { return b.id === state.bedit; })[0]; window.HubBrett.refreshPicker(root.querySelector('tr.ed'), cb, grpNames()); var bf = root.querySelector('tr.ed'); if (bf && bf.scrollIntoView) bf.scrollIntoView({ block: 'center' }); }
+    else if (a === 'bsave') {
+      var tr = root.querySelector('tr.ed'), v = tr ? window.HubBrett.collect(tr) : null; if (!v) { tip('Bitte eine Überschrift eingeben.', true); return; }
+      var eid = state.bedit, old = eid ? (state.brett || []).filter(function (b) { return b.id === eid; })[0] : null;
+      var it = window.HubBrett.merge(old, v, SH.S.me && SH.S.me.user);
+      var before = state.brett || []; state.brett = old ? before.map(function (b) { return b.id === eid ? it : b; }) : [it].concat(before); SH.lsSet('hubbrett', state.brett); state.bform = false; state.bedit = null;
+      SH.post({ action: 'dataOps', token: SH.token(), ops: [{ op: 'set', coll: 'brett', item: it }] }).then(function (r) { if (!r || r.status !== 'success') { state.brett = before; SH.lsSet('hubbrett', before); render(); tip('Speichern hat nicht geklappt.', true); } });
+      render();
+    }
+    else if (a === 'bcancel') { state.bform = false; state.bedit = null; render(); }
+    else if (a === 'bup' || a === 'bdn') {
+      var ids = window.HubBrett.moved(brettLive(), t.getAttribute('data-id'), a === 'bup' ? -1 : 1);
+      if (ids) { var pos = {}; ids.forEach(function (x, k) { pos[x] = k; }); state.brett = (state.brett || []).map(function (b) { return pos[b.id] !== undefined ? Object.assign({}, b, { ord: pos[b.id] }) : b; }); SH.lsSet('hubbrett', state.brett); render(); SH.post({ action: 'dataOps', token: SH.token(), ops: [{ op: 'order', coll: 'brett', ids: ids }] }); }
+    }
+    else if (a === 'bdel') { var bid = t.getAttribute('data-id'); state.brett = (state.brett || []).filter(function (b) { return b.id !== bid; }); SH.lsSet('hubbrett', state.brett); SH.post({ action: 'dataOps', token: SH.token(), ops: [{ op: 'del', coll: 'brett', id: bid }] }); render(); }
+  });
+  root.addEventListener('submit', function (ev) {
+    SH.submit(ev, render, load);
+  });
+  load();
+})();
