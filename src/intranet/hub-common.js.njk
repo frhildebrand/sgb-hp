@@ -391,6 +391,9 @@ window.HubShell = (function () {
         var href = i === 0 ? s.url : s.url + '#g=' + encodeURIComponent(g);
         return '<a class="hub-mi hub-mi2' + (i === 0 && here === u ? ' hub-on' : '') + '" href="' + esc(href) + '" style="--mc:' + esc(color) + '"><span class="hub-mlb">' + esc(g) + '</span></a>'; }).join('') + '</div>' : '');
     }
+    if (S.pageTabs && S.pageTabs.length > 1 && here === u && !/\/(training|weihnachtsmarkt)\/$/.test(u)) {
+      out += '<div class="hub-mitems">' + S.pageTabs.map(function (t) { return '<button type="button" class="hub-mi hub-mi2' + (S.pageTab === t.id ? ' hub-on' : '') + '" data-shx="tab:' + esc(t.id) + '" style="--mc:' + esc(color) + '"><span class="hub-mlb">' + esc(t.label) + '</span></button>'; }).join('') + '</div>';
+    }
     if (/\/weihnachtsmarkt\/$/.test(u)) {
       var subs = WMSUB.filter(function (p) { return has(p[3]); });
       if (subs.length) {
@@ -440,7 +443,7 @@ window.HubShell = (function () {
       [['mitglieder.import'], 'Im Reiter „WebClub-Import“ liest du die Gruppenliste (PDF) oder die WebClub-Datei ein. Du siehst vorher, wer neu ist, wer sich geändert hat und wer nicht mehr in der Liste steht. Bankdaten und Adressen werden nicht übernommen.'],
       [['mitglieder.view'], '„📊 Excel“ erzeugt die Liste in mehreren Blättern.']] },
     { id: 'anwesenheit', icon: '📋', title: 'Anwesenheit', text: 'Anwesenheitslisten aus WebClub je Gruppe. Die Übersicht zeigt pro Monat, wer da war, und welche Gruppe schon eine Liste hat.', steps: [
-      [['anwesenheit.upload'], 'Im Reiter „Hochladen“ wählst du die Gruppe und die PDF-Datei. Die Liste wird gelesen, die PDF zusätzlich im Drive abgelegt.']] },
+      [['anwesenheit.upload'], 'Die Anwesenheit kommt aus den Trainingsterminen der Gruppe. Im Reiter „Termine einlesen“ kannst du aus einer WebClub-PDF fehlende Trainingstage anlegen. „📊 Excel“ erzeugt die Anwesenheitsliste mit der Vorlage der SG.']] },
     { id: 'auswertung', icon: '📈', title: 'Jahresauswertung', text: 'Rangliste, Einzelblätter und Ehrungen aus der Punkteliste (World Aquatics). Gewertet wird je Strecke die punktbeste Leistung aus Lang- und Kurzbahn.', steps: [
       [['auswertung.upload'], 'Im Reiter „Hochladen“ liest du die Punkteliste je Saison ein, getrennt für Langbahn und Kurzbahn.'],
       [['auswertung.print'], 'Mit „Drucken“ entsteht die Auswertung oder das Einzelblatt als PDF.']] },
@@ -449,7 +452,6 @@ window.HubShell = (function () {
     { id: 'aufgaben', icon: '✅', title: 'Aufgaben', text: 'Wer macht was bis wann. Auf der Startseite wechselst du zwischen „Meine“ und „Alle“ Aufgaben.', steps: [
       [['aufgaben.anlegen'], 'Mit „+“ legst du eine neue Aufgabe an: Titel, Frist, Wichtigkeit und wer sie übernimmt. Unter dem Namensfeld siehst du, ob die Person ein Konto hat.'],
       [['aufgaben.edit', 'aufgaben.own'], 'Aufgaben hakst du ab, wenn sie erledigt sind. Wiederkehrende Aufgaben legen die nächste selbst an. Mit dem Stift änderst du Text, Frist und Zuständige.'],
-      [['aufgaben.edit'], 'Im Reiter „Pakete“ legst du Aufgabenreihen an (z. B. Saisonstart) und wendest sie mit einem Stichtag an.'],
       [null, '„📊 Excel“ erzeugt die Liste der offenen Aufgaben.'],
       [['aufgaben.loeschen'], 'Nicht mehr gebrauchte Aufgaben kannst du löschen.']] },
     { id: 'wettkaempfe', icon: '🏁', title: 'Wettkämpfe', text: 'Von der Planung bis zur Nachbereitung: Jeder Wettkampf hat eine Seite mit den Abschnitten Planung, Meldung, Nach Meldeergebnis, Wettkampf und Nachbereitung.', steps: [
@@ -478,7 +480,7 @@ window.HubShell = (function () {
       [['training.tage.anlegen', 'training.anlegen'], 'Mit „+“ legst du einen neuen Trainingstag an.'],
       [['training.mitglieder.view'], 'Unter „Mitglieder“ steht die Liste der Gruppe mit Jahrgang und DSV-ID.'],
       [['training.beobachtung'], 'Beobachtungen zu einzelnen Schwimmern hältst du am Trainingstag fest.'],
-      [['training.rueckblick'], 'Der Rückblick fasst das Jahr zusammen.']] },
+      [['training.view'], 'Oben wählst du die Gruppe. Training, Mitglieder und Fahrten findest du auf der Gruppenseite untereinander.']] },
     { id: 'jugend', icon: '🏊', title: 'Jugend', text: 'Schwimmabzeichen und die Jugendkasse.', steps: [
       [['jugend.abzeichen.view'], 'Reiter „Abzeichen“ mit den Ansichten „Abnahme“ (Personen als Tabelle, Fortschritt je Anforderung), „Übersicht“ und „Preise & Anforderungen“. Mit dem Stift änderst du Einträge.'],
       [['jugend.abzeichen.anlegen'], 'Neue Abzeichen trägst du mit Namen oder Mitgliedsnummer ein: Während du tippst, erscheinen unten passende Mitglieder, die du antippst. Es sind nur Personen aus der Mitgliederliste möglich.'],
@@ -502,7 +504,7 @@ window.HubShell = (function () {
       [['material.view'], 'Reiter „Ausgabe & Verleih“: Personen als Tabelle mit dem, was sie haben. Auch die Schwimmbretter aus der Mitgliederliste stehen hier. „📊 Excel“ erzeugt die Liste „Wer hat was“.'],
       [['material.view'], 'Reiter „Einkaufsliste“: Was unter dem Mindestbestand liegt, wird hier gesammelt.'],
       [['material.view'], 'Reiter „Abzeichen“: Bestand je Abzeichen mit Balken. Der Strich im Balken ist der Mindestbestand; darunter wird es rot und das Abzeichen steht unter „Nachbestellen“.'],
-      [['material.bestand', 'material.edit'], 'Bestand und Mindestbestand der Abzeichen änderst du mit „ändern“ an der Kachel.']] },
+      [['material.bestand', 'material.edit'], 'Bestand und Mindestbestand der Abzeichen pflegst du im Reiter „Abzeichen“ wie die Gegenstände: Zeile antippen, Bestand ändern, speichern. Zu jedem Abzeichen gibt es Urkunde und Abzeichen getrennt.']] },
     { id: 'veranstaltungen', icon: '🎪', title: 'Veranstaltungen', text: 'Eigene Events mit Checkliste, Helfern und Material.', steps: [
       [['veranstaltungen.anlegen'], 'Mit „+“ legst du eine Veranstaltung an, auf Wunsch aus einer Vorlage. „📄 Neue Veranstaltung aus PDF“ macht aus einer vorhandenen Checkliste (PDF) eine Veranstaltung.'],
       [['veranstaltungen.check', 'veranstaltungen.edit'], 'Die Checkliste hakst du ab. Helfer trägst du mit Namen oder Mitgliedsnummer ein.'],
@@ -521,12 +523,15 @@ window.HubShell = (function () {
       '<li>Änderungen sind sofort auf allen Geräten da. Ohne Internet speichert das Gerät zuerst lokal und schickt später nach.</li>' +
       '<li>Mit „Auto, Hell, Dunkel“ oben stellst du das Design um.</li>' +
       (m ? '<li>Die Startseite zeigt das Schwarze Brett, Termine, Fristen und deinen Schnellzugriff. Den Schnellzugriff stellst du dir mit dem Stift selbst zusammen; er gehört zu deinem Konto.</li>' : '<li>Ohne Anmeldung siehst du nur die öffentlichen Bereiche. Zum Anmelden nutze den Knopf oben rechts.</li>') + '</ul></section>';
-    var secs = HELP.filter(function (h) { return ids[h.id]; }).map(function (h) {
+    var HORD = ['wettkaempfe', 'auswertung', 'training', 'trainer', 'anwesenheit', 'mitglieder', 'jugend', 'vorstand', 'dokumente', 'aufgaben', 'abrechnung', 'fahrten', 'material', 'veranstaltungen', 'weihnachtsmarkt'];
+    var hl = HELP.filter(function (h) { return ids[h.id]; }).sort(function (a, b) { var x = HORD.indexOf(a.id), y = HORD.indexOf(b.id); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y); }); var lastC = '';
+    var secs = hl.map(function (h) {
+      var cn = SLUG_CAT[h.id] || ''; var ch = cn && cn !== lastC ? '<div class="hub-help-cat">' + (catInfo(cn).icon || '') + ' ' + esc(cn) + '</div>' : ''; lastC = cn || lastC;
       var steps = h.steps.filter(function (s) { return anyOf(s[0]); }).map(function (s) { return '<li>' + esc(s[1]) + '</li>'; }).join('');
-      return '<section class="hub-help-card"><div class="hub-help-top"><h4>' + h.icon + ' ' + esc(h.title) + '</h4><a class="hub-btn hub-ghost" href="' + esc(ids[h.id].url) + '">Öffnen</a></div><p>' + esc(h.text) + '</p>' + (steps ? '<ul>' + steps + '</ul>' : '') + '</section>';
+      return ch + '<section class="hub-help-card"><div class="hub-help-top"><h4>' + h.icon + ' ' + esc(h.title) + '</h4><a class="hub-btn hub-ghost" href="' + esc(ids[h.id].url) + '">Öffnen</a></div><p>' + esc(h.text) + '</p>' + (steps ? '<ul>' + steps + '</ul>' : '') + '</section>';
     }).join('');
-    var extra = '';
-    if (m && m.user) extra += '<section class="hub-help-card"><div class="hub-help-top"><h4>👤 Mein Profil</h4><a class="hub-btn hub-ghost" href="' + HUB_URL + 'profil/">Öffnen</a></div><p>Hier stehen deine Daten in Reitern: Schwimmer, Trainer, Kampfrichter, Funktionär, Kontakt und Bank sowie deine Unterschrift. Mit „Bearbeiten“ trägst du alles ein. Die Angaben zu Schwimmer, Kampfrichter und Funktionär werden automatisch mit der Mitgliederliste abgeglichen, in beide Richtungen. Daten lassen sich aus einer WebClub-Datei übernehmen. Die Abrechnung nutzt sie für Stundensatz, Excel-Formulare und Überweisung.</p></section>';
+    var extra = '', prof = '';
+    if (m && m.user) prof += '<section class="hub-help-card"><div class="hub-help-top"><h4>👤 Mein Profil</h4><a class="hub-btn hub-ghost" href="' + HUB_URL + 'profil/">Öffnen</a></div><p>Hier stehen deine Daten in Reitern: Schwimmer, Trainer, Kampfrichter, Funktionär, Kontakt und Bank sowie deine Unterschrift. Mit „Bearbeiten“ trägst du alles ein. Die Angaben zu Schwimmer, Kampfrichter und Funktionär werden automatisch mit der Mitgliederliste abgeglichen, in beide Richtungen. Daten lassen sich aus einer WebClub-Datei übernehmen. Die Abrechnung nutzt sie für Stundensatz, Excel-Formulare und Überweisung.</p></section>';
     if (canAdmin()) extra += '<section class="hub-help-card"><div class="hub-help-top"><h4>🛡️ Verwaltung</h4><a class="hub-btn hub-ghost" href="' + HUB_URL + 'verwaltung/">Öffnen</a></div><p>Benutzer, Rollen und Rechte. Mit den Rechten steuerst du, welche Bereiche und Funktionen jede Person sieht. Die Reihenfolge der Rollen legst du mit ▲▼ fest; sie bestimmt auch die Benutzerliste.</p><ul>' +
       (has('system.users') ? '<li>Benutzer anlegen, Startpasswort setzen, Rollen und Sonderrechte zuweisen.</li>' : '') +
       (has('system.roles') || has('system.rechte') ? '<li>Rollen anlegen und Rechte je Bereich einzeln freischalten.</li>' : '') +
@@ -647,5 +652,46 @@ window.HubShell = (function () {
       var m = document.createElement('meta'); m.name = 'apple-mobile-web-app-title'; m.content = 'SGB Intranet'; document.head.appendChild(m);
     };
     im.src = window.HUB_LOGO_S;
+  } catch (e) { }
+})();
+
+/* Datumsfelder im ganzen Intranet: frei tippbar (5.3.2026, 05.03.26, 5.3.) und weiter mit ISO-Wert (JJJJ-MM-TT) für den Code.
+   Aus <input type="date"> wird ein Textfeld mit Zahlentastatur; .value liefert weiter JJJJ-MM-TT. */
+(function () {
+  try {
+    var D = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value'); if (!D || window.__hubDates) return; window.__hubDates = 1;
+    var p2 = function (n) { return String(n).padStart(2, '0'); };
+    function parse(t) {
+      t = String(t || '').trim(); if (!t) return '';
+      var m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(t), d, mo, y;
+      if (m) { y = +m[1]; mo = +m[2]; d = +m[3]; }
+      else { m = /^(\d{1,2})[.\/\-]\s*(\d{1,2})(?:[.\/\-]\s*(\d{2,4}))?\.?$/.exec(t); if (!m) { m = /^(\d{2})(\d{2})(\d{4}|\d{2})$/.exec(t); if (!m) return null; } d = +m[1]; mo = +m[2]; y = m[3] ? +m[3] : new Date().getFullYear(); if (y < 100) y += 2000; }
+      if (mo < 1 || mo > 12 || d < 1 || d > 31 || y < 1900 || y > 2200) return null;
+      var dt = new Date(y, mo - 1, d); if (dt.getMonth() !== mo - 1) return null;
+      return y + '-' + p2(mo) + '-' + p2(d);
+    }
+    function show(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? m[3] + '.' + m[2] + '.' + m[1] : (iso || ''); }
+    function enhance(el) {
+      if (el.__hd || el.getAttribute('data-nodate') !== null) return; el.__hd = 1;
+      var raw = D.get.call(el); el.type = 'text'; el.setAttribute('inputmode', 'numeric'); el.setAttribute('autocomplete', 'off'); if (!el.placeholder) el.placeholder = 'TT.MM.JJJJ'; el.maxLength = 10; el.classList.add('hub-datefld');
+      Object.defineProperty(el, 'value', {
+        configurable: true,
+        get: function () { var r = parse(D.get.call(el)); return r === null ? '' : r; },
+        set: function (v) { D.set.call(el, show(v)); }
+      });
+      D.set.call(el, show(parse(raw) || raw));
+    }
+    function scan(root) { if (!root || !root.querySelectorAll) return; if (root.matches && root.matches('input[type=date]')) enhance(root); var l = root.querySelectorAll('input[type=date]'); for (var i = 0; i < l.length; i++) enhance(l[i]); }
+    // Während des Tippens keine halben Datumswerte an den Code geben
+    document.addEventListener('input', function (ev) { var e = ev.target; if (e && e.__hd) { var t = D.get.call(e); if (t && parse(t) === null) ev.stopImmediatePropagation(); } }, true);
+    document.addEventListener('focusout', function (ev) {
+      var e = ev.target; if (!e || !e.__hd) return; var t = D.get.call(e); var r = parse(t);
+      if (r === null) { e.style.outline = '2px solid #dc2626'; e.title = 'Bitte als TT.MM.JJJJ eingeben'; return; }
+      e.style.outline = ''; e.title = ''; var s = show(r); if (s !== t) { D.set.call(e, s); e.dispatchEvent(new Event('change', { bubbles: true })); }
+    }, true);
+    document.addEventListener('change', function (ev) { var e = ev.target; if (e && e.__hd) { var t = D.get.call(e); if (t && parse(t) === null) ev.stopImmediatePropagation(); } }, true);
+    var mo = new MutationObserver(function (list) { list.forEach(function (m) { m.addedNodes.forEach(function (n) { if (n.nodeType === 1) scan(n); }); }); });
+    var go = function () { scan(document.body); mo.observe(document.body, { childList: true, subtree: true }); };
+    if (document.body) go(); else document.addEventListener('DOMContentLoaded', go);
   } catch (e) { }
 })();

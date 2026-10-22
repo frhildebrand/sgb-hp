@@ -12,12 +12,43 @@ templateEngineOverride: false
   function lines(t) { return esc(t || '').replace(/\n/g, '<br>'); }
   function fmtShort(iso) { return iso ? M.fmtDate(iso, true) : ''; }
   /* Protokoll-Gliederung: Zeile = Punkt (1.), „- “ = Unterpunkt (a.), „-- “ = (i.); Zeilen mit „|“ = Tabelle; [Name] wird markiert */
-  var TGC = ['#e4def5', '#e0f0e0', '#fde8d4', '#dbeafe', '#fce7f3', '#fef3c7'];
-  function tagged(x) { return esc(x).replace(/\[([^\]]+)\]/g, function (m, n) { var h = 0; for (var i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) % 997; return '[<span style="background:' + TGC[h % TGC.length] + ';padding:0 2px;border-radius:3px">' + n + '</span>]'; }); }
-  function outline(text) {
+  // Jede Person hat dauerhaft ihre Farbe (aus dem Vornamen berechnet); [Name] und alle Anwesenden im Protokoll werden damit markiert
+  var TGC = ['#e4def5', '#e0f0e0', '#fde8d4', '#dbeafe', '#fce7f3', '#fef3c7', '#d3efec', '#f5dede', '#e6eccf', '#dbe3f6', '#f7e4cf', '#ead9f2'];
+  function pcol(n) { var k = String(n || '').toLowerCase().trim().split(/\s+/)[0] || '', h = 0; for (var i = 0; i < k.length; i++) h = (h * 31 + k.charCodeAt(i)) % 9973; return TGC[h % TGC.length]; }
+  function pchip(n) { return '<span style="background:' + pcol(n) + ';padding:1px 8px;border-radius:999px;margin:0 4px 4px 0;display:inline-block;font-weight:700;color:#0f172a">' + esc(n) + '</span>'; }
+  // Anwesende aus dem Freitext: „Jan Kettler (Orga), Anna Muster, …“ -> Namen
+  function attendees(txt) {
+    var out = [], seen = {};
+    String(txt || '').replace(/\([^)]*\)/g, ' ').split(/[,;\n]| und |\s&\s/).forEach(function (s) {
+      s = s.trim().replace(/^(Herr|Frau|Dr\.?)\s+/i, ''); if (!/^[A-ZÄÖÜ][\wÄÖÜäöüß.'-]+(\s+[A-ZÄÖÜ][\wÄÖÜäöüß.'-]+){0,3}$/.test(s) || /\d/.test(s)) return;
+      var k = s.toLowerCase(); if (seen[k]) return; seen[k] = 1; out.push(s);
+    });
+    return out;
+  }
+  function nameForms(list) {
+    var firsts = {}; list.forEach(function (n) { var f = n.split(/\s+/)[0].toLowerCase(); firsts[f] = (firsts[f] || 0) + 1; });
+    var forms = []; list.forEach(function (n) { forms.push([n, n]); var f = n.split(/\s+/)[0]; if (f.length >= 3 && firsts[f.toLowerCase()] === 1 && f !== n) forms.push([f, n]); });
+    return forms.sort(function (a, b) { return b[0].length - a[0].length; });
+  }
+  var LET = 'A-Za-zÄÖÜäöüß';
+  function markNames(html, list) {
+    if (!list || !list.length) return html;
+    nameForms(list).forEach(function (f) {
+      var re = new RegExp('(^|[^' + LET + '>;])(' + f[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')(?![' + LET + '])', 'g');
+      html = html.replace(re, function (m, pre, nm) { return pre + '<span style="background:' + pcol(f[1]) + ';padding:0 3px;border-radius:4px">' + nm + '</span>'; });
+    });
+    return html;
+  }
+  function tagged(x, names) {
+    var keep = [];
+    var s = esc(x).replace(/\[([^\]]+)\]/g, function (m, n) { keep.push('[<span style="background:' + pcol(n) + ';padding:0 3px;border-radius:4px">' + n + '</span>]'); return '\u0001' + (keep.length - 1) + '\u0002'; });
+    s = markNames(s, names);
+    return s.replace(/\u0001(\d+)\u0002/g, function (m, i) { return keep[+i]; });
+  }
+  function outline(text, names) {
     var out = '', lv = -1, n0 = 0, rows = [], TY = ['1', 'a', 'i', 'A'];
     var closeAll = function () { while (lv >= 0) { out += '</li></ol>'; lv--; } };
-    var flushT = function () { if (!rows.length) return; closeAll(); out += '<table>' + rows.map(function (r, i) { return '<tr>' + r.map(function (c) { return '<' + (i ? 'td' : 'th') + '>' + tagged(c) + '</' + (i ? 'td' : 'th') + '>'; }).join('') + '</tr>'; }).join('') + '</table>'; rows = []; };
+    var flushT = function () { if (!rows.length) return; closeAll(); out += '<table>' + rows.map(function (r, i) { return '<tr>' + r.map(function (c) { return '<' + (i ? 'td' : 'th') + '>' + tagged(c, names) + '</' + (i ? 'td' : 'th') + '>'; }).join('') + '</tr>'; }).join('') + '</table>'; rows = []; };
     String(text || '').split('\n').forEach(function (raw) {
       var ln = raw.replace(/\s+$/, ''); if (!ln.trim()) { flushT(); return; }
       if (ln.indexOf('|') >= 0) { rows.push(ln.split('|').map(function (c) { return c.trim(); })); return; }
@@ -27,7 +58,7 @@ templateEngineOverride: false
       else if (L > lv) { out += '<ol type="' + TY[L] + '" style="margin:2px 0;padding-left:24px"><li>'; lv = L; }
       else { while (lv > L) { out += '</li></ol>'; lv--; } out += '</li><li>'; }
       if (L === 0) n0 = (n0 || 0) + 1;
-      out += tagged(m[2]);
+      out += tagged(m[2], names);
     });
     flushT(); closeAll(); return out;
   }
@@ -73,6 +104,7 @@ templateEngineOverride: false
     { k: 'rep', t: 'sel', label: 'Wiederholen', opts: [['', 'Nie'], ['woechentlich', 'Jede Woche'], ['14tage', 'Alle 2 Wochen'], ['monatlich', 'Jeden Monat'], ['jaehrlich', 'Jedes Jahr']] },
     { k: 'sub', t: 'checks', label: 'Unteraufgaben', rows: 4, hint: 'Pro Zeile eine Unteraufgabe.' }
   ];
+  function all0Mine() { return M.items('aufgaben').some(function (x) { return x.status !== 'erledigt' && isMine(x); }); }
   function isMine(it) { var n = lower(me()); if (!n) return false; var w = Array.isArray(it.who) ? it.who : []; return w.some(function (x) { return lower(x) === n; }) || lower(it.by) === n; }
   function oldWk(it) {
     if (!it.ref || it.ref.indexOf('wk:') !== 0) return false;
@@ -128,10 +160,9 @@ templateEngineOverride: false
   M.register('aufgaben', {
     title: 'Aufgaben', icon: '✅', colls: ['aufgaben', 'vorlagen', 'wettkaempfe', 'wgMitglieder'], custom: true, access: ['aufgaben.view', 'aufgaben.own'],
     render: function () {
-      var S = M.S; var view = S.sub.av || 'liste';
+      var S = M.S;
       var canEdit = M.can('aufgaben.edit');
-      if (view === 'pakete') return paketeHtml(canEdit, view);
-      var f = S.filter.f || (M.can('aufgaben.view') ? 'offen' : 'meine');
+      var f = S.filter.f || (all0Mine() ? 'meine' : (M.can('aufgaben.view') ? 'offen' : 'meine'));
       var all = M.items('aufgaben').sort(taskSort);
       var t = M.today(), we = weekEnd();
       var open = all.filter(function (x) { return x.status !== 'erledigt' && !oldWk(x); });
@@ -153,10 +184,14 @@ templateEngineOverride: false
         return true;
       });
       if (f === 'erledigt') list.sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
-      var chips = [['offen', 'Offen', open.length], ['meine', 'Meine', all.filter(function (x) { return x.status !== 'erledigt' && isMine(x); }).length], ['erledigt', 'Erledigt', doneAll.length], ['alle', 'Alle', all.length]].filter(function (c) { return M.can('aufgaben.view') || c[0] === 'meine' || c[0] === 'erledigt'; });
-      var out = '<section class="wm-card"><div class="m-stats">' + M.stat(cOver, 'überfällig', cOver ? 'bad' : '', 'data-ma="filt" data-f="over"') + M.stat(cToday, 'heute fällig', cToday ? 'warn' : '', 'data-ma="filt" data-f="today"') + M.stat(cWeek, 'diese Woche', 'info', 'data-ma="filt" data-f="week"') + M.stat(cDone, 'erledigt (14 Tage)', 'ok', 'data-ma="filt" data-f="erledigt"') + '</div>' +
-        '<div class="wm-bar"><span class="m-actions">' + M.seg([['liste', '☰ Liste'], ['spalten', '▥ Spalten']], S.sub.lay || 'liste', 'lay') + (canEdit ? M.seg([['liste', 'Aufgaben'], ['pakete', 'Pakete']], 'liste', 'av') : '') + '</span><span class="m-actions"><button type="button" class="wm-btn" data-ma="printtasks">📊 Excel</button>' + (M.anyCan(['aufgaben.edit', 'aufgaben.anlegen']) ? '<button type="button" class="wm-amber" data-ma="addtask">+ Neue Aufgabe</button>' : '') + '</span></div>' +
-        '<div class="m-chips">' + chips.map(function (c) { return '<button type="button" class="m-chip' + (c[0] === f ? ' on' : '') + '" data-ma="filt" data-f="' + c[0] + '">' + c[1] + ' (' + c[2] + ')</button>'; }).join('') + (['over', 'today', 'week'].indexOf(f) >= 0 ? '<button type="button" class="m-chip on" data-ma="filt" data-f="offen">Filter: ' + ({ over: 'überfällig', today: 'heute', week: 'Woche' }[f]) + ' ✕</button>' : '') + '</div>' +
+      var cMine = all.filter(function (x) { return x.status !== 'erledigt' && isMine(x); }).length;
+      var chips = [['over', 'Überfällig', cOver, 'bad'], ['today', 'Heute', cToday, ''], ['week', 'Diese Woche', cWeek, ''], ['meine', 'Meine', cMine, ''], ['offen', 'Alle offenen', open.length, ''], ['erledigt', 'Erledigt', doneAll.length, '']].filter(function (c) {
+        if (c[0] === 'meine') return true;
+        if (!M.can('aufgaben.view')) return c[0] === 'erledigt';
+        return c[2] > 0 || c[0] === f || c[0] === 'offen' || c[0] === 'erledigt';
+      });
+      var out = '<section class="wm-card"><div class="wm-bar"><span class="m-actions">' + M.seg([['liste', '☰ Liste'], ['spalten', '▥ Spalten']], S.sub.lay || 'liste', 'lay') + '</span><span class="m-actions"><button type="button" class="wm-btn" data-ma="printtasks">📊 Excel</button>' + (M.anyCan(['aufgaben.edit', 'aufgaben.anlegen']) ? '<button type="button" class="wm-amber" data-ma="addtask">+ Neue Aufgabe</button>' : '') + '</span></div>' +
+        '<div class="m-chips">' + chips.map(function (c) { return '<button type="button" class="m-chip' + (c[0] === f ? ' on' : '') + (c[3] && c[2] ? ' ' + c[3] : '') + '" data-ma="filt" data-f="' + c[0] + '">' + c[1] + ' (' + c[2] + ')</button>'; }).join('') + '</div>' +
         '<input type="search" class="m-search" data-mq="1" placeholder="🔎 Aufgabe oder Person suchen …" value="' + esc(S.q) + '" autocomplete="off">';
       if (!list.length) out += '<p class="wm-note">' + (all.length ? 'Hier ist nichts offen. 🎉' : 'Noch keine Aufgaben.') + '</p>';
       else if ((S.sub.lay || 'liste') === 'spalten') {
@@ -174,7 +209,6 @@ templateEngineOverride: false
     actions: {
       filt: function (it, el) { M.S.filter.f = el.getAttribute('data-f'); M.render(true); },
       lay: function (it, el) { M.S.sub.lay = el.getAttribute('data-v'); M.render(true); },
-      av: function (it, el) { M.S.sub.av = el.getAttribute('data-v'); M.render(true); },
       addtask: function () { M.openForm({ title: 'Neue Aufgabe', fields: TASK_FIELDS, item: { status: 'offen', prio: 'normal', who: [], rep: '' }, onSave: function (v) { var it = Object.assign({ id: M.uid(), by: me() }, v); M.op({ op: 'set', coll: 'aufgaben', item: saveTaskItem(v, it, false) }); } }); },
       edit: function (it) { if (!it) return; M.openForm({ title: 'Aufgabe bearbeiten', fields: TASK_FIELDS, item: it, onSave: function (v) { M.op({ op: 'set', coll: 'aufgaben', item: saveTaskItem(v, it) }); } }); },
       del: function (it) { if (!it) return; M.confirm('„' + it.title + '“ wirklich löschen?', 'Löschen', function () { M.op({ op: 'del', coll: 'aufgaben', id: it.id }); }); },
@@ -198,36 +232,9 @@ templateEngineOverride: false
         var d = function (v) { return v ? String(v).split('-').reverse().join('.') : ''; };
         M.xlsxList({ file: 'Offene_Aufgaben.xlsx', title: 'Offene Aufgaben', sub: 'Stand ' + d(M.today()), sheets: [{ name: 'Aufgaben', head: ['Aufgabe', 'Beschreibung', 'Zuständig', 'Bis', 'Status', 'Wichtigkeit', 'Teilschritte'], w: [34, 40, 22, 12, 12, 12, 40],
           rows: l.map(function (x) { return [x.title || '', x.text || '', (x.who || []).join(', '), d(x.due), x.status === 'arbeit' ? 'In Arbeit' : 'Offen', x.prio === 'hoch' ? 'Hoch' : x.prio === 'niedrig' ? 'Niedrig' : 'Normal', (x.sub || []).map(function (q) { return (q.d ? '✓ ' : '○ ') + q.t; }).join('; ')]; }) }] });
-      },
-      pnew: function () { paketForm(null); },
-      pedit: function (it, el, ev, c) { paketForm(M.find('vorlagen', c.id)); },
-      pdel: function (it, el, ev, c) { it = M.find('vorlagen', c.id); if (!it) return; M.confirm('Paket „' + it.title + '“ löschen?', 'Löschen', function () { M.op({ op: 'del', coll: 'vorlagen', id: it.id }); }); },
-      papply: function (it, el, ev, c) {
-        it = M.find('vorlagen', c.id); if (!it) return;
-        M.openForm({ title: 'Paket anwenden: ' + it.title, fields: [{ k: 'start', t: 'date', label: 'Start- oder Stichtag', req: true }, { k: 'who', t: 'tags', label: 'Zuständig für alle (optional)' }], item: { start: M.today(), who: [] }, saveLabel: 'Aufgaben anlegen', onSave: function (v) {
-          M.ops((it.punkte || []).map(function (p) { return { op: 'set', coll: 'aufgaben', item: { id: M.uid(), title: p.t, who: v.who, due: M.addDays(v.start, p.off || 0), status: 'offen', prio: 'normal', rep: '', sub: [], ref: 'pk:' + it.id, refLabel: it.title, by: me() } }; }));
-          M.S.sub.av = 'liste'; M.toast((it.punkte || []).length + ' Aufgaben angelegt.');
-        } });
       }
     }
   });
-  function paketForm(it) {
-    var base = it ? M.clone(it) : { typ: 'aufgaben', title: '' };
-    base.src = punkteText(base.punkte, false);
-    M.openForm({ title: it ? 'Paket bearbeiten' : 'Neues Aufgaben-Paket', fields: [{ k: 'title', t: 'text', label: 'Name des Pakets', req: true, ph: 'z. B. Saisonstart' }, { k: 'src', t: 'area', label: 'Aufgaben', rows: 10, hint: 'Pro Zeile: Aufgabe | Tage ab Stichtag. Zum Beispiel „Halle buchen | -30“ (30 Tage vorher) oder „Danke schreiben | 2“.' }], item: base, onSave: function (v) {
-      var n = Object.assign({}, base, { title: v.title, typ: 'aufgaben', punkte: parsePunkte(v.src, false) }); delete n.src; n.id = base.id || M.uid(); M.op({ op: 'set', coll: 'vorlagen', item: n });
-    } });
-  }
-  function paketeHtml(canEdit) {
-    var l = vorlagen('aufgaben');
-    var out = '<section class="wm-card"><div class="wm-bar"><span class="m-actions">' + M.seg([['liste', 'Aufgaben'], ['pakete', 'Pakete']], 'pakete', 'av') + '</span>' + (canEdit ? '<button type="button" class="wm-amber" data-ma="pnew">+ Neues Paket</button>' : '') + '</div><p class="wm-note">Ein Paket ist eine Reihe von Aufgaben, die du mit einem Klick für einen Stichtag anlegst. Die Tage zählen ab dem Stichtag, negative Zahlen davor.</p>';
-    if (!l.length) out += '<p class="wm-note">Noch keine Pakete.</p>';
-    l.forEach(function (p) {
-      out += '<article class="m-card" data-id="' + esc(p.id) + '"><div class="m-head" data-ma="toggle"><div class="m-main"><div class="m-title">📦 ' + esc(p.title) + '</div><div class="wm-sub">' + (p.punkte || []).length + ' Aufgaben</div></div><span class="m-chev">' + (M.S.open[p.id] ? '▾' : '▸') + '</span></div>' + (M.S.open[p.id] ? '<div class="m-body">' + (p.punkte || []).map(function (x) { return '<div class="m-chk"><span style="flex:1">' + esc(x.t) + '</span><span class="wm-sub">' + (x.off > 0 ? '+' : '') + x.off + ' Tg.</span></div>'; }).join('') + '<div class="m-btns">' + (canEdit ? '<button type="button" class="wm-btn" data-ma="papply">▶︎ Anwenden</button><button type="button" class="wm-btn" data-ma="pedit">✏️ Bearbeiten</button><button type="button" class="wm-btn m-danger" data-ma="pdel">🗑️</button>' : '') + '</div></div>' : '') + '</article>';
-    });
-    return out + '</section>';
-  }
-
   /* ================= VERANSTALTUNGEN ================= */
   var STD_VORLAGEN = [
     { title: 'Schwimmfest (eigene Ausrichtung)', punkte: [['Halle und Termin bestätigen', 'vor', -90], ['Ausschreibung erstellen und versenden', 'vor', -60], ['Meldeschluss festlegen', 'vor', -60], ['Kampfgericht einladen', 'vor', -45], ['Zeitnehmer und Helfer einteilen', 'vor', -21], ['Meldeergebnis erstellen und verschicken', 'vor', -7], ['Kuchenverkauf und Verpflegung organisieren', 'vor', -7], ['Urkunden und Medaillen besorgen', 'vor', -14], ['Stoppuhren, Startblöcke und Technik prüfen', 'vor', -2], ['Aufbau', 'tag', 0], ['Abbau und Aufräumen', 'tag', 0], ['Ergebnisse veröffentlichen', 'danach', 1], ['Abrechnung', 'danach', 7]] },
@@ -477,6 +484,32 @@ templateEngineOverride: false
     out.tops = items.filter(function (o) { return o.lv === 0; }).map(function (o) { return o.t; });
     return out;
   }
+  // Aus dem Protokolltext: Termine (Datum mit Stichwort) und Aufgaben (Anwesende, die etwas übernehmen)
+  function dateIn(l, base) {
+    var m = /(\d{1,2})\.(\d{1,2})\.(\d{4}|\d{2})?/.exec(l); if (!m) return null;
+    var d = +m[1], mo = +m[2]; if (d < 1 || d > 31 || mo < 1 || mo > 12) return null;
+    var by = Number(String(base || M.today()).slice(0, 4)), y = m[3] ? (m[3].length === 2 ? 2000 + +m[3] : +m[3]) : by;
+    var iso = y + '-' + ('0' + mo).slice(-2) + '-' + ('0' + d).slice(-2);
+    if (!m[3] && base && iso < base) iso = (y + 1) + '-' + ('0' + mo).slice(-2) + '-' + ('0' + d).slice(-2);
+    return { iso: iso, raw: m[0] };
+  }
+  var TASK_VERB = /(übernimm\w*|übernehm\w*|kümmer\w*|erledigt|organisier\w*|zuständig|verantwortlich|klärt|klären|fragt|anfragen|schreibt|bucht|bestellt|besorgt|holt|bereitet|meldet|informiert|prüft|sorgt)/i;
+  function extractProto(p) {
+    var names = attendees(p.teilnehmer), forms = nameForms(names), tasks = [], termine = [], seenT = {};
+    String(p.text || '').split('\n').forEach(function (raw) {
+      var l = raw.replace(/^[-\s]+/, '').trim(); if (!l || l.indexOf('|') >= 0) return;
+      var dt = dateIn(l, p.datum);
+      if (dt && /(Termin|findet|statt|Sitzung|Versammlung|Treffen|Fest|Wettkampf|Training|Turnier|Markt|nächste|Frist|bis zum|am\s)/i.test(l)) {
+        var title = l.replace(dt.raw, '').replace(/\b(am|bis|ab)\s+(?=um\b|$)/gi, '').replace(/\s{2,}/g, ' ').replace(/^[\s:,.;–-]+|[\s:,.;–-]+$/g, ''); if (title.length > 90) title = title.slice(0, 88) + '…';
+        var key = dt.iso + '|' + title.toLowerCase(); if (!seenT[key] && dt.iso >= (p.datum || M.today())) { seenT[key] = 1; termine.push({ date: dt.iso, title: title || 'Termin', raw: l }); }
+      }
+      if (TASK_VERB.test(l)) {
+        var who = []; forms.forEach(function (f) { if (who.indexOf(f[1]) < 0 && new RegExp('(^|[^' + LET + '])' + f[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![' + LET + '])').test(l)) who.push(f[1]); });
+        if (who.length) tasks.push({ who: who, title: l.length > 140 ? l.slice(0, 138) + '…' : l, due: dt ? dt.iso : '' });
+      }
+    });
+    return { names: names, tasks: tasks, termine: termine };
+  }
   var PTD = null;
   function ptOpen() {
     PTD = null;
@@ -490,14 +523,27 @@ templateEngineOverride: false
       var p = parseProtoPdf(linesWithTables(r.pages, true)); var box = document.getElementById('ptbox'); if (!box) return; PTD = p;
       var fl = function (id, lab, v, t) { return '<label class="m-f wide"><span>' + lab + '</span><input type="' + (t || 'text') + '" id="' + id + '" value="' + esc(v || '') + '"></label>'; };
       box.innerHTML = '<div class="m-fgrid">' + fl('pt_t', 'Titel', p.title) + fl('pt_d', 'Datum', p.datum, 'date') + fl('pt_p', 'Protokollführung', p.pf) + fl('pt_a', 'Anwesend', p.teilnehmer) + '<label class="m-f wide"><span>Protokoll (Gliederung)</span><textarea id="pt_x" rows="12">' + esc(p.text) + '</textarea></label></div>' +
-        '<p class="wm-note">' + p.tops.length + ' Punkte erkannt. Unterpunkte beginnen mit „- “ (a., b.) bzw. „-- “ (i., ii.).</p><div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="ptsave">Als Sitzung anlegen</button></div>';
+        '<p class="wm-note">' + p.tops.length + ' Punkte erkannt. Unterpunkte beginnen mit „- “ (a., b.) bzw. „-- “ (i., ii.).</p>' + extraHtml(PX = extractProto(p)) + '<div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="ptsave">Als Sitzung anlegen</button></div>';
     }, function (e) { msg.innerHTML = '<span class="m-over">' + esc(e.message || String(e)) + '</span>'; });
+  }
+  var PX = null;
+  function extraHtml(x) {
+    var o = '';
+    if (x.names.length) o += '<div class="m-sec">Anwesende (jede Person hat ihre feste Farbe)</div><div>' + x.names.map(pchip).join('') + '</div>';
+    if (x.termine.length) o += '<div class="m-sec">Erkannte Termine → Veranstaltungen</div>' + x.termine.map(function (e, i) { return '<label class="m-chk" style="gap:8px"><input type="checkbox" data-ptt="' + i + '" checked> <span style="flex:1"><b>' + esc(M.fd(e.date)) + '</b> · ' + esc(e.title) + '</span></label>'; }).join('');
+    if (x.tasks.length) o += '<div class="m-sec">Erkannte Aufgaben → Aufgabenliste</div>' + x.tasks.map(function (e, i) { return '<label class="m-chk" style="gap:8px"><input type="checkbox" data-ptk="' + i + '" checked> <span style="flex:1">' + e.who.map(pchip).join('') + esc(e.title) + (e.due ? ' <span class="wm-sub">bis ' + esc(M.fd(e.due)) + '</span>' : '') + '</span></label>'; }).join('');
+    return o;
   }
   function ptSave() {
     var g = function (id) { var e = document.getElementById(id); return e ? e.value.trim() : ''; };
     var it = { id: M.uid(), title: g('pt_t'), date: g('pt_d'), pf: g('pt_p'), teilnehmer: g('pt_a'), protokoll: g('pt_x'), tops: (PTD && PTD.tops) || [], status: 'Durchgeführt' };
     if (!it.title) { M.toast('Bitte einen Titel eintragen.'); return; }
-    M.closeDlg(); M.op({ op: 'set', coll: 'vorstandSitzungen', item: it }); M.toast('Sitzung mit Protokoll angelegt.');
+    var ops = [{ op: 'set', coll: 'vorstandSitzungen', item: it }], nt = 0, nk = 0;
+    if (PX) {
+      [].forEach.call(document.querySelectorAll('input[data-ptt]:checked'), function (c) { var e = PX.termine[+c.getAttribute('data-ptt')]; if (e) { ops.push({ op: 'set', coll: 'veranstaltungen', item: { id: M.uid(), title: e.title, date: e.date, status: 'Geplant', beschreibung: 'Aus dem Protokoll „' + it.title + '“: ' + e.raw } }); nt++; } });
+      [].forEach.call(document.querySelectorAll('input[data-ptk]:checked'), function (c) { var e = PX.tasks[+c.getAttribute('data-ptk')]; if (e) { ops.push({ op: 'set', coll: 'aufgaben', item: { id: M.uid(), title: e.title, who: e.who, due: e.due, status: 'offen', prio: 'normal', rep: '', sub: [], ref: 'sz:' + it.id, refLabel: it.title, by: M.userName() } }); nk++; } });
+    }
+    M.closeDlg(); M.ops(ops); M.toast('Sitzung mit Protokoll angelegt' + (nt ? ', ' + nt + ' Termin(e)' : '') + (nk ? ', ' + nk + ' Aufgabe(n)' : '') + '.'); PX = null;
   }
   function parseAntragPdf(lines) {
     var L = lines.map(function (l) { return String(l).charAt(0) === '|' ? String(l) : String(l).replace(/\s{2,}/g, ' ').trim(); }).filter(Boolean);
@@ -579,7 +625,7 @@ templateEngineOverride: false
         fields: [{ k: 'title', t: 'text', label: 'Titel', req: true, ph: 'z. B. Vorstandssitzung November' }, { k: 'date', t: 'date', label: 'Datum' }, { k: 'time', t: 'time', label: 'Uhrzeit' }, { k: 'ort', t: 'text', label: 'Ort' }, { k: 'status', t: 'sel', label: 'Stand', opts: ['Geplant', 'Durchgeführt'] }, { k: 'tops', t: 'lines', label: 'Tagesordnung', rows: 6, hint: 'Pro Zeile ein Punkt.' }, { k: 'teilnehmer', t: 'text', label: 'Anwesend (Namen, Ämter)' }, { k: 'pf', t: 'text', label: 'Protokollführung', person: true }, { k: 'protokoll', t: 'area', label: 'Protokoll', rows: 12, hint: 'Eine Zeile = ein Punkt (wird automatisch 1., 2., …). Unterpunkte mit „- “ am Zeilenanfang (a., b.), darunter „-- “ (i., ii.). Namen in [eckigen Klammern] werden markiert. Tabelle: Zellen mit | trennen, Zeile 1 ist die Überschrift.' }],
         summary: function () { return M.can('vorstand.edit') ? '<div class="m-chips"><button type="button" class="m-chip" data-ma="ptpdf">📥 Protokoll aus PDF</button></div>' : ''; },
         newItem: function () { return { date: M.today(), status: 'Geplant', tops: [] }; },
-        card: function (it) { var tops = it.tops || []; return { title: it.title, badges: M.badge(it.status || 'Geplant', it.status === 'Durchgeführt' ? 'green' : 'blue'), sub: [fmtShort(it.date) + (it.time ? ', ' + esc(it.time) + ' Uhr' : ''), esc(it.ort || '')].filter(Boolean).join(' · '), body: (tops.length ? '<h4 class="wm-sub">Tagesordnung</h4><ol style="margin:4px 0 8px 18px">' + tops.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol>' : '') + (it.teilnehmer ? '<div class="wm-sub">Teilnehmer: ' + esc(it.teilnehmer) + '</div>' : '') + (it.protokoll ? '<h4 class="wm-sub">Protokoll</h4>' + outline(it.protokoll) : ''), buttons: M.can('vorstand.edit') && tops.length && !it.protokoll ? '<button type="button" class="wm-btn" data-ma="protoVor">📝 Protokoll vorbereiten</button>' : '' }; },
+        card: function (it) { var tops = it.tops || []; return { title: it.title, badges: M.badge(it.status || 'Geplant', it.status === 'Durchgeführt' ? 'green' : 'blue'), sub: [fmtShort(it.date) + (it.time ? ', ' + esc(it.time) + ' Uhr' : ''), esc(it.ort || '')].filter(Boolean).join(' · '), body: (tops.length ? '<h4 class="wm-sub">Tagesordnung</h4><ol style="margin:4px 0 8px 18px">' + tops.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol>' : '') + (it.teilnehmer ? '<div class="wm-sub" style="margin:6px 0"><b>Anwesend:</b> ' + (attendees(it.teilnehmer).length > 1 ? attendees(it.teilnehmer).map(pchip).join('') : esc(it.teilnehmer)) + '</div>' : '') + (it.protokoll ? '<h4 class="wm-sub">Protokoll</h4>' + outline(it.protokoll, attendees(it.teilnehmer)) : ''), buttons: M.can('vorstand.edit') && tops.length && !it.protokoll ? '<button type="button" class="wm-btn" data-ma="protoVor">📝 Protokoll vorbereiten</button>' : '' }; },
         actions: { protoVor: function (it) { if (!it) return; M.op({ op: 'patch', coll: 'vorstandSitzungen', id: it.id, fields: { protokoll: (it.tops || []).map(function (x) { return x + '\n'; }).join('') } }); } },
         printItem: function (it) { return protoPrint(it, it.protokoll, true); } },
       { id: 'beschluesse', label: 'Beschlüsse', coll: 'vorstandBeschluesse', view: ['vorstand.view', 'vorstand.beschluesse.view'], edit: ['vorstand.edit', 'vorstand.beschluesse.edit'], print: ['vorstand.print'], sortBy: { k: 'date', dir: -1 }, addLabel: 'Neuer Beschluss', search: ['title', 'nr', 'text'],
@@ -654,7 +700,7 @@ templateEngineOverride: false
   function abzNames(d) {
     var l = M.ABZ_STD.map(function (c) { return c.n; });
     (Array.isArray(d.extra) ? d.extra : []).forEach(function (x) { if (x && x.n && l.indexOf(x.n) < 0) l.push(x.n); });
-    Object.keys(d.bestand || {}).forEach(function (k) { if (l.indexOf(k) < 0) l.push(k); }); return l;
+    Object.keys(d.bestand || {}).forEach(function (k) { if (!/ Urkunde$/.test(k) && l.indexOf(k) < 0) l.push(k); }); return l;
   }
   // Schwimmbretter aus der Mitgliederliste: ausgegeben, noch nicht zurueck
   var BRETT_DEF = ['Rotes Brett', 'Grün-Schwarzes Brett', 'Blaues Brett', 'Schwarzes Brett', 'Grünes Brett', 'Anderes Modell'];
@@ -675,8 +721,8 @@ templateEngineOverride: false
     onInput: function (ev) { var t = ev.target; if (!t || !t.getAttribute || !t.getAttribute('data-wq')) return; WER.q = t.value; clearTimeout(WER.t); WER.t = setTimeout(function () { M.S.forceTyping = true; M.render(true); M.S.forceTyping = false; var n = document.querySelector('#mMain [data-wq]'); if (n) { n.focus(); try { n.setSelectionRange(n.value.length, n.value.length); } catch (e) { /* egal */ } } }, 250); },
     tabs: [
       { id: 'geg', label: 'Gegenstände', coll: 'material', view: ['material.view'], edit: ['material.edit'], add: ['material.edit', 'material.anlegen'], del: ['material.edit', 'material.loeschen'], print: ['material.print'], addLabel: 'Neuer Gegenstand', search: ['title', 'kategorie', 'ort', 'notiz'],
-        filter: function (it, f) { return (!f.low || low(it) || it.kaufen) && (!f.out || openLoans(it).length); },
-        summary: function (all) { var n = needList(all).length, out = all.filter(function (x) { return openLoans(x).length; }).length, ov = all.reduce(function (s, x) { return s + (x.loans || []).filter(overdueLoan).length; }, 0); return '<div class="m-chips"><button type="button" class="m-chip' + (M.S.filter.low ? ' on' : '') + '" data-ma="lowf">⚠️ Nachkaufen (' + n + ')</button><button type="button" class="m-chip' + (M.S.filter.out ? ' on' : '') + '" data-ma="outf">Verliehen (' + out + ')</button>' + (ov ? '<span class="m-over" style="align-self:center">⏰ ' + ov + ' überfällig</span>' : '') + (M.anyCan(['material.edit', 'material.anlegen']) && BRETT_DEF.some(function (n) { return !all.some(function (x) { return lower(x.title) === lower(n); }); }) ? '<button type="button" class="m-chip" data-ma="seedb">🏊 Brettarten anlegen</button>' : '') + '</div>'; },
+        filter: function (it, f) { return (!f.low || low(it) || it.kaufen) && (!f.out || openLoans(it).length) && (!f.kat || (it.kategorie || 'Ohne Kategorie') === f.kat); },
+        summary: function (all) { var n = needList(all).length, out = all.filter(function (x) { return openLoans(x).length; }).length, ov = all.reduce(function (s, x) { return s + (x.loans || []).filter(overdueLoan).length; }, 0); return '<div class="m-chips"><button type="button" class="m-chip' + (M.S.filter.low ? ' on' : '') + '" data-ma="lowf">⚠️ Nachkaufen (' + n + ')</button><button type="button" class="m-chip' + (M.S.filter.out ? ' on' : '') + '" data-ma="outf">Verliehen (' + out + ')</button>' + (ov ? '<span class="m-over" style="align-self:center">⏰ ' + ov + ' überfällig</span>' : '') + (function () { var ks = {}; all.forEach(function (x) { ks[x.kategorie || 'Ohne Kategorie'] = 1; }); ks = Object.keys(ks).sort(function (p, q) { return p.localeCompare(q, 'de'); }); return ks.length > 1 ? ks.map(function (k) { return '<button type="button" class="m-chip' + (M.S.filter.kat === k ? ' on' : '') + '" data-ma="katf" data-k="' + esc(k) + '">' + esc(k) + '</button>'; }).join('') : ''; })() + (M.anyCan(['material.edit', 'material.anlegen']) && BRETT_DEF.some(function (n) { return !all.some(function (x) { return lower(x.title) === lower(n); }); }) ? '<button type="button" class="m-chip" data-ma="seedb">🏊 Brettarten anlegen</button>' : '') + '</div>'; },
         fields: [{ k: 'title', t: 'text', label: 'Name', req: true }, { k: 'kategorie', t: 'text', label: 'Kategorie', ph: 'z. B. Training, Wettkampf, Küche' }, { k: 'ort', t: 'text', label: 'Lagerort', ph: 'z. B. Halle, Schrank 2' }, { k: 'bestand', t: 'num', label: 'Bestand (gesamt)' }, { k: 'min', t: 'num', label: 'Mindestbestand' }, { k: 'einheit', t: 'text', label: 'Einheit', ph: 'Stück' },
           { k: 'zustand', t: 'sel', label: 'Zustand', opts: ['gut', 'gebraucht', 'defekt'] }, { k: 'kaufen', t: 'chk', label: 'Auf die Einkaufsliste setzen' }, { k: 'units', t: 'lines', label: 'Einzelstücke mit Nummer (optional)', rows: 4, hint: 'Pro Zeile ein Stück, z. B. „Nr. 1“, „Nr. 2“. Dann wird jedes Stück einzeln verliehen und der Bestand ergibt sich daraus.' }, { k: 'notiz', t: 'area', label: 'Notiz', rows: 2 }],
         newItem: function () { return { bestand: 1, einheit: 'Stück', zustand: 'gut' }; },
@@ -699,6 +745,7 @@ templateEngineOverride: false
           },
           lowf: function () { M.S.filter.low = !M.S.filter.low; M.render(true); },
           outf: function () { M.S.filter.out = !M.S.filter.out; M.render(true); },
+          katf: function (it, el) { var k = el.getAttribute('data-k'); M.S.filter.kat = M.S.filter.kat === k ? '' : k; M.render(true); },
           lend: function (it, el, ev) { ev.stopPropagation(); if (it) lendForm(it); },
           back: function (it, el) { if (it) giveBack(it, el.getAttribute('data-lid')); },
           ledit: function (it, el) { if (it) editLoan(it, el.getAttribute('data-lid')); },
@@ -764,29 +811,36 @@ templateEngineOverride: false
         render: function () {
           var d = M.find('abzListe', 'main') || {}, b = d.bestand || {}, mp = d.minPro || {}; var canB = M.anyCan(['material.bestand', 'material.edit']);
           var ks = abzNames(d);
-          var minOf = function (k) { var v = mp[k] !== undefined && mp[k] !== '' ? mp[k] : d.minBestand; return v === undefined || v === '' ? null : M.num(v); };
-          var has = function (k) { return b[k] !== undefined && b[k] !== ''; };
-          var lowK = ks.filter(function (k) { return has(k) && minOf(k) !== null && M.num(b[k]) <= minOf(k); });
-          var top = Math.max(10, ks.reduce(function (m, k) { return Math.max(m, has(k) ? M.num(b[k]) : 0, (minOf(k) || 0) * 2); }, 0));
-          var out = '<section class="wm-card"><div class="wm-bar"><h3>Abzeichen-Bestand</h3><span class="m-actions"><a class="wm-btn" href="/intranet/jugend/">Preise &amp; Vergabe (Jugend) →</a></span></div>' +
-            (lowK.length ? '<p class="wm-note"><b>Nachbestellen:</b> ' + lowK.map(function (k) { return esc(k) + ' (' + M.num(b[k]) + ')'; }).join(', ') + '</p>' : '<p class="wm-note">Bei allen Abzeichen reicht der Bestand. Beim Bezahlen in der Jugend wird automatisch ein Stück abgezogen.</p>') +
-            '<div class="mb-grid">';
+          var urk = function (k) { return !/-Pass$/.test(k); };
+          var key = function (k, u) { return u ? k + ' Urkunde' : k; };
+          var minOf = function (kk) { var v = mp[kk] !== undefined && mp[kk] !== '' ? mp[kk] : d.minBestand; return v === undefined || v === '' ? null : M.num(v); };
+          var has = function (kk) { return b[kk] !== undefined && b[kk] !== ''; };
+          var isLow = function (kk) { return has(kk) && minOf(kk) !== null && M.num(b[kk]) <= minOf(kk); };
+          var lowL = []; ks.forEach(function (k) { if (isLow(k)) lowL.push(k + ' (Abzeichen ' + M.num(b[k]) + ')'); if (urk(k) && isLow(key(k, 1))) lowL.push(k + ' (Urkunde ' + M.num(b[key(k, 1)]) + ')'); });
+          var line = function (lab, kk) { var n = has(kk) ? M.num(b[kk]) : null, mn = minOf(kk); return '<span class="' + (isLow(kk) ? 'm-over' : '') + '"><b>' + lab + ':</b> ' + (n === null ? 'nicht geführt' : n + ' Stück') + (mn !== null ? ' <small>(nachbestellen ab ' + mn + ')</small>' : '') + '</span>'; };
+          var out = '<section class="wm-card"><div class="wm-bar"><h3>Abzeichen- und Urkundenbestand</h3><span class="m-actions"><a class="wm-btn" href="/intranet/jugend/">Preise &amp; Vergabe (Jugend) →</a></span></div>' +
+            (lowL.length ? '<p class="wm-note"><b>Nachbestellen:</b> ' + lowL.map(esc).join(', ') + '</p>' : '<p class="wm-note">Bei allen Abzeichen und Urkunden reicht der Bestand. Beim Bezahlen in der Jugend wird automatisch je ein Abzeichen und eine Urkunde abgezogen.</p>');
           ks.forEach(function (k) {
-            var n = has(k) ? M.num(b[k]) : null, mn = minOf(k), isLow = lowK.indexOf(k) >= 0, w = n === null ? 0 : Math.max(n ? 3 : 0, Math.round(n / top * 100)), mk = mn ? Math.min(100, Math.round(mn / top * 100)) : 0;
-            out += '<div class="mb-tile' + (isLow ? ' low' : '') + '" data-abz="' + esc(k) + '"><div class="mb-name">' + esc(k) + '</div><div class="mb-n">' + (n === null ? '–' : n) + '<small>' + (n === null ? ' nicht geführt' : ' Stück') + '</small></div>' +
-              '<div class="mb-bar" title="' + (mn ? 'Mindestbestand ' + mn : '') + '"><i style="width:' + w + '%"></i>' + (mk ? '<u style="left:' + mk + '%"></u>' : '') + '</div>' +
-              '<div class="mb-foot">' + (mn !== null ? 'ab ' + mn + ' nachbestellen' : 'kein Minimum') + (canB ? ' · <button type="button" class="mb-edit" data-ma="abzbest">ändern</button>' : '') + '</div></div>';
+            var low = isLow(k) || (urk(k) && isLow(key(k, 1)));
+            out += '<article class="m-card" data-abz="' + esc(k) + '"><div class="m-head"><div class="m-main"><div class="m-title">' + esc(k) + (low ? ' ' + M.badge('nachbestellen', 'red') : '') + '</div><div class="wm-sub">' + line('Abzeichen', k) + (urk(k) ? ' · ' + line('Urkunde', key(k, 1)) : '') + '</div></div>' +
+              (canB ? '<span class="m-rowbtns"><button type="button" class="wm-btn" data-ma="abzbest">✏️ Bestand</button></span>' : '') + '</div></article>';
           });
-          return out + '</div></section>';
+          return out + '</section>';
         },
         actions: {
           abzbest: function (it, el) {
-            var k = el.closest('[data-abz]').getAttribute('data-abz'); var d = M.find('abzListe', 'main') || { id: 'main' }; var mp = d.minPro || {};
-            M.openForm({ title: 'Bestand: ' + k, fields: [{ k: 'b', t: 'num', label: 'Bestand (Stück)', hint: 'Leer lassen, wenn der Bestand nicht geführt wird.' }, { k: 'min', t: 'num', label: 'Nachbestellen ab (Stück)', hint: 'Leer lassen für keinen Hinweis.' }],
-              item: { b: (d.bestand || {})[k], min: mp[k] !== undefined ? mp[k] : d.minBestand }, onSave: function (v) {
+            var k = el.closest('[data-abz]').getAttribute('data-abz'); var d = M.find('abzListe', 'main') || { id: 'main' }; var mp = d.minPro || {}, bs0 = d.bestand || {};
+            var urk = !/-Pass$/.test(k), ku = k + ' Urkunde';
+            var minV = function (kk) { return mp[kk] !== undefined ? mp[kk] : d.minBestand; };
+            var fields = [{ k: 'b', t: 'num', label: 'Abzeichen: Bestand (Stück)', hint: 'Leer lassen, wenn der Bestand nicht geführt wird.' }, { k: 'min', t: 'num', label: 'Abzeichen: nachbestellen ab (Stück)', hint: 'Leer lassen für keinen Hinweis.' }];
+            if (urk) fields.push({ k: 'bu', t: 'num', label: 'Urkunden: Bestand (Stück)' }, { k: 'minu', t: 'num', label: 'Urkunden: nachbestellen ab (Stück)' });
+            M.openForm({ title: 'Bestand: ' + k, fields: fields, item: { b: bs0[k], min: minV(k), bu: bs0[ku], minu: minV(ku) }, onSave: function (v) {
                 var bs = Object.assign({}, d.bestand || {}), m2 = Object.assign({}, d.minPro || {});
-                if (v.b === '' || v.b === null || v.b === undefined) delete bs[k]; else bs[k] = M.num(v.b);
-                if (v.min === '' || v.min === null || v.min === undefined) { delete m2[k]; if (d.minBestand !== undefined && d.minBestand !== '') m2[k] = ''; } else m2[k] = M.num(v.min);
+                var put = function (kk, bv, mv) {
+                  if (bv === '' || bv === null || bv === undefined) delete bs[kk]; else bs[kk] = M.num(bv);
+                  if (mv === '' || mv === null || mv === undefined) { delete m2[kk]; if (d.minBestand !== undefined && d.minBestand !== '') m2[kk] = ''; } else m2[kk] = M.num(mv);
+                };
+                put(k, v.b, v.min); if (urk) put(ku, v.bu, v.minu);
                 M.op({ op: 'set', coll: 'abzListe', item: Object.assign({}, d, { id: 'main', bestand: bs, minPro: m2 }) });
               } });
           }

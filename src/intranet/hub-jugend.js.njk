@@ -140,7 +140,10 @@ templateEngineOverride: false
   function payOps(x, pr) {
     var ops = [];
     var d = abzDoc(); var bs = (d.bestand || {})[x.abz];
-    if (bs !== undefined && bs !== '' && M.num(bs) > 0) { var nb = Object.assign({}, d.bestand); nb[x.abz] = M.num(bs) - 1; ops.push({ op: 'set', coll: 'abzListe', item: Object.assign({}, d, { id: 'main', bestand: nb }) }); }
+    var ub = (d.bestand || {})[x.abz + ' Urkunde']; var nb = Object.assign({}, d.bestand), chg = false;
+    if (bs !== undefined && bs !== '' && M.num(bs) > 0) { nb[x.abz] = M.num(bs) - 1; chg = true; }
+    if (ub !== undefined && ub !== '' && M.num(ub) > 0) { nb[x.abz + ' Urkunde'] = M.num(ub) - 1; chg = true; }
+    if (chg) { ops.push({ op: 'set', coll: 'abzListe', item: Object.assign({}, d, { id: 'main', bestand: nb }) }); }
     return ops;
   }
   function payCheck(pr) {
@@ -212,7 +215,7 @@ templateEngineOverride: false
   function kmon() { var s = M.S.sub; if (!s.km) s.km = ym(M.today()); return s.km; }
   function shift(m, n) { var p = m.split('-'); var d = new Date(+p[0], +p[1] - 1 + n, 1); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); }
   function lastDay(m) { var p = m.split('-'); var d = new Date(+p[0], +p[1], 0); return m + '-' + ('0' + d.getDate()).slice(-2); }
-  var VIEWS = [['buchungen', 'Buchungen'], ['auslagen', 'Auslagen'], ['abschluss', 'Abschluss']];
+  var VIEWS = [['buchungen', 'Buchungen'], ['auslagen', 'Auslagen'], ['abschluss', 'Abschluss & Kassenbuch']];
 
   function kasseTab() {
     var out = '<section class="wm-card"><div class="wm-bar"><h3>Jugendkasse</h3><span class="m-actions">' + M.seg(VIEWS, kv(), 'kview') + (canAdm() || canBook() ? '<button type="button" class="wm-btn" data-ma="kedit">✏️ Bearbeiten</button>' : '') + '</span></div></section>';
@@ -228,7 +231,7 @@ templateEngineOverride: false
     var ausl = M.items('kasseAuslagen').filter(function (a) { return a.status === 'beantragt'; });
     var out = '<div class="m-stats">' + M.stat(M.euro(st), 'Kassenstand (bestätigt)', st < 0 ? 'bad' : 'ok') + M.stat(M.euro(c ? c.anfang : 0), 'Anfangsbestand') + M.stat(open.length, 'Buchungen offen', open.length ? 'warn' : '', 'data-ma="kview" data-v="buchungen"') + M.stat(ausl.length, 'Auslagen beantragt', ausl.length ? 'warn' : '', 'data-ma="kview" data-v="auslagen"') + '</div>';
     if (Math.abs(all - st) > 0.004) out += '<p class="wm-note">Mit noch unbestätigten Buchungen wären es ' + M.euro(all) + '.</p>';
-    out += '<section class="wm-card"><div class="m-btns" style="margin-top:0">' + (canBook() ? '<button type="button" class="wm-amber" data-ma="kbnew" data-typ="ein">+ Einnahme</button><button type="button" class="wm-amber" data-ma="kbnew" data-typ="aus">+ Ausgabe</button><button type="button" class="wm-btn" data-ma="kansend">🧾 Auslage</button>' : '') + '<button type="button" class="wm-btn" data-ma="kmore">📋 Kassenbuch ▾</button></div></section>';
+    out += '<section class="wm-card"><div class="m-btns" style="margin-top:0">' + (canBook() ? '<button type="button" class="wm-amber" data-ma="kbnew" data-typ="ein">+ Einnahme</button><button type="button" class="wm-amber" data-ma="kbnew" data-typ="aus">+ Ausgabe</button><button type="button" class="wm-btn" data-ma="kansend">🧾 Auslage</button>' : '') + '</div></section>';
     var sturz = M.items('kasseSturz').sort(function (a, b) { return a.datum < b.datum ? 1 : -1; })[0];
     if (sturz) out += '<p class="wm-note">Letzter Kassensturz: ' + fd(sturz.datum) + ' · gezählt ' + M.euro(sturz.gezaehlt) + ' · ' + (Math.abs(M.num(sturz.diff)) < 0.005 ? '<span class="m-ok">stimmt</span>' : '<span class="m-over">Differenz ' + M.euro(sturz.diff) + '</span>') + '</p>';
     return out;
@@ -285,7 +288,7 @@ templateEngineOverride: false
       return '<div class="m-chk" data-mm="' + mm + '"><span style="flex:1"><b>' + esc(M.monthLabel(mm)) + '</b><div class="wm-sub">' + bk.length + ' Buchungen' + (open ? ' · <span class="m-over">' + open + ' unbestätigt</span>' : '') + (c ? ' · Saldo ' + M.euro(c.saldo) + ' · abgeschlossen von ' + esc(c.by || '') : '') + '</div></span>' +
         (canAdm() ? (c ? '<button type="button" class="wm-btn" data-ma="kabopen">🔓 Öffnen</button>' : (mm < cur ? '<button type="button" class="wm-btn" data-ma="kabclose"' + (open ? ' disabled title="Erst alle Buchungen bestätigen"' : '') + '>🔒 Abschließen</button>' : '')) : (c ? '🔒' : '')) + '</div>';
     }).join('');
-    out += '</section><section class="wm-card"><div class="wm-bar"><h3>Kassenstürze</h3>' + (canBook() ? '<button type="button" class="wm-amber" data-ma="ksturz">+ Kassensturz</button>' : '') + '</div>';
+    out += '</section><section class="wm-card"><div class="wm-bar"><h3>Kassensturz &amp; Kassenbuch</h3><span class="m-actions">' + (M.can('jugend.kasse.print') ? '<button type="button" class="wm-btn" data-ma="kxlsx">📊 Kassenbuch als Excel</button>' : '') + (canBook() ? '<button type="button" class="wm-amber" data-ma="ksturz">+ Kassensturz</button>' : '') + '</span></div>';
     var st = M.items('kasseSturz').sort(function (a, b) { return a.datum < b.datum ? 1 : -1; });
     if (!st.length) out += '<p class="wm-note">Noch kein Kassensturz.</p>';
     st.slice(0, 10).forEach(function (s) { out += '<div class="m-chk"><span style="flex:1"><b>' + fd(s.datum) + '</b><div class="wm-sub">gezählt ' + M.euro(s.gezaehlt) + ' · Soll ' + M.euro(s.soll) + (s.von ? ' · ' + esc(s.von) : '') + (s.notiz ? ' · ' + esc(s.notiz) : '') + (s.stk ? '</div><div class="wm-sub">' + esc(stkText(s.stk)) : '') + '</div></span>' + (Math.abs(M.num(s.diff)) < 0.005 ? '<span class="m-ok">stimmt</span>' : '<span class="m-over">' + M.euro(s.diff) + '</span>') + '</div>'; });

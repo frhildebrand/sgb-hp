@@ -32,7 +32,7 @@ intranetSeiten:
     permalink: /intranet/training/
     title: 'Wettkampfgruppe – SG Barnstorf Intranet'
     modul: 'training'
-    scripts: [hub-config, hub-common, hub-modul, hub-pdf, hub-gruppe]
+    scripts: [hub-config, hub-common, hub-modul, hub-pdf, hub-mitglieder, hub-gruppe]
   - id: veranstaltungen
     permalink: /intranet/veranstaltungen/
     title: 'Veranstaltungen – SG Barnstorf Intranet'
@@ -290,6 +290,11 @@ intranetSeiten:
   .dark .wm-prod [id^="count-"][id$="-paid"] { color: #fff !important; }
   /* Leere Zustände */
   .dark .wm-empty > div:first-child { background: rgba(255,255,255,.08) !important; }
+  /* Abstände: ausgeblendete Blöcke erzeugten mit space-y zusätzlichen Leerraum über dem Countdown */
+  main.max-w-7xl { display: flex; flex-direction: column; gap: 1.25rem; padding-top: .75rem !important; }
+  main.max-w-7xl > * { margin-top: 0 !important; margin-bottom: 0 !important; }
+  #viewAushang:not(.hidden) { display: flex; flex-direction: column; gap: 1.25rem; }
+  #viewAushang > * { margin-top: 0 !important; margin-bottom: 0 !important; }
   /* Countdown: gedämpftes Weinrot zu Tannengrün */
   .wm-countdown { background-image: linear-gradient(135deg, #7d3a47 0%, #4f3f5c 48%, #245a55 100%); }
   .dark .wm-countdown { background-image: linear-gradient(135deg, #5f2a36 0%, #3b3250 48%, #1b4742 100%); }
@@ -490,6 +495,7 @@ intranetSeiten:
   #hubRoot .ha-dialog.small { max-width: 26rem; }
   #hubRoot .hub-help-body { display: grid; gap: 12px; margin-top: 10px; }
   #hubRoot .hub-help-card { border: 1px solid rgba(100,116,139,.28); border-radius: 16px; padding: 14px 16px; background: rgba(148,163,184,.08); }
+  #hubRoot .hub-help-cat { margin: 14px 2px 2px; font: 800 12px ui-rounded, system-ui, sans-serif; letter-spacing: .09em; text-transform: uppercase; color: #64748b; }
   #hubRoot .hub-help-card h4 { margin: 0; font-size: 1rem; font-weight: 900; }
   #hubRoot .hub-help-card p { margin: 6px 0 0; font-size: .85rem; line-height: 1.5; opacity: .9; }
   #hubRoot .hub-help-card ul { margin: 8px 0 0; padding-left: 1.2rem; display: grid; gap: 5px; font-size: .82rem; line-height: 1.45; }
@@ -1086,6 +1092,12 @@ intranetSeiten:
   #hubRoot .ha-cat { display: flex; align-items: center; gap: 10px; margin: 18px 2px 8px; font: 800 12px ui-rounded, system-ui, sans-serif; letter-spacing: .09em; text-transform: uppercase; color: var(--cc, #64748b); }
   #hubRoot .ha-cat::after { content: ''; flex: 1; height: 2px; border-radius: 2px; background: linear-gradient(90deg, var(--cc, #64748b), transparent); opacity: .45; }
   #hubRoot .ha-cat-Startseite, #hubRoot .ha-c-Startseite { --cc: #e11d48; } #hubRoot .ha-cat-MeinBereich, #hubRoot .ha-c-MeinBereich { --cc: #0d9488; } #hubRoot .ha-cat-Verein, #hubRoot .ha-c-Verein { --cc: #2563eb; } #hubRoot .ha-cat-Aktionen, #hubRoot .ha-c-Aktionen { --cc: #d97706; } #hubRoot .ha-cat-Verwaltung, #hubRoot .ha-c-Verwaltung { --cc: #64748b; } #hubRoot .ha-c-Weitere { --cc: #64748b; }
+  /* Rechte-Seiten: Farben wie in der Navbar, Haken mittig */
+  #hubRoot .ha-cat-Wettkampf, #hubRoot .ha-c-Wettkampf { --cc: #6366f1; } #hubRoot .ha-cat-Training, #hubRoot .ha-c-Training { --cc: #06b6d4; } #hubRoot .ha-cat-Verein, #hubRoot .ha-c-Verein { --cc: #3b82f6; } #hubRoot .ha-cat-Organisation, #hubRoot .ha-c-Organisation { --cc: #14b8a6; } #hubRoot .ha-cat-Aktionen, #hubRoot .ha-c-Aktionen { --cc: #f59e0b; }
+  #hubRoot input.ha-sw { position: relative; display: inline-block; vertical-align: middle; box-sizing: border-box; }
+  #hubRoot input.ha-sw::after { position: absolute; top: 50%; left: 50%; width: auto; height: auto; line-height: 1; transform: translate(-50%, -50%); text-align: center; margin: 0; }
+  #hubRoot input.ha-sw:checked::after { transform: translate(-50%, -50%); }
+  #hubRoot .ha-perm { align-items: center; }
   html #hubRoot .ha-sysacc { border: 1px solid color-mix(in srgb, var(--cc, #94a3b8) 30%, transparent); border-left: 4px solid var(--cc, #94a3b8); background: color-mix(in srgb, var(--cc, #94a3b8) 4%, transparent); }
   html #hubRoot .ha-sysacc > summary { background: color-mix(in srgb, var(--cc, #94a3b8) 10%, transparent); font-weight: 800; }
   html #hubRoot .ha-sysacc[open] > summary { border-bottom: 1px solid color-mix(in srgb, var(--cc, #94a3b8) 25%, transparent); }
@@ -2064,12 +2076,12 @@ class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-
 </div>
 
 <!-- Skripte für Daten und Logik -->
-<script src="/intranet/js/weihnachtsmarkt-data.js?v=10221722"></script>
-<script src="/intranet/js/hub-config.js?v=10221722"></script>
-<script src="/intranet/js/hub-common.js?v=10221722"></script>
-<script src="/intranet/js/weihnachtsmarkt.js?v=10221722"></script>
+<script src="/intranet/js/weihnachtsmarkt-data.js?v=10222141"></script>
+<script src="/intranet/js/hub-config.js?v=10222141"></script>
+<script src="/intranet/js/hub-common.js?v=10222141"></script>
+<script src="/intranet/js/weihnachtsmarkt.js?v=10222141"></script>
 
 {% else %}
 <div id="hubRoot" {% if pg.modul %}data-modul="{{ pg.modul }}"{% else %}data-system=""{% endif %}><noscript><p style="padding:24px">Dafür wird JavaScript gebraucht.</p></noscript></div>
-{% for s in pg.scripts %}<script src="/intranet/js/{{ s }}.js?v=10221722" defer></script>
+{% for s in pg.scripts %}<script src="/intranet/js/{{ s }}.js?v=10222141" defer></script>
 {% endfor %}{% endif %}

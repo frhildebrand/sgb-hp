@@ -15,7 +15,8 @@ templateEngineOverride: false
   function rerender() { PASS = true; try { M.render(true); } finally { PASS = false; } if (EDIT) HB.pin(); }
   function live() { return HB.live(M.items('brett')); }
   function archive() { return HB.archive(M.items('brett')); }
-  function groups() { var s = {}; M.items('wgMitglieder').forEach(function (m) { (m.gruppen || []).forEach(function (g) { s[g] = 1; }); }); return Object.keys(s).sort(function (a, b) { return a.localeCompare(b, 'de'); }); }
+  var GR_STD = ['Wettkampfgruppe', 'Gruppe 1', 'Gruppe 2', 'Gruppe 3', 'Gruppe 4', 'Masters'];
+  function groups() { var s = {}; GR_STD.forEach(function (g) { s[g] = 1; }); M.items('wgMitglieder').forEach(function (m) { (m.gruppen || []).forEach(function (g) { s[g] = 1; }); }); return Object.keys(s).sort(function (a, b) { var x = GR_STD.indexOf(a), y = GR_STD.indexOf(b); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y) || a.localeCompare(b, 'de'); }); }
   function eo() { return { attr: 'data-ma', save: 'bbsave', cancel: 'bbcancel', groups: groups(), me: M.userName() }; }
   function row(b, up, dn) { return HB.row(b, { A: 'data-ma', pre: 'bb', can: can(), del: canDel(), fmt: fd, edit: eo(), editing: !!EDIT && EDIT.id === b.id, up: up, dn: dn }); }
   function render() {

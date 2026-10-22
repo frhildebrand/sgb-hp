@@ -116,9 +116,9 @@ templateEngineOverride: false
     var gl = suggestions('gruppe'), ol = suggestions('ort');
     out += '<datalist id="abGruppen">' + gl.map(function (x) { return '<option value="' + esc(x) + '">'; }).join('') + '</datalist><datalist id="abOrte">' + ol.map(function (x) { return '<option value="' + esc(x) + '">'; }).join('') + '</datalist>';
     var zOrd = (a.zeilen || []).map(function (z, i) { return i; }).sort(function (p, q) { var x = a.zeilen[p], y = a.zeilen[q]; var kx = (x.d || '') + ' ' + normTime(x.zeit || ''), ky = (y.d || '') + ' ' + normTime(y.zeit || ''); return kx < ky ? -1 : kx > ky ? 1 : p - q; });
-    zOrd.forEach(function (i) {
+    zOrd.forEach(function (i, zi) {
       var z = a.zeilen[i];
-      out += '<div class="ab-row" data-i="' + i + '"><div class="m-fgrid"><label class="m-f"><span>Datum</span><input type="date" data-abz="d" value="' + esc(z.d || '') + '"' + dis + '></label><label class="m-f"><span>Beginn</span><input type="text" data-abz="zeit" inputmode="numeric" value="' + esc(String(z.zeit || '').replace(/[–-].*$/, '')) + '" placeholder="17:00"' + dis + '></label><label class="m-f"><span>Minuten</span><input type="number" inputmode="numeric" data-abz="min" value="' + esc(z.min !== undefined && z.min !== '' ? z.min : (z.std !== undefined && z.std !== '' ? Math.round(num(z.std) * 60) : '')) + '"' + dis + '></label><label class="m-f"><span>Gruppe</span><input type="text" list="abGruppen" data-abz="gruppe" value="' + esc(z.gruppe || '') + '"' + dis + ' autocomplete="off"></label><label class="m-f"><span>Ort</span><input type="text" list="abOrte" data-abz="ort" value="' + esc(z.ort || '') + '"' + dis + ' autocomplete="off"></label></div><div class="wm-sub" style="margin-top:4px"><span class="ab-std">' + fnum(stdOf(z)) + '</span> Std.' + (ro ? '' : ' <button type="button" class="wm-btn m-danger" data-ma="abzdel" style="margin-left:10px">Zeile löschen</button>') + '</div></div>';
+      out += '<div class="ab-row' + (zi === 0 ? ' ab-first' : '') + '" data-i="' + i + '"><div class="m-fgrid"><label class="m-f"><span>Datum</span><input type="date" data-abz="d" value="' + esc(z.d || '') + '"' + dis + '></label><label class="m-f"><span>Beginn</span><input type="text" data-abz="zeit" inputmode="numeric" value="' + esc(String(z.zeit || '').replace(/[–-].*$/, '')) + '" placeholder="17:00"' + dis + '></label><label class="m-f"><span>Minuten</span><input type="number" inputmode="numeric" data-abz="min" value="' + esc(z.min !== undefined && z.min !== '' ? z.min : (z.std !== undefined && z.std !== '' ? Math.round(num(z.std) * 60) : '')) + '"' + dis + '></label><label class="m-f"><span>Gruppe</span><input type="text" list="abGruppen" data-abz="gruppe" value="' + esc(z.gruppe || '') + '"' + dis + ' autocomplete="off"></label><label class="m-f"><span>Ort</span><input type="text" list="abOrte" data-abz="ort" value="' + esc(z.ort || '') + '"' + dis + ' autocomplete="off"></label><div class="ab-end"><span class="ab-std">' + fnum(stdOf(z)) + '</span> Std.' + (ro ? '' : ' <button type="button" class="wm-btn m-danger" data-ma="abzdel" aria-label="Zeile löschen">🗑</button>') + '</div></div></div>';
     });
     out += '<p class="wm-note"><b class="ab-sum-std">' + fnum(c.std) + '</b> Std. × ' + euro(a.satz) + ' = <b class="ab-sum-h">' + euro(c.hours) + '</b></p><div class="m-fgrid">' + inp('Satz pro Stunde (€)', 'satz', a.satz, 'number', dis) + '</div><p class="wm-sub">Standard laut Sätzen: ' + euro(satzFor(a.lizArt)) + '. Für diese Abrechnung kannst du den Satz hier ändern.</p></section>';
     out += '<section class="wm-card"><div class="m-sec" style="margin-top:0">PKW und Sonstiges</div><div class="m-fgrid">' + inp('PKW: gefahrene km', 'km', a.km, 'number', dis) + inp('€ pro km', 'kmSatz', a.kmSatz, 'number', dis) + inp('PKW: wofür? (steht unter der Zeile)', 'pkwText', a.pkwText, 'text', dis, 'wide') + inp('Sonstiges (€)', 'sonst', a.sonst, 'number', dis) + inp('Sonstiges: wofür? (steht unter der Zeile)', 'sonstText', a.sonstText, 'text', dis, 'wide') + '</div>' + (!ro && openFahrten().length ? '<div class="m-btns"><button type="button" class="wm-btn" data-ma="abfahrt">🚗 Offene Fahrten übernehmen (' + openFahrten().length + ')</button></div>' : '') + '<p class="wm-note">PKW: <b class="ab-sum-km">' + euro(c.km) + '</b> · Sonstiges: <b class="ab-sum-x">' + euro(c.extra) + '</b></p></section>';
@@ -492,7 +492,7 @@ templateEngineOverride: false
     ['lizArt', 'Lizenz (Art)', 'text'], ['lizNr', 'Trainerlizenz-Nr.', 'text'], ['lizBis', 'Lizenz gültig bis', 'date'], ['edvNr', 'ÜL-EDV-Nr.', 'text'],
     ['ersteHilfeBis', 'Erste Hilfe gültig bis', 'date'], ['rettungBis', 'Rettungsnachweis gültig bis', 'date'], ['fuehrungszeugnis', 'Führungszeugnis vom', 'date'],
     ['kariNr', 'Kampfrichter-Lizenz-Nr.', 'text'], ['kariBis', 'Wettkampfrichter gültig bis', 'date'], ['kariAusw', 'Auswertung gültig bis', 'date'], ['kariSchied', 'Schiedsrichter gültig bis', 'date'], ['zStarter', 'Zusatz: Starter', 'chk'], ['zSprecher', 'Zusatz: Sprecher', 'chk'], ['zFreiwasser', 'Zusatz: Freiwasser', 'chk'],
-    ['amt', 'Funktion im Verein', 'text'], ['fzFunk', 'Führungszeugnis als Funktionär vom', 'date'],
+    ['amt', 'Funktion im Verein', 'text'],
     ['kontoinhaber', 'Kontoinhaber', 'text'], ['iban', 'IBAN', 'text'], ['bic', 'BIC', 'text']];
   // Gruppen im Bearbeiten-Dialog (Überschrift, erster Schlüssel der Gruppe)
   var PF_SEC = { nachname: 'Kontakt', dsv: 'Schwimmer', lizArt: 'Trainer', kariNr: 'Kampfrichter', amt: 'Funktionär', kontoinhaber: 'Bankverbindung (nur du siehst sie)' };
@@ -531,7 +531,7 @@ templateEngineOverride: false
         body = prow('Lizenz-Nr.', v('kariNr')) + prow('Wettkampfrichter', chip(p.kariBis)) + prow('Auswertung', chip(p.kariAusw)) + prow('Schiedsrichter', chip(p.kariSchied)) +
           prow('Zusatz Starter', yn(p.zStarter)) + prow('Zusatz Sprecher', yn(p.zSprecher)) + prow('Zusatz Freiwasser', yn(p.zFreiwasser));
       } else if (tb === 'fu') {
-        body = prow('Funktion', v('amt')) + prow('Führungszeugnis', p.fzFunk ? 'vom ' + esc(dShow(p.fzFunk)) : '');
+        body = prow('Funktion', v('amt'));
       } else if (tb === 'kb') {
         body = prow('Nachname (Abrechnungen)', v('nachname')) + prow('Telefon', v('tel')) + prow('E-Mail', v('mail')) + '<div class="m-sec">Bankverbindung</div>' + prow('Kontoinhaber', v('kontoinhaber')) + prow('IBAN', v('iban')) + prow('BIC', v('bic')) +
           '<p class="wm-sub" style="margin-top:12px">Nur du siehst diese Angaben. Sie füllen deine Abrechnungen automatisch aus. Bank und Adresse landen nicht in der Mitgliederliste.</p>';
@@ -593,8 +593,20 @@ templateEngineOverride: false
       pftab: function (it, el) { M.S.sub.pt = el.getAttribute('data-v'); M.render(true); },
       pfedit: function () {
         var p = profile(); var item = {}; PF.forEach(function (f) { item[f[0]] = f[2] === 'chk' ? !!p[f[0]] : (p[f[0]] || ''); });
-        var fields = []; PF.forEach(function (f) { if (PF_SEC[f[0]]) fields.push({ k: '_s_' + f[0], t: 'sec', label: PF_SEC[f[0]] }); fields.push({ k: f[0], t: f[2] === 'chk' ? 'chk' : f[2] === 'date' ? 'date' : 'text', label: f[1] }); });
-        M.openForm({ title: 'Profil bearbeiten', fields: fields, item: item, onSave: function (vv) { M.op({ op: 'set', coll: 'profile', item: Object.assign({}, M.find('profile', pid(me())) || {}, { id: pid(me()) }, vv) }); syncToTrainer(vv); M.toast('Profil gespeichert.'); } });
+        var rl = p._rollen || []; item.name = me(); item.rollen = rl.slice();
+        var SEC = [['Stammdaten', null, ['nachname', 'tel', 'mail', 'dsv']], ['Schwimmer', 'Schwimmer', ['attest', 'lizJahr', 'hArt', 'nArt']],
+          ['Trainer', 'Trainer', ['lizArt', 'lizNr', 'lizBis', 'edvNr', 'ersteHilfeBis', 'rettungBis', 'fuehrungszeugnis']],
+          ['Kampfrichter', 'Kampfrichter', ['kariNr', 'kariBis', 'kariAusw', 'kariSchied', 'zStarter', 'zSprecher', 'zFreiwasser']],
+          ['Funktionär', 'Funktionär', ['amt']], ['Bankverbindung (nur du siehst sie)', null, ['kontoinhaber', 'iban', 'bic']]];
+        var byKey = {}; PF.forEach(function (f) { byKey[f[0]] = f; });
+        var fields = [];
+        SEC.forEach(function (sc) {
+          var has = sc[2].some(function (k) { return item[k]; });
+          if (sc[1] && rl.length && rl.indexOf(sc[1]) < 0 && !has) return;
+          fields.push({ k: '_s_' + sc[0], t: 'sec', label: sc[0] });
+          sc[2].forEach(function (k) { var f = byKey[k]; if (f) fields.push({ k: k, t: f[2] === 'chk' ? 'chk' : f[2] === 'date' ? 'date' : 'text', label: f[1] }); });
+        });
+        M.openForm({ title: 'Profil bearbeiten', tabs: true, acc: true, noRoles: true, fields: fields, item: item, saveLabel: 'Speichern', onSave: function (vv) { M.op({ op: 'set', coll: 'profile', item: Object.assign({}, M.find('profile', pid(me())) || {}, { id: pid(me()) }, vv) }); syncToTrainer(vv); M.toast('Profil gespeichert.'); } });
       },
       pfimport: function () {
         M.openDlg('<div class="hub-dhead"><h3>Aus WebClub-Datei</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div><p class="wm-note">In WebClub deine Stammdaten als CSV exportieren („stammdaten.csv“) und hier auswählen. Es wird nur deine eigene Zeile gelesen. Übernommen werden Telefon, E-Mail, Lizenzen, Nachweise und Bankverbindung. Die Datei selbst wird nicht gespeichert.</p><div class="m-fgrid"><label class="m-f wide"><span>CSV-Datei</span><input type="file" id="pffile" accept=".csv,text/csv,text/plain"></label></div><p id="pfmsg" class="wm-note"></p><div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="pfread">Einlesen</button></div>');
@@ -621,6 +633,6 @@ templateEngineOverride: false
   // CSV mit Semikolon (WebClub), Anführungszeichen erlaubt
   var parseCsv = M.csvRows;
   window.HubProfil = { expiring: function (p) { var o = []; EXPIRES.forEach(function (x) { var iso = p && p[x[0]]; if (isoOk(iso)) { var d = M.daysTo(iso); if (d <= 60) o.push({ label: x[1], iso: iso, days: d }); } }); return o; } };
-  var st = document.createElement('style'); st.textContent = '#hubRoot .ab-row{padding:10px 0;border-bottom:1px solid rgba(148,163,184,.25)}#hubRoot .ab-total{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding:14px;border-radius:14px;background:var(--navy);color:#fff;font-size:15px}#hubRoot .ab-total b{font:900 24px ui-rounded,system-ui,sans-serif;color:var(--gold)}';
+  var st = document.createElement('style'); st.textContent = '#hubRoot .ab-row{padding:3px 0;border-bottom:1px solid rgba(148,163,184,.2)}#hubRoot .ab-row .m-fgrid{margin:0;gap:4px 8px}#hubRoot .ab-row .m-f{margin:0}#hubRoot .ab-row .m-f input{min-height:32px!important;height:32px;padding:2px 8px!important;font-size:14px;border-radius:8px}#hubRoot .ab-row .ab-end{padding-bottom:0!important;min-height:32px;gap:6px;font-size:13px}#hubRoot .ab-row .ab-end .wm-btn{padding:2px 8px;min-height:30px}#hubRoot .ab-end{display:flex;align-items:center;gap:8px;font-weight:700;white-space:nowrap;padding-bottom:6px}@media(min-width:760px){#hubRoot .ab-row .m-fgrid{display:grid;grid-template-columns:150px 90px 90px minmax(0,1fr) minmax(0,1fr) auto;gap:6px 10px;align-items:end}#hubRoot .ab-row:not(.ab-first) .m-f>span{display:none}#hubRoot .ab-row .ab-end{min-height:38px;padding:0}}#hubRoot .ab-total{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding:14px;border-radius:14px;background:var(--navy);color:#fff;font-size:15px}#hubRoot .ab-total b{font:900 24px ui-rounded,system-ui,sans-serif;color:var(--gold)}';
   document.head.appendChild(st);
 })();

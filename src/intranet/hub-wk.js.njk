@@ -92,7 +92,7 @@ templateEngineOverride: false
     var up = all.filter(function (w) { return (w.date || '9999') >= t; });
     var past = all.filter(function (w) { return (w.date || '9999') < t; }).reverse();
     var canImp = M.anyCan(['wettkaempfe.import', 'wettkaempfe.anlegen']);
-    var out = '<section class="wm-card"><div class="wm-bar"><span class="m-actions" style="margin-right:auto;align-items:center"><h3 style="margin:0 10px 0 0">Wettkämpfe</h3>' + viewSwitch(lv) + '</span><span class="m-actions" style="margin-left:auto">' + (canImp ? '<button type="button" class="wm-btn" data-ma="wkneu">➕ Termin</button><button type="button" class="wm-amber" data-ma="wkaus">📄 Neu aus Ausschreibung</button><button type="button" class="wm-btn" data-ma="wkbulk">📦 Mehrere CSV</button><button type="button" class="wm-btn" data-ma="wkneumeld">📋 Neu aus Meldedatei</button>' : '') + '</span></div>';
+    var out = '<section class="wm-card"><div class="wm-bar"><span class="m-actions" style="margin-right:auto;align-items:center"><h3 style="margin:0 10px 0 0">Wettkämpfe</h3>' + viewSwitch(lv) + '</span><span class="m-actions" style="margin-left:auto">' + (canImp ? '<button type="button" class="wm-btn" data-ma="wkneu">➕ Termin</button><button type="button" class="wm-amber" data-ma="wkaus">📄 Neu aus Ausschreibung</button>' : '') + '</span></div>';
     if (lv === 'tabelle') {
       var rows = M.S.sub.allRows ? all : up.concat(past.filter(function (w) { return M.daysTo(w.date) >= -45; }));
       out += tableHtml(rows) + '<p class="wm-note"><button type="button" class="m-chip' + (M.S.sub.allRows ? ' on' : '') + '" data-ma="allrows">Auch ältere zeigen</button> Tippe auf ein Feld, um es abzuhaken.</p></section>';
@@ -161,7 +161,7 @@ templateEngineOverride: false
   function detail(wk) {
     var s = sub();
     if (s.v === 'ablauf' || s.v === 'zeiten') s.v = 'uebersicht';
-    var views = [['check', 'Checkliste'], ['uebersicht', 'Starts'], ['gericht', 'Kampfgericht'], ['docs', 'Unterlagen']]; if (M.anyCan(['wettkaempfe.zeiten', 'wettkaempfe.vorort'])) views.splice(2, 0, ['vorort', 'Vor Ort']); if (Object.keys(wk.res || {}).length && M.anyCan(['wettkaempfe.artikel', 'wettkaempfe.import', 'wettkaempfe.zeiten'])) views.push(['artikel', 'Artikel']);
+    var views = [['check', 'Checkliste'], ['uebersicht', 'Starts'], ['gericht', 'Kampfgericht'], ['docs', 'Unterlagen']]; if (M.anyCan(['wettkaempfe.zeiten', 'wettkaempfe.vorort'])) views.splice(2, 0, ['vorort', 'Vor Ort']); if (wk.meld && (wk.meld.starts || []).some(function (s) { return s.j === 'Staffel'; })) views.splice(2, 0, ['staffel', 'Staffeln']); if (Object.keys(wk.res || {}).length && M.anyCan(['wettkaempfe.artikel', 'wettkaempfe.import', 'wettkaempfe.zeiten'])) views.push(['artikel', 'Artikel']);
     var canPrint = M.can('wettkaempfe.print'); var canImp = M.anyCan(['wettkaempfe.import', 'wettkaempfe.anlegen']);
     var out = '<section class="wm-card"><div class="wm-bar"><button type="button" class="wm-btn" data-ma="wkback">← Alle Wettkämpfe</button><span class="m-actions">' +
       (canPrint ? '<button type="button" class="wm-btn" data-ma="wkprint">🖨️ Drucken</button>' : '') +
@@ -171,6 +171,7 @@ templateEngineOverride: false
     out += '<div class="wm-tabs">' + views.map(function (v) { return '<button type="button" class="wm-tab' + (s.v === v[0] ? ' on' : '') + '" data-ma="wkview" data-v="' + v[0] + '">' + v[1] + '</button>'; }).join('') + '</div>';
     if (s.v === 'check') return out + viewCheck(wk);
     if (s.v === 'docs') return out + viewDocs(wk);
+    if (s.v === 'staffel') return out + staffelPlan(wk);
     if (s.v === 'gericht') return out + viewGericht(wk);
     if (s.v === 'artikel') return out + viewArtikel(wk);
     if (s.v === 'vorort') return out + ((wk.starts || []).length ? viewVorort(wk) : '<section class="wm-card"><p class="wm-note">Die Vor-Ort-Seite braucht das Meldeergebnis (Läufe und Bahnen). Bitte unter „Unterlagen“ hochladen.</p></section>');
@@ -291,7 +292,7 @@ templateEngineOverride: false
     var list = Object.keys(m).map(function (k) { return m[k]; }).sort(function (a, b) { return a.n.localeCompare(b.n, 'de'); });
     var out = '<section class="wm-card"><div class="wm-bar"><h3>Gemeldet</h3><span class="wm-sub">' + list.length + ' Schwimmer · ' + wk.meld.starts.length + ' Starts</span></div><p class="wm-note">Laut Meldedatei. Uhrzeiten und Bahnen kommen erst mit dem Meldeergebnis.</p>';
     list.forEach(function (x) { out += '<article class="m-card"><div class="m-body" style="border:0"><b>' + esc(x.n.replace(/^([^,]+),\s*(.+)$/, '$2 $1')) + '</b> <span class="wm-sub">(' + esc(x.j) + ')</span><br>' + x.st.sort(function (a, b) { return a.e - b.e; }).map(function (s) { return 'WK ' + s.e + ' · ' + esc(ev(wk, s.e).name) + (s.m ? ' · Meldezeit ' + esc(s.m) : ''); }).join('<br>') + '</div></article>'; });
-    return out + '</section>' + staffelPlan(wk);
+    return out + '</section>';
   }
   function viewUebersicht(wk) {
     var out = '<section class="wm-card"><div class="wm-bar"><h3>Wer schwimmt wann wo</h3><span class="wm-sub">' + swimmers(wk).length + ' Schwimmer · ' + wk.starts.length + ' Starts</span></div><input type="search" class="m-search" data-mq="1" placeholder="🔎 Schwimmer suchen …" value="' + esc(M.S.q) + '" autocomplete="off">';

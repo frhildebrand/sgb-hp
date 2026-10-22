@@ -113,12 +113,13 @@ templateEngineOverride: false
       (cur.length ? cur.map(rowHtml).join('') : '<tr><td colspan="8" class="wm-note" style="padding:16px">Keine Personen gefunden.</td></tr>') + '</table></div>' +
       (pages > 1 ? '<div class="pl-pg"><button type="button" class="m-chip" data-ma="plpage" data-v="-1">‹</button><span class="wm-sub">Seite ' + (PL.page + 1) + ' von ' + pages + ' · ' + ps.length + ' Personen</span><button type="button" class="m-chip" data-ma="plpage" data-v="1">›</button></div>' : '');
   }
+  var LW = null;   // Einbettung in die Gruppenseite: { g: Gruppe, extra: HTML }
   function listRender() {
     var can = M.anyCan(['mitglieder.edit', 'mitglieder.anlegen']);
     var sel = function (id, cur, opts) { return '<select data-pl="' + id + '">' + opts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(cur) === String(o[0]) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>'; };
-    return '<section class="wm-card"><div class="wm-bar"><h3>Personen <span class="wm-sub" id="plCnt"></span></h3><span class="m-actions"><button type="button" class="wm-btn" data-ma="plxlsx">📊 Excel</button>' + (can ? '<button type="button" class="wm-btn" data-ma="plnew">+ Person</button>' : '') + '</span></div>' +
+    return '<section class="wm-card"><div class="wm-bar"><h3>' + (LW ? '👥 Mitglieder · ' + esc(LW.g) : 'Personen') + ' <span class="wm-sub" id="plCnt"></span></h3><span class="m-actions">' + (LW && LW.extra ? LW.extra : '') + '<button type="button" class="wm-btn" data-ma="plxlsx">📊 Excel</button>' + (can ? '<button type="button" class="wm-btn" data-ma="plnew">+ Person</button>' : '') + '</span></div>' +
       '<div class="pl-bar"><input class="pl-q" type="search" data-pl="q" placeholder="🔍 Name suchen …" value="' + esc(PL.q) + '" autocomplete="off"><input class="pl-n" type="search" data-pl="nr" placeholder="Mitgl.-Nr." value="' + esc(PL.nr) + '" inputmode="numeric" autocomplete="off">' +
-      sel('r', PL.r, [['', 'Alle Rollen']].concat(ROLLEN.map(function (r) { return [r, r]; }))) + sel('g', PL.g, [['', 'Alle Gruppen']].concat(GR.map(function (g) { return [g, g]; }))) +
+      sel('r', PL.r, [['', 'Alle Rollen']].concat(ROLLEN.map(function (r) { return [r, r]; }))) + (LW ? '' : sel('g', PL.g, [['', 'Alle Gruppen']].concat(GR.map(function (g) { return [g, g]; })))) +
       sel('st', PL.st, [['aktiv', 'Aktive'], ['pausiert', 'Pausierte'], ['ausgetreten', 'Ausgetretene'], ['alle', 'Alle']]) + sel('sort', PL.sort, SORTS.map(function (s) { return ['' + s[0], 'Sortieren: ' + s[1]]; })) + '</div>' +
       '<div id="plBody">' + bodyHtml() + '</div></section>';
   }
@@ -141,7 +142,7 @@ templateEngineOverride: false
       { k: 'aktiv', t: 'sel', label: 'Aktiver Trainer', opts: [['', 'Ja'], ['nein', 'Nein']] }, { k: 'lizArt', t: 'text', label: 'Lizenzart', list: 'plLiz' }, { k: 'lizNr', t: 'text', label: 'Lizenznummer' }, { k: 'lizDosb', t: 'text', label: 'Lizenznummer DOSB' }, { k: 'lizBis', t: 'date', label: 'Lizenz gültig bis' }, { k: 'seit', t: 'date', label: 'Trainer seit' },
       { k: 'ehBis', t: 'date', label: 'Erste Hilfe bis' }, { k: 'rettungBis', t: 'date', label: 'Rettungsnachweis bis' }, { k: 'fz', t: 'date', label: 'Führungszeugnis vom' }, { k: 'ehrenkodex', t: 'date', label: 'Ehrenkodex vom' }]);
     return f.concat([{ k: '_s4', t: 'sec', label: 'Kampfrichter', role: 'Kampfrichter' }, { k: 'kariNr', t: 'text', label: 'Lizenznummer' }, { k: 'kariBis', t: 'date', label: 'Wettkampfrichter bis' }, { k: 'kariAusw', t: 'date', label: 'Auswertung bis' }, { k: 'kariSchied', t: 'date', label: 'Schiedsrichter bis' }, { k: 'zStarter', t: 'chk', label: 'Zusatz: Starter' }, { k: 'zSprecher', t: 'chk', label: 'Zusatz: Sprecher' }, { k: 'zFreiwasser', t: 'chk', label: 'Zusatz: Freiwasser' },
-      { k: '_s5', t: 'sec', label: 'Funktionär', role: 'Funktionär' }, { k: 'amt', t: 'text', label: 'Amt / Funktion', list: 'plAmt' }, { k: 'amtVon', t: 'date', label: 'Amtszeit von' }, { k: 'amtBis', t: 'date', label: 'Amtszeit bis' }, { k: 'fzFunk', t: 'date', label: 'Führungszeugnis vom' },
+      { k: '_s5', t: 'sec', label: 'Funktionär', role: 'Funktionär' }, { k: 'amt', t: 'text', label: 'Amt / Funktion', list: 'plAmt' }, { k: 'amtVon', t: 'date', label: 'Amtszeit von' }, { k: 'amtBis', t: 'date', label: 'Amtszeit bis' },
       { k: '_s5b', t: 'sec', label: 'Ausrüstung' }, { k: 'kappe', t: 'chk', label: 'Gesponserte Vereinsbadekappe erhalten' }, { k: 'kappeDatum', t: 'date', label: 'Badekappe ausgegeben am' }, { k: 'brettArt', t: 'sel', label: 'Schwimmbrett', opts: [['', 'keins']].concat(BRETTER().map(function (b) { return [b, b]; })) }, { k: 'brettAus', t: 'date', label: 'Brett ausgegeben am' }, { k: 'brettRueck', t: 'date', label: 'Brett zurückgegeben am' },
       { k: '_s6', t: 'sec', label: 'Notiz' }, { k: 'notiz', t: 'area', label: 'Notiz', rows: 3 }]);
   }
@@ -315,8 +316,14 @@ templateEngineOverride: false
     }
     return Promise.all(jobs);
   }
+  // Jede ZIP ist eine Person (eigenes Datenpaket); lose CSV-Dateien gehören zusammen.
   function csvFiles(files) {
-    return Promise.all(Array.prototype.map.call(files, function (f) { return f.arrayBuffer().then(function (b) { return /\.zip$/i.test(f.name) ? readZip(b) : [[f.name, dec(b)]]; }); })).then(function (parts) { var o = {}; parts.forEach(function (p) { p.forEach(function (x) { o[x[0].split('/').pop().toLowerCase()] = x[1]; }); }); return o; });
+    return Promise.all(Array.prototype.map.call(files, function (f) { return f.arrayBuffer().then(function (b) { return /\.zip$/i.test(f.name) ? readZip(b).then(function (z) { return { zip: true, files: z }; }) : { zip: false, files: [[f.name, dec(b)]] }; }); })).then(function (parts) {
+      var sets = [], loose = {};
+      parts.forEach(function (p) { var o = {}; p.files.forEach(function (x) { o[x[0].split('/').pop().toLowerCase()] = x[1]; }); if (p.zip) sets.push(o); else Object.keys(o).forEach(function (k) { loose[k] = o[k]; }); });
+      if (Object.keys(loose).length) sets.push(loose);
+      return sets;
+    });
   }
   function importFromCsv(o) {
     var st = o['stammdaten.csv']; if (!st) throw new Error('Keine „stammdaten.csv“ gefunden.');
@@ -348,8 +355,9 @@ templateEngineOverride: false
   function csvRead() {
     var el = document.getElementById('mi_f'), msg = document.getElementById('mi_msg'); if (!el || !el.files.length) { if (msg) msg.textContent = 'Bitte zuerst eine Datei auswählen.'; return; }
     msg.textContent = 'Wird gelesen …';
-    csvFiles(el.files).then(function (o) {
-      var res = importFromCsv(o); if (!res.length) { msg.innerHTML = '<span class="m-over">Keine Personen in der Datei gefunden.</span>'; return; }
+    csvFiles(el.files).then(function (sets) {
+      var withSt = sets.filter(function (o) { return o['stammdaten.csv']; }); if (!withSt.length) throw new Error('Keine „stammdaten.csv“ gefunden.');
+      var res = []; withSt.forEach(function (o) { res = res.concat(importFromCsv(o)); }); if (!res.length) { msg.innerHTML = '<span class="m-over">Keine Personen in der Datei gefunden.</span>'; return; }
       CSVI = res; var chg = res.filter(function (r) { return r.diff.length || !r.ex; });
       M.openDlg('<div class="hub-dhead"><h3>Vorschau: Personendaten</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div><p class="wm-note"><b>' + res.filter(function (r) { return !r.ex; }).length + '</b> neu · <b>' + res.filter(function (r) { return r.ex && r.diff.length; }).length + '</b> geändert · <b>' + res.filter(function (r) { return r.ex && !r.diff.length; }).length + '</b> unverändert. Bank- und Adressdaten werden nicht übernommen.</p><div style="max-height:45vh;overflow:auto">' +
         res.map(function (r) { return '<div class="m-chk"><span style="flex:1"><b>' + esc(r.v.name) + '</b> <span class="wm-sub">' + (r.ex ? 'vorhanden' : 'neu') + '</span><br><span class="wm-sub">' + esc(r.diff.map(function (k) { return KEYLAB[k] || k; }).join(', ') || 'keine Änderung') + '</span></span></div>'; }).join('') + '</div>' +
@@ -362,6 +370,7 @@ templateEngineOverride: false
   }
 
   function applyHash() {
+    if (document.getElementById('hubRoot') && document.getElementById('hubRoot').getAttribute('data-modul') !== 'mitglieder') return;
     var h = decodeURIComponent(String(location.hash || '').replace(/^#/, '')); if (!h) return;
     if (h === 'import') { M.S.tab = 'import'; } else if (h === 'alle') { M.S.tab = 'alle'; PL.g = ''; } else if (/^r=/.test(h)) { M.S.tab = 'alle'; PL.r = h.slice(2); PL.g = ''; PL.page = 0; } else if (/^g=/.test(h)) { M.S.tab = 'alle'; PL.g = h.slice(2); PL.page = 0; } else return;
     if (M.render) M.render(true);
@@ -384,4 +393,10 @@ templateEngineOverride: false
       mimpsave: function () { impSave(); }
     }
   });
+  // Einbettung: die Gruppenseite zeigt dieselbe Tabelle, gefiltert auf ihre Gruppe
+  M.listWidget = {
+    render: function (g, extra) { LW = { g: g, extra: extra || '' }; PL.g = g; PL.page = 0; var h = listRender(); LW = null; setTimeout(plRefresh, 0); return h; },
+    input: function (ev) { return plInput(ev); },
+    actions: function () { var d = M.moduleDef('mitglieder') || {}, o = {}; ['plopen', 'plsort', 'plpage', 'plnew', 'plxlsx', 'pledit', 'pldel'].forEach(function (k) { if (d.actions && d.actions[k]) o[k] = d.actions[k]; }); return o; }
+  };
 })();

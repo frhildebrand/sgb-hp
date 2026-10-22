@@ -89,7 +89,7 @@ templateEngineOverride: false
   }
   function find(coll, id) { var l = items(coll); for (var i = 0; i < l.length; i++) if (l[i].id === id) return l[i]; return null; }
   function persistQ() { lsSet('modq', Q); }
-  function persistBase() { lsSet('modbase_' + def.id, { token: SH.token(), base: D.base, people: D.people, dir: D.dir, pick: D.pick }); }
+  function persistBase() { lsSet('modbase_' + def.id, { token: SH.token(), base: D.base, people: D.people, dir: D.dir, pick: D.pick, pr: D.pr }); }
   function op(o, quiet) { Q.push(o); persistQ(); if (!quiet) renderMain(true); scheduleFlush(); }
   function ops(list) { list.forEach(function (o) { Q.push(o); }); persistQ(); renderMain(true); scheduleFlush(); }
   function scheduleFlush() { clearTimeout(flushTimer); flushTimer = setTimeout(flush, 500); }
@@ -126,6 +126,7 @@ templateEngineOverride: false
       if (r.people) D.people = r.people;
       if (r.dir) D.dir = r.dir;
       if (r.pick) D.pick = r.pick;
+      if (r.pr) D.pr = r.pr;
       S.loaded = true; persistBase();
       if (before !== JSON.stringify([D.base, D.denied, D.people, D.dir, D.pick]) || !S.drawn) renderMain();
       S.drawn = true;
@@ -135,7 +136,12 @@ templateEngineOverride: false
   /* ---------- Zeichnen ---------- */
   function tabsOf() { return (def.tabs || []).filter(function (t) { return anyCan(t.view); }); }
   function curTab() { var t = tabsOf(); for (var i = 0; i < t.length; i++) if (t[i].id === S.tab) return t[i]; return t[0] || null; }
+  // Reiter der Seite auch im linken Menü anbieten (dort als Unterpunkte der Seite)
+  function wide() { try { return window.matchMedia('(min-width: 1100px)').matches; } catch (e) { return false; } }
+  function syncTabs() { var tl = def.custom ? [] : tabsOf(); var c = tl.length > 1 ? curTab() : null; SH.S.pageTabs = tl.length > 1 ? tl.map(function (x) { return { id: x.id, label: x.label }; }) : null; SH.S.pageTab = c ? c.id : ''; }
+  function setTab(id) { S.tab = id; S.q = ''; S.filter = {}; lsSet('modtab_' + def.id, S.tab); renderMain(true); renderChrome(); window.scrollTo(0, 0); }
   function renderChrome() {
+    syncTabs();
     var h = document.getElementById('mHead'); var o = document.getElementById('mOv');
     if (h) h.innerHTML = SH.header(def.title);
     if (o) o.innerHTML = SH.overlay();
@@ -154,7 +160,7 @@ templateEngineOverride: false
     if (S.error) out += '<div class="hub-err">' + esc(S.error) + '</div>';
     if (def.custom) return out + def.render(api);
     var t = curTab();
-    if (tabs.length > 1) out += '<div class="wm-tabs">' + tabs.map(function (x) { return '<button type="button" class="wm-tab' + (x === t ? ' on' : '') + '" data-ma="tab" data-tab="' + esc(x.id) + '">' + esc(x.label) + '</button>'; }).join('') + '</div>';
+    if (tabs.length > 1 && !wide()) out += '<div class="wm-tabs">' + tabs.map(function (x) { return '<button type="button" class="wm-tab' + (x === t ? ' on' : '') + '" data-ma="tab" data-tab="' + esc(x.id) + '">' + esc(x.label) + '</button>'; }).join('') + '</div>';
     return out + (t.render ? t.render(api, t) : listHtml(t));
   }
   var lastHtml = '';
@@ -202,14 +208,27 @@ templateEngineOverride: false
   }
 
   /* ---------- Formulare ---------- */
+  function lstRow(x) { return '<div class="m-lr"><input type="text" data-lr="1" value="' + esc(x) + '" autocomplete="off"><button type="button" class="wm-btn m-lx" data-lstdel="1" aria-label="Entfernen">✕</button></div>'; }
+  function lstSync(box) { var ta = box.querySelector('textarea'); if (ta) ta.value = [].map.call(box.querySelectorAll('input[data-lr]'), function (i) { return i.value.trim(); }).filter(Boolean).join('\n'); }
+  function lstAdd(box, after) { var h = document.createElement('div'); h.innerHTML = lstRow(''); var row = h.firstChild, rows = box.querySelector('.m-lrows'); if (after && after.parentNode === rows) rows.insertBefore(row, after.nextSibling); else rows.appendChild(row); row.querySelector('input').focus(); }
+  document.addEventListener('input', function (ev) { var i = ev.target; if (i && i.getAttribute && i.getAttribute('data-lr')) lstSync(i.closest('.m-lst')); });
+  document.addEventListener('keydown', function (ev) { var i = ev.target; if (ev.key === 'Enter' && i && i.getAttribute && i.getAttribute('data-lr')) { ev.preventDefault(); lstAdd(i.closest('.m-lst'), i.closest('.m-lr')); } });
+  document.addEventListener('click', function (ev) {
+    var e = ev.target.closest ? ev.target.closest('[data-lstadd],[data-lstdel]') : null; if (!e) return; var box = e.closest('.m-lst'); if (!box) return;
+    if (e.getAttribute('data-lstadd')) { lstAdd(box); return; }
+    var row = e.closest('.m-lr'), rows = box.querySelector('.m-lrows'); if (rows.children.length > 1) row.parentNode.removeChild(row); else row.querySelector('input').value = ''; lstSync(box);
+  });
   function fieldHtml(f, v) {
     var id = 'mf_' + f.k; var val = v === undefined || v === null ? '' : v; var lab = '<span>' + esc(f.label) + (f.req ? ' *' : '') + '</span>';
     var attr = ' name="' + esc(f.k) + '" id="' + id + '"' + (f.req ? ' required' : '') + (f.ph ? ' placeholder="' + esc(f.ph) + '"' : '');
     if (f.t === 'sec') return '<div class="m-f wide m-fsec">' + esc(f.label) + '</div>';
     if (f.t === 'chk') return '<label class="m-f m-fchk"><input type="checkbox"' + attr + (val ? ' checked' : '') + '>' + lab + '</label>';
     if (f.t === 'area') return '<label class="m-f' + (f.wide === false ? '' : ' wide') + '">' + lab + '<textarea' + attr + ' rows="' + (f.rows || 4) + '">' + esc(val) + '</textarea>' + (f.hint ? '<small>' + f.hint + '</small>' : '') + '</label>';
-    if (f.t === 'lines') return '<label class="m-f wide">' + lab + '<textarea' + attr + ' rows="' + (f.rows || 5) + '">' + esc((Array.isArray(val) ? val : []).join('\n')) + '</textarea>' + (f.hint ? '<small>' + f.hint + '</small>' : '') + '</label>';
-    if (f.t === 'checks') return '<label class="m-f wide">' + lab + '<textarea' + attr + ' rows="' + (f.rows || 6) + '">' + esc((Array.isArray(val) ? val : []).map(function (c) { return c.t; }).join('\n')) + '</textarea>' + (f.hint ? '<small>' + f.hint + '</small>' : '') + '</label>';
+    if (f.t === 'lines' || f.t === 'checks') {
+      var arr = Array.isArray(val) ? val : []; if (f.t === 'checks') arr = arr.map(function (c) { return c.t; });
+      var rows = arr.length ? arr : [''];
+      return '<div class="m-f wide m-lst">' + lab + '<textarea hidden' + attr + '>' + esc(arr.join('\n')) + '</textarea><div class="m-lrows">' + rows.map(lstRow).join('') + '</div><button type="button" class="wm-btn m-ladd" data-lstadd="1">➕ Eintrag hinzufügen</button>' + (f.hint ? '<small>' + f.hint + '</small>' : '') + '</div>';
+    }
     if (f.t === 'pick') {
       var cur = Array.isArray(val) ? val : []; var opts = (typeof f.opts === 'function' ? f.opts() : (f.opts || D.people || [])).slice(); cur.forEach(function (n) { if (opts.indexOf(n) < 0) opts.push(n); });
       return '<div class="m-f wide">' + lab + '<div class="m-pick">' + opts.map(function (n) { var on = cur.indexOf(n) >= 0; return '<label class="m-pk' + (on ? ' on' : '') + '"><input type="checkbox" data-pick="' + esc(f.k) + '" value="' + esc(n) + '"' + (on ? ' checked' : '') + '><span>' + esc(n) + '</span></label>'; }).join('') + '</div>' + (f.extra ? '<input class="m-pkx" type="text" data-pickx="' + esc(f.k) + '" placeholder="' + esc(f.extra) + '" autocomplete="off">' : '') + (f.hint ? '<small>' + f.hint + '</small>' : '') + '</div>';
@@ -252,7 +271,7 @@ templateEngineOverride: false
         var nm = String(item.name || '').trim(), ini = nm ? nm.split(/\s+/).map(function (x) { return x.charAt(0); }).join('').slice(0, 2).toUpperCase() : '＋';
         body = '<div class="m-phead"><span class="m-pav" id="m_pav">' + esc(ini) + '</span><div class="m-pnm"><b id="m_pname">' + esc(nm || 'Neue Person') + '</b><div class="m-prol" id="m_prol"></div></div></div>' +
           '<section class="m-acard m-acard-main"><h4><span>' + IC.Stammdaten + '</span>Stammdaten</h4><div class="m-fgrid">' + panes[0].h + '</div></section>' +
-          '<details class="m-acc m-rolecard"><summary><span class="m-ai">🧩</span><span class="m-at">Rollen<small id="m_rsum"></small></span></summary><div class="m-rolebody">' + rolH + '</div></details>' +
+          (o.noRoles ? '' : '<details class="m-acc m-rolecard"><summary><span class="m-ai">🧩</span><span class="m-at">Rollen<small id="m_rsum"></small></span></summary><div class="m-rolebody">' + rolH + '</div></details>') +
           panes.slice(1).map(function (pn) { return '<details class="m-acc m-ar-' + (AC[pn.f.label] || 'x') + '"' + (pn.f.role ? ' data-role="' + esc(pn.f.role) + '"' : '') + '><summary><span class="m-ai">' + (IC[pn.f.label] || '▫️') + '</span><span class="m-at">' + esc(pn.f.label) + '</span></summary><div class="m-fgrid">' + pn.h + '</div></details>'; }).join('');
       }
       else body = '<div class="m-tabs" role="tablist">' + panes.map(function (pn, i) { return '<button type="button" class="m-tab' + (i === 0 ? ' on' : '') + '" data-tab="' + i + '"' + (pn.f.role ? ' data-role="' + esc(pn.f.role) + '"' : '') + '>' + esc(pn.f.label) + '</button>'; }).join('') + '</div>' +
@@ -269,10 +288,11 @@ templateEngineOverride: false
       if (o.acc) {
         var RC = { 'Schwimmer': 'pl-s', 'Trainer': 'pl-tr', 'Kampfrichter': 'pl-k', 'Funktionär': 'pl-v' };
         var upd = function () {
-          var rs = [].slice.call(form.querySelectorAll('input[data-pick="rollen"]:checked')).map(function (x) { return x.value; });
+          var rs = o.noRoles ? (item.rollen || []) : [].slice.call(form.querySelectorAll('input[data-pick="rollen"]:checked')).map(function (x) { return x.value; });
           var chips = rs.length ? rs.map(function (r) { return '<span class="pl-c ' + (RC[r] || 'pl-g') + '">' + esc(r) + '</span>'; }).join('') : '<span class="wm-sub">noch keine Rolle</span>';
           var el1 = document.getElementById('m_prol'), el2 = document.getElementById('m_rsum'); if (el1) el1.innerHTML = chips; if (el2) el2.innerHTML = rs.length ? rs.join(' · ') : 'noch keine gewählt';
           var n = form.querySelector('#mf_name'), v = n ? n.value.trim() : '', pn = document.getElementById('m_pname'), pv = document.getElementById('m_pav');
+          if (!n) return;
           if (pn) pn.textContent = v || 'Neue Person'; if (pv) pv.textContent = v ? v.split(/\s+/).map(function (x) { return x.charAt(0); }).join('').slice(0, 2).toUpperCase() : '＋';
         };
         form.addEventListener('change', upd); form.addEventListener('input', function (e) { if (e.target && e.target.id === 'mf_name') upd(); }); upd();
@@ -297,6 +317,7 @@ templateEngineOverride: false
   }
   function confirmBox(text, yesLabel, onYes) {
     openDlg('<h3>' + esc(text) + '</h3><div class="ha-actions"><button type="button" class="hub-btn hub-ghost" data-ma="dclose">Abbrechen</button><button type="button" class="hub-btn hub-gold" data-ma="dyes">' + esc(yesLabel || 'Ja') + '</button></div>');
+    var cd = document.querySelector('#mDlg .m-dlg'); if (cd) cd.className += ' m-dlgsmall';
     document.getElementById('mDlg')._yes = onYes;
   }
   document.addEventListener('submit', function (ev) {
@@ -341,11 +362,13 @@ templateEngineOverride: false
     items('wgMitglieder').forEach(function (m) { if (m.name && isActive(m)) { seen[nameKey(m.name)] = 1; out.push({ n: m.name, nr: m.mnr || '', ro: Array.isArray(m.rollen) && m.rollen.length ? m.rollen : [m.rolle || 'Schwimmer'], gr: (m.gruppen || []).concat(m.trainerIn || []) }); } });
     (D.dir || []).forEach(function (m) { if (m && m.n && !seen[nameKey(m.n)]) { seen[nameKey(m.n)] = 1; out.push({ n: m.n, nr: m.nr || '', ro: m.ro || [], gr: m.gr || [] }); } });
     (D.people || []).forEach(function (n) { if (n && !seen[nameKey(n)]) { seen[nameKey(n)] = 1; out.push({ n: n, nr: '', ro: [], gr: [] }); } });
+    var PR = {}; Object.keys(D.pr || {}).forEach(function (n) { PR[nameKey(n)] = D.pr[n]; });
+    out.forEach(function (m) { m.ur = PR[nameKey(m.n)] || []; });
     var c = pickCfgOf(ctx);
     if (!c || c.m !== 'filter') return out;
     return out.filter(function (m) {
       if ((c.n || []).some(function (x) { return nameKey(x) === nameKey(m.n); })) return true;
-      if ((c.r || []).length && (m.ro || []).some(function (x) { return c.r.indexOf(x) >= 0; })) return true;
+      if ((c.b || []).length && (m.ur || []).some(function (x) { return c.b.indexOf(x) >= 0; })) return true;
       if ((c.g || []).length && (m.gr || []).some(function (x) { return c.g.indexOf(x) >= 0; })) return true;
       return false;
     });
@@ -409,15 +432,18 @@ templateEngineOverride: false
   // o = { file, title, sub, sheets: [{ name, head: [..], rows: [[..]], w: [Breiten] }] }
   // Standard-Abzeichen (Name, Preis, Anforderungen): einzige Quelle für Jugend und Material
   var ABZ_STD = [
+    { n: 'DSA-Pass', p: 0, req: [] },
     { n: 'DSA Bronze', p: 3, req: ['Kopfsprung', '15 min schwimmen: 50 m Rücken + 150 m Brust + x', '1 Ring aus 2 m', 'Paketsprung', 'Baderegeln'] },
     { n: 'DSA Silber', p: 2, req: ['Kopfsprung', '20 min schwimmen: 100 m Rücken + 300 m Brust + x', '2× Ring aus 2 m', 'Sprung aus 3 m / 2 Sprünge 1 m', '10 m Tauchen mit Abstoß', 'Baderegeln', 'Selbstrettung'] },
     { n: 'DSA Gold', p: 2, req: ['Kopfsprung', '30 min schwimmen: 150 m Rücken + 650 m Brust + x', 'Start + 50 m Brust in 1:15 min', 'Start + 25 m Kraul', '50 m Rücken oder 50 m Brustbeine in Rückenlage', '10 m Tauchen ohne Abstoß', 'Sprung aus 3 m / 2 Sprünge 1 m', '3 Ringe aus 2 m (unter 3 min)', '50 m Transportschwimmen', 'Baderegeln', 'Selbstrettung', 'Fremdrettung'] },
+    { n: 'DLA-Pass', p: 0, req: [] },
     { n: 'DLA Hai', p: 3, req: [] },
     { n: 'DLA Silber', p: 2, req: ['100 m Brust unter 1:55 min', '100 m Kraul unter 1:40 min', '100 m Rücken unter 1:50 min', '100 m Lagen', '400 m Freistil unter 10 min', '3-m-Sprung', '1-m-Salto', '25 m Wasserball dribbeln unter 25 sek'] },
     { n: 'DLA Gold', p: 2, req: [] },
     { n: 'Totenkopf 1 Std.', p: 5, req: ['1 Stunde schwimmen, ohne sich festzuhalten oder etwas zu berühren'] },
     { n: 'Totenkopf 1,5 Std.', p: 5, req: ['1,5 Stunden schwimmen, ohne sich festzuhalten oder etwas zu berühren'] },
-    { n: 'Totenkopf 2 Std.', p: 5, req: ['2 Stunden schwimmen, ohne sich festzuhalten oder etwas zu berühren'] }
+    { n: 'Totenkopf 2 Std.', p: 5, req: ['2 Stunden schwimmen, ohne sich festzuhalten oder etwas zu berühren'] },
+    { n: 'Swimstars', p: 0, req: [] }
   ];
   // gemeinsame Helfer: CSV (Semikolon, Anführungszeichen), Zelle in Excel-Vorlage füllen, JSZip nachladen
   function csvRows(txt) {
@@ -525,7 +551,7 @@ templateEngineOverride: false
     if (a === 'dyes') { var f = document.getElementById('mDlg')._yes; closeDlg(); if (f) f(); return; }
     if (a === 'retry') { start(); return; }
     var t = def.custom ? null : curTab(); var c = ctxOf(el);
-    if (a === 'tab') { S.tab = el.getAttribute('data-tab'); S.q = ''; S.filter = {}; lsSet('modtab_' + def.id, S.tab); renderMain(true); return; }
+    if (a === 'tab') { setTab(el.getAttribute('data-tab')); return; }
     if (a === 'toggle') { if (ev.target.closest('a,button,input,select,textarea') && ev.target.closest('a,button,input,select,textarea') !== el) return; S.open[c.id] = !S.open[c.id]; renderMain(true); return; }
     if (t && a === 'add') { if (t.onAdd) t.onAdd(api); else editItem(t, null); return; }
     if (t && a === 'edit') { editItem(t, find(t.coll, c.id)); return; }
@@ -548,7 +574,7 @@ templateEngineOverride: false
   /* ---------- Start ---------- */
   function start() {
     var cache = lsGet('modbase_' + def.id, null);
-    if (cache && cache.token === SH.token()) { D.base = cache.base || {}; D.people = cache.people || []; D.dir = cache.dir || []; D.pick = cache.pick || {}; S.loaded = true; }
+    if (cache && cache.token === SH.token()) { D.base = cache.base || {}; D.people = cache.people || []; D.dir = cache.dir || []; D.pick = cache.pick || {}; D.pr = cache.pr || {}; S.loaded = true; }
     SH.S.restoredDone = false;
     var had = SH.restore(); SH.S.restoredDone = true; renderChrome(); renderMain(true);
     if (had && S.loaded) reload();                                        // Daten parallel zur Kontoprüfung holen
@@ -565,7 +591,7 @@ templateEngineOverride: false
     root.addEventListener('submit', function (ev) { if (SH.submit(ev, function () { renderChrome(); }, function () { start(); })) renderChrome(); });
     root.addEventListener('input', onInput);
     root.addEventListener('change', onChange);
-    SH.S.onMenu = function () {};
+    SH.S.onMenu = function (x) { if (String(x).indexOf('tab:') === 0) setTab(String(x).slice(4)); };
     injectCss(); start();
     if (Q.length) scheduleFlush();
     setInterval(function () { if (document.hidden || dlgOpen || typing() || Q.length) return; reload(); }, 20000);
@@ -593,7 +619,8 @@ templateEngineOverride: false
     '#hubRoot .m-chk{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(148,163,184,.18)}#hubRoot .m-chk:last-child{border-bottom:0}#hubRoot .m-box{flex:0 0 auto;width:26px;height:26px;border-radius:8px;border:2px solid #94a3b8;background:transparent;color:#fff;font-weight:900;font-size:16px;line-height:22px;padding:0;cursor:pointer}#hubRoot .m-box.on{background:#10b981;border-color:#10b981}' +
     '#hubRoot .m-acc{border:1px solid #cbd5e1;border-radius:12px;margin:12px 0 0;overflow:hidden}#hubRoot .m-acc>summary{cursor:pointer;list-style:none;padding:14px 16px;font-weight:800;font-size:15px;display:flex;justify-content:space-between;align-items:center;min-height:44px}#hubRoot .m-acc>summary::-webkit-details-marker{display:none}#hubRoot .m-acc>summary::after{content:\'⌄\';font-size:18px}#hubRoot .m-acc[open]>summary::after{content:\'⌃\'}#hubRoot .m-acc[open]>summary{border-bottom:1px solid #cbd5e1;background:rgba(100,116,139,.08)}#hubRoot .m-acc>.m-fgrid{padding:12px 14px}' +
     '#hubRoot .m-accform .ha-actions{position:sticky;bottom:0;background:#fff;padding:12px 0 4px;margin-top:12px;border-top:1px solid #e2e8f0}.dark #hubRoot .m-accform .ha-actions{background:#131d30;border-color:#1f2a3d}' +
-    '#hubRoot .m-dlg.m-dlgwide{max-width:68rem;width:calc(100vw - 24px)}#hubRoot .m-accform .m-fgrid{grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:14px 16px}#hubRoot .m-accform .m-f.wide{grid-column:1/-1}' +
+    '#hubRoot .m-lr{display:flex;gap:8px;margin:0 0 8px}#hubRoot .m-lr input{flex:1 1 auto}#hubRoot .m-lx{flex:0 0 auto;min-width:46px;padding:0 12px}#hubRoot .m-ladd{align-self:flex-start}' +
+    '#hubRoot .m-dlg,#hubRoot .m-dlg.m-dlgtab,#hubRoot .m-dlg.m-dlgwide{max-width:68rem;width:calc(100vw - 24px)}#hubRoot .m-dlg.m-dlgsmall{max-width:30rem}#hubRoot .m-accform .m-fgrid{grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:14px 16px}#hubRoot .m-accform .m-f.wide{grid-column:1/-1}' +
     '#hubRoot .m-phead{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:16px;background:linear-gradient(135deg,#0f2a4a,#1e4f82);color:#fff;margin:4px 0 14px}#hubRoot .m-pav{width:56px;height:56px;border-radius:50%;background:#f5b335;color:#10243f;font-weight:900;font-size:22px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}#hubRoot .m-pnm b{font-size:20px;display:block}#hubRoot .m-prol{margin-top:4px}#hubRoot .m-prol .pl-c{font-size:12.5px}' +
     '#hubRoot .m-acard{border:1px solid #cbd5e1;border-radius:14px;padding:4px 16px 8px;margin:0 0 12px;background:rgba(100,116,139,.04)}#hubRoot .m-acard>h4{margin:12px 0 0;font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px}' +
     '#hubRoot .m-accform .m-acc{border-radius:14px;margin:0 0 12px;border-left:5px solid #94a3b8}#hubRoot .m-accform .m-acc>summary{padding:16px 18px;font-size:16px;justify-content:flex-start;gap:12px}#hubRoot .m-accform .m-acc>summary::after{margin-left:auto}#hubRoot .m-ai{font-size:22px;line-height:1}#hubRoot .m-at{display:flex;flex-direction:column;font-weight:800}#hubRoot .m-at small{font-weight:600;opacity:.7;font-size:12.5px;margin-top:2px}' +
@@ -619,7 +646,7 @@ templateEngineOverride: false
     '@media (max-width:640px){#hubRoot .hub-main{padding:14px 12px 8px}#hubRoot .wm-card{padding:14px}}';
 
   var api = { euro: euro, num: num, initials: initials, avatar: avatar, prog: prog, stat: stat, seg: seg, monthLabel: monthLabel, slug: slug, MON: MON, S: S, D: D, esc: esc, uid: uid, clone: clone, today: today, addDays: addDays, daysTo: daysTo, fmtDate: fmtDate, userName: userName, can: can, anyCan: anyCan, items: items, find: find, op: op, ops: ops, reload: reload, flush: flush, render: renderMain, chrome: renderChrome,
-    openForm: openForm, openDlg: openDlg, closeDlg: closeDlg, confirm: confirmBox, print: printDoc, xlsxList: xlsxList, csvRows: csvRows, ABZ_STD: ABZ_STD, xlsxCell: xlsxCell, loadJSZip: loadJSZip, GROUPS: GROUPS, PROFILE_MAP: PROFILE_MAP, lower: lowerS, pidOf: pidOf, ym: ym, fd: fd, fs: fs, isActive: isActive, age: age, xe: xe, asSw: asSw, gsOf: gsOf, mixGroup: mixGroup, nameKey: nameKey, memberSuggest: memberSuggest, memberResolve: memberResolve, personSuggest: personSuggest, personResolve: personResolve, personPool: personPool, isTrainerOf: isTrainerOf, toast: toast, badge: badge, colors: COLORS, loadScript: loadScript, lsGet: lsGet, lsSet: lsSet, SH: SH, register: function (id, d) { d.id = id; MODULES[id] = d; }, mod: function (id) { return MODULES[id]; }, editItem: editItem, typing: typing, person: function () { return userName(); } };
+    openForm: openForm, openDlg: openDlg, closeDlg: closeDlg, confirm: confirmBox, print: printDoc, xlsxList: xlsxList, csvRows: csvRows, ABZ_STD: ABZ_STD, xlsxCell: xlsxCell, loadJSZip: loadJSZip, GROUPS: GROUPS, PROFILE_MAP: PROFILE_MAP, lower: lowerS, pidOf: pidOf, ym: ym, fd: fd, fs: fs, isActive: isActive, age: age, xe: xe, asSw: asSw, gsOf: gsOf, mixGroup: mixGroup, nameKey: nameKey, memberSuggest: memberSuggest, memberResolve: memberResolve, personSuggest: personSuggest, personResolve: personResolve, personPool: personPool, isTrainerOf: isTrainerOf, toast: toast, badge: badge, colors: COLORS, loadScript: loadScript, lsGet: lsGet, lsSet: lsSet, SH: SH, moduleDef: function (id) { return MODULES[id]; }, register: function (id, d) { d.id = id; MODULES[id] = d; }, mod: function (id) { return MODULES[id]; }, editItem: editItem, typing: typing, person: function () { return userName(); } };
   document.addEventListener('change', function (e) { var t = e.target; if (t && t.getAttribute && t.getAttribute('data-pick') !== null && t.closest) { var l = t.closest('.m-pk'); if (l) l.classList.toggle('on', t.checked); } });
   window.HubMod = api;
   window.HubModBoot = boot;
