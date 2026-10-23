@@ -4471,7 +4471,7 @@ function renderKasseExtras() {
   show('kasseCloseBtn', !practice && (closed ? window.can('kasse.reopen') : window.can('kasse.close')));
   const cb = document.getElementById('kasseCloseBtn');
   if (cb) cb.innerText = closed ? '🔓 ' + dayName(day) + ' wieder öffnen' : '🔒 ' + dayName(day) + ' abschließen';
-  show('kassePracticeBtn', window.can('kasse.practice'));
+  show('kassePracticeBtn', false);   // Übungsmodus entfernt
   const pb = document.getElementById('kassePracticeBtn');
   if (pb) pb.innerText = practice ? '✓ Übung beenden' : '🎓 Übungsmodus';
   show('kasseKioskBtn', window.can('system.kiosk') && !practice && !kiosk);

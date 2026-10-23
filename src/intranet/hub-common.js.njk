@@ -723,7 +723,7 @@ window.HubShell = (function () {
   var NS = 'http://www.w3.org/2000/svg';
   function svg(name) {
     var p = P[name]; if (!p) return null;
-    var s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', p[0]); s.setAttribute('class', 'fa'); s.setAttribute('aria-hidden', 'true'); s.setAttribute('focusable', 'false');
+    var s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', p[0]); s.setAttribute('class', 'fa fa-' + name); s.setAttribute('aria-hidden', 'true'); s.setAttribute('focusable', 'false');
     var q = document.createElementNS(NS, 'path'); q.setAttribute('d', p[1]); s.appendChild(q); return s;
   }
   function name(m, next) { var k = m.replace(/️/g, ''); var n = E[m] || E[k] || E[k + '️']; if (k === '📊' && /^\s*Excel/.test(next || '')) n = 'file-excel'; return n; }
