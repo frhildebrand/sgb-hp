@@ -247,7 +247,7 @@ templateEngineOverride: false
       days.forEach(function (d) { if (!inGroup(m, d.date) || !asSw(m, d)) return; var mgs = Array.isArray(m.gruppen) && m.gruppen.length ? m.gruppen : ['Wettkampfgruppe']; if (!gsOf(d).some(function (g) { return mgs.indexOf(g) >= 0; })) return; n++; var c = (d.anw || {})[m.id]; if (c === 'a') a++; else if (c === 'e') e++; else if (c === 'f') f++; });
       return { m: m, a: a, e: e, f: f, n: n, p: n ? Math.round(a * 100 / n) : null };
     }).filter(function (r) { return r.n > 0; }).sort(function (x, y) { return (y.p || 0) - (x.p || 0); });
-    if (!rows.length) return out + '<p class="wm-note">Noch keine Daten.</p></section>';
+    if (!rows.length) return out + '<p class="wm-note">Noch keine Anwesenheit im gewählten Zeitraum. Sie erscheint, sobald an einem Trainingstag Anwesenheit eingetragen ist. Wähle oben ggf. „Alles“.</p></section>';
     out += '<table class="m-table"><tr><th>Name</th><th>✓</th><th>E</th><th>✗</th><th>Termine</th><th style="width:34%">Anteil</th></tr>' + rows.map(function (r) { return '<tr><td>' + esc(r.m.name) + '</td><td>' + r.a + '</td><td>' + r.e + '</td><td>' + r.f + '</td><td>' + r.n + '</td><td>' + M.prog(r.a, r.n, false) + ' <b>' + r.p + ' %</b></td></tr>'; }).join('') + '</table></section>';
     return out;
   }

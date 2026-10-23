@@ -74,7 +74,7 @@ const LEGACY_PERMISSION_GROUPS = [
       ['aushang.editRows', 'Zeilen anlegen, bearbeiten, löschen, sortieren', 'oa'],
       ['aushang.editTitle', 'Titel und Datum ändern', 'oa'],
       ['aushang.editTeig', 'Teig-Plätze hinzufügen / entfernen', 'oa'],
-      ['aushang.print', 'Aushang drucken (Druckknöpfe sehen)', 'oa'],
+      ['aushang.print', 'Aushang als Excel (Knopf sehen)', 'oa'],
       ['aushang.editInfo', 'Infotext oben ändern', 'oa'],
       ['aushang.fullNames', 'Volle Namen in den Listen sehen (sonst nur Vornamen)', 'hoa'],
       ['aushang.countdown', 'Countdown einstellen', 'a'],
@@ -131,7 +131,7 @@ const LEGACY_PERMISSION_GROUPS = [
       ['strom.plan', 'Karten verplanen (ziehen)', 'oa'],
       ['strom.watt', 'Watt, Belastbarkeit und Steckplätze je Karte', 'oa'],
       ['strom.verteiler', 'Verteiler einstellen', 'oa'],
-      ['strom.print', 'Stromplan drucken', 'hoa']
+      ['strom.print', 'Stromplan als Excel', 'hoa']
     ]
   },
   {
@@ -147,7 +147,7 @@ const LEGACY_PERMISSION_GROUPS = [
       ['aufbau.imageEdit', 'Bilder bearbeiten', 'oa'],
       ['aufbau.imageDelete', 'Bilder löschen', 'oa'],
       ['aufbau.sort', 'Einträge sortieren', 'oa'],
-      ['aufbau.print', 'Aufbauplan drucken', 'hoa'],
+      ['aufbau.print', 'Aufbauplan als Excel', 'hoa'],
       ['skizze.edit', 'Standskizze verschieben und bearbeiten', 'oa']
     ]
   },
@@ -175,7 +175,7 @@ const LEGACY_PERMISSION_GROUPS = [
       ['kasse.close', 'Tag abschließen', 'oa'],
       ['kasse.reopen', 'Abgeschlossenen Tag wieder öffnen', 'a'],
       ['kasse.practice', 'Übungsmodus benutzen', 'hoa'],
-      ['kasse.report', 'Tagesbericht drucken', 'oa']
+      ['kasse.report', 'Tagesbericht als Excel', 'oa']
     ]
   },
   {
@@ -190,7 +190,7 @@ const LEGACY_PERMISSION_GROUPS = [
       ['finance.productDelete', 'Produkte löschen', 'a'],
       ['finance.teig', 'Waffeln pro Teig ändern', 'a'],
       ['finance.receipt', 'Belege zu Ausgaben anhängen und entfernen', 'a'],
-      ['finance.export', 'Abrechnung als CSV oder PDF ausgeben', 'a']
+      ['finance.export', 'Abrechnung als CSV oder Excel ausgeben', 'a']
     ]
   },
   {
@@ -242,7 +242,7 @@ const PERMISSION_GROUPS = [
     id: 'aushang', title: 'Aushang', perms: [
       ['aushang.signup', 'Sich in Listen eintragen', 'ghoa'],
       ['aushang.fullNames', 'Volle Namen in den Listen sehen (sonst nur Vornamen)', 'hoa'],
-      ['aushang.verwalten', 'Aushang verwalten (Zeilen, Titel, Teig, Infotext, Fremde austragen, drucken)', 'oa'],
+      ['aushang.verwalten', 'Aushang verwalten (Zeilen, Titel, Teig, Infotext, Fremde austragen, Excel)', 'oa'],
       ['aushang.admin', 'Aushang: Countdown einstellen und Scan hochladen', 'a']
     ]
   },
@@ -271,13 +271,13 @@ const PERMISSION_GROUPS = [
   },
   {
     id: 'strom', title: 'Strom', perms: [
-      ['strom.ansehen', 'Strom und Verkabelung ansehen und Stromplan drucken', 'hoa'],
+      ['strom.ansehen', 'Strom und Verkabelung ansehen und Stromplan als Excel', 'hoa'],
       ['strom.verwalten', 'Strom verwalten (Stecker, Karten verplanen, Watt, Verteiler)', 'oa']
     ]
   },
   {
     id: 'aufbau', title: 'Aufbau', perms: [
-      ['aufbau.helfen', 'Auf- und Abbau ansehen, Schritte abhaken, Plan drucken', 'hoa'],
+      ['aufbau.helfen', 'Auf- und Abbau ansehen, Schritte abhaken, Plan als Excel', 'hoa'],
       ['aufbau.verwalten', 'Auf- und Abbau verwalten (Schritte, Hinweise, Bilder, Sortierung, Standskizze)', 'oa']
     ]
   },
@@ -402,7 +402,6 @@ const VIEW_IDS = {
   admin: 'viewAdminpanel',
   aufbau: 'viewAufbau',
   leihgaben: 'viewLeihgaben',
-  hilfe: 'viewHilfe'
 };
 
 // ------------------------------------------
@@ -1058,6 +1057,18 @@ function permLabelOf(key) {
   }
   return '';
 }
+// Inventar, Lagerbestand und Einkaufsliste sind eine gemeinsame Seite mit drei Reitern
+const INV_TABS = [['inventar', '📦 Inventar'], ['lagerbestand', '🏬 Lager'], ['einkaufsliste', '🛒 Einkauf']];
+function invTabs(viewName) {
+  INV_TABS.forEach((t) => {
+    const v = document.getElementById(VIEW_IDS[t[0]]);
+    if (!v) return;
+    let bar = v.querySelector(':scope > .wm-invtabs');
+    if (viewName !== t[0]) { if (bar) bar.remove(); return; }
+    if (!bar) { bar = document.createElement('div'); bar.className = 'wm-invtabs flex flex-wrap gap-2 mb-3'; v.insertBefore(bar, v.firstChild); }
+    bar.innerHTML = INV_TABS.filter((x) => window.can('view.' + x[0])).map((x) => `<button type="button" onclick="switchView('${x[0]}')" class="px-4 py-2 rounded-xl text-sm font-bold border ${x[0] === viewName ? 'bg-[#12395c] text-white border-[#12395c]' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700'}">${x[1]}</button>`).join('');
+  });
+}
 window.switchView = function (viewName) {
   if (viewName === 'kasse') viewName = 'verkauf';
   if (window.kioskActive) viewName = 'verkauf';
@@ -1075,6 +1086,7 @@ window.switchView = function (viewName) {
   window.currentView = viewName;
   updateNavActive();
   wmShellSync(viewName);
+  invTabs(viewName);
 
   if (viewName === 'aushang') {
     window.renderAushangImages();
@@ -1108,8 +1120,6 @@ window.switchView = function (viewName) {
   } else if (viewName === 'leihgaben') {
     renderLeihgaben();
     leihgabenStore.sync();
-  } else if (viewName === 'hilfe') {
-    renderHilfe();
   } else if (viewName === 'verkabelung') {
     renderVerkabelung();
     window.syncInventar();
@@ -3426,82 +3436,6 @@ function stromStatusBadge(status) {
     : (status === 'warn' ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30' : 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30');
   return `<span class="px-2 py-0.5 rounded-md text-[11px] font-bold border ${cls}">${STROM_TEXT[status]}</span>`;
 }
-function stromSketchSvg(model) {
-  const W = 1000;
-  const perLine = 5;
-  const chipW = 128;
-  const chipH = 36;
-  const gap = 8;
-  const startX = 272;
-  const rows = model.steckers.map((s) => {
-    const chips = s.calc.kabel.map((c) => ({ t: 'k', c: c })).concat(s.calc.geraete.map((c) => ({ t: 'g', c: c })));
-    return { s: s, chips: chips, lines: Math.max(1, Math.ceil(chips.length / perLine)) };
-  });
-  const dosen = model.cfg.dosen;
-  const boxH = Math.max(150, dosen * 34 + 70);
-  let y = 14;
-  rows.forEach((r) => {
-    r.y = y;
-    r.h = 40 + r.lines * (chipH + 8);
-    y += r.h + 14;
-  });
-  const H = Math.max(boxH + 28, y + 6);
-  const doseY = (i) => 62 + (i - 1) * 34;
-  const out = [];
-  out.push(`<svg viewBox="0 0 ${W} ${H}" width="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Stromplan-Skizze" style="font-family:Arial,Helvetica,sans-serif;color:inherit">`);
-  const totalStatus = model.totalStatus;
-  out.push(`<rect x="10" y="14" width="190" height="${boxH}" rx="10" fill="rgba(148,163,184,0.15)" stroke="rgba(148,163,184,0.8)" stroke-width="2"/>`);
-  out.push(`<text x="105" y="36" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor">${model.cfg.phasen > 1 ? model.cfg.phasen + ' × ' : ''}${escapeHtml(fmtNum(model.cfg.ampGesamt))} A Verteiler</text>`);
-  out.push(`<text x="105" y="${boxH - 2}" text-anchor="middle" font-size="12" font-weight="700" fill="${STROM_COLORS[totalStatus]}">${escapeHtml(fmtW(model.total))} / ${escapeHtml(fmtW(model.totalLimit))}</text>`);
-  for (let i = 1; i <= dosen; i++) {
-    const dl = model.perDose[i] || 0;
-    const ds = dl > model.doseLimit ? 'over' : (dl > model.doseLimit * 0.8 ? 'warn' : 'ok');
-    out.push(`<circle cx="200" cy="${doseY(i)}" r="13" fill="rgba(148,163,184,0.25)" stroke="${dl > 0 ? STROM_COLORS[ds] : 'rgba(148,163,184,0.9)'}" stroke-width="2.5"/>`);
-    out.push(`<text x="200" y="${doseY(i) + 4}" text-anchor="middle" font-size="11" font-weight="700" fill="currentColor">${i}</text>`);
-    out.push(`<text x="24" y="${doseY(i) + 4}" font-size="11" fill="currentColor" opacity="0.85">Dose ${i}${dl > 0 ? ': ' + escapeHtml(fmtW(dl)) : ''}</text>`);
-  }
-  rows.forEach((r) => {
-    const st = r.s.st;
-    const calc = r.s.calc;
-    const col = STROM_COLORS[calc.status];
-    const headY = r.y + 20;
-    out.push(`<text x="${startX}" y="${headY}" font-size="14" font-weight="700" fill="currentColor">${escapeHtml(st.name)}</text>`);
-    out.push(`<text x="${startX + 200}" y="${headY}" font-size="12" font-weight="700" fill="${col}">${escapeHtml(fmtW(calc.load))} / ${escapeHtml(fmtW(calc.limit))} · ${escapeHtml(STROM_TEXT[calc.status])} · Plätze ${calc.used}/${calc.outlets}</text>`);
-    const firstChipY = r.y + 32;
-    if (st.dose > 0 && st.dose <= dosen) {
-      const dy = doseY(st.dose);
-      const ly = firstChipY + chipH / 2;
-      out.push(`<polyline points="213,${dy} 240,${dy} 240,${ly} ${startX - 6},${ly}" fill="none" stroke="${col}" stroke-width="2.5"/>`);
-    } else {
-      out.push(`<text x="${startX - 8}" y="${firstChipY + chipH / 2 + 4}" text-anchor="end" font-size="10" fill="#ef4444">nicht angeschlossen</text>`);
-    }
-    if (!r.chips.length) {
-      out.push(`<text x="${startX}" y="${firstChipY + chipH / 2 + 4}" font-size="11" fill="currentColor" opacity="0.6">noch leer</text>`);
-    }
-    r.chips.forEach((ch, i) => {
-      const line = Math.floor(i / perLine);
-      const col2 = i % perLine;
-      const x = startX + col2 * (chipW + gap);
-      const cy = firstChipY + line * (chipH + 8);
-      const c = ch.c;
-      const isK = ch.t === 'k';
-      const noWatt = !isK && c.watt <= 0;
-      const fill = isK ? 'rgba(56,189,248,0.18)' : 'rgba(245,158,11,0.18)';
-      const stroke = noWatt ? '#ef4444' : (isK ? '#38bdf8' : '#f59e0b');
-      if (isK && col2 > 0) out.push(`<line x1="${x - gap}" y1="${cy + chipH / 2}" x2="${x}" y2="${cy + chipH / 2}" stroke="${col}" stroke-width="2.5"/>`);
-      const name = c.label.length > 17 ? c.label.slice(0, 16) + '…' : c.label;
-      const sub = isK ? fmtW(c.rating) + (c.outlets > 1 ? ' · ' + c.outlets + 'x' : '') : (c.watt > 0 ? fmtW(c.watt) : 'Watt fehlt');
-      out.push(`<rect x="${x}" y="${cy}" width="${chipW}" height="${chipH}" rx="8" fill="${fill}" stroke="${stroke}" stroke-width="2"${noWatt ? ' stroke-dasharray="4 3"' : ''}/>`);
-      out.push(`<text x="${x + 8}" y="${cy + 15}" font-size="11" font-weight="700" fill="currentColor">${escapeHtml(name)}</text>`);
-      out.push(`<text x="${x + 8}" y="${cy + 29}" font-size="10" fill="currentColor" opacity="0.85">${escapeHtml(sub)}</text>`);
-    });
-  });
-  if (!rows.length) {
-    out.push(`<text x="${startX}" y="60" font-size="13" fill="currentColor" opacity="0.7">Noch kein Stecker angelegt.</text>`);
-  }
-  out.push('</svg>');
-  return out.join('');
-}
 
 function renderVerkabelung() {
   const root = document.getElementById('stromRoot');
@@ -3609,18 +3543,17 @@ function renderVerkabelung() {
 
     <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 space-y-3">
       <div class="flex flex-wrap items-center justify-between gap-2">
-        <h3 class="font-black text-base text-slate-900 dark:text-slate-100">🗺️ Skizze</h3>
-        <button type="button" id="stromPrintBtn" onclick="window.printStromPlan()" class="${window.can('strom.print') ? '' : 'hidden '}px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 transition">🖨️ Drucken</button>
+        <h3 class="font-black text-base text-slate-900 dark:text-slate-100">🔌 Stromplan</h3>
+        <button type="button" id="stromPrintBtn" onclick="window.printStromPlan()" class="${window.can('strom.print') ? '' : 'hidden '}px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 transition">📊 Excel</button>
       </div>
-      <div class="overflow-x-auto text-slate-800 dark:text-slate-100">${stromSketchSvg(model)}</div>
       <div class="text-[11px] text-slate-500 dark:text-slate-400">Grün = in Ordnung, Gelb = über 80 % der Belastbarkeit, Rot = überlastet oder zu wenig Steckplätze. Die Belastbarkeit eines Steckers ist der kleinste Wert aus Dose (${escapeHtml(fmtNum(cfg.ampDose))} A × ${STROM_VOLT} V) und allen Kabeln darin.</div>
     </div>`;
 }
 window.printStromPlan = function () {
-  if (!window.can('strom.print')) { notify('Drucken ist für deine Anmeldung nicht freigegeben.'); return; }
+  if (!window.can('strom.print')) { notify('Excel ist für deine Anmeldung nicht freigegeben.'); return; }
   const model = stromModel();
   const rows = model.steckers.map((s) => `<tr><td>${escapeHtml(s.st.name)}</td><td>${s.st.dose > 0 ? 'Dose ' + s.st.dose : 'nicht angeschlossen'}</td><td>${escapeHtml(s.calc.kabel.map((c) => c.label).join(', ') || '–')}</td><td>${escapeHtml(s.calc.geraete.map((c) => c.label + ' (' + fmtW(c.watt) + ')').join(', ') || '–')}</td><td>${escapeHtml(fmtW(s.calc.load))} / ${escapeHtml(fmtW(s.calc.limit))}</td></tr>`).join('');
-  window.printHtml(`<h1>Stromplan Weihnachtsmarkt</h1><p>Verteiler: ${model.cfg.phasen > 1 ? 'Drehstrom, ' : ''}${escapeHtml(fmtNum(model.cfg.ampGesamt))} A${model.cfg.phasen > 1 ? ' je Phase' : ''}, ${model.cfg.dosen} Dosen · Gesamtbelastung ${escapeHtml(fmtW(model.total))} von ${escapeHtml(fmtW(model.totalLimit))}</p>${stromSketchSvg(model)}<h2>Übersicht</h2><table class="ps-table"><tr><th>Stecker</th><th>Dose</th><th>Verkabelung</th><th>Geräte</th><th>Last</th></tr>${rows}</table>`);
+  window.printHtml(`<h1>Stromplan Weihnachtsmarkt</h1><p>Verteiler: ${model.cfg.phasen > 1 ? 'Drehstrom, ' : ''}${escapeHtml(fmtNum(model.cfg.ampGesamt))} A${model.cfg.phasen > 1 ? ' je Phase' : ''}, ${model.cfg.dosen} Dosen · Gesamtbelastung ${escapeHtml(fmtW(model.total))} von ${escapeHtml(fmtW(model.totalLimit))}</p><h2>Übersicht</h2><table class="ps-table"><tr><th>Stecker</th><th>Dose</th><th>Verkabelung</th><th>Geräte</th><th>Last</th></tr>${rows}</table>`);
 };
 
 // --- Ziehen und Ablegen (Zeiger-Ereignisse, funktioniert auch per Touch) ---
@@ -4746,7 +4679,7 @@ window.startKiosk = async function () {
   }
   const ok = await window.uiConfirm({
     title: 'Kiosk-Modus starten?',
-    message: 'Dieses Gerät zeigt danach nur noch die Kasse (Buchen und Rückgängig). Menü, Anmeldung und alle anderen Seiten sind gesperrt. Beenden: den Titel oben 3 Sekunden gedrückt halten und mit einem Konto anmelden, das den Kiosk-Modus beenden darf. Für ein wirklich gesperrtes iPad zusätzlich „Geführten Zugriff“ einschalten.',
+    message: 'Dieses Gerät zeigt danach nur noch die Kasse (Buchen und Rückgängig). Menü, Anmeldung und alle anderen Seiten sind gesperrt. Beenden: einmal auf „Kiosk-Modus beenden“ unter der Kasse tippen. Für ein wirklich gesperrtes iPad zusätzlich „Geführten Zugriff“ einschalten.',
     okText: 'Starten'
   });
   if (!ok) return;
@@ -4755,43 +4688,20 @@ window.startKiosk = async function () {
   window.applyPermissionUi();
   window.switchView('verkauf');
 };
-window.exitKioskDialog = async function () {
+window.exitKioskDialog = function () {
   if (!window.kioskActive) return;
-  const roleOpts = window.rolesData.filter((r) => r.hasPw && r.id !== 'gast' && r.perms.indexOf('system.kiosk') >= 0).map((r) => ({ value: 'role:' + r.id, label: 'Rollen-Passwort: ' + r.name }));
-  const v = await window.uiForm({
-    title: 'Kiosk-Modus beenden',
-    fields: [
-      { key: 'kind', label: 'Anmelden mit', type: 'select', value: 'user', options: [{ value: 'user', label: 'Benutzername und Passwort' }].concat(roleOpts) },
-      { key: 'name', label: 'Benutzername (nur bei „Benutzername und Passwort“)', type: 'text', value: '' },
-      { key: 'password', label: 'Passwort', type: 'password', value: '' }
-    ],
-    okText: 'Beenden'
-  });
-  if (!v) return;
-  const payload = v.kind === 'user' ? { kind: 'user', name: v.name, password: v.password } : { kind: 'role', role: String(v.kind).slice(5), password: v.password };
-  const res = await postJson(Object.assign({ action: 'login' }, payload));
-  if (!res) { notify('Keine Verbindung. Zum Beenden des Kiosk-Modus wird Internet gebraucht.'); return; }
-  if (res.status !== 'success') { notify(res.message || 'Falsche Anmeldedaten.'); return; }
-  if (res.perms.indexOf('system.kiosk') < 0) {
-    postJson({ action: 'logout', token: res.token });
-    notify('Mit diesem Konto darf der Kiosk-Modus nicht beendet werden.');
-    return;
-  }
-  if (window.session && window.session.token) postJson({ action: 'logout', token: window.session.token });
   try { localStorage.setItem('kiosk', '0'); } catch (e) { /* egal */ }
   window.kioskActive = false;
-  window.session = { token: res.token, user: res.user || '', roles: res.roles || [], perms: res.user ? res.perms : [] };
-  lsSet('session4', window.session);
-  if (!window.roleById(res.role.id)) window.rolesData.push({ id: res.role.id, name: res.role.name, desc: '', perms: res.perms, hasPw: true, builtin: false });
-  window.setRole(res.role.id, { user: res.user || '', perms: res.perms });
-  window.refreshRoles();
+  applyKioskUi();
+  window.applyPermissionUi();
+  window.switchView('verkauf');
   notify('Kiosk-Modus beendet.');
 };
 function setupKioskExit() {
   const h = document.getElementById('headerTitle');
   if (!h || !h.addEventListener) return;
   let timer = null;
-  const start = () => { if (!window.kioskActive) return; clearTimeout(timer); timer = setTimeout(() => window.exitKioskDialog(), 3000); };
+  const start = () => { if (!window.kioskActive) return; clearTimeout(timer); timer = setTimeout(() => window.exitKioskDialog(), 1500); };
   const stop = () => clearTimeout(timer);
   ['touchstart', 'mousedown'].forEach((ev) => h.addEventListener(ev, start));
   ['touchend', 'touchcancel', 'mouseup', 'mouseleave'].forEach((ev) => h.addEventListener(ev, stop));
@@ -4803,18 +4713,7 @@ function setupKioskExit() {
 window.hourlyData = null;
 window.hourlyNote = '';
 const PRODUCT_HEX = { rose: '#f43f5e', amber: '#f59e0b', emerald: '#10b981', sky: '#0ea5e9', violet: '#8b5cf6', orange: '#f97316', teal: '#14b8a6', fuchsia: '#d946ef' };
-window.loadHourly = async function () {
-  if (!window.can('view.statistik')) return;
-  if (!window.session || !window.session.token) {
-    window.hourlyNote = 'Bitte einmal abmelden und neu anmelden, dann erscheinen hier die Verkäufe pro Stunde.';
-    renderHourly();
-    return;
-  }
-  const r = await getJson('hourly', { token: window.session.token });
-  if (r && r.status === 'success') { window.hourlyData = r; window.hourlyNote = ''; }
-  else window.hourlyNote = r ? (r.code === 'auth' ? 'Die Anmeldung ist abgelaufen. Bitte neu anmelden.' : 'Dafür fehlt dir die Berechtigung.') : 'Keine Verbindung.';
-  renderHourly();
-};
+window.loadHourly = async function () { /* Verkäufe pro Stunde entfallen */ };
 function hourlyColumns(data, prods) {
   const hours = {};
   prods.forEach((p) => Object.keys(data[p.id] || {}).forEach((h) => { hours[h] = true; }));
@@ -4971,7 +4870,7 @@ window.removeBeleg = async function (id) {
   window.renderStatistik(true);
 };
 
-// ---------- Abrechnung: CSV und Druck (PDF ueber den Druckdialog) ----------
+// ---------- Abrechnung: CSV und Excel ----------
 function reportData() {
   const f = window.getFinance();
   const cfg = window.kasseCfg;
@@ -5036,12 +4935,7 @@ window.exportCsv = function () {
 };
 window.exportPrint = async function () {
   if (!window.can('finance.export')) return;
-  const v = await window.uiForm({
-    title: 'Abrechnung drucken oder als PDF sichern',
-    fields: [{ key: 'belege', label: 'Fotos der Belege hinten anhängen (braucht Internet)', type: 'checkbox', value: false }],
-    okText: 'Weiter'
-  });
-  if (!v) return;
+  const v = { belege: false };
   const d = reportData();
   const e2 = (x) => escapeHtml(x);
   const table = (head, body) => `<table><thead><tr>${head.map((h) => `<th>${e2(h)}</th>`).join('')}</tr></thead><tbody>${body.map((r) => `<tr>${r.map((c) => `<td>${e2(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
@@ -5771,11 +5665,12 @@ function archivSnapshot() {
 window.archivSnapshot = archivSnapshot;
 window.archiveSeason = async function (label) {
   if (!window.can('archiv.create')) return false;
-  if (archivStore.items().length >= 8) { notify('Das Archiv ist voll (8 Saisons). Bitte zuerst eine alte Saison löschen.'); return false; }
   const snap = archivSnapshot();
   const name = String(label || '').trim() || 'Weihnachtsmarkt ' + snap.year;
   const id = newId('ar');
   archivStore.apply({ op: 'save', item: { id: id, label: name, year: snap.year, at: Date.now(), by: l4Who(), json: JSON.stringify(snap) } });
+  // Es bleiben nur die letzten 2 Saisons erhalten
+  archivStore.items().slice().sort((a, b) => (b.at || 0) - (a.at || 0)).slice(2).forEach((x) => archivStore.apply({ op: 'del', id: x.id }));
   archivOpen = id;
   renderArchiv();
   return true;
@@ -5818,10 +5713,10 @@ function renderArchiv() {
   const open = items.find((x) => x.id === archivOpen);
   const detail = open ? (() => {
     const t = archivTables(open);
-    return `<div class="rounded-xl border border-amber-500/40 p-3 space-y-2"><div class="flex flex-wrap items-center justify-between gap-2"><h4 class="font-extrabold text-sm">${escapeHtml(open.label)}</h4><button type="button" onclick="printArchiv('${escapeHtml(open.id)}')" class="${L4_SMALL}">🖨️ Drucken / als PDF sichern</button></div><div class="archiv-tables overflow-x-auto text-xs">${t.html}</div></div>`;
+    return `<div class="rounded-xl border border-amber-500/40 p-3 space-y-2"><div class="flex flex-wrap items-center justify-between gap-2"><h4 class="font-extrabold text-sm">${escapeHtml(open.label)}</h4><button type="button" onclick="printArchiv('${escapeHtml(open.id)}')" class="${L4_SMALL}">📊 Excel</button></div><div class="archiv-tables overflow-x-auto text-xs">${t.html}</div></div>`;
   })() : '';
   root.innerHTML = `${window.can('archiv.create') ? `<div class="flex flex-wrap gap-2"><button type="button" onclick="archiveSeasonPrompt()" class="${L4_ADD}">🗂️ Saison jetzt archivieren</button></div>` : ''}
-    <p class="text-[11px] text-slate-500 dark:text-slate-400">Das Archiv hält bis zu 8 Saisons mit Umsatz, Ausgaben, Gewinn und Kassensturz. Beim Saison-Reset kann automatisch vorher archiviert werden.</p>
+    <p class="text-[11px] text-slate-500 dark:text-slate-400">Das Archiv hält die letzten 2 Saisons mit Umsatz, Ausgaben, Gewinn und Kassensturz. Beim Saison-Reset kann automatisch vorher archiviert werden.</p>
     ${list || '<div class="text-xs text-slate-500 dark:text-slate-400">Noch keine Saison archiviert.</div>'}${detail}`;
 }
 window.renderArchiv = renderArchiv;
@@ -5890,7 +5785,7 @@ const L4_INFO_DEFAULT = [
   '',
   '## Gut zu wissen',
   '- Alle Seiten findest du im Menü links unter „Weihnachtsmarkt“ (auf dem Handy: ☰ oben rechts).',
-  '- Unter „Hilfe“ steht, was jede Seite kann.',
+  '- Was jede Seite kann, steht im Hub unter „Hilfe“.',
   '- Einträge klappen auch ohne Internet. Sie werden später automatisch nachgeschickt.'
 ].join('\n');
 function infoItem() {
@@ -5946,79 +5841,6 @@ window.resetAushangInfo = function () {
   renderAushangLists();
 };
 
-// ---------- Hilfe: zeigt nur, was für die aktuelle Anmeldung freigegeben ist ----------
-const HILFE = [
-  { view: 'aushang', icon: '📌', title: 'Aushang', text: 'Hier steht, wer an welchem Tag zu welcher Zeit am Stand hilft. Ganz oben findest du den Infotext und, wenn er eingestellt ist, den Countdown bis zum Markt. Darunter folgen Samstag und Sonntag mit den Zeitfenstern, der Spalte „Aufsicht (Ü18)“ und dem Waffelteig. In der Karte „Meine Schichten“ stehen deine eigenen Einträge auf einen Blick.', steps: [
-    ['aushang.signup', 'Auf „Eintragen“ tippen, Namen eingeben, fertig. Mit dem ✕ trägst du dich wieder aus.'],
-    ['aushang.signup', 'Beim Waffelteig tippst du auf einen freien Platz und trägst deinen Namen ein. Ist eine Zeile voll, steht dort „voll“.'],
-    ['aushang.unsignOthers', 'Du kannst auch andere Einträge austragen.'],
-    ['aushang.editRows', 'Mit ✏️, ⬆️ und ⬇️ änderst und sortierst du Zeilen. Die Höchstbesetzung stellst du je Zeile ein, getrennt für Name und Aufsicht. Null bedeutet unbegrenzt.'],
-    ['aushang.editTeig', 'Mit „+ Platz“ und „− Platz“ änderst du die Zahl der Teig-Plätze.'],
-    ['aushang.print', 'Mit „Drucken“ entsteht ein DIN-A4-Blatt je Tag. Es öffnet sich eine Vorschau mit eigenem Druck-Knopf. Am iPad kannst du über Teilen ein PDF sichern.'],
-    ['aushang.editInfo', 'Den Infotext ganz oben änderst du mit „Bearbeiten“. Überschriften, Listen und fette Wörter sind möglich.']] },
-  { view: 'verkauf', icon: '💶', title: 'Kasse', text: 'Die Kasse zählt, was am Stand verkauft wird: Waffeln, Punsch und alles, was ihr eingerichtet habt. Alle Geräte buchen auf denselben Stand, du kannst also an mehreren Kassen gleichzeitig arbeiten. Bezahlte Stück und „Helfer (gratis)“ werden getrennt gezählt. Die Summen fließen in die Abrechnung ein.', steps: [
-    ['kasse.book', 'Auf + tippen bucht, auf − oder „Rückgängig“ nimmt die letzte Buchung zurück. Ohne Internet wird lokal gespeichert und später nachgeschickt.'],
-    ['kasse.practice', 'Im Übungsmodus kannst du üben, ohne dass etwas zählt.'],
-    ['kasse.sturz', 'Beim Kassensturz zählst du das Bargeld nach Münzen und Scheinen von 1 ct bis 100 €. Die App zeigt die Differenz zum Soll.'],
-    ['kasse.report', 'Der Tagesbericht ist ein Blatt mit Verkäufen, Spendenente, Kassensturz und, wenn du die Statistik sehen darfst, den Verkäufen pro Stunde. Du kannst ihn drucken oder als PDF sichern.'],
-    ['kasse.close', 'Mit „Tag abschließen“ sperrst du den Tag gegen weitere Buchungen.'],
-    ['kasse.reopen', 'Ein abgeschlossener Tag lässt sich wieder öffnen.'],
-    ['kasse.correct', 'Zahlen kannst du über „Korrigieren“ direkt eintragen.'],
-    ['system.kiosk', 'Der Kiosk-Modus sperrt ein Gerät auf die Kasse. Beenden: Titel oben 3 Sekunden gedrückt halten.']] },
-  { view: 'statistik', icon: '📊', title: 'Statistik', text: 'Die Statistik zeigt Umsatz, Ausgaben und Gewinn je Tag und insgesamt. Dazu gibt es ein Diagramm mit den Verkäufen pro Stunde: Jede Buchung wird mit Uhrzeit gespeichert und nach vollen Stunden zusammengezählt. Hier trägst du auch Standgebühr, Spendenente und Ausgaben ein.', steps: [
-    ['finance.expenseAdd', 'Ausgaben trägst du mit Betrag und Verwendungszweck ein.'],
-    ['finance.receipt', 'Zu jeder Ausgabe kannst du ein Foto oder PDF als Beleg anhängen (mit Internet).'],
-    ['finance.export', 'Die Abrechnung gibt es als CSV oder zum Drucken. Unter der Statistik buchst du Ausgaben (jederzeit) und Einnahmen (nach Abschluss von Samstag und Sonntag) in die Jugendkasse.']] },
-  { view: 'rezepte', icon: '🧇', title: 'Rezepte', text: 'Die Rezepte für Waffeln und Punsch mit allen Zutaten und Mengen. Beim Punsch rechnet der Rechner die Zutaten auf die Menge um, die ihr zubereiten wollt. Mit dem entsprechenden Recht kannst du Zutaten ändern und eigene Rezepte anlegen.', steps: [] },
-  { view: 'aufbau', icon: '🧰', title: 'Auf- & Abbau', text: 'Alles zum Standaufbau an einem Ort: der Ablauf zum Abhaken für Aufbau und Abbau, die Abnahme-Checkliste vor der Öffnung, die Standskizze, Hinweise und Fotos. Erledigtes sehen alle Geräte sofort.', steps: [
-    ['aufbau.check', 'Erledigte Schritte hakst du ab. Aufbau und Abbau haben jeweils einen eigenen Zähler.'],
-    ['abnahme.check', 'In der Abnahme hakst du die Prüfpunkte ab. Dabei werden Name und Uhrzeit gespeichert.'],
-    ['abnahme.sign', 'Zum Schluss bestätigt eine Person die Abnahme.'],
-    ['skizze.edit', 'In der Standskizze verschiebst du die Elemente mit dem Finger. Antippen wählt ein Element aus. Am gelben Griff unten rechts ziehst du es in die richtige Größe. Die Maße stehen in Zentimetern am Element, genaue Werte tippst du unter „Maße“ ein.'],
-    ['skizze.edit', 'Jedes Element hat eine Ebene (Boden, Möbel, Geräte, Oben) und lässt sich nach vorn oder hinten stellen. Liegen zwei Elemente auf derselben Ebene übereinander, werden sie rot markiert.'],
-    ['skizze.edit', 'Mit „Hütte anlegen“ zeichnest du die Hütte. „Öffnung“ fügt Tür, Fenster oder Verkaufsklappe in eine Wand ein. „Standfläche“ stellt die Größe des ganzen Plans ein.'],
-    ['aufbau.print', 'Mit „Drucken“ entsteht der Aufbauplan als Blatt.']] },
-  { view: 'inventar', icon: '📦', title: 'Inventar', text: 'Das Inventar listet alles, was für den Stand gebraucht wird, nach Kategorien: Bedarf (wie viel brauchen wir, mit Einheit im selben Feld, zum Beispiel „12 Kartons“ oder „22,5 l“), Lager (wie viel ist da), Status und Box. Mit dem Einkaufswagen setzt du einen Artikel auf die Einkaufsliste. Bei Artikeln, deren Bestand ihr nicht zählt, lässt sich die Spalte „Lager“ im Bearbeiten-Modus pro Zeile ausblenden.', steps: [] },
-  { view: 'einkaufsliste', icon: '🛒', title: 'Einkaufsliste', text: 'Die Einkaufsliste zeigt, was noch gekauft werden muss: Bedarf minus Lager. Im Feld „Bedarf“ stehen Zahl und Einheit zusammen („12 Kartons“), im Feld „Packungsgröße“ ebenso („6 Btl.“). Dazu kommen Preis und Laden. Gekauftes hakst du ab.', steps: [] },
-  { view: 'verkabelung', icon: '⚡', title: 'Strom & Verkabelung', text: 'Der Stromplan rechnet nach, ob die Verkabelung hält. Du ziehst Kabel, Mehrfachstecker und Geräte auf die Stecker. Grün heißt in Ordnung, Gelb über 80 % der Belastbarkeit, Rot überlastet. Bei Rot steht dabei, warum und welche Grenze gilt. Bei einem Drehstrom-Anschluss (Starkstrom) stellst du oben „Drehstrom (3 Phasen)“ ein, dann gilt die Grenze je Phase. Der Plan ist eine Rechenhilfe und ersetzt nicht den Blick auf Absicherung und Typenschilder.', steps: [
-    ['strom.watt', 'Mit ✎ an einer Karte trägst du Watt ein. Leer gelassen gilt wieder der Wert aus dem Inventar.'],
-    ['strom.plan', 'Karten ziehst du auf die Steckdosen.'],
-    ['strom.print', 'Der Stromplan lässt sich drucken.']] },
-  { view: 'lagerbestand', icon: '🏬', title: 'Lagerbestand', text: 'Der Bestand im Lager auf einen Blick, so wie er im Inventar bei „Lager“ steht.', steps: [] },
-  { view: 'boxen', icon: '📥', title: 'Kisten & Boxen', text: 'Hier siehst du, was in welcher Kiste liegt. Die Zuordnung kommt aus dem Inventar, wo jeder Artikel eine Box bekommt.', steps: [] },
-  { view: 'leihgaben', icon: '🤝', title: 'Leihgaben', text: 'Geliehene Sachen mit Verleiher, Kontakt, Abholung und Rückgabe, gruppiert nach „Noch zu besorgen“, „Vor Ort“ und „Zurückgegeben“. Was nach dem Rückgabedatum noch nicht zurück ist, wird rot als überfällig markiert.', steps: [
-    ['leihgaben.status', 'Mit „Offen“, „Vor Ort“ und „Zurück“ hältst du den Stand fest.'],
-    ['leihgaben.add', 'Neue Leihgaben legst du mit „➕ Leihgabe“ an.']] },
-  { view: 'admin', icon: '🛡️', title: 'Admin-Panel', text: 'Hier stellst du den Markt ein: Preise und Produkte, Countdown und Aushang, außerdem Benutzer, Rollen und Rechte. Die Registerkarten oben trennen Verwaltung, Benutzer und Zugang.', steps: [
-    ['archiv.create', 'Unter „Saison-Archiv“ hältst du die Zahlen einer Saison fest.'],
-    ['system.reset', 'Der Saison-Reset setzt für die neue Saison zurück. Auf Wunsch wird vorher archiviert.'],
-    ['system.backup', 'Sicherungen und Backups findest du im Bereich Daten.']] },
-  { view: 'status', icon: '🩺', title: 'Systemstatus', text: 'Zeigt, ob die Verbindung zum Sheet steht, welche Versionen laufen, wann zuletzt abgeglichen wurde und ob Änderungen noch warten. Praktisch, wenn etwas nicht aktuell wirkt.', steps: [] },
-  { view: 'protokoll', icon: '📝', title: 'Änderungsprotokoll', text: 'Wer hat wann was geändert, mit Suche und Filter nach Bereich. So lässt sich nachvollziehen, woher eine Zahl kommt.', steps: [] }
-];
-function renderHilfe() {
-  const root = document.getElementById('hilfeRoot');
-  if (!root) return;
-  const canSome = (perm) => !perm || window.can(perm);
-  const who = window.isLoggedIn() ? 'Du bist angemeldet' + (window.currentUserName ? ' als ' + window.currentUserName : '') + '.' : 'Du bist als Gast unterwegs.';
-  const general = `<div class="${L4_CARD}"><h3 class="font-black text-base text-slate-900 dark:text-slate-100">👋 Allgemein</h3>
-    <p class="text-xs text-slate-600 dark:text-slate-300">${escapeHtml(who)} Hier stehen nur die Seiten und Funktionen, die für deine Anmeldung freigegeben sind.</p>
-    <ul class="text-xs text-slate-700 dark:text-slate-200 space-y-1 list-disc pl-5">
-      <li>Alle Seiten findest du im Menü links unter „Weihnachtsmarkt“ (auf dem Handy: ☰ oben rechts).</li>
-      <li>Mit „Anmelden / Rolle wechseln“ meldest du dich an oder wechselst die Rolle. Was du sehen darfst, legt der Administrator fest.</li>
-      ${window.currentUserName && window.can('account.password') ? '<li>Dein Passwort änderst du im Menü unter „Passwort ändern“. Vergessen? Dann setzt es ein Administrator neu.</li>' : ''}
-      <li>Änderungen werden sofort auf alle Geräte verteilt. Ohne Internet speichert dein Gerät zuerst lokal und schickt später nach.</li>
-      <li>Auf dem iPad lässt sich die Seite über Teilen und „Zum Home-Bildschirm“ wie eine App ablegen.</li>
-    </ul></div>`;
-  const sections = HILFE.filter((h) => window.can('view.' + h.view)).map((h) => {
-    const steps = h.steps.filter((s) => canSome(s[0])).map((s) => `<li>${escapeHtml(s[1])}</li>`).join('');
-    return `<div class="${L4_CARD}"><div class="flex flex-wrap items-center justify-between gap-2"><h3 class="font-black text-base text-slate-900 dark:text-slate-100">${h.icon} ${escapeHtml(h.title)}</h3><button type="button" onclick="switchView('${h.view}')" class="${L4_SMALL}">Seite öffnen</button></div>
-      <p class="text-xs text-slate-600 dark:text-slate-300">${escapeHtml(h.text)}</p>${steps ? `<ul class="text-xs text-slate-700 dark:text-slate-200 space-y-1 list-disc pl-5">${steps}</ul>` : ''}</div>`;
-  }).join('');
-  root.innerHTML = general + sections;
-}
-window.renderHilfe = renderHilfe;
-window.HILFE = HILFE;
 
 
 function renderAdmin() {
@@ -6312,64 +6134,38 @@ function setupTableCards() {
 function skelHtml(n) {
   return Array.from({ length: n || 3 }, () => '<div class="wm-skel h-16 mb-3"></div>').join('');
 }
-// Druck: Das Druckfenster muss auf dem iPad direkt beim Antippen geoeffnet werden (nicht erst nach einer Wartezeit),
-// sonst blockiert iOS es. Falls es trotzdem nicht aufgeht, erscheint kurz eine Taste zum Antippen.
-let printFallbackEl = null;
-window.getPrintFallback = function () { return printFallbackEl; };
-function removePrintFallback() {
-  if (printFallbackEl) { try { printFallbackEl.remove(); } catch (e) { /* egal */ } }
-  printFallbackEl = null;
-}
-// Druck in einem eigenen Tab: Das Blatt steht allein auf einer weißen Seite. Das funktioniert auf dem iPad zuverlässiger
-// als das Drucken der Portalseite. Oben stehen eine Drucken-Taste und der Hinweis auf Teilen / In Dateien sichern (PDF).
-const PRINT_DOC_CSS = 'body{margin:0;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;font-size:11pt}' +
-  '.bar{position:sticky;top:0;display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px 14px;background:#f1f5f9;border-bottom:1px solid #cbd5e1;font:600 13px system-ui,sans-serif}' +
-  '.bar button{padding:10px 16px;border:0;border-radius:10px;background:#f59e0b;color:#0f172a;font:800 15px system-ui,sans-serif}' +
-  '#printSheet{max-width:210mm;margin:0 auto;padding:14mm}' +
-  '@page{size:A4;margin:14mm}@media print{.bar{display:none}#printSheet{padding:0;max-width:none}}' +
-  'h1{font-size:24pt;font-weight:400;margin:0}h2{font-size:16pt;font-weight:400;margin:12pt 0 4pt}h3{font-size:12pt;margin:10pt 0 2pt}' +
-  '.ps-head{display:flex;justify-content:space-between;align-items:flex-start}.ps-head img{max-height:20mm;max-width:45mm}' +
-  '.ps-page{page-break-after:always;page-break-inside:avoid}.ps-page:last-child{page-break-after:auto}' +
-  'table{width:100%;border-collapse:collapse;margin-top:4pt;page-break-inside:avoid}th,td{border:1px solid #000;padding:5pt 6pt;text-align:left;vertical-align:top}th{background:#eee;font-weight:700}' +
-  '.ps-slots td,.ps-teig td{padding:3pt 6pt;box-sizing:border-box}.ps-slots .c1{width:24%}.ps-slots .c3{width:20%}.ps-teig td{width:50%}' +
-  '.ps-img{page-break-inside:avoid;margin:6pt 0}.ps-img img{max-width:100%;max-height:120mm}svg{max-width:100%;height:auto}';
-function openPrintWindow(html) {
-  let w = null;
-  try { w = window.open('', '_blank'); } catch (e) { w = null; }
-  if (!w) return false;
-  try {
-    w.document.open();
-    w.document.write('<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Drucken</title><style>' + PRINT_DOC_CSS + '</style></head><body>' +
-      '<div class="bar"><button type="button" onclick="window.print()">🖨️ Drucken</button><span>iPad: Alternativ oben auf Teilen tippen, dann „Drucken“ oder „In Dateien sichern“ (PDF).</span></div><div id="printSheet">' + html + '</div></body></html>');
-    w.document.close();
-    try { w.focus(); } catch (e) { /* egal */ }
-  } catch (e) { return false; }
-  return true;
-}
-window.printHtml = function (html) {
-  if (openPrintWindow(html)) return;
-  let sheet = document.getElementById('printSheet');
-  if (!sheet) {
-    sheet = mk('div', { id: 'printSheet' });
-    document.body.appendChild(sheet);
-  }
-  sheet.innerHTML = html;
-  removePrintFallback();
-  let fired = false;
-  const onAfter = () => { fired = true; removePrintFallback(); if (window.removeEventListener) window.removeEventListener('afterprint', onAfter); };
-  if (window.addEventListener) window.addEventListener('afterprint', onAfter);
-  const standalone = !!(window.navigator && window.navigator.standalone) || !!(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
-  if (standalone) notify('Falls kein Druckfenster erscheint: In der Home-Bildschirm-App kann iOS nicht drucken. Öffne das Portal dann in Safari.');
-  try { window.print(); } catch (e) { /* siehe Taste unten */ }
-  setTimeout(() => {
-    if (fired || printFallbackEl) return;
-    const btn = mk('button', { class: 'fixed right-4 bottom-20 z-[80] px-5 py-3 rounded-2xl bg-amber-500 text-slate-950 font-black shadow-2xl border border-amber-600', text: '🖨️ Drucken' });
-    btn.onclick = () => { removePrintFallback(); if (openPrintWindow(html)) return; try { window.print(); } catch (e) { notify('Drucken ist hier nicht möglich. Öffne das Portal in Safari.'); } };
-    document.body.appendChild(btn);
-    printFallbackEl = btn;
-    setTimeout(() => { if (printFallbackEl === btn) removePrintFallback(); }, 12000);
-  }, 700);
+// Excel statt Druck: Die Blätter werden als HTML aufgebaut und hier in eine Excel-Datei umgewandelt
+// (gleicher Erzeuger wie im Hub: hub-xlsx.js). Jede Tabelle wird ein Blatt, Überschriften geben den Namen.
+window.printHtml = function (html, fileBase) {
+  if (!window.HubXlsx) { notify('Excel konnte nicht erstellt werden. Bitte Seite neu laden.'); return; }
+  const box = document.createElement('div');
+  box.innerHTML = html;
+  const cellText = (el) => { const c = el.cloneNode(true); c.querySelectorAll('br').forEach((br) => br.replaceWith('\n')); return (c.textContent || '').replace(/[ \t]+/g, ' ').replace(/ ?\n ?/g, '\n').trim(); };
+  let title = '', sub = [], h1 = '', h2 = '';
+  const sheets = [], used = {}, notes = [];
+  box.querySelectorAll('h1,h2,h3,p,table').forEach((el) => {
+    const t = el.tagName;
+    if (t === 'H1') { h1 = cellText(el); if (!title) title = h1; return; }
+    if (t === 'H2') { h2 = cellText(el); return; }
+    if (t === 'H3') { notes.push([cellText(el), '']); return; }
+    if (t === 'P') { const x = cellText(el); if (!x) return; if (!sheets.length && !title.length === false && sub.length < 2 && !h2) sub.push(x); else notes.push([x, '']); return; }
+    const trs = Array.from(el.querySelectorAll('tr'));
+    if (!trs.length) return;
+    const th = trs[0].querySelectorAll('th').length ? Array.from(trs[0].children).map(cellText) : null;
+    const body = trs.slice(th ? 1 : 0).map((tr) => Array.from(tr.children).map(cellText));
+    const cols = Math.max(th ? th.length : 0, ...body.map((r) => r.length));
+    let name = (h2 || h1 || 'Blatt').replace(/[\\\/?*\[\]:]/g, ' ').slice(0, 31) || 'Blatt';
+    const base = name; let n = 2; while (used[name]) name = base.slice(0, 28) + ' ' + n++;
+    used[name] = 1;
+    const w = Array.from({ length: cols }, (_, i) => Math.min(60, Math.max(10, ...body.map((r) => String(r[i] || '').split('\n').reduce((m, l) => Math.max(m, l.length), 0)), th ? String(th[i] || '').length : 0) + 2));
+    sheets.push({ name, head: th || Array.from({ length: cols }, (_, i) => (i === 0 ? (h2 || '') : '')), rows: body.map((r) => Array.from({ length: cols }, (_, i) => r[i] || '')), w });
+  });
+  if (notes.length) sheets.push({ name: 'Hinweise', head: ['Hinweis', ''], rows: notes, w: [90, 4] });
+  if (!sheets.length) { notify('Es gibt nichts zu exportieren.'); return; }
+  const file = (fileBase || title || 'Weihnachtsmarkt').replace(/[^A-Za-z0-9ÄÖÜäöüß]+/g, '_').replace(/^_+|_+$/g, '') + '.xlsx';
+  window.HubXlsx.list({ file, title: title || 'Weihnachtsmarkt', sub: sub.join(' · '), sheets });
 };
+window.getPrintFallback = function () { return null; };
 function siteLogoSrc() {
   const img = document.querySelector ? document.querySelector('.navbar-brand img') : null;
   return img && img.src ? img.src : '';
@@ -6621,7 +6417,7 @@ function renderAushangLists() {
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${teigCells || '<div class="text-xs text-slate-500 dark:text-slate-400">Noch keine Plätze.</div>'}</div>
       </div>
-      ${canPrint ? `<div class="pt-2"><button type="button" onclick="window.printAushang('${day}')" class="${btn} bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200">🖨️ Als DIN-A4-Blatt drucken</button></div>` : ''}`;
+      ${canPrint ? `<div class="pt-2"><button type="button" onclick="window.printAushang('${day}')" class="${btn} bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200">📊 Excel</button></div>` : ''}`;
   });
   renderAushangMine();
   renderCountdown();
@@ -6898,7 +6694,7 @@ function aushangPrintPage(day) {
 }
 window.aushangPrintPage = aushangPrintPage;
 window.printAushang = function (day) {
-  if (!window.can('aushang.print')) { notify('Drucken ist für deine Anmeldung nicht freigegeben.'); return; }
+  if (!window.can('aushang.print')) { notify('Excel ist für deine Anmeldung nicht freigegeben.'); return; }
   const days = day === 'beide' ? ['samstag', 'sonntag'] : [day];
   window.printHtml(days.map((x) => '<div class="ps-page">' + aushangPrintPage(x) + '</div>').join(''));
 };
@@ -7127,7 +6923,7 @@ window.openAufbauImage = function (id) {
   if (rec && rec.data) window.openLightbox(rec.data, it.title);
 };
 window.printAufbau = function () {
-  if (!window.can('aufbau.print')) { notify('Drucken ist für deine Anmeldung nicht freigegeben.'); return; }
+  if (!window.can('aufbau.print')) { notify('Excel ist für deine Anmeldung nicht freigegeben.'); return; }
   const items = aufbauStore.items();
   const allSteps = items.filter((x) => x.kind === 'step');
   const notes = items.filter((x) => x.kind === 'note');
@@ -7191,7 +6987,7 @@ document.addEventListener('keydown', (e) => {
 // 8. START
 // ------------------------------------------
 window.rerenderAll = function () {
-  [window.renderKasse, window.renderStatistik, window.renderInventar, renderEinkaufsliste, renderLagerbestand, renderVerkabelung, renderBoxen, renderAushangLists, renderAufbau, renderLeihgaben, renderHilfe, renderArchiv, renderRezepte, renderAdmin, renderLogin].forEach((fn) => {
+  [window.renderKasse, window.renderStatistik, window.renderInventar, renderEinkaufsliste, renderLagerbestand, renderVerkabelung, renderBoxen, renderAushangLists, renderAufbau, renderLeihgaben, renderArchiv, renderRezepte, renderAdmin, renderLogin].forEach((fn) => {
     try { fn(); } catch (e) { console.warn('Neu zeichnen fehlgeschlagen:', e); }
   });
 };

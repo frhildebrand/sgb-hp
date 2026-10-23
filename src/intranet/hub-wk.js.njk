@@ -164,7 +164,7 @@ templateEngineOverride: false
     var views = [['check', 'Checkliste'], ['uebersicht', 'Starts'], ['gericht', 'Kampfgericht'], ['docs', 'Unterlagen']]; if (M.anyCan(['wettkaempfe.zeiten', 'wettkaempfe.vorort'])) views.splice(2, 0, ['vorort', 'Vor Ort']); if (wk.meld && (wk.meld.starts || []).some(function (s) { return s.j === 'Staffel'; })) views.splice(2, 0, ['staffel', 'Staffeln']); if (Object.keys(wk.res || {}).length && M.anyCan(['wettkaempfe.artikel', 'wettkaempfe.import', 'wettkaempfe.zeiten'])) views.push(['artikel', 'Artikel']);
     var canPrint = M.can('wettkaempfe.print'); var canImp = M.anyCan(['wettkaempfe.import', 'wettkaempfe.anlegen']);
     var out = '<section class="wm-card"><div class="wm-bar"><button type="button" class="wm-btn" data-ma="wkback">← Alle Wettkämpfe</button><span class="m-actions">' +
-      (canPrint ? '<button type="button" class="wm-btn" data-ma="wkprint">🖨️ Drucken</button>' : '') +
+      (canPrint ? '<button type="button" class="wm-btn" data-ma="wkprint">📊 Excel</button>' : '') +
       (canImp ? '<button type="button" class="wm-btn" data-ma="wkedit">✏️</button>' : '') + (M.anyCan(['wettkaempfe.import', 'wettkaempfe.loeschen']) ? '<button type="button" class="wm-btn m-danger" data-ma="wkdel">🗑️</button>' : '') + '</span></div>' +
       '<h3 class="m-h2" style="margin:6px 0 2px">' + esc(wk.title) + '</h3><div class="wm-sub">' + [fd(wk.date), esc(wk.ort || ''), esc(wk.veranstalter ? 'Veranstalter: ' + wk.veranstalter : ''), esc(wk.becken || ''), esc(wk.temp ? 'Wasser ' + wk.temp : '')].filter(Boolean).join(' · ') + '</div>' +
       (wk.stand ? '<div class="wm-sub">Stand des Meldeergebnisses: ' + esc(wk.stand.replace(/^(\d{4})-(\d{2})-(\d{2})/, '$3.$2.$1')) + '</div>' : '') + '<div class="wk-prog" style="margin-top:8px">' + M.prog(done(wk), STEPS) + ' <span class="wm-sub">erledigt</span></div>' + warnHtml(wk) + '</section>';
@@ -588,10 +588,6 @@ templateEngineOverride: false
   }
   var NEW_FIELDS = [{ k: 'title', t: 'text', label: 'Name des Wettkampfs', req: true }, { k: 'date', t: 'date', label: 'Datum', req: true }, { k: 'ort', t: 'text', label: 'Ort' }, { k: 'bahn', t: 'sel', label: 'Bahnlänge', opts: [['', 'automatisch aus dem Meldeergebnis'], ['25', 'Kurzbahn (25 m)'], ['50', 'Langbahn (50 m)']] }, { k: 'meldeschluss', t: 'date', label: 'Meldeschluss' }, { k: 'intMs', t: 'date', label: 'Interner Meldeschluss' }];
 
-  function startLine(wk, st, withName) {
-    var e = ev(wk, st.e);
-    return '<tr><td class="nowrap"><b>' + esc(st.t) + '</b></td><td>' + (withName ? '<b>' + esc(st.n) + '</b> (' + esc(st.j) + ')<br>' : '') + 'WK ' + st.e + ' · ' + esc(e.name) + '</td><td class="nowrap">Lauf ' + st.l + '/' + st.lt + '<br>Bahn ' + st.b + '</td><td class="nowrap">' + (st.m ? esc(st.m) : '<span class="wm-sub">ohne</span>') + '</td></tr>';
-  }
   function viewAblauf(wk) {
     var st = sortStarts(wk); var out = '<section class="wm-card"><div class="wm-bar"><h3>Ablauf nach Uhrzeit</h3></div>';
     (wk.abschnitte || []).forEach(function (a) { out += '<div class="wm-sub" style="margin-top:6px"><b>Abschnitt ' + a.no + '</b>' + (a.tag ? ' · ' + esc(a.tag) : '') + (a.einlass ? ' · Einlass ' + esc(a.einlass) : '') + (a.einschwimmen ? ' · Einschwimmen ' + esc(a.einschwimmen) : '') + (a.kr ? ' · Kampfrichtersitzung ' + esc(a.kr) : '') + (a.beginn ? ' · Beginn ' + esc(a.beginn) : '') + '</div>'; });
@@ -689,33 +685,37 @@ templateEngineOverride: false
     return out + '</section>';
   }
 
-  /* ---------- Drucken ---------- */
+  /* ---------- Excel (statt Drucken) ---------- */
   function printMenu(wk) {
-    M.openDlg('<div class="hub-dhead"><h3>Drucken</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div><div class="m-btns" style="flex-direction:column;align-items:stretch">' +
-      '<button type="button" class="wm-btn" data-ma="pr" data-w="slips">🧾 Laufzettel nach Wettkampffolge (quer)</button>' +
-      '<button type="button" class="wm-btn" data-ma="pr" data-w="slipsS">🧾 Laufzettel nach Schwimmer (quer)</button>' +
-      '<button type="button" class="wm-btn" data-ma="pr" data-w="start">📋 Startliste (nach Uhrzeit)</button>' +
-      '<button type="button" class="wm-btn" data-ma="pr" data-w="eltern">👪 Übersicht je Schwimmer (kompakt)</button></div>');
+    M.openDlg('<div class="hub-dhead"><h3>Excel</h3><button type="button" class="hub-btn hub-ghost" data-ma="dclose">✕</button></div><div class="m-btns" style="flex-direction:column;align-items:stretch">' +
+      '<button type="button" class="wm-btn" data-ma="pr" data-w="slips">🧾 Laufzettel nach Wettkampffolge</button>' +
+      '<button type="button" class="wm-btn" data-ma="pr" data-w="slipsS">🧾 Laufzettel nach Schwimmer</button>' +
+      '<button type="button" class="wm-btn" data-ma="pr" data-w="start">📋 Startliste (nach Uhrzeit) mit Kampfgericht</button>' +
+      '<button type="button" class="wm-btn" data-ma="pr" data-w="eltern">👪 Übersicht je Schwimmer</button></div>');
   }
-  function head(wk, what) { return '<h1>' + esc(what) + '</h1><div class="sub"><b>' + esc(wk.title) + '</b> · ' + fd(wk.date) + (wk.ort ? ' · ' + esc(wk.ort) : '') + '</div>'; }
+  function evShort(e) { return String((e && e.name) || '').replace(/\s+(männlich|weiblich|mixed)$/i, ''); }
+  function nm(n) { return String(n || '').replace(/^([^,]+),\s*(.+)$/, '$2 $1'); }
   function printWhat(wk, what) {
-    var body = '';
-    if (what === 'start') {
-      body = head(wk, 'Startliste ' + club()) + '<table><tr><th>Uhr</th><th>Schwimmer / Strecke</th><th>Lauf / Bahn</th><th>Meldezeit</th></tr>' + sortStarts(wk).map(function (s) { return startLine(wk, s, true); }).join('') + '</table>';
-      (wk.abschnitte || []).forEach(function (a) { body += '<div class="sub">Abschnitt ' + a.no + ': ' + [a.einlass && 'Einlass ' + a.einlass, a.einschwimmen && 'Einschwimmen ' + a.einschwimmen, a.kr && 'Kampfrichtersitzung ' + a.kr, a.beginn && 'Beginn ' + a.beginn].filter(Boolean).map(esc).join(' · ') + '</div>'; });
-    } else if (what === 'slips' || what === 'slipsS') {
+    var title = String(wk.title || 'Wettkampf'), file = title.replace(/[^A-Za-z0-9ÄÖÜäöüß]+/g, '_'), sub = title + ' · ' + fd(wk.date) + (wk.ort ? ' · ' + wk.ort : '');
+    if (what === 'slips' || what === 'slipsS') {
       var all = what === 'slips' ? sortStarts(wk) : (function () { var l = []; swimmers(wk).forEach(function (x) { x.starts.slice().sort(function (a, b) { return a.t < b.t ? -1 : a.t > b.t ? 1 : a.e - b.e; }).forEach(function (st) { l.push(st); }); }); return l; })();
       var multi = (wk.abschnitte || []).length > 1;
-      body = '<table class="lz"><tr>' + (multi ? '<th>Abs.</th>' : '') + '<th>Uhr</th><th>WK</th><th>Strecke</th><th>Lauf</th><th>Bahn</th><th>Schwimmer</th><th>Jg.</th><th>Meldezeit</th><th style="width:16%">Endzeit</th><th style="width:26%">Zwischenzeiten</th></tr>' +
-        all.map(function (s) { var e = ev(wk, s.e); return '<tr>' + (multi ? '<td>' + (e.ab || 1) + '</td>' : '') + '<td class="nowrap"><b>' + esc(s.t) + '</b></td><td>' + s.e + '</td><td>' + esc((e.name || '').replace(/\s+(männlich|weiblich|mixed)$/i, '')) + '</td><td>' + s.l + '/' + s.lt + '</td><td>' + s.b + '</td><td class="nowrap"><b>' + esc(s.n.replace(/^([^,]+),\s*(.+)$/, '$2 $1')) + '</b></td><td>' + esc(s.j) + '</td><td class="nowrap">' + esc(s.m ? P.showT(s.m) : '–') + '</td><td></td><td></td></tr>'; }).join('') + '</table>';
-      M.print('Laufzettel ' + wk.title, body, { landscape: true, t2: 'Laufzettel' + (what === 'slipsS' ? ' nach Schwimmern' : ' nach Wettkampffolge'), t3: wk.title + ' · ' + fd(wk.date), css: 'table.lz td{height:30px;font-size:11.5px;padding:3px 5px}table.lz th{font-size:11px}' });
+      var head = (multi ? ['Abs.'] : []).concat(['Uhr', 'WK', 'Strecke', 'Lauf', 'Bahn', 'Schwimmer', 'Jg.', 'Meldezeit', 'Endzeit', 'Zwischenzeiten']);
+      var rows = all.map(function (s) { var e = ev(wk, s.e); return (multi ? [e.ab || 1] : []).concat([s.t, s.e, evShort(e), s.l + '/' + s.lt, s.b, nm(s.n), s.j, s.m ? P.showT(s.m) : '–', '', '']); });
+      M.xlsxList({ file: 'Laufzettel_' + (what === 'slipsS' ? 'Schwimmer_' : '') + file + '.xlsx', title: 'Laufzettel' + (what === 'slipsS' ? ' nach Schwimmern' : ' nach Wettkampffolge'), sub: sub, sheets: [{ name: 'Laufzettel', head: head, rows: rows, w: (multi ? [6] : []).concat([8, 6, 26, 8, 6, 26, 7, 11, 14, 24]) }] });
       return;
-    } else if (what === 'eltern') {
-      body = head(wk, 'Meine Starts');
-      swimmers(wk).forEach(function (x) { body += '<div class="slip"><b>' + esc(x.n) + '</b> (' + esc(x.j) + ')<br>' + x.starts.slice().sort(function (a, b) { return a.t < b.t ? -1 : 1; }).map(function (s) { return esc(s.t) + ' Uhr · ' + esc(ev(wk, s.e).name) + ' · Lauf ' + s.l + '/' + s.lt + ' · Bahn ' + s.b; }).join('<br>') + '</div>'; });
     }
-    if (what === 'start') { var g = wk.gericht || []; if (g.length && what === 'start') body += '<h2>Kampfgericht ' + esc(club()) + '</h2><table><tr><th>Abschn.</th><th>Position</th><th>Name</th></tr>' + g.map(function (x) { return '<tr><td>' + x.a + '</td><td>' + esc(x.pos) + '</td><td>' + (/^N\s?N$/i.test(x.name) ? '<i>noch offen</i>' : esc(x.name)) + '</td></tr>'; }).join('') + '</table>'; }
-    M.print(wk.title, body);
+    if (what === 'eltern') {
+      var rows2 = []; swimmers(wk).forEach(function (x) { x.starts.slice().sort(function (a, b) { return a.t < b.t ? -1 : 1; }).forEach(function (s, i) { rows2.push([i ? '' : nm(x.n), i ? '' : x.j, s.t, s.e, ev(wk, s.e).name, s.l + '/' + s.lt, s.b]); }); });
+      M.xlsxList({ file: 'Starts_je_Schwimmer_' + file + '.xlsx', title: 'Starts je Schwimmer', sub: sub, sheets: [{ name: 'Je Schwimmer', head: ['Schwimmer', 'Jg.', 'Uhr', 'WK', 'Strecke', 'Lauf', 'Bahn'], rows: rows2, w: [26, 7, 8, 6, 40, 8, 6] }] });
+      return;
+    }
+    var st = sortStarts(wk).map(function (s) { var e = ev(wk, s.e); return [s.t, nm(s.n), s.j, s.e, e.name, s.l + '/' + s.lt, s.b, s.m ? P.showT(s.m) : 'ohne']; });
+    var sheets = [{ name: 'Startliste', head: ['Uhr', 'Schwimmer', 'Jg.', 'WK', 'Strecke', 'Lauf', 'Bahn', 'Meldezeit'], rows: st, w: [8, 26, 7, 6, 40, 8, 6, 11] }];
+    var ab = (wk.abschnitte || []).map(function (a) { return ['Abschnitt ' + a.no, a.einlass || '', a.einschwimmen || '', a.kr || '', a.beginn || '']; });
+    if (ab.length) sheets.push({ name: 'Abschnitte', head: ['Abschnitt', 'Einlass', 'Einschwimmen', 'Kampfrichtersitzung', 'Beginn'], rows: ab, w: [14, 10, 14, 20, 10] });
+    var g = wk.gericht || []; if (g.length) sheets.push({ name: 'Kampfgericht', head: ['Abschnitt', 'Position', 'Name'], rows: g.map(function (x) { return [x.a, x.pos, /^N\s?N$/i.test(x.name) ? 'noch offen' : x.name]; }), w: [10, 28, 28] });
+    M.xlsxList({ file: 'Startliste_' + file + '.xlsx', title: 'Startliste ' + club(), sub: sub, sheets: sheets });
   }
 
   /* ---------- Modul ---------- */

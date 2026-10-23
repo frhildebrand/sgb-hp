@@ -35,8 +35,8 @@ templateEngineOverride: false
   var TRAINER_KEYS = ['lizArt', 'lizNr', 'lizDosb', 'lizBis', 'aktiv', 'seit', 'ehBis', 'rettungBis', 'fz', 'ehrenkodex'];
   // Profil (Abrechnung) und Trainerdatensatz teilen diese Angaben
   var PROFILE_MAP = Object.assign({}, M.PROFILE_MAP, { kariNr: 'kariNr', kariBis: 'kariBis' });
-  var PL = { q: '', nr: '', r: '', g: '', st: 'aktiv', sort: 'name', dir: 1, page: 0, open: {}, per: 25 };
-  var SORTS = [['name', 'Name A–Z'], ['nr', 'Mitgliedsnummer'], ['schwimmer', 'Schwimmer zuerst'], ['trainer', 'Trainer zuerst'], ['kari', 'Kampfrichter zuerst'], ['funk', 'Funktionäre zuerst']];
+  var PL = { q: '', nr: '', r: '', g: '', st: 'aktiv', sort: (function () { try { var v = localStorage.getItem('mitgl_sort'); return v || 'vorname'; } catch (e) { return 'vorname'; } })(), dir: 1, page: 0, open: {}, per: 25 };
+  var SORTS = [['vorname', 'Vorname A–Z'], ['name', 'Nachname A–Z'], ['nr', 'Mitgliedsnummer'], ['schwimmer', 'Schwimmer zuerst'], ['trainer', 'Trainer zuerst'], ['kari', 'Kampfrichter zuerst'], ['funk', 'Funktionäre zuerst']];
   function trMap() { var o = {}; trainers().forEach(function (t) { o[lower(t.name)] = t; o[lower(swapName(t.name))] = t; if (t.mnr) o['#' + t.mnr] = t; }); return o; }
   // Verbindung Person ↔ Trainerdatensatz: zuerst über die Mitgliedsnummer, sonst über den Namen
   function trOf(m, tm) { return (m.mnr && tm['#' + m.mnr]) || tm[lower(m.name)] || tm[lower(swapName(m.name))] || null; }
@@ -61,6 +61,7 @@ templateEngineOverride: false
   function lastName(n) { var t = String(n || '').trim().split(/\s+/); return t.length > 1 ? t[t.length - 1] + ' ' + t.slice(0, -1).join(' ') : t[0] || ''; }
   function sortKey(p, k) {
     if (k === 'nr') return Number(p.m.mnr) || 1e9;
+    if (k === 'vorname') return lower(p.m.name);
     var has = { schwimmer: isSw(p), trainer: isTr(p), kari: isKari(p), funk: isFunk(p) }[k];
     return has === undefined ? lower(lastName(p.m.name)) : (has ? 0 : 1);
   }
@@ -74,7 +75,7 @@ templateEngineOverride: false
       if (PL.g && gOf(m).indexOf(PL.g) < 0 && tGroups(p).indexOf(PL.g) < 0) return false;
       return true;
     });
-    ps.forEach(function (p) { p.k = sortKey(p, PL.sort); p.n = lower(lastName(p.m.name)); });
+    ps.forEach(function (p) { p.k = sortKey(p, PL.sort); p.n = PL.sort === 'vorname' ? lower(p.m.name) : lower(lastName(p.m.name)); });
     ps.sort(function (a, b) { var c = a.k < b.k ? -1 : a.k > b.k ? 1 : 0; if (c === 0) c = a.n < b.n ? -1 : a.n > b.n ? 1 : 0; return c * PL.dir; });
     return ps;
   }
@@ -109,7 +110,7 @@ templateEngineOverride: false
   function bodyHtml() {
     var ps = listed(); PL.cnt = ps.length; var pages = Math.max(1, Math.ceil(ps.length / PL.per)); if (PL.page >= pages) PL.page = pages - 1; var cur = ps.slice(PL.page * PL.per, PL.page * PL.per + PL.per);
     var th = function (k, lab) { return '<th class="' + (PL.sort === k ? 'on' : '') + '" data-ma="plsort" data-v="' + k + '">' + lab + (PL.sort === k ? (PL.dir > 0 ? ' ▲' : ' ▼') : ' ⇅') + '</th>'; };
-    return '<div class="pl-wrap"><table class="pl-t"><tr><th style="width:20px;cursor:default"></th>' + th('name', 'Name') + th('nr', 'Nr.') + th('schwimmer', '🏊 Schwimmer') + th('trainer', '🎓 Trainer') + th('kari', '⚖️ Kampfrichter') + th('funk', '🏛 Funktionär') + '<th style="cursor:default"></th></tr>' +
+    return '<div class="pl-wrap"><table class="pl-t"><tr><th style="width:20px;cursor:default"></th>' + th(PL.sort === 'name' ? 'name' : 'vorname', PL.sort === 'name' ? 'Name (Nachname)' : 'Name') + th('nr', 'Nr.') + th('schwimmer', '🏊 Schwimmer') + th('trainer', '🎓 Trainer') + th('kari', '⚖️ Kampfrichter') + th('funk', '🏛 Funktionär') + '<th style="cursor:default"></th></tr>' +
       (cur.length ? cur.map(rowHtml).join('') : '<tr><td colspan="8" class="wm-note" style="padding:16px">Keine Personen gefunden.</td></tr>') + '</table></div>' +
       (pages > 1 ? '<div class="pl-pg"><button type="button" class="m-chip" data-ma="plpage" data-v="-1">‹</button><span class="wm-sub">Seite ' + (PL.page + 1) + ' von ' + pages + ' · ' + ps.length + ' Personen</span><button type="button" class="m-chip" data-ma="plpage" data-v="1">›</button></div>' : '');
   }
@@ -126,7 +127,7 @@ templateEngineOverride: false
   function plRefresh() { var b = document.getElementById('plBody'); if (b) b.innerHTML = bodyHtml(); var c = document.getElementById('plCnt'); if (c) c.textContent = '(' + PL.cnt + ')'; }
   function plInput(ev) {
     var t = ev.target; var k = t && t.getAttribute && t.getAttribute('data-pl'); if (!k) return false;
-    if (PL[k] === t.value) return true; PL[k] = t.value; PL.page = 0; if (k === 'sort') PL.dir = 1;
+    if (PL[k] === t.value) return true; PL[k] = t.value; PL.page = 0; if (k === 'sort') { PL.dir = 1; try { localStorage.setItem('mitgl_sort', t.value); } catch (e) { /* egal */ } }
     plRefresh(); return true;
   }
   function formFields(p) {

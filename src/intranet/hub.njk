@@ -22,72 +22,72 @@ intranetSeiten:
     permalink: /intranet/aufgaben/
     title: 'Aufgaben – SG Barnstorf Intranet'
     modul: 'aufgaben'
-    scripts: [hub-config, hub-common, hub-modul, hub-systeme]
+    scripts: [hub-config, hub-common, hub-xlsx, hub-modul, hub-systeme]
   - id: wettkaempfe
     permalink: /intranet/wettkaempfe/
     title: 'Wettkämpfe – SG Barnstorf Intranet'
     modul: 'wettkaempfe'
-    scripts: [hub-config, hub-common, hub-modul, hub-pdf, hub-wk]
+    scripts: [hub-config, hub-common, hub-xlsx, hub-modul, hub-pdf, hub-wk]
   - id: training
     permalink: /intranet/training/
     title: 'Wettkampfgruppe – SG Barnstorf Intranet'
     modul: 'training'
-    scripts: [hub-config, hub-common, hub-modul, hub-pdf, hub-mitglieder, hub-gruppe]
+    scripts: [hub-config, hub-common, hub-xlsx, hub-modul, hub-pdf, hub-mitglieder, hub-gruppe]
   - id: veranstaltungen
     permalink: /intranet/veranstaltungen/
     title: 'Veranstaltungen – SG Barnstorf Intranet'
     modul: 'veranstaltungen'
-    scripts: [hub-config, hub-common, hub-modul, hub-pdf, hub-systeme]
+    scripts: [hub-config, hub-common, hub-xlsx, hub-modul, hub-pdf, hub-systeme]
   - id: vorstand
     permalink: /intranet/vorstand/
     title: 'Vorstand – SG Barnstorf Intranet'
     modul: 'vorstand'
-    scripts: [hub-config, hub-common, hub-modul, hub-pdf, hub-systeme]
+    scripts: [hub-config, hub-common, hub-xlsx, hub-modul, hub-pdf, hub-systeme]
   - id: material
     permalink: /intranet/material/
     title: 'Material – SG Barnstorf Intranet'
     modul: 'material'
-    scripts: [hub-config, hub-common, hub-modul, hub-systeme]
+    scripts: [hub-config, hub-common, hub-xlsx, hub-modul, hub-systeme]
   - id: jugend
     permalink: /intranet/jugend/
     title: 'Jugend – SG Barnstorf Intranet'
     modul: 'jugend'
-    scripts: [hub-config, hub-common, hub-modul, hub-jugend]
+    scripts: [hub-config, hub-common, hub-xlsx, hub-modul, hub-jugend]
   - id: abrechnung
     permalink: /intranet/abrechnung/
     title: 'Abrechnung – SG Barnstorf Intranet'
     modul: 'abrechnung'
-    scripts: [hub-config, hub-common, hub-modul, hub-pdf, hub-abrechnung]
+    scripts: [hub-config, hub-common, hub-xlsx, hub-modul, hub-pdf, hub-abrechnung]
   - id: mitglieder
     permalink: /intranet/mitglieder/
     title: 'Mitglieder – SG Barnstorf Intranet'
     modul: 'mitglieder'
-    scripts: [hub-config, hub-common, hub-modul, hub-pdf, hub-mitglieder]
+    scripts: [hub-config, hub-common, hub-xlsx, hub-modul, hub-pdf, hub-mitglieder]
   - id: anwesenheit
     permalink: /intranet/anwesenheit/
     title: 'Anwesenheit – SG Barnstorf Intranet'
     modul: 'anwesenheit'
-    scripts: [hub-config, hub-common, hub-modul, hub-pdf, hub-anwesenheit]
+    scripts: [hub-config, hub-common, hub-xlsx, hub-modul, hub-pdf, hub-anwesenheit]
   - id: auswertung
     permalink: /intranet/auswertung/
     title: 'Jahresauswertung – SG Barnstorf Intranet'
     modul: 'auswertung'
-    scripts: [hub-config, hub-common, hub-modul, hub-pdf, hub-wapunkte, hub-auswertung]
+    scripts: [hub-config, hub-common, hub-xlsx, hub-modul, hub-pdf, hub-wapunkte, hub-auswertung]
   - id: dokumente
     permalink: /intranet/dokumente/
     title: 'Dokumente – SG Barnstorf Intranet'
     modul: 'dokumente'
-    scripts: [hub-config, hub-common, hub-modul, hub-dokumente]
+    scripts: [hub-config, hub-common, hub-xlsx, hub-modul, hub-dokumente]
   - id: brett
     permalink: /intranet/brett/
     title: 'Schwarzes Brett – SG Barnstorf Intranet'
     modul: 'brett'
-    scripts: [hub-config, hub-common, hub-modul, hub-brett]
+    scripts: [hub-config, hub-common, hub-xlsx, hub-modul, hub-brett]
   - id: profil
     permalink: /intranet/profil/
     title: 'Mein Profil – SG Barnstorf Intranet'
     modul: 'profil'
-    scripts: [hub-config, hub-common, hub-modul, hub-pdf, hub-abrechnung]
+    scripts: [hub-config, hub-common, hub-xlsx, hub-modul, hub-pdf, hub-abrechnung]
   - id: weihnachtsmarkt
     permalink: /intranet/weihnachtsmarkt/
     title: 'Weihnachtsmarkt – SG Barnstorf Intranet'
@@ -164,12 +164,608 @@ intranetSeiten:
     }, 9000);
   })();
 </script>
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-  tailwind.config = {
-    darkMode: 'class'
-  }
-</script>
+<style>*,::before,::after{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}
+html{line-height:1.5;-webkit-text-size-adjust:100%;tab-size:4;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji"}
+body{margin:0;line-height:inherit}
+hr{height:0;color:inherit;border-top-width:1px}
+h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}
+a{color:inherit;text-decoration:inherit}
+b,strong{font-weight:bolder}
+code,kbd,samp,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:1em}
+small{font-size:80%}
+table{text-indent:0;border-color:inherit;border-collapse:collapse}
+button,input,optgroup,select,textarea{font-family:inherit;font-size:100%;font-weight:inherit;line-height:inherit;color:inherit;margin:0;padding:0}
+button,select{text-transform:none}
+button,[type=button],[type=reset],[type=submit]{-webkit-appearance:button;background-color:transparent;background-image:none}
+blockquote,dl,dd,h1,h2,h3,h4,h5,h6,hr,figure,p,pre{margin:0}
+fieldset{margin:0;padding:0}
+legend{padding:0}
+ol,ul,menu{list-style:none;margin:0;padding:0}
+textarea{resize:vertical}
+input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}
+button,[role=button]{cursor:pointer}
+:disabled{cursor:default}
+img,svg,video,canvas,audio,iframe,embed,object{display:block;vertical-align:middle}
+img,video{max-width:100%;height:auto}
+[hidden]{display:none}
+summary{display:list-item}
+@keyframes wmpulse{50%{opacity:.5}}
+.\!bg-emerald-500{background-color:#10b981 !important}
+.\!bg-rose-500\/10{background-color:rgb(244 63 94 / 0.1) !important}
+.\!border-emerald-600{border-color:#059669 !important}
+.\!border-rose-500\/30{border-color:rgb(244 63 94 / 0.3) !important}
+.\!grid{display:grid !important}
+.\!text-rose-500{color:#f43f5e !important}
+.\!text-white{color:#ffffff !important}
+.-translate-x-1\/2{transform:translateX(-50%)}
+.absolute{position:absolute}
+.accent-amber-500{accent-color:#f59e0b}
+.accent-emerald-500{accent-color:#10b981}
+.align-top{vertical-align:top}
+.animate-pulse{animation:wmpulse 2s cubic-bezier(.4,0,.6,1) infinite}
+.backdrop-blur-md{backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.backdrop-blur-sm{backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.bg-\[\#0f2a43\]{background-color:#0f2a43}
+.bg-\[\#12395c\]{background-color:#12395c}
+.bg-amber-100{background-color:#fef3c7}
+.bg-amber-400\/20{background-color:rgb(251 191 36 / 0.2)}
+.bg-amber-50{background-color:#fffbeb}
+.bg-amber-50\/50{background-color:rgb(255 251 235 / 0.5)}
+.bg-amber-500{background-color:#f59e0b}
+.bg-amber-500\/10{background-color:rgb(245 158 11 / 0.1)}
+.bg-amber-500\/15{background-color:rgb(245 158 11 / 0.15)}
+.bg-amber-500\/20{background-color:rgb(245 158 11 / 0.2)}
+.bg-amber-500\/5{background-color:rgb(245 158 11 / 0.05)}
+.bg-emerald-50{background-color:#ecfdf5}
+.bg-emerald-500{background-color:#10b981}
+.bg-emerald-500\/10{background-color:rgb(16 185 129 / 0.1)}
+.bg-emerald-500\/15{background-color:rgb(16 185 129 / 0.15)}
+.bg-emerald-600{background-color:#059669}
+.bg-fuchsia-50{background-color:#fdf4ff}
+.bg-fuchsia-500{background-color:#d946ef}
+.bg-fuchsia-500\/10{background-color:rgb(217 70 239 / 0.1)}
+.bg-indigo-500\/10{background-color:rgb(99 102 241 / 0.1)}
+.bg-indigo-600{background-color:#4f46e5}
+.bg-orange-50{background-color:#fff7ed}
+.bg-orange-500{background-color:#f97316}
+.bg-orange-500\/10{background-color:rgb(249 115 22 / 0.1)}
+.bg-orange-500\/20{background-color:rgb(249 115 22 / 0.2)}
+.bg-purple-500\/10{background-color:rgb(168 85 247 / 0.1)}
+.bg-purple-600{background-color:#9333ea}
+.bg-red-500\/10{background-color:rgb(239 68 68 / 0.1)}
+.bg-rose-50{background-color:#fff1f2}
+.bg-rose-50\/60{background-color:rgb(255 241 242 / 0.6)}
+.bg-rose-500{background-color:#f43f5e}
+.bg-rose-500\/10{background-color:rgb(244 63 94 / 0.1)}
+.bg-rose-500\/15{background-color:rgb(244 63 94 / 0.15)}
+.bg-rose-500\/20{background-color:rgb(244 63 94 / 0.2)}
+.bg-rose-500\/5{background-color:rgb(244 63 94 / 0.05)}
+.bg-rose-600{background-color:#e11d48}
+.bg-sky-100{background-color:#e0f2fe}
+.bg-sky-50{background-color:#f0f9ff}
+.bg-sky-500{background-color:#0ea5e9}
+.bg-sky-500\/10{background-color:rgb(14 165 233 / 0.1)}
+.bg-sky-500\/15{background-color:rgb(14 165 233 / 0.15)}
+.bg-slate-100{background-color:#f1f5f9}
+.bg-slate-200{background-color:#e2e8f0}
+.bg-slate-200\/60{background-color:rgb(226 232 240 / 0.6)}
+.bg-slate-400{background-color:#94a3b8}
+.bg-slate-50{background-color:#f8fafc}
+.bg-slate-500\/10{background-color:rgb(100 116 139 / 0.1)}
+.bg-slate-700{background-color:#334155}
+.bg-slate-800{background-color:#1e293b}
+.bg-slate-900{background-color:#0f172a}
+.bg-slate-950\/80{background-color:rgb(2 6 23 / 0.8)}
+.bg-slate-950\/95{background-color:rgb(2 6 23 / 0.95)}
+.bg-teal-50{background-color:#f0fdfa}
+.bg-teal-500{background-color:#14b8a6}
+.bg-teal-500\/10{background-color:rgb(20 184 166 / 0.1)}
+.bg-violet-50{background-color:#f5f3ff}
+.bg-violet-500{background-color:#8b5cf6}
+.bg-violet-500\/10{background-color:rgb(139 92 246 / 0.1)}
+.bg-white{background-color:#ffffff}
+.bg-white\/20{background-color:rgb(255 255 255 / 0.2)}
+.bg-white\/70{background-color:rgb(255 255 255 / 0.7)}
+.bg-white\/80{background-color:rgb(255 255 255 / 0.8)}
+.block{display:block}
+.border{border-width:1px}
+.border-2{border-width:2px}
+.border-\[\#12395c\]{border-color:#12395c}
+.border-amber-200{border-color:#fde68a}
+.border-amber-400{border-color:#fbbf24}
+.border-amber-500{border-color:#f59e0b}
+.border-amber-500\/30{border-color:rgb(245 158 11 / 0.3)}
+.border-amber-500\/40{border-color:rgb(245 158 11 / 0.4)}
+.border-amber-500\/50{border-color:rgb(245 158 11 / 0.5)}
+.border-amber-500\/60{border-color:rgb(245 158 11 / 0.6)}
+.border-b{border-bottom-width:1px}
+.border-dashed{border-style:dashed}
+.border-emerald-200{border-color:#a7f3d0}
+.border-emerald-300{border-color:#6ee7b7}
+.border-emerald-400{border-color:#34d399}
+.border-emerald-500\/30{border-color:rgb(16 185 129 / 0.3)}
+.border-emerald-500\/40{border-color:rgb(16 185 129 / 0.4)}
+.border-emerald-500\/50{border-color:rgb(16 185 129 / 0.5)}
+.border-fuchsia-200{border-color:#f5d0fe}
+.border-fuchsia-400{border-color:#e879f9}
+.border-fuchsia-500\/40{border-color:rgb(217 70 239 / 0.4)}
+.border-indigo-500\/30{border-color:rgb(99 102 241 / 0.3)}
+.border-l-4{border-left-width:4px}
+.border-l-amber-400{border-left-color:#fbbf24}
+.border-l-emerald-500{border-left-color:#10b981}
+.border-orange-200{border-color:#fed7aa}
+.border-orange-400{border-color:#fb923c}
+.border-orange-500\/40{border-color:rgb(249 115 22 / 0.4)}
+.border-orange-500\/60{border-color:rgb(249 115 22 / 0.6)}
+.border-purple-300{border-color:#d8b4fe}
+.border-purple-500\/30{border-color:rgb(168 85 247 / 0.3)}
+.border-red-500\/30{border-color:rgb(239 68 68 / 0.3)}
+.border-rose-200{border-color:#fecdd3}
+.border-rose-300{border-color:#fda4af}
+.border-rose-400{border-color:#fb7185}
+.border-rose-500\/30{border-color:rgb(244 63 94 / 0.3)}
+.border-rose-500\/40{border-color:rgb(244 63 94 / 0.4)}
+.border-rose-500\/60{border-color:rgb(244 63 94 / 0.6)}
+.border-sky-200{border-color:#bae6fd}
+.border-sky-300{border-color:#7dd3fc}
+.border-sky-400{border-color:#38bdf8}
+.border-sky-500\/30{border-color:rgb(14 165 233 / 0.3)}
+.border-sky-500\/40{border-color:rgb(14 165 233 / 0.4)}
+.border-sky-500\/50{border-color:rgb(14 165 233 / 0.5)}
+.border-slate-100{border-color:#f1f5f9}
+.border-slate-200{border-color:#e2e8f0}
+.border-slate-300{border-color:#cbd5e1}
+.border-slate-300\/60{border-color:rgb(203 213 225 / 0.6)}
+.border-slate-500\/30{border-color:rgb(100 116 139 / 0.3)}
+.border-t{border-top-width:1px}
+.border-teal-200{border-color:#99f6e4}
+.border-teal-400{border-color:#2dd4bf}
+.border-teal-500\/40{border-color:rgb(20 184 166 / 0.4)}
+.border-violet-200{border-color:#ddd6fe}
+.border-violet-400{border-color:#a78bfa}
+.border-violet-500\/40{border-color:rgb(139 92 246 / 0.4)}
+.border-white\/10{border-color:rgb(255 255 255 / 0.1)}
+.bottom-5{bottom:1.25rem}
+.bottom-6{bottom:1.5rem}
+.cursor-grab{cursor:grab}
+.cursor-pointer{cursor:pointer}
+.cursor-zoom-in{cursor:zoom-in}
+.divide-slate-200 > :not([hidden]) ~ :not([hidden]){border-color:#e2e8f0}
+.duration-200{transition-duration:.2s}
+.fixed{position:fixed}
+.flex{display:flex}
+.flex-1{flex:1 1 0%}
+.flex-col{flex-direction:column}
+.flex-wrap{flex-wrap:wrap}
+.font-black{font-weight:900}
+.font-bold{font-weight:700}
+.font-extrabold{font-weight:800}
+.font-medium{font-weight:500}
+.font-normal{font-weight:400}
+.font-sans{font-family:ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji"}
+.font-semibold{font-weight:600}
+.gap-1{gap:0.25rem}
+.gap-1\.5{gap:0.375rem}
+.gap-2{gap:0.5rem}
+.gap-3{gap:0.75rem}
+.gap-4{gap:1rem}
+.gap-5{gap:1.25rem}
+.gap-6{gap:1.5rem}
+.gap-x-3{column-gap:0.75rem}
+.gap-x-4{column-gap:1rem}
+.gap-y-1{row-gap:0.25rem}
+.grid{display:grid}
+.grid-cols-1{grid-template-columns:repeat(1,minmax(0,1fr))}
+.grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+details[open] > summary .group-open\:rotate-180{transform:rotate(180deg)}
+.h-1{height:0.25rem}
+.h-10{height:2.5rem}
+.h-14{height:3.5rem}
+.h-16{height:4rem}
+.h-2{height:0.5rem}
+.h-2\.5{height:0.625rem}
+.h-20{height:5rem}
+.h-4{height:1rem}
+.h-5{height:1.25rem}
+.h-6{height:1.5rem}
+.h-7{height:1.75rem}
+.h-8{height:2rem}
+.h-9{height:2.25rem}
+.h-full{height:100%}
+.hidden{display:none}
+.inline{display:inline}
+.inline-block{display:inline-block}
+.inline-flex{display:inline-flex}
+.inset-0{top:0;right:0;bottom:0;left:0}
+.inset-y-0{top:0;bottom:0}
+.items-baseline{align-items:baseline}
+.items-center{align-items:center}
+.items-start{align-items:flex-start}
+.items-stretch{align-items:stretch}
+.justify-between{justify-content:space-between}
+.justify-center{justify-content:center}
+.justify-end{justify-content:flex-end}
+.leading-none{line-height:1}
+.leading-relaxed{line-height:1.625}
+.leading-snug{line-height:1.375}
+.leading-tight{line-height:1.25}
+.left-0{left:0}
+.left-1\/2{left:50%}
+.list-decimal{list-style-type:decimal}
+.list-disc{list-style-type:disc}
+.list-none{list-style-type:none}
+.max-h-72{max-height:18rem}
+.max-h-96{max-height:24rem}
+.max-h-\[90vh\]{max-height:90vh}
+.max-w-4xl{max-width:56rem}
+.max-w-7xl{max-width:80rem}
+.max-w-\[92vw\]{max-width:92vw}
+.max-w-\[96vw\]{max-width:96vw}
+.max-w-lg{max-width:32rem}
+.max-w-md{max-width:28rem}
+.max-w-sm{max-width:24rem}
+.mb-1{margin-bottom:0.25rem}
+.mb-2{margin-bottom:0.5rem}
+.mb-3{margin-bottom:0.75rem}
+.mb-4{margin-bottom:1rem}
+.mb-5{margin-bottom:1.25rem}
+.min-h-\[3\.25rem\]{min-height:3.25rem}
+.min-h-\[7rem\]{min-height:7rem}
+.min-h-screen{min-height:100vh}
+.min-w-0{min-width:0}
+.min-w-\[10rem\]{min-width:10rem}
+.min-w-\[11rem\]{min-width:11rem}
+.min-w-\[12rem\]{min-width:12rem}
+.min-w-\[4\.5rem\]{min-width:4.5rem}
+.min-w-\[7rem\]{min-width:7rem}
+.min-w-\[8rem\]{min-width:8rem}
+.min-w-\[9rem\]{min-width:9rem}
+.min-w-full{min-width:100%}
+.ml-1{margin-left:0.25rem}
+.mr-1{margin-right:0.25rem}
+.mr-auto{margin-right:auto}
+.mt-0{margin-top:0}
+.mt-0\.5{margin-top:0.125rem}
+.mt-1{margin-top:0.25rem}
+.mt-1\.5{margin-top:0.375rem}
+.mt-2{margin-top:0.5rem}
+.mt-3{margin-top:0.75rem}
+.mt-6{margin-top:1.5rem}
+.mt-auto{margin-top:auto}
+.mx-auto{margin-left:auto;margin-right:auto}
+.normal-case{text-transform:none}
+.object-contain{object-fit:contain}
+.opacity-50{opacity:0.5}
+.opacity-60{opacity:0.6}
+.opacity-70{opacity:0.7}
+.opacity-80{opacity:0.8}
+.opacity-90{opacity:0.9}
+.overflow-auto{overflow:auto}
+.overflow-hidden{overflow:hidden}
+.overflow-x-auto{overflow-x:auto}
+.overflow-y-auto{overflow-y:auto}
+.p-1{padding:0.25rem}
+.p-1\.5{padding:0.375rem}
+.p-2{padding:0.5rem}
+.p-3{padding:0.75rem}
+.p-4{padding:1rem}
+.p-5{padding:1.25rem}
+.p-6{padding:1.5rem}
+.p-8{padding:2rem}
+.pb-1{padding-bottom:0.25rem}
+.pb-16{padding-bottom:4rem}
+.pb-2{padding-bottom:0.5rem}
+.pb-20{padding-bottom:5rem}
+.pb-3{padding-bottom:0.75rem}
+.pb-5{padding-bottom:1.25rem}
+.pl-10{padding-left:2.5rem}
+.pl-2{padding-left:0.5rem}
+.pl-2\.5{padding-left:0.625rem}
+.pl-3{padding-left:0.75rem}
+.pl-3\.5{padding-left:0.875rem}
+.pl-4{padding-left:1rem}
+.pl-5{padding-left:1.25rem}
+.placeholder-slate-400{color:#94a3b8}
+.pointer-events-none{pointer-events:none}
+.pr-1{padding-right:0.25rem}
+.pr-1\.5{padding-right:0.375rem}
+.pr-2{padding-right:0.5rem}
+.pr-2\.5{padding-right:0.625rem}
+.pr-4{padding-right:1rem}
+.pt-1{padding-top:0.25rem}
+.pt-2{padding-top:0.5rem}
+.pt-6{padding-top:1.5rem}
+.px-1{padding-left:0.25rem;padding-right:0.25rem}
+.px-1\.5{padding-left:0.375rem;padding-right:0.375rem}
+.px-2{padding-left:0.5rem;padding-right:0.5rem}
+.px-2\.5{padding-left:0.625rem;padding-right:0.625rem}
+.px-3{padding-left:0.75rem;padding-right:0.75rem}
+.px-3\.5{padding-left:0.875rem;padding-right:0.875rem}
+.px-4{padding-left:1rem;padding-right:1rem}
+.px-5{padding-left:1.25rem;padding-right:1.25rem}
+.py-0{padding-top:0;padding-bottom:0}
+.py-0\.5{padding-top:0.125rem;padding-bottom:0.125rem}
+.py-1{padding-top:0.25rem;padding-bottom:0.25rem}
+.py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}
+.py-10{padding-top:2.5rem;padding-bottom:2.5rem}
+.py-2{padding-top:0.5rem;padding-bottom:0.5rem}
+.py-2\.5{padding-top:0.625rem;padding-bottom:0.625rem}
+.py-3{padding-top:0.75rem;padding-bottom:0.75rem}
+.py-3\.5{padding-top:0.875rem;padding-bottom:0.875rem}
+.py-4{padding-top:1rem;padding-bottom:1rem}
+.py-6{padding-top:1.5rem;padding-bottom:1.5rem}
+.relative{position:relative}
+.ring-1{box-shadow:0 0 0 1px var(--wm-ring,rgb(59 130 246 / .5))}
+.ring-2{box-shadow:0 0 0 2px var(--wm-ring,rgb(59 130 246 / .5))}
+.ring-amber-400{--wm-ring:#fbbf24}
+.ring-amber-500\/40{--wm-ring:rgb(245 158 11 / 0.4)}
+.rotate-180{transform:rotate(180deg)}
+.rounded{border-radius:.25rem}
+.rounded-2xl{border-radius:1rem}
+.rounded-full{border-radius:9999px}
+.rounded-lg{border-radius:.5rem}
+.rounded-md{border-radius:.375rem}
+.rounded-sm{border-radius:.125rem}
+.rounded-xl{border-radius:.75rem}
+.select-none{-webkit-user-select:none;user-select:none}
+.self-end{align-self:flex-end}
+.shadow{box-shadow:0 1px 3px 0 rgb(0 0 0 / .1), 0 1px 2px -1px rgb(0 0 0 / .1)}
+.shadow-2xl{box-shadow:0 25px 50px -12px rgb(0 0 0 / .25)}
+.shadow-md{box-shadow:0 4px 6px -1px rgb(0 0 0 / .1), 0 2px 4px -2px rgb(0 0 0 / .1)}
+.shadow-sm{box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.shrink-0{flex-shrink:0}
+.sticky{position:sticky}
+.table{display:table}
+.table-fixed{table-layout:fixed}
+.tabular-nums{font-variant-numeric:tabular-nums}
+.text-2xl{font-size:1.5rem;line-height:2rem}
+.text-3xl{font-size:1.875rem;line-height:2.25rem}
+.text-4xl{font-size:2.25rem;line-height:2.5rem}
+.text-5xl{font-size:3rem;line-height:1}
+.text-\[10px\]{font-size:10px}
+.text-\[11px\]{font-size:11px}
+.text-amber-400{color:#fbbf24}
+.text-amber-500{color:#f59e0b}
+.text-amber-600{color:#d97706}
+.text-amber-700{color:#b45309}
+.text-amber-900{color:#78350f}
+.text-base{font-size:1rem;line-height:1.5rem}
+.text-center{text-align:center}
+.text-emerald-600{color:#059669}
+.text-emerald-700{color:#047857}
+.text-emerald-800{color:#065f46}
+.text-emerald-900{color:#064e3b}
+.text-fuchsia-600{color:#c026d3}
+.text-fuchsia-900{color:#701a75}
+.text-indigo-600{color:#4f46e5}
+.text-left{text-align:left}
+.text-lg{font-size:1.125rem;line-height:1.75rem}
+.text-orange-600{color:#ea580c}
+.text-orange-900{color:#7c2d12}
+.text-purple-600{color:#9333ea}
+.text-red-600{color:#dc2626}
+.text-right{text-align:right}
+.text-rose-500{color:#f43f5e}
+.text-rose-600{color:#e11d48}
+.text-rose-700{color:#be123c}
+.text-rose-800{color:#9f1239}
+.text-rose-900{color:#881337}
+.text-sky-600{color:#0284c7}
+.text-sky-700{color:#0369a1}
+.text-sky-800{color:#075985}
+.text-sky-900{color:#0c4a6e}
+.text-slate-300{color:#cbd5e1}
+.text-slate-400{color:#94a3b8}
+.text-slate-500{color:#64748b}
+.text-slate-600{color:#475569}
+.text-slate-700{color:#334155}
+.text-slate-800{color:#1e293b}
+.text-slate-900{color:#0f172a}
+.text-slate-950{color:#020617}
+.text-sm{font-size:.875rem;line-height:1.25rem}
+.text-teal-600{color:#0d9488}
+.text-teal-900{color:#134e4a}
+.text-violet-600{color:#7c3aed}
+.text-violet-900{color:#4c1d95}
+.text-white{color:#ffffff}
+.text-xl{font-size:1.25rem;line-height:1.75rem}
+.text-xs{font-size:.75rem;line-height:1rem}
+.top-0{top:0}
+.tracking-wide{letter-spacing:.025em}
+.tracking-wider{letter-spacing:.05em}
+.tracking-widest{letter-spacing:.1em}
+.transition{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}
+.transition-colors{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}
+.transition-transform{transition-property:transform;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}
+.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.underline{text-decoration-line:underline}
+.uppercase{text-transform:uppercase}
+.w-10{width:2.5rem}
+.w-12{width:3rem}
+.w-14{width:3.5rem}
+.w-16{width:4rem}
+.w-2{width:0.5rem}
+.w-2\.5{width:0.625rem}
+.w-20{width:5rem}
+.w-24{width:6rem}
+.w-28{width:7rem}
+.w-32{width:8rem}
+.w-36{width:9rem}
+.w-4{width:1rem}
+.w-44{width:11rem}
+.w-5{width:1.25rem}
+.w-6{width:1.5rem}
+.w-7{width:1.75rem}
+.w-8{width:2rem}
+.w-9{width:2.25rem}
+.w-\[4\.25rem\]{width:4.25rem}
+.w-auto{width:auto}
+.w-full{width:100%}
+.whitespace-nowrap{white-space:nowrap}
+.whitespace-pre-line{white-space:pre-line}
+.z-40{z-index:40}
+.z-50{z-index:50}
+.z-\[60\]{z-index:60}
+.z-\[70\]{z-index:70}
+.z-\[80\]{z-index:80}
+.active\:scale-95:active{transform:scale(.95)}
+.disabled\:opacity-30:disabled{opacity:0.3}
+.disabled\:opacity-60:disabled{opacity:0.6}
+.focus\:border-amber-500:focus{border-color:#f59e0b}
+.focus\:outline-none:focus{outline:2px solid transparent;outline-offset:2px}
+.focus\:ring-2:focus{box-shadow:0 0 0 2px var(--wm-ring,rgb(59 130 246 / .5))}
+.focus\:ring-amber-500:focus{--wm-ring:#f59e0b}
+.hover\:bg-\[\#16395c\]:hover{background-color:#16395c}
+.hover\:bg-amber-400:hover{background-color:#fbbf24}
+.hover\:bg-amber-500\/20:hover{background-color:rgb(245 158 11 / 0.2)}
+.hover\:bg-amber-500\/30:hover{background-color:rgb(245 158 11 / 0.3)}
+.hover\:bg-amber-600:hover{background-color:#d97706}
+.hover\:bg-emerald-400:hover{background-color:#34d399}
+.hover\:bg-emerald-500:hover{background-color:#10b981}
+.hover\:bg-emerald-700:hover{background-color:#047857}
+.hover\:bg-fuchsia-400:hover{background-color:#e879f9}
+.hover\:bg-indigo-500:hover{background-color:#6366f1}
+.hover\:bg-orange-400:hover{background-color:#fb923c}
+.hover\:bg-purple-700:hover{background-color:#7e22ce}
+.hover\:bg-rose-400:hover{background-color:#fb7185}
+.hover\:bg-rose-500:hover{background-color:#f43f5e}
+.hover\:bg-rose-500\/20:hover{background-color:rgb(244 63 94 / 0.2)}
+.hover\:bg-rose-700:hover{background-color:#be123c}
+.hover\:bg-sky-400:hover{background-color:#38bdf8}
+.hover\:bg-sky-600:hover{background-color:#0284c7}
+.hover\:bg-slate-200:hover{background-color:#e2e8f0}
+.hover\:bg-slate-300\/60:hover{background-color:rgb(203 213 225 / 0.6)}
+.hover\:bg-slate-50:hover{background-color:#f8fafc}
+.hover\:bg-slate-600:hover{background-color:#475569}
+.hover\:bg-slate-700:hover{background-color:#334155}
+.hover\:bg-teal-400:hover{background-color:#2dd4bf}
+.hover\:bg-violet-400:hover{background-color:#a78bfa}
+.hover\:opacity-100:hover{opacity:1}
+.hover\:text-rose-500:hover{color:#f43f5e}
+.hover\:text-slate-600:hover{color:#475569}
+.last\:border-0:last-child{border-width:0}
+.last\:mb-0:last-child{margin-bottom:0}
+html.dark .dark\:bg-amber-950\/20{background-color:rgb(69 26 3 / 0.2)}
+html.dark .dark\:bg-amber-950\/30{background-color:rgb(69 26 3 / 0.3)}
+html.dark .dark\:bg-amber-950\/40{background-color:rgb(69 26 3 / 0.4)}
+html.dark .dark\:bg-amber-950\/50{background-color:rgb(69 26 3 / 0.5)}
+html.dark .dark\:bg-emerald-950\/30{background-color:rgb(2 44 34 / 0.3)}
+html.dark .dark\:bg-fuchsia-950\/30{background-color:rgb(74 4 78 / 0.3)}
+html.dark .dark\:bg-orange-950\/30{background-color:rgb(67 20 7 / 0.3)}
+html.dark .dark\:bg-rose-950\/20{background-color:rgb(76 5 25 / 0.2)}
+html.dark .dark\:bg-rose-950\/30{background-color:rgb(76 5 25 / 0.3)}
+html.dark .dark\:bg-sky-950\/30{background-color:rgb(8 47 73 / 0.3)}
+html.dark .dark\:bg-sky-950\/50{background-color:rgb(8 47 73 / 0.5)}
+html.dark .dark\:bg-slate-100{background-color:#f1f5f9}
+html.dark .dark\:bg-slate-700{background-color:#334155}
+html.dark .dark\:bg-slate-800{background-color:#1e293b}
+html.dark .dark\:bg-slate-800\/50{background-color:rgb(30 41 59 / 0.5)}
+html.dark .dark\:bg-slate-800\/60{background-color:rgb(30 41 59 / 0.6)}
+html.dark .dark\:bg-slate-900{background-color:#0f172a}
+html.dark .dark\:bg-slate-900\/60{background-color:rgb(15 23 42 / 0.6)}
+html.dark .dark\:bg-slate-900\/70{background-color:rgb(15 23 42 / 0.7)}
+html.dark .dark\:bg-slate-900\/80{background-color:rgb(15 23 42 / 0.8)}
+html.dark .dark\:bg-slate-950{background-color:#020617}
+html.dark .dark\:bg-teal-950\/30{background-color:rgb(4 47 46 / 0.3)}
+html.dark .dark\:bg-violet-950\/30{background-color:rgb(46 16 101 / 0.3)}
+html.dark .dark\:border-amber-500\/80{border-color:rgb(245 158 11 / 0.8)}
+html.dark .dark\:border-amber-800\/50{border-color:rgb(146 64 14 / 0.5)}
+html.dark .dark\:border-emerald-800\/50{border-color:rgb(6 95 70 / 0.5)}
+html.dark .dark\:border-emerald-800\/80{border-color:rgb(6 95 70 / 0.8)}
+html.dark .dark\:border-fuchsia-800\/50{border-color:rgb(134 25 143 / 0.5)}
+html.dark .dark\:border-orange-800\/50{border-color:rgb(154 52 18 / 0.5)}
+html.dark .dark\:border-purple-800\/80{border-color:rgb(107 33 168 / 0.8)}
+html.dark .dark\:border-rose-800\/50{border-color:rgb(159 18 57 / 0.5)}
+html.dark .dark\:border-rose-800\/80{border-color:rgb(159 18 57 / 0.8)}
+html.dark .dark\:border-sky-800\/50{border-color:rgb(7 89 133 / 0.5)}
+html.dark .dark\:border-sky-800\/80{border-color:rgb(7 89 133 / 0.8)}
+html.dark .dark\:border-slate-600{border-color:#475569}
+html.dark .dark\:border-slate-600\/60{border-color:rgb(71 85 105 / 0.6)}
+html.dark .dark\:border-slate-700{border-color:#334155}
+html.dark .dark\:border-slate-800{border-color:#1e293b}
+html.dark .dark\:border-slate-800\/60{border-color:rgb(30 41 59 / 0.6)}
+html.dark .dark\:border-slate-800\/80{border-color:rgb(30 41 59 / 0.8)}
+html.dark .dark\:border-teal-800\/50{border-color:rgb(17 94 89 / 0.5)}
+html.dark .dark\:border-violet-800\/50{border-color:rgb(91 33 182 / 0.5)}
+html.dark .dark\:divide-slate-700\/60 > :not([hidden]) ~ :not([hidden]){border-color:rgb(51 65 85 / 0.6)}
+html.dark .dark\:divide-slate-800\/60 > :not([hidden]) ~ :not([hidden]){border-color:rgb(30 41 59 / 0.6)}
+html.dark .dark\:placeholder-slate-500{color:#64748b}
+html.dark .dark\:shadow-md{box-shadow:0 4px 6px -1px rgb(0 0 0 / .1), 0 2px 4px -2px rgb(0 0 0 / .1)}
+html.dark .dark\:text-amber-100{color:#fef3c7}
+html.dark .dark\:text-amber-200{color:#fde68a}
+html.dark .dark\:text-amber-300{color:#fcd34d}
+html.dark .dark\:text-amber-400{color:#fbbf24}
+html.dark .dark\:text-emerald-200{color:#a7f3d0}
+html.dark .dark\:text-emerald-300{color:#6ee7b7}
+html.dark .dark\:text-emerald-400{color:#34d399}
+html.dark .dark\:text-fuchsia-300{color:#f0abfc}
+html.dark .dark\:text-fuchsia-400{color:#e879f9}
+html.dark .dark\:text-indigo-300{color:#a5b4fc}
+html.dark .dark\:text-indigo-400{color:#818cf8}
+html.dark .dark\:text-orange-300{color:#fdba74}
+html.dark .dark\:text-orange-400{color:#fb923c}
+html.dark .dark\:text-purple-400{color:#c084fc}
+html.dark .dark\:text-red-400{color:#f87171}
+html.dark .dark\:text-rose-200{color:#fecdd3}
+html.dark .dark\:text-rose-300{color:#fda4af}
+html.dark .dark\:text-rose-400{color:#fb7185}
+html.dark .dark\:text-sky-100{color:#e0f2fe}
+html.dark .dark\:text-sky-200{color:#bae6fd}
+html.dark .dark\:text-sky-300{color:#7dd3fc}
+html.dark .dark\:text-sky-400{color:#38bdf8}
+html.dark .dark\:text-slate-100{color:#f1f5f9}
+html.dark .dark\:text-slate-200{color:#e2e8f0}
+html.dark .dark\:text-slate-300{color:#cbd5e1}
+html.dark .dark\:text-slate-400{color:#94a3b8}
+html.dark .dark\:text-slate-500{color:#64748b}
+html.dark .dark\:text-slate-600{color:#475569}
+html.dark .dark\:text-slate-900{color:#0f172a}
+html.dark .dark\:text-teal-300{color:#5eead4}
+html.dark .dark\:text-teal-400{color:#2dd4bf}
+html.dark .dark\:text-violet-300{color:#c4b5fd}
+html.dark .dark\:text-violet-400{color:#a78bfa}
+html.dark .dark\:hover\:bg-slate-700:hover{background-color:#334155}
+html.dark .dark\:hover\:bg-slate-800:hover{background-color:#1e293b}
+html.dark .dark\:hover\:bg-slate-800\/40:hover{background-color:rgb(30 41 59 / 0.4)}
+html.dark .dark\:hover\:text-slate-200:hover{color:#e2e8f0}
+@media (min-width:640px){
+.sm\:col-span-2{grid-column:span 2 / span 2}
+.sm\:flex-row{flex-direction:row}
+.sm\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.sm\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.sm\:grid-cols-6{grid-template-columns:repeat(6,minmax(0,1fr))}
+.sm\:grid-cols-\[1fr_1fr_auto\]{grid-template-columns:1fr 1fr auto}
+.sm\:grid-cols-\[8rem_1fr_auto\]{grid-template-columns:8rem 1fr auto}
+.sm\:inline{display:inline}
+.sm\:items-center{align-items:center}
+.sm\:p-6{padding:1.5rem}
+.sm\:self-center{align-self:center}
+.sm\:text-2xl{font-size:1.5rem;line-height:2rem}
+.sm\:text-3xl{font-size:1.875rem;line-height:2.25rem}
+.sm\:text-base{font-size:1rem;line-height:1.5rem}
+.sm\:text-lg{font-size:1.125rem;line-height:1.75rem}
+.sm\:text-sm{font-size:.875rem;line-height:1.25rem}
+.sm\:w-20{width:5rem}
+}
+@media (min-width:768px){
+.md\:flex-row{flex-direction:row}
+.md\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.md\:items-center{align-items:center}
+.md\:self-center{align-self:center}
+}
+@media (min-width:1024px){
+.lg\:flex-nowrap{flex-wrap:nowrap}
+.lg\:flex-row{flex-direction:row}
+.lg\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.lg\:grid-cols-5{grid-template-columns:repeat(5,minmax(0,1fr))}
+.lg\:items-center{align-items:center}
+}
+@media (min-width:1280px){
+.xl\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.xl\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.xl\:grid-cols-\[minmax\(0\,22rem\)_1fr\]{grid-template-columns:minmax(0,22rem) 1fr}
+}</style>
 
 <!-- Hintergrund und Fußzeile der ganzen Seite folgen dem gewählten Design -->
 <style>
@@ -214,6 +810,9 @@ intranetSeiten:
     #printSheet svg { max-width: 100%; height: auto; }
   }
 
+
+  /* Icons (Font Awesome, wie im Hub) */
+  svg.fa { display: inline-block; width: 1.05em; height: 1.05em; vertical-align: -0.14em; fill: currentColor; flex: none; }
 
   /* Platzhalter beim Laden */
   .wm-skel { background: linear-gradient(90deg, rgba(148,163,184,.16), rgba(148,163,184,.34), rgba(148,163,184,.16)); background-size: 200% 100%; animation: wmShimmer 1.4s linear infinite; border-radius: 14px; }
@@ -298,6 +897,24 @@ intranetSeiten:
   /* Countdown: gedämpftes Weinrot zu Tannengrün */
   .wm-countdown { background-image: linear-gradient(135deg, #7d3a47 0%, #4f3f5c 48%, #245a55 100%); }
   .dark .wm-countdown { background-image: linear-gradient(135deg, #5f2a36 0%, #3b3250 48%, #1b4742 100%); }
+
+  /* ===== Hub-Look: gleiche Hintergründe, Karten, Überschriften und Tasten wie im Hub ===== */
+  #appBody, .dark #appBody { background-image: none !important; }
+  #appBody { background-color: #f1f5f9 !important; }
+  .dark #appBody { background-color: #0b1220 !important; }
+  [id^="view"] { --acc: #d6a23a; --acc2: #b88a24; --accs: rgba(214,162,58,.15); }
+  [id^="view"] > div:first-child:not(#aushangInfo):not(#aushangCountdown):not(#guestLockNotice):not(.wm-nohead) { border-radius: 16px !important; border: 1px solid #e2e8f0 !important; border-left: 1px solid #e2e8f0 !important; background-image: none !important; background-color: #fff !important; box-shadow: 0 1px 3px rgba(15,23,42,.06) !important; }
+  .dark [id^="view"] > div:first-child:not(#aushangInfo):not(#aushangCountdown):not(#guestLockNotice):not(.wm-nohead) { background-color: #0f172a !important; border-color: #1f2a3d !important; border-left-color: #1f2a3d !important; box-shadow: none !important; }
+  [id^="view"] > div:first-child:not(#aushangInfo):not(#aushangCountdown):not(#guestLockNotice):not(.wm-nohead) h2 { color: #12395c !important; font: 800 22px/28px -apple-system, system-ui, sans-serif !important; }
+  .dark [id^="view"] > div:first-child:not(#aushangInfo):not(#aushangCountdown):not(#guestLockNotice):not(.wm-nohead) h2 { color: #fff !important; }
+  main > div[id^="view"] h2 { font: 800 22px/28px -apple-system, system-ui, sans-serif; }
+  [id^="view"] h3 { font-family: -apple-system, system-ui, sans-serif; }
+  .wm-tile { width: 36px; height: 36px; margin-right: 10px; border-radius: 12px; font-size: 18px; background-image: none; background-color: #12395c; color: #fff; box-shadow: none; }
+  [id^="view"] .rounded-2xl { border-radius: 16px; }
+  [id^="view"] .text-amber-600, [id^="view"] .dark\:text-amber-400 { color: inherit; }
+  .wm-foot { display: none; }
+  .wm-countdown { background-image: none; background-color: #12395c; }
+  .dark .wm-countdown { background-image: none; background-color: #1c4f7c; }
   /* Zierlinie und Fusszeile */
   .wm-foot { max-width: 80rem; margin: 28px auto 0; padding: 0 1rem; color: #64748b; }
   .dark .wm-foot { color: #cfe0ec; }
@@ -1057,6 +1674,20 @@ intranetSeiten:
   #hubRoot .wg-t tr:last-child td { border-bottom: 0; } #hubRoot .wg-t tr:hover td { background: color-mix(in srgb, currentColor 4%, transparent); }
   #hubRoot .wg-tbl .wm-bar { margin-bottom: 4px; }
   #hubRoot .wg-ic { border: 0; background: none; cursor: pointer; font-size: 15px; padding: 2px 6px; color: inherit; opacity: .75; }
+  #hubRoot .wm-btn, #hubRoot .wm-amber, #hubRoot .hub-btn, #hubRoot .hub-gold { gap: 6px; align-items: center; }
+  @media (pointer: coarse) {
+    html #hubRoot .wm-btn { min-height: 40px; }
+    html #hubRoot .wm-amber, html #hubRoot .hub-gold { min-height: 44px; }
+    #hubRoot .hub-bx, #hubRoot .tt-ic, #hubRoot .m-rowbtns button, #hubRoot .wm-mv button, #hubRoot .hub-bt td.a .hub-bx { min-width: 40px; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; }
+    html #hubRoot .m-chip { min-height: 36px; }
+  }
+  #hubRoot .pl-ic svg.fa, #hubRoot .tt-ic svg.fa, #hubRoot .hub-bx svg.fa { width: 18px; height: 18px; color: var(--soft); }
+  #hubRoot .pl-ic:hover svg.fa, #hubRoot .tt-ic:hover svg.fa, #hubRoot .hub-bx:hover svg.fa { color: var(--navy, currentColor); }
+  #hubRoot svg.fa.fa-s { width: .8em; height: .8em; }
+  #hubRoot .wm-note a, #hubRoot .hub-sub a { color: inherit; font-weight: 700; text-decoration: underline; text-decoration-color: var(--gold, #d6a23a); text-underline-offset: 2px; }
+  @media (max-width: 900px) { #hubRoot .pl-ic { min-width: 36px; min-height: 40px; padding: 6px; } #hubRoot .pl-t td:last-child, #hubRoot .pl-t th:last-child { padding-left: 2px; padding-right: 2px; } }
+  #hubRoot svg.fa { display: inline-block; width: 1.05em; height: 1.05em; vertical-align: -0.14em; fill: currentColor; flex: none; }
+  #hubRoot .hub-mic svg.fa, #hubRoot .hub-mic2 svg.fa { width: 1em; height: 1em; vertical-align: middle; }
   #hubRoot .wm-card select, #hubRoot .pl-bar select, #hubRoot .m-f select { appearance: auto; font: inherit; font-size: 14px; font-weight: 600; padding: 7px 10px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--gold, #d6a23a) 55%, var(--line)); background: color-mix(in srgb, var(--gold, #d6a23a) 14%, var(--card)); color: inherit; min-height: 38px; }
   #hubRoot .wm-card select:focus { outline: 2px solid color-mix(in srgb, var(--gold, #d6a23a) 70%, transparent); outline-offset: 1px; }
   #hubRoot .wg-ct { appearance: none; background: transparent; border: 0; color: inherit; font-size: 15px; padding: 2px 8px 2px 0; cursor: pointer; }
@@ -1391,9 +2022,9 @@ html.dark #navigationModal .wm-solo { background: rgba(255,255,255,.04); }
       <h2 class="font-extrabold text-lg text-slate-800 dark:text-slate-100">Ankündigungen</h2>
     </div>
     <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-      Hier trägst du dich für unseren Weihnachtsmarktstand ein: bei „Unterstützung vor Ort“ in ein Zeitfenster und beim Waffelteig auf einen freien Platz. Deinen Eintrag kannst du mit dem ✕ wieder entfernen. <span id="aushangPrintHint" class="hidden">Jede Liste lässt sich als DIN-A4-Blatt ausdrucken.</span>
+      Hier trägst du dich für unseren Weihnachtsmarktstand ein: bei „Unterstützung vor Ort“ in ein Zeitfenster und beim Waffelteig auf einen freien Platz. Deinen Eintrag kannst du mit dem ✕ wieder entfernen. <span id="aushangPrintHint" class="hidden">Jede Liste lässt sich als Excel-Datei speichern.</span>
     </p>
-    <div id="aushangPrintAll" class="mt-3 hidden"><button type="button" onclick="printAushang('beide')" class="px-3 py-1.5 rounded-lg text-[11px] font-bold border bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200">🖨️ Beide Tage drucken</button></div>
+    <div id="aushangPrintAll" class="mt-3 hidden"><button type="button" onclick="printAushang('beide')" class="px-3 py-1.5 rounded-lg text-[11px] font-bold border bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200">📊 Excel (beide Tage)</button></div>
   </div>
 
   <!-- Meine Schichten -->
@@ -1548,7 +2179,7 @@ class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-
     <button id="kasseKioskBtn" type="button" onclick="startKiosk()" class="hidden px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl border border-slate-300 dark:border-slate-700 transition">📌 Kiosk-Modus</button>
     <button id="kasseReportBtn" type="button" onclick="printTagesbericht()" class="hidden px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl border border-slate-300 dark:border-slate-700 transition">📄 Tagesbericht</button>
   </div>
-  <div id="kasseKioskHint" class="hidden text-[11px] font-semibold text-slate-500 dark:text-slate-400 text-center">📌 Kiosk-Modus. Zum Beenden den Titel oben 3 Sekunden gedrückt halten.</div>
+  <div id="kasseKioskHint" class="hidden text-center"><button type="button" onclick="exitKioskDialog()" class="px-5 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-sm rounded-xl border border-slate-300 dark:border-slate-700 transition">📌 Kiosk-Modus beenden</button></div>
   <div id="kasseBanner" class="hidden"></div>
 
   <!-- Tag wählen -->
@@ -1700,20 +2331,13 @@ class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-
     <p class="text-[11px] text-slate-500 dark:text-slate-400">Gesamtgewinn = Gesamtumsatz − Standgebühr − Summe der Ausgaben. Preise stehen im Admin-Panel.</p>
   </div>
 
-  <!-- Verkäufe pro Stunde -->
-  <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 space-y-3">
-    <h3 class="font-extrabold text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">🕒 Verkäufe pro Stunde</h3>
-    <p class="text-[11px] text-slate-500 dark:text-slate-400">Bezahlte Stück je Stunde, getrennt nach Tag und Produkt. Rückgängig gemachte Buchungen sind schon abgezogen.</p>
-    <div id="statHourlyRoot"></div>
-  </div>
-
   <!-- Abrechnung -->
   <div id="statExportCard" class="hidden bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 space-y-3">
     <h3 class="font-extrabold text-sm uppercase tracking-wide text-slate-500 dark:text-slate-400">🧾 Abrechnung ausgeben</h3>
-    <p class="text-[11px] text-slate-500 dark:text-slate-400">Umsatz je Tag und Produkt, Spendenente, Standgebühr, Ausgaben mit Belegvermerk, Gewinn und Kassensturz. CSV öffnet sich direkt in Excel oder Numbers. Für ein PDF auf „Drucken“ tippen und im iPad-Druckdialog oben rechts „Teilen“ und „In Dateien sichern“ wählen, genau wie bei den Aushängen.</p>
+    <p class="text-[11px] text-slate-500 dark:text-slate-400">Umsatz je Tag und Produkt, Spendenente, Standgebühr, Ausgaben mit Belegvermerk, Gewinn und Kassensturz. Mit „Excel“ entsteht die Abrechnung als Excel-Datei, die CSV öffnet sich ebenfalls direkt in Excel.</p>
     <div class="flex flex-wrap gap-2">
       <button type="button" onclick="exportCsv()" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl border border-slate-300 dark:border-slate-700 transition">📄 Als CSV speichern</button>
-      <button type="button" onclick="exportPrint()" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl border border-slate-300 dark:border-slate-700 transition">🖨️ Drucken / als PDF sichern</button>
+      <button type="button" onclick="exportPrint()" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl border border-slate-300 dark:border-slate-700 transition">📊 Excel</button>
     </div>
   </div>
 </div>
@@ -1819,7 +2443,7 @@ class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-
       <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Ablauf zum Abhaken für Aufbau und Abbau, Abnahme-Checkliste, Standskizze, Hinweise sowie Fotos.</p>
     </div>
     <div class="flex flex-wrap items-center gap-2">
-      <button type="button" id="aufbauPrintBtn" onclick="printAufbau()" class="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 transition">🖨️ Drucken</button>
+      <button type="button" id="aufbauPrintBtn" onclick="printAufbau()" class="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 transition">📊 Excel</button>
       <button type="button" onclick="switchView('aushang')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition border border-slate-300 dark:border-slate-700">⬅️ Zurück</button>
     </div>
   </div>
@@ -1839,18 +2463,6 @@ class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-
     </div>
   </div>
   <div id="leihgabenRoot" class="space-y-6"></div>
-</div>
-
-<!-- hilfe.njk -->
-<div id="viewHilfe" class="hidden space-y-6">
-  <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-    <div>
-      <h2 class="font-black text-xl text-emerald-600 dark:text-emerald-400 flex items-center gap-2">❓ Hilfe</h2>
-      <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Was die Seiten können. Du siehst nur, was für deine Anmeldung freigegeben ist.</p>
-    </div>
-    <button type="button" onclick="switchView('aushang')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 transition">← Zurück</button>
-  </div>
-  <div id="hilfeRoot" class="space-y-6"></div>
 </div>
 
 <!-- admin.njk -->
@@ -2086,12 +2698,13 @@ class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-
 </div>
 
 <!-- Skripte für Daten und Logik -->
-<script src="/intranet/js/weihnachtsmarkt-data.js?v=10222305"></script>
-<script src="/intranet/js/hub-config.js?v=10222305"></script>
-<script src="/intranet/js/hub-common.js?v=10222305"></script>
-<script src="/intranet/js/weihnachtsmarkt.js?v=10222305"></script>
+<script src="/intranet/js/weihnachtsmarkt-data.js?v=10231907"></script>
+<script src="/intranet/js/hub-config.js?v=10231907"></script>
+<script src="/intranet/js/hub-common.js?v=10231907"></script>
+<script src="/intranet/js/hub-xlsx.js?v=10231907"></script>
+<script src="/intranet/js/weihnachtsmarkt.js?v=10231907"></script>
 
 {% else %}
 <div id="hubRoot" {% if pg.modul %}data-modul="{{ pg.modul }}"{% else %}data-system=""{% endif %}><noscript><p style="padding:24px">Dafür wird JavaScript gebraucht.</p></noscript></div>
-{% for s in pg.scripts %}<script src="/intranet/js/{{ s }}.js?v=10222305" defer></script>
+{% for s in pg.scripts %}<script src="/intranet/js/{{ s }}.js?v=10231907" defer></script>
 {% endfor %}{% endif %}
