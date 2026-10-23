@@ -2086,12 +2086,12 @@ class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-
 </div>
 
 <!-- Skripte für Daten und Logik -->
-<script src="/intranet/js/weihnachtsmarkt-data.js?v=10222251"></script>
-<script src="/intranet/js/hub-config.js?v=10222251"></script>
-<script src="/intranet/js/hub-common.js?v=10222251"></script>
-<script src="/intranet/js/weihnachtsmarkt.js?v=10222251"></script>
+<script src="/intranet/js/weihnachtsmarkt-data.js?v=10222305"></script>
+<script src="/intranet/js/hub-config.js?v=10222305"></script>
+<script src="/intranet/js/hub-common.js?v=10222305"></script>
+<script src="/intranet/js/weihnachtsmarkt.js?v=10222305"></script>
 
 {% else %}
 <div id="hubRoot" {% if pg.modul %}data-modul="{{ pg.modul }}"{% else %}data-system=""{% endif %}><noscript><p style="padding:24px">Dafür wird JavaScript gebraucht.</p></noscript></div>
-{% for s in pg.scripts %}<script src="/intranet/js/{{ s }}.js?v=10222251" defer></script>
+{% for s in pg.scripts %}<script src="/intranet/js/{{ s }}.js?v=10222305" defer></script>
 {% endfor %}{% endif %}
