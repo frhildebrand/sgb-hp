@@ -6166,10 +6166,6 @@ window.printHtml = function (html, fileBase) {
   window.HubXlsx.list({ file, title: title || 'Weihnachtsmarkt', sub: sub.join(' · '), sheets });
 };
 window.getPrintFallback = function () { return null; };
-function siteLogoSrc() {
-  const img = document.querySelector ? document.querySelector('.navbar-brand img') : null;
-  return img && img.src ? img.src : '';
-}
 
 // --- Bilder (Scans und Aufbau-Fotos) ---
 // Schluessel: samstag, sonntag oder aufbau_<id>. Cache im Speicher + lokal, Ablage im Sheet in Stuecken.
@@ -6663,40 +6659,57 @@ window.addTeigPlatz = function (day, dir) {
   renderAushangLists();
 };
 
-// --- Aushang drucken (wie die Vorlage der letzten Jahre) ---
-function aushangPrintPage(day) {
+// --- Aushang als Excel (wie die Vorlage der letzten Jahre) ---
+// Pro Tag ein A4-Blatt: Titel links, Logo rechts, "Unterstützung vor Ort" als Tabelle (Zeit, Name, Aufsicht) ohne Kopfzeile,
+// darunter "Waffelteig" in zwei Spalten. Raster mit vier Spalten: Zeit = 1, Name = 2 und 3, Aufsicht = 4; Teig = 1+2 und 3+4.
+const AUSHANG_XLSX_WIDTHS = [15.7, 27.3, 27.3, 15.7];
+function aushangSheet(day) {
   const d = aushangDay(day);
-  const logo = siteLogoSrc();
-  const aux = !d.meta.auxLabel || d.meta.auxLabel === 'Aufsicht' ? 'Aufsicht (Ü18)' : d.meta.auxLabel;
-  // Zeilenhoehe so waehlen, dass alles auf EINE A4-Seite passt (Platz fuer Zeilen: rund 185 mm)
-  const nSlots = d.slots.length;
+  const pt = 2.835; // Punkt je Millimeter
   const nTeigRows = Math.ceil(d.teige.length / 2);
-  const avail = 185;
+  // Zeilenhoehe so waehlen, dass alles auf EINE A4-Seite passt (Platz fuer die Zeilen: rund 205 mm)
+  const avail = 205;
   let sh = 17;
   let th = 9;
-  let fs = 11;
-  const need = nSlots * sh + nTeigRows * th;
+  const need = d.slots.length * sh + nTeigRows * th;
   if (need > avail) {
     const f = avail / need;
-    sh = Math.max(7, Math.round(sh * f * 10) / 10);
+    sh = Math.max(10, Math.round(sh * f * 10) / 10);
     th = Math.max(7, Math.round(th * f * 10) / 10);
   }
-  if (nSlots * sh + nTeigRows * th > avail) { fs = 9; sh = Math.max(6, sh - 1); th = Math.max(6, th - 1); }
-  const rows = d.slots.map((s) => `<tr style="height:${sh}mm"><td class="c1">${escapeHtml(s.label)}</td><td>${escapeHtml((s.names || []).map((e) => window.showName(e.n)).join(', '))}</td><td class="c3">${escapeHtml((s.aufsicht || []).map((e) => window.showName(e.n)).concat(s.extra ? [s.extra] : []).join(', '))}</td></tr>`).join('');
-  const cells = d.teige.map((t) => `${t.n}. ${t.name ? window.showName(t.name) : ''}`);
-  const teigRows = [];
-  for (let i = 0; i < cells.length; i += 2) teigRows.push(`<tr style="height:${th}mm"><td>${escapeHtml(cells[i])}</td><td>${escapeHtml(cells[i + 1] || '')}</td></tr>`);
-  return `<div style="font-size:${fs}pt"><div class="ps-head"><h1>${escapeHtml(d.meta.dateText || AUSHANG_TAGE[day])}</h1>${logo ? `<img src="${escapeHtml(logo)}" alt="">` : ''}</div>
-    <h2>Unterstützung vor Ort</h2>
-    <table class="ps-table ps-slots"><tr><th>Zeit</th><th>Name</th><th>${escapeHtml(aux)}</th></tr>${rows}</table>
-    <h2>Waffelteig</h2>
-    <table class="ps-table ps-teig">${teigRows.join('')}</table></div>`;
+  const rows = [{ h: 38, cells: [{ t: d.meta.dateText || AUSHANG_TAGE[day], span: 3, s: 'title' }] }, { h: 8, cells: [] }];
+  if (d.slots.length) {
+    rows.push({ h: 24, cells: [{ t: 'Unterstützung vor Ort', span: 4, s: 'sub' }] }, { h: 8, cells: [] });
+    d.slots.forEach((slot) => rows.push({
+      h: Math.round(sh * pt * 10) / 10,
+      cells: [
+        { t: slot.label, s: 'box' },
+        { t: (slot.names || []).map((e) => window.showName(e.n)).join(', '), span: 2, s: 'box' },
+        { t: (slot.aufsicht || []).map((e) => window.showName(e.n)).concat(slot.extra ? [slot.extra] : []).join(', '), s: 'box' }
+      ]
+    }));
+    rows.push({ h: 14, cells: [] });
+  }
+  if (d.teige.length) {
+    rows.push({ h: 24, cells: [{ t: 'Waffelteig', span: 4, s: 'sub' }] }, { h: 8, cells: [] });
+    const cells = d.teige.map((t) => `${t.n}. ${t.name ? window.showName(t.name) : ''}`);
+    for (let i = 0; i < cells.length; i += 2) {
+      rows.push({ h: Math.round(th * pt * 10) / 10, cells: [{ t: cells[i], span: 2, s: 'cell' }, { t: cells[i + 1] || '', span: 2, s: 'cell' }] });
+    }
+  }
+  return { name: AUSHANG_TAGE[day], rows: rows };
 }
-window.aushangPrintPage = aushangPrintPage;
 window.printAushang = function (day) {
   if (!window.can('aushang.print')) { notify('Excel ist für deine Anmeldung nicht freigegeben.'); return; }
-  const days = day === 'beide' ? ['samstag', 'sonntag'] : [day];
-  window.printHtml(days.map((x) => '<div class="ps-page">' + aushangPrintPage(x) + '</div>').join(''));
+  if (!window.HubXlsx || !window.HubXlsx.pages) { notify('Excel konnte nicht erstellt werden. Bitte Seite neu laden.'); return; }
+  const days = day === 'beide' ? Object.keys(AUSHANG_TAGE) : [day];
+  const sheets = days.map(aushangSheet);
+  if (sheets.every((sheet) => sheet.rows.length <= 2)) { notify('Es gibt nichts zu exportieren.'); return; }
+  window.HubXlsx.pages({
+    file: day === 'beide' ? 'Aushang_Weihnachtsmarkt.xlsx' : 'Aushang_' + AUSHANG_TAGE[day] + '.xlsx',
+    widths: AUSHANG_XLSX_WIDTHS,
+    sheets: sheets
+  });
 };
 
 // --- Aufbau: Ablauf, Hinweise, Bilder und Skizzen ---

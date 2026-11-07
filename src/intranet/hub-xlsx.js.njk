@@ -38,7 +38,7 @@ templateEngineOverride: false
     x += '</sheetData><autoFilter ref="A' + HR + ':' + last + (HR + sh.rows.length) + '"/><printOptions horizontalCentered="1"/><pageMargins left="0.5" right="0.5" top="0.5" bottom="0.5" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="' + (sh.portrait ? 'portrait' : nc > 6 || sh.land ? 'landscape' : 'portrait') + '"' + (sh.land || sh.portrait ? ' fitToWidth="1"' : '') + ' fitToHeight="0"/>' + (hasLogo ? '<drawing r:id="rId1"/>' : '') + '</worksheet>';
     return x;
   }
-  var XL_STYLES = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="2"><numFmt numFmtId="164" formatCode="dd.mm.yyyy"/><numFmt numFmtId="165" formatCode="#,##0.00\ &quot;€&quot;"/></numFmts><fonts count="5"><font><sz val="10"/><color rgb="FF000000"/><name val="Arial"/></font><font><b/><sz val="14"/><color rgb="FF000000"/><name val="Arial"/></font><font><b/><sz val="13"/><color rgb="FF000000"/><name val="Arial"/></font><font><sz val="11"/><color rgb="FF000000"/><name val="Arial"/></font><font><b/><sz val="10"/><color rgb="FF000000"/><name val="Arial"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFD9E2F3"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FF000000"/></left><right style="thin"><color rgb="FF000000"/></right><top style="thin"><color rgb="FF000000"/></top><bottom style="thin"><color rgb="FF000000"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="9"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf><xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf><xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf><xf numFmtId="0" fontId="4" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="top"/></xf><xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="top"/></xf><xf numFmtId="165" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="top"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="top"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+  var XL_STYLES = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="2"><numFmt numFmtId="164" formatCode="dd.mm.yyyy"/><numFmt numFmtId="165" formatCode="#,##0.00\ &quot;€&quot;"/></numFmts><fonts count="7"><font><sz val="10"/><color rgb="FF000000"/><name val="Arial"/></font><font><b/><sz val="14"/><color rgb="FF000000"/><name val="Arial"/></font><font><b/><sz val="13"/><color rgb="FF000000"/><name val="Arial"/></font><font><sz val="11"/><color rgb="FF000000"/><name val="Arial"/></font><font><b/><sz val="10"/><color rgb="FF000000"/><name val="Arial"/></font><font><sz val="20"/><color rgb="FF000000"/><name val="Arial"/></font><font><sz val="16"/><color rgb="FF000000"/><name val="Arial"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFD9E2F3"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FF000000"/></left><right style="thin"><color rgb="FF000000"/></right><top style="thin"><color rgb="FF000000"/></top><bottom style="thin"><color rgb="FF000000"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="13"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf><xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf><xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf><xf numFmtId="0" fontId="4" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="top"/></xf><xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="top"/></xf><xf numFmtId="165" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="top"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="top"/></xf><xf numFmtId="0" fontId="5" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf><xf numFmtId="0" fontId="6" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="top" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1" indent="1"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
   // o = { file, title, sub, sheets: [{ name, head: [..], rows: [[..]], w: [Breiten] }] }
   function xlsxList(o) {
     var go = function () {
@@ -70,5 +70,65 @@ templateEngineOverride: false
     loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js').then(function () { return go(); }).catch(fail);
   }
 
-  window.HubXlsx = { list: xlsxList };
+  /* ---------- Seiten im freien Layout (z. B. Aushang): feste Zeilenhöhen, verbundene Zellen, Logo rechts oben ---------- */
+  // o = { file, widths: [Spaltenbreiten], logoPx: Breite des Logos in Pixel (0 = ohne Logo, Standard 192),
+  //       sheets: [{ name, rows: [{ h: Höhe in Punkt, cells: [{ t: Text, span: Anzahl Spalten, s: 'title' | 'sub' | 'box' | 'cell' }] }] }] }
+  var XL_PAGE_STYLE = { title: 9, sub: 10, box: 11, cell: 12 };
+  function xlPageXml(sh, widths, hasLogo) {
+    var rows = '', merges = [];
+    sh.rows.forEach(function (r, ri) {
+      var rn = ri + 1, c = 0, x = '<row r="' + rn + '" ht="' + r.h + '" customHeight="1">';
+      (r.cells || []).forEach(function (cell) {
+        var span = cell.span || 1, st = XL_PAGE_STYLE[cell.s] || 0, ref = xlCol(c) + rn, v = cell.t;
+        x += (v === '' || v === null || v === undefined) ? '<c r="' + ref + '" s="' + st + '"/>' : '<c r="' + ref + '" s="' + st + '" t="inlineStr"><is><t xml:space="preserve">' + xlEsc(v) + '</t></is></c>';
+        for (var k = 1; k < span; k++) x += '<c r="' + xlCol(c + k) + rn + '" s="' + st + '"/>';
+        if (span > 1) merges.push(ref + ':' + xlCol(c + span - 1) + rn);
+        c += span;
+      });
+      rows += x + '</row>';
+    });
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView showGridLines="0" workbookViewId="0"/></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols>' +
+      widths.map(function (w, i) { return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>'; }).join('') + '</cols><sheetData>' + rows + '</sheetData>' +
+      (merges.length ? '<mergeCells count="' + merges.length + '">' + merges.map(function (m) { return '<mergeCell ref="' + m + '"/>'; }).join('') + '</mergeCells>' : '') +
+      '<printOptions horizontalCentered="1"/><pageMargins left="0.7" right="0.7" top="0.6" bottom="0.6" header="0.3" footer="0.3"/><pageSetup paperSize="9" orientation="portrait" fitToWidth="1" fitToHeight="1"/>' + (hasLogo ? '<drawing r:id="rId1"/>' : '') + '</worksheet>';
+  }
+  // Das Logo sitzt rechtsbündig in der ersten Zeile (Spaltenbreite 1 = rund 7 Pixel).
+  function xlPageDrawing(widths, px, NS) {
+    var cw = widths.map(function (w) { return Math.round(w * 7); }), total = cw.reduce(function (a, b) { return a + b; }, 0);
+    var x0 = Math.max(0, total - px), col = 0, acc = 0;
+    while (col < cw.length - 1 && acc + cw[col] <= x0) { acc += cw[col]; col++; }
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="' + NS + '"><xdr:oneCellAnchor><xdr:from><xdr:col>' + col + '</xdr:col><xdr:colOff>' + (x0 - acc) * 9525 + '</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:ext cx="' + px * 9525 + '" cy="' + Math.round(px * 165 / 640) * 9525 + '"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="2" name="Logo" descr="SG Barnstorf Sharks"/><xdr:cNvPicPr preferRelativeResize="0"/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor></xdr:wsDr>';
+  }
+  function xlsxPages(o) {
+    var go = function () {
+      var z = new JSZip(); var NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'; var sh = o.sheets;
+      var px = o.logoPx === undefined ? 192 : o.logoPx;
+      var ct = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>';
+      var wbs = '', wrel = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdS" Type="' + NS + '/styles" Target="styles.xml"/>';
+      sh.forEach(function (s, i) {
+        var n = i + 1, nm = xlEsc(String(s.name).replace(/[\\\/?*\[\]:]/g, ' ').slice(0, 31));
+        ct += '<Override PartName="/xl/worksheets/sheet' + n + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' + (px ? '<Override PartName="/xl/drawings/drawing' + n + '.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>' : '');
+        wbs += '<sheet name="' + nm + '" sheetId="' + n + '" r:id="rId' + n + '"/>'; wrel += '<Relationship Id="rId' + n + '" Type="' + NS + '/worksheet" Target="worksheets/sheet' + n + '.xml"/>';
+        z.file('xl/worksheets/sheet' + n + '.xml', xlPageXml(s, o.widths, !!px));
+        if (!px) return;
+        z.file('xl/worksheets/_rels/sheet' + n + '.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="' + NS + '/drawing" Target="../drawings/drawing' + n + '.xml"/></Relationships>');
+        z.file('xl/drawings/drawing' + n + '.xml', xlPageDrawing(o.widths, px, NS));
+        z.file('xl/drawings/_rels/drawing' + n + '.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="' + NS + '/image" Target="../media/logo.png"/></Relationships>');
+      });
+      z.file('[Content_Types].xml', ct + '</Types>');
+      z.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="' + NS + '/officeDocument" Target="xl/workbook.xml"/></Relationships>');
+      z.file('xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="' + NS + '"><sheets>' + wbs + '</sheets></workbook>');
+      z.file('xl/_rels/workbook.xml.rels', wrel + '</Relationships>'); z.file('xl/styles.xml', XL_STYLES); if (px) z.file('xl/media/logo.png', XL_LOGO, { base64: true });
+      return z.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }).then(function (blob) {
+        var url = URL.createObjectURL(blob), l = document.createElement('a'); l.href = url; l.download = o.file; document.body.appendChild(l); l.click(); setTimeout(function () { document.body.removeChild(l); URL.revokeObjectURL(url); }, 4000);
+        toast('Excel-Datei erstellt.');
+      });
+    };
+    var fail = function (e) { toast('Excel konnte nicht erstellt werden. Bitte Internetverbindung prüfen.'); try { console.error(e); } catch (x) { /* egal */ } };
+    if (window.JSZip) { try { go().catch(fail); } catch (e) { fail(e); } return; }
+    toast('Excel-Datei wird erstellt …');
+    loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js').then(function () { return go(); }).catch(fail);
+  }
+
+  window.HubXlsx = { list: xlsxList, pages: xlsxPages };
 })();
