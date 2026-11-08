@@ -73,7 +73,7 @@ templateEngineOverride: false
   /* ---------- Seiten im freien Layout (z. B. Aushang): feste Zeilenhöhen, verbundene Zellen, Logo rechts oben ---------- */
   // o = { file, widths: [Spaltenbreiten], logoPx: Breite des Logos in Pixel (0 = ohne Logo, Standard 192),
   //       sheets: [{ name, rows: [{ h: Höhe in Punkt, cells: [{ t: Text, span: Anzahl Spalten, s: 'title' | 'sub' | 'box' | 'cell' }] }] }] }
-  var XL_PAGE_STYLE = { title: 9, sub: 10, box: 11, cell: 12 };
+  var XL_PAGE_STYLE = { title: 9, sub: 10, box: 11, cell: 12, h1: 1, h2: 2 };
   function xlPageXml(sh, widths, hasLogo) {
     var rows = '', merges = [];
     sh.rows.forEach(function (r, ri) {
@@ -92,10 +92,10 @@ templateEngineOverride: false
       (merges.length ? '<mergeCells count="' + merges.length + '">' + merges.map(function (m) { return '<mergeCell ref="' + m + '"/>'; }).join('') + '</mergeCells>' : '') +
       '<printOptions horizontalCentered="1"/><pageMargins left="0.7" right="0.7" top="0.6" bottom="0.6" header="0.3" footer="0.3"/><pageSetup paperSize="9" orientation="portrait" fitToWidth="1" fitToHeight="1"/>' + (hasLogo ? '<drawing r:id="rId1"/>' : '') + '</worksheet>';
   }
-  // Das Logo sitzt rechtsbündig in der ersten Zeile (Spaltenbreite 1 = rund 7 Pixel).
+  // Das Logo sitzt linksbündig oben (wie in der Vorlage); Vereinsname und Titel stehen rechtsbündig daneben.
   function xlPageDrawing(widths, px, NS) {
     var cw = widths.map(function (w) { return Math.round(w * 7); }), total = cw.reduce(function (a, b) { return a + b; }, 0);
-    var x0 = Math.max(0, total - px), col = 0, acc = 0;
+    var x0 = 0, col = 0, acc = 0;
     while (col < cw.length - 1 && acc + cw[col] <= x0) { acc += cw[col]; col++; }
     return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="' + NS + '"><xdr:oneCellAnchor><xdr:from><xdr:col>' + col + '</xdr:col><xdr:colOff>' + (x0 - acc) * 9525 + '</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:ext cx="' + px * 9525 + '" cy="' + Math.round(px * 165 / 640) * 9525 + '"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="2" name="Logo" descr="SG Barnstorf Sharks"/><xdr:cNvPicPr preferRelativeResize="0"/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor></xdr:wsDr>';
   }
