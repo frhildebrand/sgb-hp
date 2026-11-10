@@ -73,7 +73,7 @@ templateEngineOverride: false
   /* ---------- Seiten im freien Layout (z. B. Aushang): feste Zeilenhöhen, verbundene Zellen, Logo rechts oben ---------- */
   // o = { file, widths: [Spaltenbreiten], logoPx: Breite des Logos in Pixel (0 = ohne Logo, Standard 192),
   //       sheets: [{ name, rows: [{ h: Höhe in Punkt, cells: [{ t: Text, span: Anzahl Spalten, s: 'title' | 'sub' | 'box' | 'cell' }] }] }] }
-  var XL_PAGE_STYLE = { title: 9, sub: 10, box: 11, cell: 12, h1: 1, h2: 2 };
+  var XL_PAGE_STYLE = { title: 9, sub: 10, box: 11, cell: 12, h1: 1, h2: 2, head: 4 };
   function xlPageXml(sh, widths, hasLogo) {
     var rows = '', merges = [];
     sh.rows.forEach(function (r, ri) {

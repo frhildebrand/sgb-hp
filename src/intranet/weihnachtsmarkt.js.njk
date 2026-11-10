@@ -6088,6 +6088,7 @@ window.resetSeasonPrompt = async function () {
 // Lokal zuerst, alles wird zusaetzlich im Google Sheet abgelegt und auf allen Geraeten angezeigt.
 // ------------------------------------------
 const AUSHANG_TAGE = { samstag: 'Samstag', sonntag: 'Sonntag' };
+const AUSHANG_DATUM = { samstag: '28.11.2026', sonntag: '29.11.2026' };
 window.signupName = localStorage.getItem('signupName') || '';
 
 // --- Drucken: DIN-A4-Blatt (nur der Inhalt, ohne Menues) ---
@@ -6668,9 +6669,9 @@ function aushangSheet(day) {
   const pt = 2.835; // Punkt je Millimeter
   const nTeigRows = Math.ceil(d.teige.length / 2);
   // Kopf wie in der Vorlage: Logo links, Vereinsname und Titel rechtsbuendig (Zeilen 40 + 32 + 8 Punkt)
-  const rows = [{ h: 40, cells: [{ t: 'Schwimmgemeinschaft Barnstorf e.V.', span: 4, s: 'h1' }] }, { h: 32, cells: [{ t: d.meta.dateText || AUSHANG_TAGE[day], span: 4, s: 'h2' }] }, { h: 8, cells: [] }];
+  const rows = [{ h: 40, cells: [{ t: 'Schwimmgemeinschaft Barnstorf e.V.', span: 4, s: 'h1' }] }, { h: 32, cells: [{ t: /\d/.test(d.meta.dateText || '') ? d.meta.dateText : AUSHANG_DATUM[day] + ' ' + (d.meta.dateText || AUSHANG_TAGE[day]), span: 4, s: 'h2' }] }, { h: 8, cells: [] }];
   // Zeilenhoehe so waehlen, dass die Tabellen die A4-Seite bis unten ausfuellen (Seitenhoehe abzgl. Rand und Reserve)
-  const fix = 80 + (d.slots.length ? 24 + 8 + 14 : 0) + (d.teige.length ? 24 + 8 : 0);
+  const fix = 80 + (d.slots.length ? 24 + 8 + 20 + 14 : 0) + (d.teige.length ? 24 + 8 : 0);
   const units = d.slots.length + nTeigRows * 0.53;
   const unit = units ? Math.max(0, 745 - fix) / units : 0;
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -6678,6 +6679,8 @@ function aushangSheet(day) {
   const th = clamp(unit * 0.53, 7 * pt, 20 * pt);
   if (d.slots.length) {
     rows.push({ h: 24, cells: [{ t: 'Unterstützung vor Ort', span: 4, s: 'sub' }] }, { h: 8, cells: [] });
+    const aux = (d.meta.auxLabel || 'Aufsicht').replace(/\s*\(Ü18\)/, '').trim() || 'Aufsicht';
+    rows.push({ h: 20, cells: [{ t: 'Zeit', s: 'head' }, { t: 'Name', span: 2, s: 'head' }, { t: aux, s: 'head' }] });
     d.slots.forEach((slot) => rows.push({
       h: Math.round(sh * 10) / 10,
       cells: [
