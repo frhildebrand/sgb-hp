@@ -1,0 +1,5 @@
+{% for person in verein.vorstand %}
+  {% if person.funktion == "1.Vorsitzender" or person.funktion == "1.Vorsitzende" or person.funktion == "Geschäftsführerin" or person.funktion == "Geschäftsführer" %}
+    <li>{{ person.vollstaendigerName | default(person.name) | escape }}</li>
+  {% endif %}
+{% endfor %}
