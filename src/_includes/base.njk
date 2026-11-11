@@ -3,7 +3,7 @@ title: Schwimmgemeinschaft Barnstorf e.V.
 ---
 
 <!DOCTYPE html>
-<html>
+<html lang="de">
   <head>
     {% if heading %}
       <title>{{ heading }} - {{ title }}</title>
@@ -13,7 +13,7 @@ title: Schwimmgemeinschaft Barnstorf e.V.
     <meta charset="utf-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, user-scalable=no"
+      content="width=device-width, initial-scale=1"
     />
     <link rel="stylesheet" href="/assets/css/main.css" />
     <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css" />
@@ -47,10 +47,11 @@ title: Schwimmgemeinschaft Barnstorf e.V.
                 />
               </a>
 
-              <a
-                role="button"
+              <button
+                type="button"
                 class="navbar-burger"
-                aria-label="menu"
+                aria-label="Menü öffnen oder schließen"
+                aria-controls="navbarMain"
                 aria-expanded="false"
                 data-target="navbarMain"
               >
@@ -58,7 +59,7 @@ title: Schwimmgemeinschaft Barnstorf e.V.
                 <span aria-hidden="true"></span>
                 <span aria-hidden="true"></span>
                 <span aria-hidden="true"></span>
-              </a>
+              </button>
             </div>
 
             <div id="navbarMain" class="navbar-menu">
@@ -259,12 +260,6 @@ title: Schwimmgemeinschaft Barnstorf e.V.
 
     <!-- Scripts -->
 
-    <script src="/assets/js/jquery.min.js"></script>
-    <script src="/assets/js/jquery.dropotron.min.js"></script>
-    <script src="/assets/js/browser.min.js"></script>
-    <script src="/assets/js/breakpoints.min.js"></script>
-    <script src="/assets/js/util.js"></script>
-    <script src="/assets/js/main.js"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
         const $navbarBurgers = Array.prototype.slice.call(
@@ -275,7 +270,8 @@ title: Schwimmgemeinschaft Barnstorf e.V.
           el.addEventListener("click", () => {
             const target = el.dataset.target;
             const $target = document.getElementById(target);
-            el.classList.toggle("is-active");
+            const expanded = el.classList.toggle("is-active");
+            el.setAttribute("aria-expanded", String(expanded));
             $target.classList.toggle("is-active");
           });
         });

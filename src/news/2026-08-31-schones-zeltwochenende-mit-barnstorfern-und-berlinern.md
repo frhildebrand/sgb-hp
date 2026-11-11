@@ -8,7 +8,7 @@ tags:
   - veranstaltung
 excerpt: Ein Wochenende voller Schwimmsport, gemeinsamer Aktionen und guter Stimmung.
 preview: /images/2026-08-berlin-gruppenfoto.jpg
-heroImage: /images/pxl202608290527598142.jpg
+heroImage: /images/2026-08-berlin-zelte.jpg
 images:
   - src: /images/2026-08-berlin-zelte.jpg
     alt: Unser Zeltdorf auf dem Freibadgelände
@@ -18,9 +18,9 @@ images:
     alt: Das Kanuhaus bunt beleuchtet
   - src: /images/2026-08-berlin-grillbuffet.jpg
     alt: Das Grillbuffet steht bereit
-  - src: /images/pxl20260829190229098night.jpg
+  - src: /images/2026-08-berlin-nachtschwimmen.jpg
     alt: Samstagabend im Wasser
-  - src: /images/img20260830135525.jpg
+  - src: /images/2026-08-berlin-gruppenfoto.jpg
     alt: Gruppenfoto vorm Bus
 links:
   - text: Ergebnisse des Vereinswettkampfes

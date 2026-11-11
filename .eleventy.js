@@ -12,6 +12,11 @@ module.exports = function (config) {
     return collectionApi.getFilteredByGlob("src/news/**/*.md");
   });
 
+  config.addCollection("newsTags", (collectionApi) => {
+    const posts = collectionApi.getFilteredByGlob("src/news/**/*.md");
+    return [...new Set(posts.flatMap((post) => post.data.tags || []))].sort();
+  });
+
   // Filter to extract headings with IDs for the sidebar TOC
   config.addFilter("extractHeadings", (content) => {
     if (!content) return [];

@@ -19,10 +19,10 @@ images:
   - src: /images/2026-09-abschwimmen-03.jpg
     alt: Siegerehrung am Kanuhaus
 links:
-  - text: https://live.sgbarnstorf.de/archiv/26/09-sgb/results.php
-    url: Ergebnisse des Vereinswettkampfes
-  - text: https://www.worldaquatics.com/swimming/points
-    url: Erklärung zu den World-Aquatics-Punkten
+  - text: Ergebnisse des Vereinswettkampfes
+    url: https://live.sgbarnstorf.de/archiv/26/09-sgb/results.php
+  - text: Erklärung zu den World-Aquatics-Punkten
+    url: https://www.worldaquatics.com/swimming/points
 ---
 # Katze, Bandit und Bauchtänzerin im Freibad gesichtet
 
