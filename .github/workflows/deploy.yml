@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: production-sftp
+  cancel-in-progress: false
+
 jobs:
   web-deploy:
     name: 🏗️ Build & Sync
@@ -36,8 +40,9 @@ jobs:
       - name: Deploy via SFTP
         run: |
           lftp <<EOF
+          set cmd:fail-exit yes
           set sftp:auto-confirm yes
           open -u "${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }}" sftp://${{ secrets.FTP_SERVER }}
-          mirror -R ./_site/ ./
+          mirror --reverse --delete ./_site/ ./
           bye
           EOF

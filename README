@@ -16,7 +16,7 @@ Nach dem Build prüft `npm run check` die öffentlichen Seiten auf fehlende
 lokale Dateien und Sprungziele. `src/intranet` bleibt bei dieser Prüfung und
 bei `npm run format` ausgeschlossen.
 
-Der GitHub-Workflow baut und prüft die Website vor dem SFTP-Upload. Der Upload
-löscht derzeit keine entfernten Dateien, da das Zielverzeichnis auch andere
-Inhalte enthalten könnte. Alte Dateien auf dem Server müssen bis zur Klärung
-des Zielverzeichnisses gezielt entfernt werden.
+Der GitHub-Workflow baut und prüft die Website vor dem SFTP-Upload. Das
+SFTP-Zielverzeichnis ist ausschließlich für diese Website vorgesehen: Dateien,
+die im Build nicht mehr vorkommen, werden dort beim Deployment gelöscht.
+Deployments laufen nacheinander, damit sich Uploads nicht überschneiden.
