@@ -17,14 +17,17 @@
           {{ person.funktion }}
           seit {{ person.seitWann }}
         {% else %}
-          {{ person.gruppen | join(', ') }}
+          {% for gruppe in person.gruppen %}
+            {{ gruppe }}{% if person.vertretungsgruppen and gruppe in person.vertretungsgruppen %}{{ " (Vertretung)" }}{% endif %}{% if not loop.last %}, {% endif %}
+          {% endfor %}
         {% endif %}
       </p>
     </div>
     {% if person.ausbildung %}
       <div class="content">
-        {% if person.ausbildung != "-" %}<em>"{{ person.ausbildung }}"</em
-        ><br />{% endif %}
+        {% if person.ausbildung != "-" %}
+          <em>"{{ person.ausbildung }}"</em><br />
+        {% endif %}
         {% if person.seitWann != "?" %}Am Beckenrand seit {{ person.seitWann }}{% endif %}
       </div>
     {% endif %}
