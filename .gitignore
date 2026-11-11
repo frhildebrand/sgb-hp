@@ -4,6 +4,9 @@ node_modules/
 # Build-Ordner
 _site/
 
+# Generated from src/assets/_sass/main.scss
+/src/assets/css/
+
 # Betriebssystem-Dateien
 .DS_Store
 Thumbs.db

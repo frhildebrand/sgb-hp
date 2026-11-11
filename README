@@ -1,5 +1,22 @@
 # Homepage der Schwimmgemeinschaft Barnstorf
 
-- 11ty
+Die Website verwendet Eleventy und Bulma. Voraussetzung ist Node.js 24
+(siehe `.nvmrc`).
 
-To run it locally: `npm run start`
+```sh
+npm ci
+npm start
+```
+
+`npm run build` erzeugt CSS aus `src/assets/_sass/main.scss` und baut die
+Website nach `_site`. Generierte CSS-Dateien und Source Maps werden nicht
+versioniert. `npm start` beobachtet sowohl Sass als auch Eleventy.
+
+Nach dem Build prüft `npm run check` die öffentlichen Seiten auf fehlende
+lokale Dateien und Sprungziele. `src/intranet` bleibt bei dieser Prüfung und
+bei `npm run format` ausgeschlossen.
+
+Der GitHub-Workflow baut und prüft die Website vor dem SFTP-Upload. Der Upload
+löscht derzeit keine entfernten Dateien, da das Zielverzeichnis auch andere
+Inhalte enthalten könnte. Alte Dateien auf dem Server müssen bis zur Klärung
+des Zielverzeichnisses gezielt entfernt werden.

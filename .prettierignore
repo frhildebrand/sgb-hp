@@ -1,4 +1,6 @@
 node_modules
 _site
+src/intranet
+src/assets/css
 package-lock.json
 src/assets/js/*.min.js

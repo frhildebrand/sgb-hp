@@ -8,7 +8,7 @@ module.exports = function (config) {
   });
 
   // Create a collection of all news articles based on their file location
-  config.addCollection("news", function(collectionApi) {
+  config.addCollection("news", function (collectionApi) {
     return collectionApi.getFilteredByGlob("src/news/**/*.md");
   });
 
@@ -28,13 +28,13 @@ module.exports = function (config) {
       headings.push({
         level: match[1],
         id: match[2],
-        text: match[3].replace(/<[^>]+>/g, '').trim() // Strip inner HTML tags
+        text: match[3].replace(/<[^>]+>/g, "").trim(), // Strip inner HTML tags
       });
     }
     return headings;
   });
 
-  config.addPassthroughCopy("src/assets");
+  config.addPassthroughCopy("src/assets/css/main.css");
   config.addPassthroughCopy("src/images");
   config.addPassthroughCopy("src/downloads");
   config.addPassthroughCopy({

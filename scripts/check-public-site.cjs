@@ -17,9 +17,13 @@ async function main() {
     ];
     for (const [, reference] of references) {
       if (/^(?:[a-z]+:|\/\/)/i.test(reference)) continue;
-      const url = new URL(reference.replaceAll("&amp;", "&"), `https://local${page.url}`);
+      const url = new URL(
+        reference.replaceAll("&amp;", "&"),
+        `https://local${page.url}`,
+      );
       const pathname = decodeURIComponent(url.pathname);
-      const target = byUrl.get(pathname) || byUrl.get(`${pathname.replace(/\/$/, "")}/`);
+      const target =
+        byUrl.get(pathname) || byUrl.get(`${pathname.replace(/\/$/, "")}/`);
       const asset = path.join("src", pathname);
       const isAsset = fs.existsSync(asset) && fs.statSync(asset).isFile();
       if (!target && !isAsset && !pathname.startsWith("/assets/fontawesome/")) {
@@ -33,9 +37,39 @@ async function main() {
     }
   }
   assert.equal(errors.size, 0, [...errors].join("\n"));
-  assert(!byUrl.has("/tags/all/"), "Internal collections must not become tag pages");
-  assert(!byUrl.has("/tags/news/"), "The news collection must not become a tag page");
-  console.log(`Checked ${pages.length} public pages and their local references.`);
+  assert(
+    !byUrl.has("/tags/all/"),
+    "Internal collections must not become tag pages",
+  );
+  assert(
+    !byUrl.has("/tags/news/"),
+    "The news collection must not become a tag page",
+  );
+  const count = (url, pattern) => (byUrl.get(url).match(pattern) || []).length;
+  const newsCount = pages.filter((page) =>
+    page.inputPath.replaceAll("\\", "/").startsWith("./src/news/"),
+  ).length;
+  assert.equal(count("/", /class="card-footer-item"/g), Math.min(3, newsCount));
+  assert.equal(count("/news/", /class="card-footer-item"/g), newsCount);
+  const training = require("../src/_data/training.json");
+  const verein = require("../src/_data/verein.json");
+  const faq = require("../src/_data/faq.json");
+  assert.equal(
+    count("/training/", /class="portrait"/g),
+    training.trainer.length,
+  );
+  assert.equal(
+    count("/verein/", /class="portrait"/g),
+    verein.vorstand.length + verein.jugendvertretung.length,
+  );
+  assert.equal(count("/faq/", /<details\b/g), faq.length);
+  assert.equal(
+    count("/training/", /<details\b/g),
+    faq.filter((item) => item.tags.includes("training")).length,
+  );
+  console.log(
+    `Checked ${pages.length} public pages and their local references.`,
+  );
 }
 
 main().catch((error) => {
