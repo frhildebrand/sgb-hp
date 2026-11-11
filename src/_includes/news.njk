@@ -39,21 +39,8 @@ layout: base.njk
 
       {% if images %}
         <h3 class="subtitle is-3">Bilder</h3>
-        <div class="columns is-multiline is-mobile news-gallery">
-          {% for image in images %}
-            <div class="column is-3-desktop is-4-tablet is-6-mobile">
-              <a href="{{ image.src }}" data-caption="{{ image.alt }}">
-                <figure class="image is-1by1">
-                  <img
-                    src="{{ image.src }}"
-                    alt="{{ image.alt }}"
-                    style="object-fit: cover; border-radius: 6px; width: 100%; height: 100%;"
-                  />
-                </figure>
-              </a>
-            </div>
-          {% endfor %}
-        </div>
+        {% set galleryImages = images %}
+        {% include "gallery.njk" %}
       {% endif %}
 
       {% if links %}
@@ -78,29 +65,7 @@ layout: base.njk
       {% endif %}
     </article>
 
-    {# Lightbox Ressourcen & Initialisierung #}
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/baguettebox.js/1.11.1/baguetteBox.min.css"
-    />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/baguettebox.js/1.11.1/baguetteBox.min.js"></script>
-    <script>
-      window.addEventListener("load", function () {
-        baguetteBox.run(".news-gallery");
-      });
-    </script>
-    <style>
-      .news-gallery a {
-        display: block;
-        transition:
-          transform 0.2s ease,
-          box-shadow 0.2s ease;
-      }
-      .news-gallery a:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      }
-    </style>
+    {% if images %}{% include "lightbox.njk" %}{% endif %}
   </div>
 
   <div class="column is-4-desktop is-12-tablet">

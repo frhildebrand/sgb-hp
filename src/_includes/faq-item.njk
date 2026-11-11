@@ -1,0 +1,21 @@
+<details class="box faq-item mb-4">
+  <summary
+    class="is-size-5 has-text-weight-semibold is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap"
+  >
+    <span>{{ item.frage }}</span>
+    {% if item.tags %}
+      <div class="tags">
+        {% for tag in item.tags %}
+          <span class="tag is-primary is-light is-small">{{ tag }}</span>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </summary>
+  <div class="content mt-4 pt-4" style="border-top: 1px solid #eee;">
+    {{ item.antwort | safe }}
+    {% if item.images %}
+      {% set galleryImages = item.images %}
+      {% include "gallery.njk" %}
+    {% endif %}
+  </div>
+</details>

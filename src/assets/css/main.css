@@ -21616,5 +21616,14 @@ has-background-danger.is-hoverable:active {
     columns: 1;
   }
 }
+.news-gallery a {
+  display: block;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.news-gallery a:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
 
 /*# sourceMappingURL=main.css.map */

@@ -11,7 +11,7 @@ $red: #af0303;
   $primary: $blue,
   $link: $blue,
   $danger: $red,
-  $info: $blue-light,
+  $info: $blue-light
 );
 
 // Import the Google Font
@@ -91,4 +91,15 @@ $red: #af0303;
       columns: 1;
     }
   }
+}
+
+.news-gallery a {
+  display: block;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.news-gallery a:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }

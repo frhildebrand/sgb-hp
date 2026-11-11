@@ -1,0 +1,19 @@
+{% macro trainingTimes(groups, showTrainers=false) %}
+  <div class="grid is-col-min-10">
+    {% for gruppe in groups %}
+      <article class="message is-primary">
+        <div class="message-header"><p>{{ gruppe.name }}</p></div>
+        <div class="message-body">
+          <ul>
+            {% for termin in gruppe.termine %}
+              <li>
+                <strong>{{ termin.tag }}:</strong> {{ termin.zeit }}
+                {% if showTrainers %}<br />mit {{ termin.trainer | join(', ') }}{% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+{% endmacro %}

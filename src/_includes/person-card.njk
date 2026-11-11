@@ -1,0 +1,32 @@
+<div class="card">
+  <div class="card-image">
+    <figure class="image">
+      <img
+        src="{{ person.bild | default('/images/personen/placeholder.png') }}"
+        alt="{{ person.name }}"
+        class="portrait"
+        loading="lazy"
+      />
+    </figure>
+  </div>
+  <div class="card-content">
+    <div class="media-content">
+      <p class="title is-4">{{ person.name }}</p>
+      <p class="subtitle is-6">
+        {% if person.funktion %}
+          {{ person.funktion }}
+          seit {{ person.seitWann }}
+        {% else %}
+          {{ person.gruppen | join(', ') }}
+        {% endif %}
+      </p>
+    </div>
+    {% if person.ausbildung %}
+      <div class="content">
+        {% if person.ausbildung != "-" %}<em>"{{ person.ausbildung }}"</em
+        ><br />{% endif %}
+        {% if person.seitWann != "?" %}Am Beckenrand seit {{ person.seitWann }}{% endif %}
+      </div>
+    {% endif %}
+  </div>
+</div>
