@@ -38,6 +38,8 @@ module.exports = function (config) {
   config.addPassthroughCopy("src/images");
   config.addPassthroughCopy("src/downloads");
   config.addPassthroughCopy({
+    // Preserve the old image URL without maintaining a duplicate source file.
+    "src/images/news/freibad.png": "images/personen/placeholder-action.png",
     "node_modules/@fortawesome/fontawesome-free/css/all.min.css":
       "assets/fontawesome/css/all.min.css",
     "node_modules/@fortawesome/fontawesome-free/webfonts":
